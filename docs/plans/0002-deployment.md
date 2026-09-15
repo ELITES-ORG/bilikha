@@ -137,7 +137,7 @@ git status         # should be clean
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Supabase database | 0 / 3 | Not started |
+| 1. Supabase database | 0 / 6 | Not started |
 | 2. Migrate and seed production | 0 / 3 | Not started |
 | 3. Render API | 0 / 6 | Not started |
 | 4. Vercel frontend and proxy | 0 / 5 | Not started |
@@ -165,6 +165,31 @@ adds Supabase Auth mid-sprint is creating a second, conflicting auth system.
     connection string and cannot be retrieved later, only reset
   - Region: **Southeast Asia (Singapore)** — `ap-southeast-1`. Closest to
     Biliran; every other region adds a round trip to every query
+- [ ] **Action.** Under **Security**, **uncheck Enable Data API**.
+
+  It is checked by default. The Data API (PostgREST) auto-generates a public
+  REST API over the `public` schema, reachable with the anon key — which is
+  designed to be shipped in client apps and is therefore not a secret. Combined
+  with the default "Automatically expose new tables", the `users` table created
+  in [plan 0001](./0001-registration-and-auth.md) would be readable over the
+  internet, `password_hash` and all, with RLS off and nothing behind it.
+
+  Nothing here uses it. The API connects over the Postgres wire protocol with a
+  connection string, which this setting does not affect. Supabase will warn that
+  `supabase-js` cannot query the database — that is the intended outcome.
+
+  Leave **Enable automatic RLS** unchecked: with the Data API off it is
+  irrelevant, and the API connects as the database owner, which bypasses RLS.
+
+- [ ] **Action.** Leave **GitHub (optional)** unconnected.
+
+  It lets Supabase manage schema from the repository, which would compete with
+  Drizzle migrations — see [ADR 0009](../decisions/0009-migrations-over-db-push.md).
+  Schema changes come from `drizzle/`, from one place only.
+
+- [ ] **Verify.** Before clicking create: Data API unchecked, GitHub not
+  connected, region Singapore, and **the database password saved in a password
+  manager**. It cannot be retrieved afterwards, only reset.
 - [ ] **Verify.** Project status reads **Active** (takes a couple of minutes).
 
 ### Step 1.2 — Get the session pooler connection string
