@@ -40,7 +40,7 @@ Number sequentially. Never renumber.
 | [0001](./0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](./0002-pern-with-client-rendered-spa.md) | PERN with a client-rendered SPA | Accepted |
 | [0003](./0003-postgres-native-search.md) | Postgres-native search, no PostGIS | Accepted |
-| [0004](./0004-unified-account-model.md) | Unified account, creative profile as a role | Proposed |
+| [0004](./0004-unified-account-model.md) | Unified account, creative profile as a role | Accepted (refined by 0015) |
 | [0005](./0005-organization-pages.md) | Public pages for organisations only | Proposed |
 | [0006](./0006-asymmetric-reviews.md) | Asymmetric, restrained reputation | Proposed |
 | [0007](./0007-phone-as-primary-identity.md) | Phone number as primary identity | Superseded by 0013 |
@@ -51,3 +51,4 @@ Number sequentially. Never renumber.
 | [0012](./0012-versioned-api-prefix.md) | Versioned API prefix from day one | Accepted |
 | [0013](./0013-username-password-auth-sprint-1.md) | Username and password auth for sprint 1 | Accepted |
 | [0014](./0014-modular-monolith-architecture.md) | Modular monolith with feature slices | Accepted |
+| [0015](./0015-clients-register-through-the-inquiry-flow.md) | Clients register through the inquiry flow | Accepted |

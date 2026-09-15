@@ -3,6 +3,12 @@
 - **Status:** Proposed
 - **Date:** 2026-09-15
 
+> **Partly refined by
+> [0015](./0015-clients-register-through-the-inquiry-flow.md).** The unified
+> account model below is unchanged and correct. The "two front doors" framing is
+> revised: the client door leads to the directory, and registration happens
+> inside the inquiry flow rather than at a separate form.
+
 ## Context
 
 Bilikha has two sides: creatives who list themselves, and clients who look for
