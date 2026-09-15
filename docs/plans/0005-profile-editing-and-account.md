@@ -84,8 +84,8 @@ apply unchanged. Three specific to this plan:
 | 5. Backend — change password | 2 / 2 | Complete |
 | 6. Backend — admin edited queue | 3 / 3 | Complete |
 | 7. Frontend — account area | 4 / 4 | Complete |
-| 8. Frontend — resubmit and password | 0 / 3 | Not started |
-| 9. Verification | 0 / 5 | Not started |
+| 8. Frontend — resubmit and password | 3 / 3 | Complete |
+| 9. Verification | 5 / 5 | Complete |
 
 ---
 
