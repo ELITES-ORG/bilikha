@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../middleware/require-admin.js';
-import { listQuerySchema, moderateSchema } from './admin.schema.js';
+import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
 import { getProfile, listProfiles, moderate, statusCounts } from './admin.service.js';
 
 export const adminRouter: Router = Router();
@@ -24,14 +24,16 @@ adminRouter.get('/profiles/counts', async (_req, res) => {
 });
 
 adminRouter.get('/profiles/:id', async (req, res) => {
-  res.json({ data: await getProfile(req.params.id) });
+  const { id } = profileParamsSchema.parse(req.params);
+  res.json({ data: await getProfile(id) });
 });
 
 adminRouter.post('/profiles/:id/moderate', async (req, res) => {
+  const { id } = profileParamsSchema.parse(req.params);
   const input = moderateSchema.parse(req.body);
 
   const updated = await moderate({
-    profileId: req.params.id,
+    profileId: id,
     adminId: req.session.userId!,
     action: input.action,
     reason: input.reason,
