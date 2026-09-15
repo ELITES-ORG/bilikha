@@ -278,7 +278,8 @@ Must print `clean`. If it prints `LEAK`, the service is selecting whole rows.
 - `kind: 'client'` — first name, last name, username, email, phone, birth date,
   password, confirm password, consent flags. **No** municipality, barangay,
   sub-domains, or suffix. (Birth date is required — age gate applies to both
-  kinds.)
+  kinds; [ADR 0015](../decisions/0015-clients-register-through-the-inquiry-flow.md)
+  records why.)
 
 Shared field definitions stay shared; do not duplicate the name or password
 rules.

@@ -42,7 +42,16 @@ survives the registration step.
 | Moderation | Enters `pending_review` | Active immediately |
 | Sub-domains | 1–5, one primary | None |
 | Municipality / barangay | Required | Optional |
-| Fields | ~15 | ~6 |
+| Date of birth | Required | **Required** — see below |
+| Fields | ~15 | ~7 |
+
+**Date of birth applies to both.** An earlier draft of this record excluded it
+from client accounts to keep the form as short as possible. That was wrong on
+two counts. `users.birth_date` is `NOT NULL`, so exempting clients would need a
+migration making it nullable — and it would drop the age gate for exactly the
+accounts that contract and pay for work. RA 10173 treats a minor's data
+differently regardless of which side of the market they are on, so the check
+belongs on every account. One date field is a cheap way to keep it.
 
 **Municipality is optional for clients because a client need not be in Biliran.**
 A Manila producer looking for Waray folk musicians, or a Cebu resort
