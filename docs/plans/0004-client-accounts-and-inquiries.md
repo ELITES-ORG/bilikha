@@ -1,6 +1,6 @@
 # 0004. Client accounts and inquiries
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0001](./0001-registration-and-auth.md) (auth) and
   [plan 0003](./0003-admin-moderation.md) — nothing is `published` until
   moderation exists, and only published profiles are publicly visible
@@ -85,7 +85,7 @@ card, at a fraction of the cost.
 | 6. Frontend — directory and profile | 3 / 3 | Complete |
 | 7. Frontend — inquiry flow | 4 / 4 | Complete |
 | 8. Frontend — inbox and sent | 3 / 3 | Complete |
-| 9. Verification | 0 / 5 | Not started |
+| 9. Verification | 5 / 5 | Complete |
 
 ---
 
@@ -528,11 +528,13 @@ Show this page only to users who have a creative profile; a client has no inbox.
 | `GET /creatives/<published-slug>` | 200, **no email/phone/birthDate** |
 | `/directory` and `/creatives/:slug` in a private window | Both render |
 
+- [x] **Verify.** Table above holds.
+
 ### Step 9.2 — The flow, as a stranger
 
-- [ ] **Verify** in a private window, end to end: browse the directory, open a
+- [x] **Verify** in a private window, end to end: browse the directory, open a
   profile, compose, register as a client, inquiry sends with the original text.
-- [ ] **Verify** the client has no inbox link and no public profile page.
+- [x] **Verify** the client has no inbox link and no public profile page.
 
 ### Step 9.3 — Ownership and abuse
 
@@ -545,30 +547,32 @@ Show this page only to users who have a creative profile; a client has no inbox.
 | 11 inquiries in a day | 11th is 429 |
 | Message under 20 characters | 400 |
 
+- [x] **Verify.** Table above holds.
+
 ### Step 9.4 — Contact reveal
 
-- [ ] **Verify.** Before the creative responds, the sent list shows no contact
+- [x] **Verify.** Before the creative responds, the sent list shows no contact
   detail. After **Respond**, it shows the channel named by `contactPreference`.
   After **Decline**, it still shows none.
 
 ### Step 9.5 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] All 9 phases complete
-- [ ] Only published profiles are publicly reachable
-- [ ] No public response or page contains an email, phone, or birth date
-- [ ] An anonymous visitor can go from directory to sent inquiry without losing
+- [x] All 9 phases complete
+- [x] Only published profiles are publicly reachable
+- [x] No public response or page contains an email, phone, or birth date
+- [x] An anonymous visitor can go from directory to sent inquiry without losing
       their message
-- [ ] Client accounts have no profile, no inbox, and never enter moderation
-- [ ] Every ownership check in Step 9.3 holds
-- [ ] `docs/reference/api.md` and `docs/reference/data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] Client accounts have no profile, no inbox, and never enter moderation
+- [x] Every ownership check in Step 9.3 holds
+- [x] `docs/reference/api.md` and `docs/reference/data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 
