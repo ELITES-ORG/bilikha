@@ -78,6 +78,17 @@ for a province of 180,000 people.
 
 ---
 
+## Live
+
+| | |
+|---|---|
+| Application | <https://bilikha.vercel.app> |
+| API | <https://bilikha.onrender.com> |
+
+Configuration and free-tier caveats: [docs/reference/deployments.md](./docs/reference/deployments.md)
+
+---
+
 ## Current state
 
 This is foundation, not product. Working end to end:

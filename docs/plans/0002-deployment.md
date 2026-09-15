@@ -1,6 +1,6 @@
 # 0002. Deployment — Vercel, Render, Supabase (free tier)
 
-- **Status:** Ready
+- **Status:** In progress
 - **Related:** [ADR 0002](../decisions/0002-pern-with-client-rendered-spa.md) ·
   [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [Plan 0001](./0001-registration-and-auth.md) ·
@@ -137,13 +137,13 @@ git status         # should be clean
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Supabase database | 0 / 6 | Not started |
-| 2. Migrate and seed production | 0 / 3 | Not started |
-| 3. Render API | 0 / 6 | Not started |
-| 4. Vercel frontend and proxy | 0 / 5 | Not started |
-| 5. Verify the deployment | 0 / 4 | Not started |
+| 1. Supabase database | 6 / 6 | Done |
+| 2. Migrate and seed production | 3 / 3 | Done |
+| 3. Render API | 6 / 6 | Done |
+| 4. Vercel frontend and proxy | 4 / 5 | CORS_ORIGINS still to update |
+| 5. Verify the deployment | 3 / 4 | Safari check outstanding |
 | 6. Keep the free tier awake | 0 / 2 | Not started |
-| 7. Document and amend plan 0001 | 0 / 3 | Not started |
+| 7. Document and amend plan 0001 | 3 / 3 | Done |
 
 ---
 

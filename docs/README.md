@@ -66,6 +66,7 @@ Different categories rot at different speeds. Treat them accordingly.
 - [Data model](./reference/data-model.md)
 - [Environment variables](./reference/environment.md)
 - [Commands](./reference/commands.md)
+- [Deployments](./reference/deployments.md)
 
 **Explanation**
 - [Architecture](./explanation/architecture.md)

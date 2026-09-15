@@ -103,7 +103,7 @@ text. **The plan is not blocked by this** — but obtain the data before launch.
 | 4. Password and session infrastructure | 0 / 5 | Not started |
 | 5. Auth module | 0 / 5 | Not started |
 | 6. Supporting endpoints | 0 / 2 | Not started |
-| 7. Security hardening | 0 / 3 | Not started |
+| 7. Security hardening | 0 / 4 | Not started |
 | 8. Frontend auth plumbing | 0 / 4 | Not started |
 | 9. Registration page | 0 / 4 | Not started |
 | 10. Login page and guard | 0 / 3 | Not started |
@@ -812,6 +812,12 @@ import { isProduction } from './config/env.js';
   );
 ```
 
+> **`sameSite: 'lax'` is correct as written**, but only because the API is
+> served same-origin through the Vercel rewrite — see
+> [deployments](../reference/deployments.md). If that proxy is ever removed,
+> the cookie becomes cross-site and Safari will drop it. Do not "fix" this to
+> `none` without re-reading that page.
+
 - [ ] **Verify.** `npm run typecheck` exits 0, then `npm run dev:api` starts
   without error and logs `Bilikha API listening`. Stop it afterwards.
 
@@ -1356,14 +1362,41 @@ for i in $(seq 1 11); do curl -s -o /dev/null -w "%{http_code} " -X POST \
 
 Expected: ten `401` then `429`.
 
-### Step 7.2 — Confirm CORS carries credentials
+### Step 7.2 — Fix rate limiting behind the proxy
+
+The app is deployed behind **two** proxies: Vercel's edge rewrites `/api/*` to
+Render, and Render fronts the container. See
+[deployments](../reference/deployments.md).
+
+`req.ip` therefore reports a proxy address, not the client. Left uncorrected
+every user shares one rate-limit bucket, and the first five registrations lock
+out the entire province.
+
+- [ ] **Action.** In `backend/src/app.ts`, change the trust-proxy setting to
+  account for both hops:
+
+```ts
+  // Vercel's edge, then Render. Counting hops exactly is deliberate:
+  // `true` would trust the whole X-Forwarded-For chain, letting a client
+  // spoof its address and bypass rate limiting entirely.
+  app.set('trust proxy', isProduction ? 2 : 1);
+```
+
+- [ ] **Verify.** Deploy, then hit a rate-limited endpoint and check the log
+  line's `req.ip`. It must be your real public address (check at
+  <https://ifconfig.me>), not `10.x.x.x` or a Vercel address. If it is an
+  internal address, the hop count is wrong.
+
+---
+
+### Step 7.3 — Confirm CORS carries credentials
 
 - [ ] **Action.** Confirm `backend/src/app.ts` already sets
   `cors({ origin: env.CORS_ORIGINS, credentials: true })`. It does — change
   nothing.
 - [ ] **Verify.** Read the file and confirm `credentials: true` is present.
 
-### Step 7.3 — Confirm the frontend sends credentials
+### Step 7.4 — Confirm the frontend sends credentials
 
 - [ ] **Action.** Confirm `frontend/src/lib/api-client.ts` sets
   `withCredentials: true`. It does — change nothing.
