@@ -78,7 +78,7 @@ apply unchanged. Three specific to this plan:
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Schema | 3 / 3 | Complete |
-| 2. Migration | 0 / 2 | Not started |
+| 2. Migration | 2 / 2 | Complete |
 | 3. Backend — read own profile | 0 / 2 | Not started |
 | 4. Backend — update profile | 0 / 4 | Not started |
 | 5. Backend — change password | 0 / 2 | Not started |
@@ -133,8 +133,8 @@ Acknowledging is a moderation decision and belongs in the same audit trail —
 
 ### Step 2.1 — Generate and read
 
-- [ ] **Action.** `npm --prefix backend run db:generate`, then read the file.
-- [ ] **Verify.** One added column, one index, and an `ALTER TYPE …  ADD VALUE
+- [x] **Action.** `npm --prefix backend run db:generate`, then read the file.
+- [x] **Verify.** One added column, one index, and an `ALTER TYPE …  ADD VALUE
   'acknowledged_edit'`. **Stop if any `DROP` appears.**
 
 > Postgres cannot add an enum value inside a transaction in older versions. If
@@ -143,8 +143,8 @@ Acknowledging is a moderation decision and belongs in the same audit trail —
 
 ### Step 2.2 — Apply
 
-- [ ] **Action.** `npm run db:migrate`
-- [ ] **Verify.**
+- [x] **Action.** `npm run db:migrate`
+- [x] **Verify.**
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c "\d creative_profiles" | grep edited_since_review_at
