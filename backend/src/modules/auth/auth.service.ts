@@ -31,6 +31,59 @@ export interface PublicUser {
 }
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
+  if (input.kind === 'client') {
+    return registerClient(input);
+  }
+  return registerCreative(input);
+}
+
+async function registerClient(
+  input: Extract<RegisterInput, { kind: 'client' }>,
+): Promise<PublicUser> {
+  const usernameNormalized = normalizeUsername(input.username);
+
+  if (isReservedUsername(usernameNormalized)) {
+    throw AppError.conflict('That username is not available.', {
+      field: 'username',
+    });
+  }
+
+  const emailNormalized = normalizeEmail(input.email);
+  const phone = normalizePhone(input.phone);
+  const passwordHash = await hashPassword(input.password);
+  const now = new Date();
+
+  try {
+    const [user] = await db
+      .insert(users)
+      .values({
+        username: input.username.trim(),
+        usernameNormalized,
+        email: input.email.trim(),
+        emailNormalized,
+        phone,
+        passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        birthDate: input.birthDate.toISOString().slice(0, 10),
+        municipalityId: null,
+        privacyConsentAt: now,
+        termsAcceptedAt: now,
+        consentVersion: CONSENT_VERSION,
+      })
+      .returning();
+
+    if (!user) throw new Error('User insert returned no row');
+
+    return toPublicUser(user, null);
+  } catch (error) {
+    throw translateUniqueViolation(error);
+  }
+}
+
+async function registerCreative(
+  input: Extract<RegisterInput, { kind: 'creative' }>,
+): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);
 
   if (isReservedUsername(usernameNormalized)) {

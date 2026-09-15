@@ -51,9 +51,10 @@ export const users = pgTable(
     status: userStatusEnum('status').notNull().default('active'),
     role: userRoleEnum('role').notNull().default('member'),
 
-    municipalityId: uuid('municipality_id')
-      .notNull()
-      .references(() => municipalities.id, { onDelete: 'restrict' }),
+    // Nullable: clients need not be in Biliran (ADR 0015 / plan 0004).
+    municipalityId: uuid('municipality_id').references(() => municipalities.id, {
+      onDelete: 'restrict',
+    }),
     barangayId: uuid('barangay_id').references(() => barangays.id, { onDelete: 'set null' }),
 
     // RA 10173 requires demonstrable consent. Store when, and to which version

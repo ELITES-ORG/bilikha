@@ -1,0 +1,1 @@
+ALTER TABLE "users" ALTER COLUMN "municipality_id" DROP NOT NULL;

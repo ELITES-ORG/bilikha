@@ -80,7 +80,7 @@ card, at a fraction of the cost.
 | 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 2 / 2 | Complete |
 | 3. Backend — public profiles | 3 / 3 | Complete |
-| 4. Backend — client registration | 0 / 3 | Not started |
+| 4. Backend — client registration | 3 / 3 | Complete |
 | 5. Backend — inquiries | 0 / 4 | Not started |
 | 6. Frontend — directory and profile | 0 / 3 | Not started |
 | 7. Frontend — inquiry flow | 0 / 4 | Not started |
@@ -270,24 +270,25 @@ Must print `clean`. If it prints `LEAK`, the service is selecting whole rows.
 
 ### Step 4.1 — Discriminate on `kind`
 
-- [ ] **Action.** In `backend/src/modules/auth/auth.schema.ts`, restructure
+- [x] **Action.** In `backend/src/modules/auth/auth.schema.ts`, restructure
   `registerSchema` as a discriminated union on `kind`.
 
 - `kind: 'creative'` — the existing shape, unchanged. **Default when `kind` is
   absent**, so the existing frontend keeps working.
-- `kind: 'client'` — first name, last name, username, email, phone, password,
-  confirm password, consent flags. **No** birth date, municipality, barangay,
-  sub-domains, or suffix.
+- `kind: 'client'` — first name, last name, username, email, phone, birth date,
+  password, confirm password, consent flags. **No** municipality, barangay,
+  sub-domains, or suffix. (Birth date is required — age gate applies to both
+  kinds.)
 
 Shared field definitions stay shared; do not duplicate the name or password
 rules.
 
-- [ ] **Verify.** `npm run typecheck` exits 0, and an existing creative
+- [x] **Verify.** `npm run typecheck` exits 0, and an existing creative
   registration payload with no `kind` still validates.
 
 ### Step 4.2 — Register without a profile
 
-- [ ] **Action.** In `auth.service.ts`, branch `registerUser` on `input.kind`.
+- [x] **Action.** In `auth.service.ts`, branch `registerUser` on `input.kind`.
 
 For `'client'`: insert the user with `municipalityId: null` and **do not insert
 a `creative_profile` or any sub-domain rows**.
@@ -297,7 +298,7 @@ a `creative_profile` or any sub-domain rows**.
 > ([ADR 0015](../decisions/0015-clients-register-through-the-inquiry-flow.md)).
 > Generate and apply that change before continuing.
 
-- [ ] **Verify.** Register with `{"kind":"client", …}`. The response has
+- [x] **Verify.** Register with `{"kind":"client", …}`. The response has
   `profileSlug: null` and `profileStatus: null`, and:
 
 ```bash
@@ -309,7 +310,7 @@ Returns `0`.
 
 ### Step 4.3 — Confirm the client is not moderated
 
-- [ ] **Verify.** The client account does not appear in the admin review queue
+- [x] **Verify.** The client account does not appear in the admin review queue
   from [plan 0003](./0003-admin-moderation.md) under any status tab. It has no
   profile, so there is nothing to review.
 
