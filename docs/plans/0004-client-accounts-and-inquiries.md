@@ -77,7 +77,7 @@ card, at a fraction of the cost.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 0 / 3 | Not started |
+| 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 0 / 2 | Not started |
 | 3. Backend — public profiles | 0 / 3 | Not started |
 | 4. Backend — client registration | 0 / 3 | Not started |
@@ -93,7 +93,7 @@ card, at a fraction of the cost.
 
 ### Step 1.1 — Inquiries table
 
-- [ ] **Action.** Create `backend/src/db/schema/inquiries.ts`:
+- [x] **Action.** Create `backend/src/db/schema/inquiries.ts`:
 
 ```ts
 import { pgTable, pgEnum, uuid, text, timestamp, index } from 'drizzle-orm/pg-core';
@@ -159,19 +159,19 @@ export const inquiriesRelations = relations(inquiries, ({ one }) => ({
 export type Inquiry = typeof inquiries.$inferSelect;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.2 — Export it
 
-- [ ] **Action.** Add `export * from './inquiries.js';` to
+- [x] **Action.** Add `export * from './inquiries.js';` to
   `backend/src/db/schema/index.ts`.
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.3 — Contact visibility on profiles
 
 A creative's contact details stay private until they respond to an inquiry.
 
-- [ ] **Action.** In `backend/src/db/schema/profiles.ts`, add to
+- [x] **Action.** In `backend/src/db/schema/profiles.ts`, add to
   `creativeProfiles`:
 
 ```ts
@@ -180,7 +180,7 @@ A creative's contact details stay private until they respond to an inquiry.
     contactPreference: text('contact_preference').notNull().default('phone'),
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 

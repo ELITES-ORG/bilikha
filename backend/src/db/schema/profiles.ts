@@ -30,6 +30,9 @@ export const creativeProfiles = pgTable(
     rejectionReason: text('rejection_reason'),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+    // Which channel is revealed to a client when this creative responds to
+    // their inquiry. Nothing is ever shown on the public profile itself.
+    contactPreference: text('contact_preference').notNull().default('phone'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
