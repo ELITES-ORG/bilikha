@@ -76,7 +76,7 @@ when profile editing ships.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 0 / 4 | Not started |
+| 1. Schema | 4 / 4 | Complete |
 | 2. Migration | 0 / 3 | Not started |
 | 3. Admin bootstrap | 0 / 2 | Not started |
 | 4. Backend — guard and service | 0 / 3 | Not started |
@@ -92,7 +92,7 @@ when profile editing ships.
 
 ### Step 1.1 — Add a role to users
 
-- [ ] **Action.** In `backend/src/db/schema/users.ts`, add the enum beside the
+- [x] **Action.** In `backend/src/db/schema/users.ts`, add the enum beside the
   existing ones:
 
 ```ts
@@ -101,17 +101,17 @@ when profile editing ships.
 export const userRoleEnum = pgEnum('user_role', ['member', 'admin']);
 ```
 
-- [ ] **Action.** Add the column to the `users` table, after `status`:
+- [x] **Action.** Add the column to the `users` table, after `status`:
 
 ```ts
     role: userRoleEnum('role').notNull().default('member'),
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.2 — Add review fields to profiles
 
-- [ ] **Action.** In `backend/src/db/schema/profiles.ts`, add to
+- [x] **Action.** In `backend/src/db/schema/profiles.ts`, add to
   `creativeProfiles`, after `status`:
 
 ```ts
@@ -125,11 +125,11 @@ export const userRoleEnum = pgEnum('user_role', ['member', 'admin']);
 `onDelete: 'set null'` rather than cascade: deleting an administrator's account
 must not delete the profiles they reviewed.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.3 — Add the audit table
 
-- [ ] **Action.** Append to `backend/src/db/schema/profiles.ts`:
+- [x] **Action.** Append to `backend/src/db/schema/profiles.ts`:
 
 ```ts
 export const moderationActionEnum = pgEnum('moderation_action', [
@@ -165,20 +165,20 @@ export const moderationActions = pgTable(
 export type ModerationAction = typeof moderationActions.$inferSelect;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.4 — Index the review queue
 
 The queue always filters on status and orders by age. Without an index this is a
 sequential scan on every page load.
 
-- [ ] **Action.** In `creativeProfiles`, replace the existing status index with:
+- [x] **Action.** In `creativeProfiles`, replace the existing status index with:
 
 ```ts
     index('creative_profiles_status_created_idx').on(table.status, table.createdAt),
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 

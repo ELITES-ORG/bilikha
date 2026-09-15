@@ -25,13 +25,18 @@ export const creativeProfiles = pgTable(
     displayName: text('display_name'),
     bio: text('bio'),
     status: profileStatusEnum('status').notNull().default('pending_review'),
+    // Shown to the registrant verbatim, so write it as something a person can
+    // act on rather than an internal note.
+    rejectionReason: text('rejection_reason'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewedBy: uuid('reviewed_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('creative_profiles_user_idx').on(table.userId),
     uniqueIndex('creative_profiles_slug_idx').on(table.slug),
-    index('creative_profiles_status_idx').on(table.status),
+    index('creative_profiles_status_created_idx').on(table.status, table.createdAt),
   ],
 );
 
@@ -59,6 +64,36 @@ export const creativeProfileSubdomains = pgTable(
   ],
 );
 
+export const moderationActionEnum = pgEnum('moderation_action', [
+  'approved',
+  'rejected',
+  'returned_to_pending',
+]);
+
+/**
+ * Append-only record of every moderation decision. Rows are never updated or
+ * deleted — the profile's current status is the state, this is the history.
+ * Without it, "who published this profile and when" has no answer.
+ */
+export const moderationActions = pgTable(
+  'moderation_actions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    profileId: uuid('profile_id')
+      .notNull()
+      .references(() => creativeProfiles.id, { onDelete: 'cascade' }),
+    // Nullable so the history survives an administrator's account being deleted.
+    adminId: uuid('admin_id').references(() => users.id, { onDelete: 'set null' }),
+    action: moderationActionEnum('action').notNull(),
+    reason: text('reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('moderation_actions_profile_idx').on(table.profileId),
+    index('moderation_actions_created_idx').on(table.createdAt),
+  ],
+);
+
 export const creativeProfilesRelations = relations(creativeProfiles, ({ one, many }) => ({
   user: one(users, { fields: [creativeProfiles.userId], references: [users.id] }),
   subdomains: many(creativeProfileSubdomains),
@@ -79,3 +114,4 @@ export const creativeProfileSubdomainsRelations = relations(
 );
 
 export type CreativeProfile = typeof creativeProfiles.$inferSelect;
+export type ModerationAction = typeof moderationActions.$inferSelect;

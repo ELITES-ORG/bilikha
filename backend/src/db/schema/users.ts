@@ -14,6 +14,9 @@ import { municipalities, barangays } from './geography.js';
  *  them later is not a migration of every existing row. */
 export const accountTypeEnum = pgEnum('account_type', ['individual', 'organization']);
 export const userStatusEnum = pgEnum('user_status', ['active', 'suspended']);
+/** Deliberately coarse. A finer permission model can come later; two roles is
+ *  what sprint 1 needs and anything more is speculative. */
+export const userRoleEnum = pgEnum('user_role', ['member', 'admin']);
 
 export const users = pgTable(
   'users',
@@ -46,6 +49,7 @@ export const users = pgTable(
 
     accountType: accountTypeEnum('account_type').notNull().default('individual'),
     status: userStatusEnum('status').notNull().default('active'),
+    role: userRoleEnum('role').notNull().default('member'),
 
     municipalityId: uuid('municipality_id')
       .notNull()
