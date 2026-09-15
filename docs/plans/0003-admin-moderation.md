@@ -67,8 +67,10 @@ exist, so there is nothing for them to change. This plan gives the admin a
 "return to pending" action so a mistaken rejection is recoverable, but the
 registrant has no self-service path.
 
-That is acceptable at sprint-1 volumes and unacceptable at scale. Resolve it
-when profile editing ships.
+That is acceptable at sprint-1 volumes and unacceptable at scale.
+
+**Resolved by [plan 0005](./0005-profile-editing-and-account.md)**, which lets a
+rejected registrant edit and resubmit without an administrator.
 
 ---
 

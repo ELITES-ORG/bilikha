@@ -52,3 +52,4 @@ Number sequentially. Never renumber.
 | [0013](./0013-username-password-auth-sprint-1.md) | Username and password auth for sprint 1 | Accepted |
 | [0014](./0014-modular-monolith-architecture.md) | Modular monolith with feature slices | Accepted |
 | [0015](./0015-clients-register-through-the-inquiry-flow.md) | Clients register through the inquiry flow | Accepted |
+| [0016](./0016-edits-never-unpublish.md) | Edits never un-publish; public edits flag for re-review | Accepted |
