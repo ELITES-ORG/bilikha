@@ -162,25 +162,33 @@ Optional 1:1 public profile on a user. Sprint 1 creates rows at
 | `reviewed_at` | `timestamptz` null | |
 | `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
 | `contact_preference` | `text` | Default `phone`; channel revealed when the creative responds to an inquiry |
+| `edited_since_review_at` | `timestamptz` null | Set when a published profile's public fields change; cleared when an admin acknowledges the edit |
 | `created_at` / `updated_at` | `timestamptz` | |
 
-Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review queue.
+Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review
+queue; `edited_since_review_at` for the Edited queue.
 
 Rejection sets `status` to `suspended` and stores the reason — there is no
 separate `rejected` enum value in sprint 1.
+
+Public edits never unpublish a profile (ADR 0016). Published profiles remain
+published and set `edited_since_review_at`; suspended profiles return to
+`pending_review`; draft and pending profiles retain their status. Private-only
+changes such as `contact_preference` do not set the flag.
 
 ---
 
 ## `moderation_actions`
 
-Append-only audit of every approve / reject / return-to-pending decision.
+Append-only audit of every approve / reject / return-to-pending / edit
+acknowledgement decision.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
 | `profile_id` | `uuid` FK | `ON DELETE CASCADE` |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
-| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` |
+| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` |
 | `reason` | `text` null | Required for rejections |
 | `created_at` | `timestamptz` | |
 

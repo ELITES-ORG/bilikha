@@ -270,6 +270,46 @@ rejected).
 
 ---
 
+## Account
+
+All `/me/*` routes require a signed-in session. They derive ownership from the
+session user id; no profile or user id is accepted from the request.
+
+### `GET /api/v1/me/profile`
+
+Returns the signed-in creative's editable profile, including their own contact
+details, `contactPreference`, moderation status, rejection reason, edit-review
+flag, selected sub-domain slugs, and primary sub-domain slug. Clients receive
+`{ "data": null }`.
+
+### `PUT /api/v1/me/profile`
+
+Replaces the signed-in creative's editable name, profile text, location,
+sub-domains, primary sub-domain, and contact preference. Unknown taxonomy slugs
+return `400`; clients receive `404`.
+
+Public edits follow ADR 0016: a published profile stays published and sets
+`editedSinceReviewAt`; a suspended profile returns to `pending_review` and
+clears its rejection reason; draft and pending profiles keep their status.
+Changing only `contactPreference` does not set the edit-review flag.
+
+### `POST /api/v1/me/password`
+
+```jsonc
+{
+  "currentPassword": "correct horse battery",
+  "newPassword": "a different long password",
+  "confirmPassword": "a different long password"
+}
+```
+
+Verifies the current password before replacing it, regenerates the session id,
+and keeps the user signed in. A wrong current password returns `401`. Limited to
+five failed attempts per user per hour; successful requests do not consume the
+budget.
+
+---
+
 ## Admin
 
 All `/admin/*` routes require an administrator session. Non-admins and signed-out
@@ -278,9 +318,12 @@ advertise itself.
 
 ### `GET /api/v1/admin/profiles`
 
-Paginated review queue. Default `status=pending_review`, oldest first.
+Paginated review queue. Default `status=pending_review`, oldest first. The
+virtual `status=edited` filter returns only published profiles whose
+`editedSinceReviewAt` is set, ordered by the oldest edit first.
 
-Query: `status`, `page`, `limit` (max 50).
+Query: `status` (`draft`, `pending_review`, `published`, `suspended`, or
+`edited`), `page`, `limit` (max 50).
 
 ```jsonc
 {
@@ -289,6 +332,7 @@ Query: `status`, `page`, `limit` (max 50).
       "id": "…",
       "slug": "juancruz",
       "status": "pending_review",
+      "editedSinceReviewAt": null,
       "createdAt": "…",
       "firstName": "Juan",
       "lastName": "dela Cruz",
@@ -303,10 +347,11 @@ Query: `status`, `page`, `limit` (max 50).
 
 ### `GET /api/v1/admin/profiles/counts`
 
-Counts per status for the queue tabs.
+Counts per status for the queue tabs. `edited` is the count of flagged,
+published profiles and is independent of the `published` total.
 
 ```jsonc
-{ "data": { "pending_review": 3, "published": 1, "suspended": 0 } }
+{ "data": { "pending_review": 3, "published": 1, "suspended": 0, "edited": 1 } }
 ```
 
 ### `GET /api/v1/admin/profiles/:id`
@@ -320,11 +365,13 @@ history (newest first). Contact fields are admin-only.
 { "action": "approved" }
 { "action": "rejected", "reason": "Please use your real name." }
 { "action": "returned_to_pending" }
+{ "action": "acknowledged_edit" }
 ```
 
 Rejection requires a non-empty `reason`. Each decision writes a
 `moderation_actions` row in the same transaction. Rejection sets profile status
-to `suspended` and stores the reason for the registrant banner.
+to `suspended` and stores the reason for the registrant banner. Acknowledging an
+edit clears `editedSinceReviewAt` without changing the published status.
 
 ---
 
@@ -406,8 +453,8 @@ channel to the sender. Already-answered inquiries → `409`.
 Listed so the shape of the eventual surface is visible, and so nobody builds a
 parallel version:
 
-- **Creative profile self-service** — create, update, claim (public list/read
-  by slug is live above)
+- **Creative profile creation and claiming** — editing and public list/read are
+  live above
 - **Organisations** — read, create, membership
 - **Search** — Postgres-native full-text plus fuzzy name matching
 - **Media** — portfolio upload, moderation queue

@@ -82,7 +82,7 @@ apply unchanged. Three specific to this plan:
 | 3. Backend — read own profile | 2 / 2 | Complete |
 | 4. Backend — update profile | 4 / 4 | Complete |
 | 5. Backend — change password | 2 / 2 | Complete |
-| 6. Backend — admin edited queue | 0 / 3 | Not started |
+| 6. Backend — admin edited queue | 3 / 3 | Complete |
 | 7. Frontend — account area | 0 / 4 | Not started |
 | 8. Frontend — resubmit and password | 0 / 3 | Not started |
 | 9. Verification | 0 / 5 | Not started |
@@ -326,26 +326,26 @@ been captured.
 
 ### Step 6.1 — Extend the admin list
 
-- [ ] **Action.** In `admin.service.ts`, allow `status=edited` in
+- [x] **Action.** In `admin.service.ts`, allow `status=edited` in
   `listProfiles`, meaning `status = 'published' AND edited_since_review_at IS
   NOT NULL`, ordered oldest-edit first.
-- [ ] **Action.** Include the same count in `statusCounts`.
-- [ ] **Verify.** `GET /admin/profiles?status=edited` returns only flagged,
+- [x] **Action.** Include the same count in `statusCounts`.
+- [x] **Verify.** `GET /admin/profiles?status=edited` returns only flagged,
   published profiles.
 
 ### Step 6.2 — Acknowledge
 
-- [ ] **Action.** Add `'acknowledged_edit'` to the `moderateSchema` action enum
+- [x] **Action.** Add `'acknowledged_edit'` to the `moderateSchema` action enum
   and handle it in `moderate()`: clears `editedSinceReviewAt`, leaves `status`
   untouched, writes the audit row.
-- [ ] **Verify.** Acknowledging removes the profile from the Edited tab and
+- [x] **Verify.** Acknowledging removes the profile from the Edited tab and
   leaves it published.
 
 ### Step 6.3 — Reference docs
 
-- [ ] **Action.** Update [`api.md`](../reference/api.md) and
+- [x] **Action.** Update [`api.md`](../reference/api.md) and
   [`data-model.md`](../reference/data-model.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
