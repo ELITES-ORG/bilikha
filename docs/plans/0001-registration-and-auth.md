@@ -36,6 +36,8 @@ up as build errors.
 7. **Do not add dependencies** beyond those in Phase 1.
 8. **Tick the checkbox** for each step as you complete it, and update the
    Progress table.
+9. **No AI attribution in commit messages.** No `Co-Authored-By` trailer, no
+   "generated with" footer. See [`CLAUDE.md`](../../CLAUDE.md).
 
 ---
 

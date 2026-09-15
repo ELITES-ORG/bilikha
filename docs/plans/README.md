@@ -21,6 +21,10 @@ prior context on this codebase. When a plan is fully shipped, mark it
 
 Copy `_template.md`. Number sequentially; never renumber.
 
+**Commits made while executing a plan carry no AI attribution** — no
+`Co-Authored-By` trailer, no "generated with" footer. See
+[`CLAUDE.md`](../../CLAUDE.md).
+
 **A plan must be executable without asking questions.** That means:
 
 - **Exact file paths.** `backend/src/modules/auth/auth.service.ts`, not "the auth
