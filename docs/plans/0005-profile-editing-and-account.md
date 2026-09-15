@@ -1,6 +1,6 @@
 # 0005. Profile editing and the account area
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0003](./0003-admin-moderation.md) (moderation queue) and
   [plan 0004](./0004-client-accounts-and-inquiries.md) (`contactPreference`)
 - **Related:** [ADR 0016](../decisions/0016-edits-never-unpublish.md) ·
@@ -441,33 +441,33 @@ Requirements:
 
 ### Step 9.3 — Password
 
-- [ ] **Verify.** Wrong current password → 401. Correct → 200, old password no
+- [x] **Verify.** Wrong current password → 401. Correct → 200, old password no
   longer works, new one does, and the session survives.
-- [ ] **Verify.** Six wrong attempts → 429.
+- [x] **Verify.** Six wrong attempts → 429.
 
 ### Step 9.4 — Audit trail
 
-- [ ] **Verify.** A resubmit writes a `moderation_actions` row with
+- [x] **Verify.** A resubmit writes a `moderation_actions` row with
   `returned_to_pending` and a null `admin_id`. An acknowledge writes
   `acknowledged_edit` with the admin's id.
 
 ### Step 9.5 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] All 9 phases complete
-- [ ] The four transitions in 9.1 behave exactly as stated
-- [ ] No edit ever removes a profile from the directory
-- [ ] A rejected registrant can fix and resubmit without an administrator
-- [ ] Password change works and rate limits
-- [ ] Every status change still has a matching audit row
-- [ ] `api.md` and `data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] All 9 phases complete
+- [x] The four transitions in 9.1 behave exactly as stated
+- [x] No edit ever removes a profile from the directory
+- [x] A rejected registrant can fix and resubmit without an administrator
+- [x] Password change works and rate limits
+- [x] Every status change still has a matching audit row
+- [x] `api.md` and `data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 
