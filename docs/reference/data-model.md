@@ -134,7 +134,7 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `account_type` | enum | `individual` \| `organization`; default `individual` |
 | `status` | enum | `active` \| `suspended` |
 | `role` | enum | `member` \| `admin`; default `member`. First admin via `admin:grant` |
-| `municipality_id` | `uuid` FK | `ON DELETE RESTRICT` |
+| `municipality_id` | `uuid` FK null | `ON DELETE RESTRICT`; null for clients (ADR 0015) |
 | `barangay_id` | `uuid` FK null | `ON DELETE SET NULL` |
 | `privacy_consent_at` / `terms_accepted_at` | `timestamptz` | |
 | `consent_version` | `text` | Bumped when policy text changes |
@@ -161,6 +161,7 @@ Optional 1:1 public profile on a user. Sprint 1 creates rows at
 | `rejection_reason` | `text` null | Shown to the registrant after rejection |
 | `reviewed_at` | `timestamptz` null | |
 | `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
+| `contact_preference` | `text` | Default `phone`; channel revealed when the creative responds to an inquiry |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review queue.
@@ -203,6 +204,32 @@ Indexes: unique on `(profile_id, subdomain_id)`; partial unique
 
 ---
 
+## `inquiries`
+
+First contact from a signed-in client (or any user) to a published creative
+profile. One message and one response — not a thread
+([plan 0004](../plans/0004-client-accounts-and-inquiries.md)).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
+| `sender_user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `subject` | `text` | |
+| `message` | `text` | |
+| `status` | enum | `sent` \| `read` \| `responded` \| `declined` |
+| `response` | `text` null | Creative's reply |
+| `read_at` / `responded_at` | `timestamptz` null | |
+| `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes: `(profile_id, created_at)`, `(sender_user_id, created_at)`, `status`.
+
+Both `responded` and `declined` count as answered for response-rate metrics.
+On `responded`, the creative's preferred contact channel becomes visible to
+that sender only.
+
+---
+
 ## `sessions`
 
 Backing store for `express-session`. Visible and migrated like every other
@@ -236,7 +263,6 @@ Sketched only. Nothing below is built, and the shapes will change.
 | `organizations` | Public pages for companies, cooperatives, LGUs | [ADR 0005](../decisions/0005-organization-pages.md) |
 | `organization_members` | Many users per organisation, with roles | [ADR 0005](../decisions/0005-organization-pages.md) |
 | `portfolio_items` | Images and links per profile | |
-| `inquiries` | Client → creative, sent as a user or an organisation | |
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
 

@@ -4,6 +4,7 @@ import { taxonomyRouter } from '../modules/taxonomy/taxonomy.routes.js';
 import { authRouter } from '../modules/auth/auth.routes.js';
 import { adminRouter } from '../modules/admin/admin.routes.js';
 import { profilesRouter } from '../modules/profiles/profiles.routes.js';
+import { inquiriesRouter } from '../modules/inquiries/inquiries.routes.js';
 
 /**
  * All application routes hang off /api/v1. Versioning the prefix from day one
@@ -16,4 +17,5 @@ apiRouter.use('/health', healthRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/creatives', profilesRouter);
+apiRouter.use('/inquiries', inquiriesRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

@@ -34,3 +34,22 @@ export const loginLimiter = rateLimit({
     },
   },
 });
+
+/** Keyed on the signed-in user, not IP — café / shared-connection creatives
+ *  must not share one budget. Mounted after `requireAuth`, so userId is set. */
+export const inquiryLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  // userId is not an IP; disable the IPv6 helper check that assumes otherwise.
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many inquiries today. Try again tomorrow.',
+    },
+  },
+});

@@ -168,14 +168,17 @@ httpOnly cookie named `bilikha.sid`. Email and phone are collected but
 
 ### `POST /api/v1/auth/register`
 
-Creates a user, a creative profile in `pending_review`, and the selected
-sub-domain links (1–5, one primary). Signs the new user in. Rate limited to
-5 attempts per IP per hour.
+Discriminated on `kind` (`creative` default when omitted, or `client`).
+
+**Creative** — creates a user, a creative profile in `pending_review`, and the
+selected sub-domain links (1–5, one primary). Signs the new user in. Rate
+limited to 5 attempts per IP per hour.
 
 Request body:
 
 ```jsonc
 {
+  "kind": "creative",            // optional; default
   "firstName": "Juan",
   "middleName": "Santos",       // optional
   "lastName": "dela Cruz",
@@ -195,6 +198,25 @@ Request body:
 }
 ```
 
+**Client** — creates a user with no creative profile (`municipality_id` null).
+Same age gate on `birthDate`. No municipality, barangay, suffix, or sub-domains.
+
+```jsonc
+{
+  "kind": "client",
+  "firstName": "Ana",
+  "lastName": "Reyes",
+  "username": "anareyes",
+  "email": "ana@example.com",
+  "phone": "09181234567",
+  "birthDate": "1995-06-01",
+  "password": "correct horse battery",
+  "confirmPassword": "correct horse battery",
+  "privacyConsent": true,
+  "termsAccepted": true
+}
+```
+
 `201`
 
 ```jsonc
@@ -206,8 +228,8 @@ Request body:
     "lastName": "dela Cruz",
     "email": "juan@example.com",
     "role": "member",
-    "profileSlug": "juancruz",
-    "profileStatus": "pending_review",
+    "profileSlug": "juancruz",   // null for clients
+    "profileStatus": "pending_review", // null for clients
     "rejectionReason": null
   }
 }
@@ -306,15 +328,87 @@ to `suspended` and stores the reason for the registrant banner.
 
 ---
 
+## Creatives (public)
+
+Published profiles only. Unpublished or pending profiles return 404 — the same
+status whether the slug is unknown or awaiting review.
+
+Public payloads never include `email`, `phone`, or `birthDate`.
+
+### `GET /api/v1/creatives`
+
+Query: `domain`, `subdomain`, `municipality` (slugs, optional), `page` (default
+1), `limit` (default 20, max 50).
+
+`200` — `{ data: PublicProfile[], meta: { page, limit, total } }`
+
+### `GET /api/v1/creatives/:slug`
+
+`200` — `{ data: PublicProfile }`. `404` when missing or not published.
+
+`PublicProfile`: `slug`, `displayName`, `fullName`, `bio`, `municipality`,
+`subdomains[]` (`slug`, `name`, `domain`, `isPrimary`), `memberSince`.
+
+---
+
+## Inquiries
+
+All routes require a signed-in session. One message, one response — not a chat.
+
+### `POST /api/v1/inquiries`
+
+Send an inquiry to a **published** profile. Rate limited to 10 successful
+sends per user per day.
+
+```jsonc
+{
+  "profileSlug": "juancruz",
+  "subject": "Mural for a café wall",
+  "message": "Looking for a muralist available in October for a ~3m wall in Naval."
+}
+```
+
+`201`. Rejects self-inquiry (`400`) and a second open inquiry (`sent`/`read`)
+to the same profile (`409`). Unpublished slugs → `404`.
+
+### `GET /api/v1/inquiries/received`
+
+Inbox for the caller's own creative profile. Newest first. Empty when the
+caller has no profile.
+
+### `GET /api/v1/inquiries/sent`
+
+What the caller sent. When status is `responded`, includes `contact`
+(`channel` + `value`) from the creative's `contactPreference`. Declined
+inquiries do not reveal contact.
+
+### `POST /api/v1/inquiries/:id/read`
+
+Recipient only. Marks `sent` → `read`.
+
+### `POST /api/v1/inquiries/:id/respond`
+
+Recipient only.
+
+```jsonc
+{ "action": "responded", "response": "Yes — message me on this number." }
+// or
+{ "action": "declined", "response": "Fully booked until December." }
+```
+
+`responded` requires a non-empty `response` and reveals the preferred contact
+channel to the sender. Already-answered inquiries → `409`.
+
+---
+
 ## Not yet implemented
 
 Listed so the shape of the eventual surface is visible, and so nobody builds a
 parallel version:
 
-- **Creative profiles** — list with filters and pagination, read by slug, create,
-  update, claim
+- **Creative profile self-service** — create, update, claim (public list/read
+  by slug is live above)
 - **Organisations** — read, create, membership
-- **Inquiries** — send, list for a recipient, respond
 - **Search** — Postgres-native full-text plus fuzzy name matching
 - **Media** — portfolio upload, moderation queue
 - **Self-service password reset / phone verification** — deferred until an SMS

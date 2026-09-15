@@ -81,7 +81,7 @@ card, at a fraction of the cost.
 | 2. Migration | 2 / 2 | Complete |
 | 3. Backend — public profiles | 3 / 3 | Complete |
 | 4. Backend — client registration | 3 / 3 | Complete |
-| 5. Backend — inquiries | 0 / 4 | Not started |
+| 5. Backend — inquiries | 4 / 4 | Complete |
 | 6. Frontend — directory and profile | 0 / 3 | Not started |
 | 7. Frontend — inquiry flow | 0 / 4 | Not started |
 | 8. Frontend — inbox and sent | 0 / 3 | Not started |
@@ -320,7 +320,7 @@ Returns `0`.
 
 ### Step 5.1 — Validation
 
-- [ ] **Action.** Create `backend/src/modules/inquiries/inquiries.schema.ts`:
+- [x] **Action.** Create `backend/src/modules/inquiries/inquiries.schema.ts`:
 
 ```ts
 export const sendInquirySchema = z.object({
@@ -338,11 +338,11 @@ export const respondSchema = z.object({
 The 20-character minimum is deliberate: a one-word inquiry wastes the creative's
 time and is the easiest form of spam to send.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.2 — Service
 
-- [ ] **Action.** Create `backend/src/modules/inquiries/inquiries.service.ts`
+- [x] **Action.** Create `backend/src/modules/inquiries/inquiries.service.ts`
   with:
 
 - `send({ senderUserId, profileSlug, subject, message })`
@@ -363,17 +363,17 @@ time and is the easiest form of spam to send.
 Every function takes the caller's user id and checks ownership. **Never trust an
 id from the request body to establish who may read an inquiry.**
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.3 — Routes and rate limiting
 
-- [ ] **Action.** Add an `inquiryLimiter` to `backend/src/middleware/rate-limit.ts`:
+- [x] **Action.** Add an `inquiryLimiter` to `backend/src/middleware/rate-limit.ts`:
   10 per user per day, `skipFailedRequests: true`.
 
 Key it on `req.session.userId`, not IP — several creatives may share an
 internet café connection.
 
-- [ ] **Action.** Create `backend/src/modules/inquiries/inquiries.routes.ts`,
+- [x] **Action.** Create `backend/src/modules/inquiries/inquiries.routes.ts`,
   all routes behind `requireAuth`:
 
 ```
@@ -384,15 +384,15 @@ POST   /inquiries/:id/read     mark read
 POST   /inquiries/:id/respond  respond or decline
 ```
 
-- [ ] **Action.** Mount at `/inquiries`.
-- [ ] **Verify.** Signed out, every route returns `UNAUTHORIZED`.
+- [x] **Action.** Mount at `/inquiries`.
+- [x] **Verify.** Signed out, every route returns `UNAUTHORIZED`.
 
 ### Step 5.4 — Update the API reference
 
-- [ ] **Action.** Add `/creatives` and `/inquiries` to
+- [x] **Action.** Add `/creatives` and `/inquiries` to
   [`docs/reference/api.md`](../reference/api.md), and the new tables to
   [`docs/reference/data-model.md`](../reference/data-model.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
