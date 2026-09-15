@@ -112,6 +112,15 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
 
   return (
     <form onSubmit={(event) => void onSubmit(event)} className="space-y-8" noValidate>
+      {profile.status === 'suspended' && profile.rejectionReason && (
+        <p
+          className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+          role="status"
+        >
+          {profile.rejectionReason}
+        </p>
+      )}
+
       {formError && (
         <p
           className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"

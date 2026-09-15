@@ -3,6 +3,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ProfileEditor } from '@/features/me/ProfileEditor';
+import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
 
 export function AccountPage() {
@@ -64,9 +65,7 @@ export function AccountPage() {
               </p>
               <Card elevation="flat" className="mt-5">
                 <CardBody>
-                  <p className="text-sm text-ink-muted">
-                    Use a long password that you do not use on another service.
-                  </p>
+                  <PasswordForm />
                 </CardBody>
               </Card>
             </section>

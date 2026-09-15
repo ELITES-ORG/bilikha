@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { authKeys } from '@/features/auth/api';
 import { apiClient, toApiError } from '@/lib/api-client';
-import type { OwnProfile, UpdateProfilePayload } from './types';
+import type { ChangePasswordPayload, OwnProfile, UpdateProfilePayload } from './types';
 
 interface ApiResponse<T> {
   data: T;
@@ -47,6 +47,20 @@ export function useUpdateOwnProfile() {
         queryClient.invalidateQueries({ queryKey: meKeys.profile() }),
         queryClient.invalidateQueries({ queryKey: authKeys.me }),
       ]);
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (payload: ChangePasswordPayload): Promise<void> => {
+      try {
+        await apiClient.post('/me/password', payload);
+      } catch (error) {
+        // Keep AxiosError so the form can map validation and 401 responses.
+        if (error instanceof AxiosError) throw error;
+        throw toApiError(error);
+      }
     },
   });
 }

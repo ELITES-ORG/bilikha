@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { Clock3, CircleAlert, FilePenLine } from 'lucide-react';
 import { useCurrentUser } from './api';
 import { Badge, Container } from '@/components/ui';
@@ -28,6 +29,11 @@ export function RegistrationStatusBanner() {
         icon={<CircleAlert className="size-4" aria-hidden="true" />}
         label="Not approved"
         message={`Your registration was not approved. ${user.rejectionReason}`}
+        action={
+          <Link to="/account" className="link-underline font-medium">
+            Edit and resubmit
+          </Link>
+        }
       />
     );
   }
@@ -50,6 +56,11 @@ export function RegistrationStatusBanner() {
         icon={<CircleAlert className="size-4" aria-hidden="true" />}
         label="Suspended"
         message="Your registration was not approved."
+        action={
+          <Link to="/account" className="link-underline font-medium">
+            Edit and resubmit
+          </Link>
+        }
       />
     );
   }
@@ -62,11 +73,13 @@ function Banner({
   icon,
   label,
   message,
+  action,
 }: {
   tone: 'warning' | 'danger' | 'neutral';
   icon: ReactNode;
   label: string;
   message: string;
+  action?: ReactNode;
 }) {
   const surfaces = {
     warning: 'border-warning-100 bg-warning-50 text-warning-700',
@@ -80,7 +93,10 @@ function Banner({
         <Badge tone={tone} icon={icon}>
           {label}
         </Badge>
-        <p className="text-sm text-pretty">{message}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-pretty">{message}</p>
+          {action && <p className="mt-1 text-sm">{action}</p>}
+        </div>
       </Container>
     </div>
   );

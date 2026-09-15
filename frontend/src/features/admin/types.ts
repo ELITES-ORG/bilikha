@@ -1,12 +1,18 @@
 export type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
+export type QueueStatus = ProfileStatus | 'edited';
 
-export type ModerationActionType = 'approved' | 'rejected' | 'returned_to_pending';
+export type ModerationActionType =
+  | 'approved'
+  | 'rejected'
+  | 'returned_to_pending'
+  | 'acknowledged_edit';
 
 export interface AdminQueueRow {
   id: string;
   slug: string;
   status: ProfileStatus;
   createdAt: string;
+  editedSinceReviewAt: string | null;
   firstName: string;
   lastName: string;
   username: string;
@@ -18,13 +24,14 @@ export interface AdminQueueMeta {
   page: number;
   limit: number;
   total: number;
-  status: ProfileStatus;
+  status: QueueStatus;
 }
 
 export interface AdminProfileDetail {
   id: string;
   slug: string;
   status: ProfileStatus;
+  editedSinceReviewAt: string | null;
   rejectionReason: string | null;
   reviewedAt: string | null;
   createdAt: string;

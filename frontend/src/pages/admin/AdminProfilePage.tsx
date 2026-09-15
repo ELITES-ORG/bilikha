@@ -23,7 +23,9 @@ function AdminProfileInner() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  async function decide(action: 'approved' | 'rejected' | 'returned_to_pending') {
+  async function decide(
+    action: 'approved' | 'rejected' | 'returned_to_pending' | 'acknowledged_edit',
+  ) {
     setError(null);
     try {
       await moderate.mutateAsync({
@@ -162,6 +164,16 @@ function AdminProfileInner() {
                       onClick={() => void decide('returned_to_pending')}
                     >
                       Return to pending
+                    </Button>
+                  )}
+                  {profile.data.status === 'published' && profile.data.editedSinceReviewAt && (
+                    <Button
+                      variant="secondary"
+                      loading={moderate.isPending}
+                      disabled={moderate.isPending}
+                      onClick={() => void decide('acknowledged_edit')}
+                    >
+                      Acknowledge
                     </Button>
                   )}
                 </div>

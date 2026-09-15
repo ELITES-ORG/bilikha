@@ -33,3 +33,9 @@ export interface UpdateProfilePayload {
   primarySubdomainSlug: string;
   contactPreference: ContactPreference;
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}

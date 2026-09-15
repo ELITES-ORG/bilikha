@@ -2,14 +2,15 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Inbox } from 'lucide-react';
 import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
-import type { ProfileStatus } from '@/features/admin/types';
+import type { QueueStatus } from '@/features/admin/types';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { Badge, Button, ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
-const TABS: Array<{ status: ProfileStatus; label: string }> = [
+const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
+  { status: 'edited', label: 'Edited' },
   { status: 'published', label: 'Published' },
   { status: 'suspended', label: 'Suspended' },
 ];
@@ -32,7 +33,7 @@ export function AdminQueuePage() {
 }
 
 function AdminQueueInner() {
-  const [status, setStatus] = useState<ProfileStatus>('pending_review');
+  const [status, setStatus] = useState<QueueStatus>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminCounts();
   const list = useAdminProfiles(status, page);
@@ -112,8 +113,16 @@ function AdminQueueInner() {
             {list.data && list.data.data.length === 0 && (
               <EmptyState
                 icon={<CheckCircle2 className="size-5" />}
-                title="Nothing waiting for review"
-                description="An empty pending queue is a good outcome — every registration has been decided."
+                title={
+                  status === 'edited'
+                    ? 'No published edits waiting'
+                    : 'Nothing waiting for review'
+                }
+                description={
+                  status === 'edited'
+                    ? 'Public changes to published profiles will appear here until they are acknowledged.'
+                    : 'An empty pending queue is a good outcome — every registration has been decided.'
+                }
               />
             )}
 
@@ -143,7 +152,13 @@ function AdminQueueInner() {
                         <td className="py-3 pr-4 text-ink-muted">{row.username}</td>
                         <td className="py-3 pr-4 text-ink-muted">{row.municipality}</td>
                         <td className="py-3 pr-4 text-ink-muted">{row.subdomainCount}</td>
-                        <td className="py-3 text-ink-muted">{waitingLabel(row.createdAt)}</td>
+                        <td className="py-3 text-ink-muted">
+                          {waitingLabel(
+                            status === 'edited'
+                              ? (row.editedSinceReviewAt ?? row.createdAt)
+                              : row.createdAt,
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

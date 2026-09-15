@@ -6,6 +6,7 @@ import type {
   AdminQueueRow,
   ModeratePayload,
   ProfileStatus,
+  QueueStatus,
 } from './types';
 
 interface ApiResponse<T> {
@@ -20,13 +21,13 @@ interface ListResponse {
 export const adminKeys = {
   all: ['admin'] as const,
   lists: () => [...adminKeys.all, 'list'] as const,
-  list: (status: ProfileStatus, page: number) =>
+  list: (status: QueueStatus, page: number) =>
     [...adminKeys.lists(), status, page] as const,
   counts: () => [...adminKeys.all, 'counts'] as const,
   detail: (id: string) => [...adminKeys.all, 'detail', id] as const,
 };
 
-export function useAdminProfiles(status: ProfileStatus, page: number) {
+export function useAdminProfiles(status: QueueStatus, page: number) {
   return useQuery({
     queryKey: adminKeys.list(status, page),
     queryFn: async (): Promise<ListResponse> => {

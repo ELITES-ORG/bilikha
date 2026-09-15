@@ -395,26 +395,26 @@ Requirements:
 
 ### Step 8.1 — Resubmit path
 
-- [ ] **Action.** When `profileStatus === 'suspended'`, the status banner gains
+- [x] **Action.** When `profileStatus === 'suspended'`, the status banner gains
   a link to `/account` reading **Edit and resubmit**. On the editor, show the
   rejection reason above the form so they can see what to fix.
-- [ ] **Verify.** As a rejected user: the banner links through, the reason is
+- [x] **Verify.** As a rejected user: the banner links through, the reason is
   visible, saving returns the profile to `pending_review`, and the banner
   changes to "being reviewed".
 
 ### Step 8.2 — Password form
 
-- [ ] **Action.** Build the Security section: current password, new, confirm.
+- [x] **Action.** Build the Security section: current password, new, confirm.
   `autoComplete="current-password"` and `"new-password"`. On success, clear the
   fields and confirm plainly.
-- [ ] **Verify.** Wrong current password shows an error on that field, not a
+- [x] **Verify.** Wrong current password shows an error on that field, not a
   banner.
 
 ### Step 8.3 — Admin Edited tab
 
-- [ ] **Action.** Add the **Edited** tab to the queue with its count, and an
+- [x] **Action.** Add the **Edited** tab to the queue with its count, and an
   **Acknowledge** action on the detail view for flagged profiles.
-- [ ] **Verify.** Editing a published profile as a creative makes it appear
+- [x] **Verify.** Editing a published profile as a creative makes it appear
   there; acknowledging removes it.
 
 ---
