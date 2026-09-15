@@ -1,13 +1,12 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, MapPin, Search, TriangleAlert } from 'lucide-react';
-import { useCurrentUser, useLogout } from '@/features/auth/api';
+import { SiteHeader } from '@/components/SiteHeader';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import {
   Badge,
   Button,
-  ButtonLink,
   Container,
   EmptyState,
   Input,
@@ -142,68 +141,6 @@ export function HomePage() {
 
       <SiteFooter />
     </>
-  );
-}
-
-function SiteHeader() {
-  const { data: user } = useCurrentUser();
-  const logout = useLogout();
-
-  return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-sm">
-      <Container width="wide" className="flex h-16 items-center justify-between gap-6">
-        <Link to="/" className="group flex items-baseline gap-2.5">
-          <span className="u-display text-xl font-semibold tracking-tight text-ink">Bilikha</span>
-          <span className="hidden text-2xs text-ink-subtle sm:inline">BILIRAN</span>
-        </Link>
-
-        <nav className="flex items-center gap-1 sm:gap-2">
-          <Link
-            to="/directory"
-            className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-          >
-            Directory
-          </Link>
-          <Link
-            to="/about"
-            className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-          >
-            About
-          </Link>
-          {user?.role === 'admin' && (
-            <Link
-              to="/admin"
-              className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-            >
-              Admin
-            </Link>
-          )}
-          {user ? (
-            <>
-              <span className="hidden px-2 text-sm text-ink-muted sm:inline">{user.username}</span>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="ml-1"
-                loading={logout.isPending}
-                onClick={() => void logout.mutateAsync()}
-              >
-                Sign out
-              </Button>
-            </>
-          ) : (
-            <>
-              <ButtonLink to="/login" variant="ghost" size="sm" className="ml-1">
-                Sign in
-              </ButtonLink>
-              <ButtonLink to="/register" size="sm">
-                Register
-              </ButtonLink>
-            </>
-          )}
-        </nav>
-      </Container>
-    </header>
   );
 }
 

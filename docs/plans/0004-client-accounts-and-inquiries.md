@@ -82,9 +82,9 @@ card, at a fraction of the cost.
 | 3. Backend — public profiles | 3 / 3 | Complete |
 | 4. Backend — client registration | 3 / 3 | Complete |
 | 5. Backend — inquiries | 4 / 4 | Complete |
-| 6. Frontend — directory and profile | 0 / 3 | Not started |
-| 7. Frontend — inquiry flow | 0 / 4 | Not started |
-| 8. Frontend — inbox and sent | 0 / 3 | Not started |
+| 6. Frontend — directory and profile | 3 / 3 | Complete |
+| 7. Frontend — inquiry flow | 4 / 4 | Complete |
+| 8. Frontend — inbox and sent | 3 / 3 | Complete |
 | 9. Verification | 0 / 5 | Not started |
 
 ---
@@ -400,13 +400,13 @@ POST   /inquiries/:id/respond  respond or decline
 
 ### Step 6.1 — Data layer
 
-- [ ] **Action.** Create `frontend/src/features/profiles/` with `types.ts` and
+- [x] **Action.** Create `frontend/src/features/profiles/` with `types.ts` and
   `api.ts`, following `features/taxonomy/api.ts`.
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 6.2 — Directory page
 
-- [ ] **Action.** Create `frontend/src/pages/DirectoryPage.tsx` at `/directory`.
+- [x] **Action.** Create `frontend/src/pages/DirectoryPage.tsx` at `/directory`.
   **No auth guard.**
 
 Requirements:
@@ -421,11 +421,11 @@ Requirements:
   parent domain, clear the filter. Never a bare "no results"
 - Pagination
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 6.3 — Public profile page
 
-- [ ] **Action.** Create `frontend/src/pages/CreativeProfilePage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/CreativeProfilePage.tsx` at
   `/creatives/:slug`. **No auth guard.**
 
 Shows name, municipality, sub-domains with the primary marked, bio, member
@@ -435,7 +435,7 @@ returns 404.
 **No email, phone, or birth date appears anywhere on this page** — not in the
 markup, not in a data attribute.
 
-- [ ] **Verify.** View source on a published profile and search for the
+- [x] **Verify.** View source on a published profile and search for the
   registrant's phone number. It must not be present.
 
 ---
@@ -446,25 +446,25 @@ This is the part that earns the plan. Keep the message alive through every step.
 
 ### Step 7.1 — Draft persistence
 
-- [ ] **Action.** Create `frontend/src/features/inquiries/draft.ts` storing a
+- [x] **Action.** Create `frontend/src/features/inquiries/draft.ts` storing a
   draft under `bilikha:inquiry-draft:<profileSlug>` in `localStorage`, wrapped in
   `try`/`catch` like the registration draft.
 
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 7.2 — Compose
 
-- [ ] **Action.** Create `frontend/src/features/inquiries/InquiryComposer.tsx`:
+- [x] **Action.** Create `frontend/src/features/inquiries/InquiryComposer.tsx`:
   subject and message fields, a character counter on message, and a Send button.
 
 **Anonymous visitors see this form, not a login wall.** They compose first; the
 account step comes after they choose to send.
 
-- [ ] **Verify.** Lint and typecheck exit 0.
+- [x] **Verify.** Lint and typecheck exit 0.
 
 ### Step 7.3 — Register in place
 
-- [ ] **Action.** On Send, if `useCurrentUser()` returns null, show the
+- [x] **Action.** On Send, if `useCurrentUser()` returns null, show the
   lightweight client registration inline — six fields plus both consent
   checkboxes — with a "Already have an account? Sign in" toggle.
 
@@ -472,16 +472,16 @@ The draft is saved **before** this step renders, and restored after the account
 is created or the sign-in succeeds. On success, send the inquiry immediately
 without making the user press Send twice.
 
-- [ ] **Verify.** As an anonymous visitor: compose a message, press Send,
+- [x] **Verify.** As an anonymous visitor: compose a message, press Send,
   register, and confirm the inquiry sends with the original text and the draft is
   cleared.
 
 ### Step 7.4 — Confirmation
 
-- [ ] **Action.** After sending, show a confirmation stating that the creative
+- [x] **Action.** After sending, show a confirmation stating that the creative
   will see it in their inbox and that **there is no email notification** — the
   client should check back. Link to the sent list.
-- [ ] **Verify.** The message is unambiguous about how a response arrives.
+- [x] **Verify.** The message is unambiguous about how a response arrives.
 
 ---
 
@@ -489,7 +489,7 @@ without making the user press Send twice.
 
 ### Step 8.1 — Inbox
 
-- [ ] **Action.** Create `frontend/src/pages/InboxPage.tsx` at `/inbox`, behind
+- [x] **Action.** Create `frontend/src/pages/InboxPage.tsx` at `/inbox`, behind
   `RequireAuth`.
 
 Lists received inquiries newest first, unread visually distinct, showing sender
@@ -498,21 +498,21 @@ Respond requires text, Decline does not.
 
 Show this page only to users who have a creative profile; a client has no inbox.
 
-- [ ] **Verify.** Lint and typecheck exit 0.
+- [x] **Verify.** Lint and typecheck exit 0.
 
 ### Step 8.2 — Sent list
 
-- [ ] **Action.** Create `frontend/src/pages/SentInquiriesPage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/SentInquiriesPage.tsx` at
   `/inquiries`, behind `RequireAuth`. Shows each inquiry, its status, and — once
   the creative has responded — their response and revealed contact detail.
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 8.3 — Navigation
 
-- [ ] **Action.** In `SiteHeader`: **Directory** always visible; **Inbox** only
+- [x] **Action.** In `SiteHeader`: **Directory** always visible; **Inbox** only
   for users with a creative profile, with an unread count; **Inquiries** for
   signed-in users.
-- [ ] **Verify.** The header differs correctly for anonymous, client, and
+- [x] **Verify.** The header differs correctly for anonymous, client, and
   creative accounts.
 
 ---

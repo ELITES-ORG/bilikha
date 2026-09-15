@@ -3,11 +3,15 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { queryClient } from '@/lib/query-client';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
+import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
+import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HomePage } from '@/pages/HomePage';
+import { InboxPage } from '@/pages/InboxPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage';
+import { SentInquiriesPage } from '@/pages/SentInquiriesPage';
 import { StyleGuidePage } from '@/pages/StyleGuidePage';
 
 export default function App() {
@@ -16,6 +20,10 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/directory" element={<DirectoryPage />} />
+          <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
+          <Route path="/inbox" element={<InboxPage />} />
+          <Route path="/inquiries" element={<SentInquiriesPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/success" element={<RegisterSuccessPage />} />
           <Route path="/login" element={<LoginPage />} />

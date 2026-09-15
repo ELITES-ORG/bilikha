@@ -10,7 +10,8 @@ export interface AuthUser {
   rejectionReason: string | null;
 }
 
-export interface RegisterPayload {
+export interface CreativeRegisterPayload {
+  kind?: 'creative';
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -28,3 +29,19 @@ export interface RegisterPayload {
   privacyConsent: true;
   termsAccepted: true;
 }
+
+export interface ClientRegisterPayload {
+  kind: 'client';
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  password: string;
+  confirmPassword: string;
+  privacyConsent: true;
+  termsAccepted: true;
+}
+
+export type RegisterPayload = CreativeRegisterPayload | ClientRegisterPayload;
