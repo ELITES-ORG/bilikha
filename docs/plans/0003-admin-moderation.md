@@ -1,6 +1,6 @@
 # 0003. Admin panel — creative registration moderation
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0001](./0001-registration-and-auth.md) — there must be
   registrations before there is anything to moderate
 - **Related:** [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) ·
@@ -84,7 +84,7 @@ when profile editing ships.
 | 6. Frontend — data layer | 2 / 2 | Complete |
 | 7. Frontend — review queue | 3 / 3 | Complete |
 | 8. Frontend — registrant status | 3 / 3 | Complete |
-| 9. Verification | 0 / 4 | Not started |
+| 9. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -613,7 +613,7 @@ The registrant's own status has to reach the frontend.
 
 ### Step 6.1 — Types and hooks
 
-- [ ] **Action.** Create `frontend/src/features/admin/types.ts` and
+- [x] **Action.** Create `frontend/src/features/admin/types.ts` and
   `frontend/src/features/admin/api.ts`, following the pattern in
   `features/taxonomy/api.ts`: a key factory, fetchers wrapping errors in
   `toApiError`, `useQuery` for the list, counts, and detail, and a `useMutation`
@@ -622,17 +622,17 @@ The registrant's own status has to reach the frontend.
 The moderate mutation must invalidate the list, the counts, **and** the detail
 query on success, or the queue shows stale rows after a decision.
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 6.2 — Admin route guard
 
-- [ ] **Action.** Create `frontend/src/features/auth/RequireAdmin.tsx`,
+- [x] **Action.** Create `frontend/src/features/auth/RequireAdmin.tsx`,
   following `RequireAuth`: render nothing while `useCurrentUser()` is pending,
   redirect to `/` if there is no user or `user.role !== 'admin'`.
 
 This is convenience, not security. The API returns 404 regardless.
 
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ---
 
@@ -640,7 +640,7 @@ This is convenience, not security. The API returns 404 regardless.
 
 ### Step 7.1 — Queue page
 
-- [ ] **Action.** Create `frontend/src/pages/admin/AdminQueuePage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/admin/AdminQueuePage.tsx` at
   `/admin`, wrapped in `RequireAdmin`.
 
 Requirements:
@@ -657,11 +657,11 @@ Requirements:
   outcome here, so word it that way rather than as an absence
 - `Skeleton` rows while loading
 
-- [ ] **Verify.** Typecheck and `npx oxlint src` both exit 0.
+- [x] **Verify.** Typecheck and `npx oxlint src` both exit 0.
 
 ### Step 7.2 — Detail and decision
 
-- [ ] **Action.** Create `frontend/src/pages/admin/AdminProfilePage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/admin/AdminProfilePage.tsx` at
   `/admin/profiles/:id`.
 
 Requirements:
@@ -678,14 +678,14 @@ Requirements:
 - Buttons disabled while the mutation is pending, using `loading`
 - On success, return to the queue
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 7.3 — Routes and entry point
 
-- [ ] **Action.** Add both routes in `App.tsx`, wrapped in `RequireAdmin`.
-- [ ] **Action.** In `SiteHeader`, show an **Admin** link only when
+- [x] **Action.** Add both routes in `App.tsx`, wrapped in `RequireAdmin`.
+- [x] **Action.** In `SiteHeader`, show an **Admin** link only when
   `user?.role === 'admin'`.
-- [ ] **Verify.** The link is absent for a normal account and present for an
+- [x] **Verify.** The link is absent for a normal account and present for an
   admin.
 
 ---
@@ -696,7 +696,7 @@ Every registrant sees their own status whenever they open the app.
 
 ### Step 8.1 — Status banner
 
-- [ ] **Action.** Create
+- [x] **Action.** Create
   `frontend/src/features/auth/RegistrationStatusBanner.tsx`.
 
 Reads `useCurrentUser()` and renders nothing when signed out or when
@@ -711,20 +711,20 @@ Reads `useCurrentUser()` and renders nothing when signed out or when
 Use `Badge` tones and existing tokens. Status is never colour alone — pair each
 with an icon.
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 8.2 — Show it on every screen
 
-- [ ] **Action.** Render the banner directly below `SiteHeader`, so it appears
+- [x] **Action.** Render the banner directly below `SiteHeader`, so it appears
   on every page rather than only after login.
-- [ ] **Verify.** Sign in as a pending account. The banner shows on `/` and
+- [x] **Verify.** Sign in as a pending account. The banner shows on `/` and
   stays after navigating and after a reload.
 
 ### Step 8.3 — Show it after login
 
-- [ ] **Action.** On `LoginPage`, after a successful sign-in, route to `/` where
+- [x] **Action.** On `LoginPage`, after a successful sign-in, route to `/` where
   the banner is visible. Do not swallow the status in a toast — it must persist.
-- [ ] **Verify.** Log in as a rejected account. The rejection reason is visible
+- [x] **Verify.** Log in as a rejected account. The rejection reason is visible
   without any further clicks.
 
 ---
@@ -733,7 +733,7 @@ with an icon.
 
 ### Step 9.1 — Access control
 
-- [ ] **Verify** each row:
+- [x] **Verify** each row:
 
 | Attempt | Expected |
 |---|---|
@@ -745,16 +745,16 @@ with an icon.
 
 ### Step 9.2 — The moderation flow
 
-- [ ] **Verify.** Register a new account → it appears in Pending → approve it →
+- [x] **Verify.** Register a new account → it appears in Pending → approve it →
   it moves to Published, and the registrant's banner disappears.
-- [ ] **Verify.** Register another → reject with a reason → the registrant sees
+- [x] **Verify.** Register another → reject with a reason → the registrant sees
   the reason verbatim on next load.
-- [ ] **Verify.** Return that profile to pending → it reappears in the Pending
+- [x] **Verify.** Return that profile to pending → it reappears in the Pending
   queue and the banner changes back.
 
 ### Step 9.3 — The audit trail
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c \
@@ -763,7 +763,7 @@ docker exec bilikha-postgres psql -U bilikha -d bilikha -c \
 
 One row per decision, in order, each with an admin. Rejections have a reason.
 
-- [ ] **Verify** rejection without a reason is refused:
+- [x] **Verify** rejection without a reason is refused:
 
 ```bash
 curl -s -b cookies.txt -X POST http://localhost:4000/api/v1/admin/profiles/<id>/moderate \
@@ -774,20 +774,20 @@ Expected: 400, message about a reason being required.
 
 ### Step 9.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] All 9 phases complete
-- [ ] Admin endpoints return 404 to everyone who is not an admin
-- [ ] No status change exists without a `moderation_actions` row
-- [ ] Rejection requires a reason, and the registrant sees it
-- [ ] The status banner appears on every page until the profile is published
-- [ ] `docs/reference/api.md` and `docs/reference/data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] All 9 phases complete
+- [x] Admin endpoints return 404 to everyone who is not an admin
+- [x] No status change exists without a `moderation_actions` row
+- [x] Rejection requires a reason, and the registrant sees it
+- [x] The status banner appears on every page until the profile is published
+- [x] `docs/reference/api.md` and `docs/reference/data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 
