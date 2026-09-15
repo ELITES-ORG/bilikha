@@ -53,3 +53,21 @@ export const inquiryLimiter = rateLimit({
     },
   },
 });
+
+/** Keyed on the signed-in user. Counts failures so guessing the current
+ *  password is rate-limited; successes do not consume the budget. */
+export const passwordChangeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many password attempts. Try again in an hour.',
+    },
+  },
+});

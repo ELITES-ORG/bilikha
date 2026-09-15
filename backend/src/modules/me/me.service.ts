@@ -10,7 +10,8 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
-import type { UpdateProfileInput } from './me.schema.js';
+import { hashPassword, verifyPassword } from '../../lib/password.js';
+import type { ChangePasswordInput, UpdateProfileInput } from './me.schema.js';
 
 export interface OwnProfile {
   firstName: string;
@@ -268,4 +269,31 @@ export async function updateOwnProfile(
   const updated = await getOwnProfile(userId);
   if (!updated) throw new Error('Profile missing after update');
   return updated;
+}
+
+export async function changePassword(userId: string, input: ChangePasswordInput): Promise<void> {
+  const [user] = await db
+    .select({ id: users.id, passwordHash: users.passwordHash, username: users.username })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) throw AppError.unauthorized('Session is no longer valid.');
+
+  const ok = await verifyPassword(user.passwordHash, input.currentPassword);
+  if (!ok) {
+    throw AppError.unauthorized('Current password is incorrect.');
+  }
+
+  if (input.newPassword.toLowerCase().includes(user.username.toLowerCase())) {
+    throw AppError.badRequest('Password must not contain your username.', {
+      field: 'newPassword',
+    });
+  }
+
+  const passwordHash = await hashPassword(input.newPassword);
+  await db
+    .update(users)
+    .set({ passwordHash, updatedAt: new Date() })
+    .where(eq(users.id, userId));
 }

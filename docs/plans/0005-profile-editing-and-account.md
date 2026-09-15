@@ -81,7 +81,7 @@ apply unchanged. Three specific to this plan:
 | 2. Migration | 2 / 2 | Complete |
 | 3. Backend — read own profile | 2 / 2 | Complete |
 | 4. Backend — update profile | 4 / 4 | Complete |
-| 5. Backend — change password | 0 / 2 | Not started |
+| 5. Backend — change password | 2 / 2 | Complete |
 | 6. Backend — admin edited queue | 0 / 3 | Not started |
 | 7. Frontend — account area | 0 / 4 | Not started |
 | 8. Frontend — resubmit and password | 0 / 3 | Not started |
@@ -289,7 +289,7 @@ municipality or barangay differs from what is stored. It is **false** when only
 
 ### Step 5.1 — Service and schema
 
-- [ ] **Action.** Add to `me.schema.ts`:
+- [x] **Action.** Add to `me.schema.ts`:
 
 ```ts
 export const changePasswordSchema = z.object({
@@ -303,7 +303,7 @@ export const changePasswordSchema = z.object({
 });
 ```
 
-- [ ] **Action.** `changePassword(userId, input)` verifies the current password
+- [x] **Action.** `changePassword(userId, input)` verifies the current password
   with `verifyPassword` before hashing the new one. A wrong current password is
   a 401, not a 400.
 
@@ -311,14 +311,14 @@ export const changePasswordSchema = z.object({
 in. A password change is the moment to invalidate a session id that may have
 been captured.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.2 — Route and rate limit
 
-- [ ] **Action.** Add `POST /password` to `me.routes.ts`, behind a limiter of 5
+- [x] **Action.** Add `POST /password` to `me.routes.ts`, behind a limiter of 5
   attempts per user per hour with `skipSuccessfulRequests: true`. Without it,
   the endpoint is an oracle for guessing the current password.
-- [ ] **Verify.** Six wrong attempts: the sixth is 429.
+- [x] **Verify.** Six wrong attempts: the sixth is 429.
 
 ---
 
