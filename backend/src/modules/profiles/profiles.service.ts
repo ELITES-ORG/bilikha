@@ -1,0 +1,183 @@
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { db } from '../../db/index.js';
+import {
+  creativeDomains,
+  creativeProfiles,
+  creativeProfileSubdomains,
+  creativeSubdomains,
+  municipalities,
+  users,
+} from '../../db/schema/index.js';
+import { AppError } from '../../lib/http-error.js';
+
+// Public shape. Note what is absent: email, phone, birthDate, barangay.
+export interface PublicProfile {
+  slug: string;
+  displayName: string | null;
+  fullName: string;
+  bio: string | null;
+  municipality: string;
+  subdomains: { slug: string; name: string; domain: string; isPrimary: boolean }[];
+  memberSince: string;
+}
+
+export interface ListPublishedOptions {
+  domain?: string;
+  subdomain?: string;
+  municipality?: string;
+  page: number;
+  limit: number;
+}
+
+function formatFullName(parts: {
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  suffix: string | null;
+}): string {
+  return [parts.firstName, parts.middleName, parts.lastName, parts.suffix]
+    .filter(Boolean)
+    .join(' ');
+}
+
+async function subdomainsForProfiles(profileIds: string[]) {
+  if (profileIds.length === 0) return new Map<string, PublicProfile['subdomains']>();
+
+  const rows = await db
+    .select({
+      profileId: creativeProfileSubdomains.profileId,
+      slug: creativeSubdomains.slug,
+      name: creativeSubdomains.name,
+      domain: creativeDomains.name,
+      isPrimary: creativeProfileSubdomains.isPrimary,
+    })
+    .from(creativeProfileSubdomains)
+    .innerJoin(
+      creativeSubdomains,
+      eq(creativeProfileSubdomains.subdomainId, creativeSubdomains.id),
+    )
+    .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
+    .where(inArray(creativeProfileSubdomains.profileId, profileIds));
+
+  const map = new Map<string, PublicProfile['subdomains']>();
+  for (const row of rows) {
+    const list = map.get(row.profileId) ?? [];
+    list.push({
+      slug: row.slug,
+      name: row.name,
+      domain: row.domain,
+      isPrimary: row.isPrimary,
+    });
+    map.set(row.profileId, list);
+  }
+  return map;
+}
+
+export async function listPublished(options: ListPublishedOptions) {
+  const offset = (options.page - 1) * options.limit;
+  const filters = [eq(creativeProfiles.status, 'published')];
+
+  if (options.municipality) {
+    filters.push(eq(municipalities.slug, options.municipality));
+  }
+
+  if (options.subdomain) {
+    filters.push(
+      sql`exists (
+        select 1 from creative_profile_subdomains cps
+        join creative_subdomains cs on cs.id = cps.subdomain_id
+        where cps.profile_id = ${creativeProfiles.id}
+          and cs.slug = ${options.subdomain}
+      )`,
+    );
+  } else if (options.domain) {
+    filters.push(
+      sql`exists (
+        select 1 from creative_profile_subdomains cps
+        join creative_subdomains cs on cs.id = cps.subdomain_id
+        join creative_domains cd on cd.id = cs.domain_id
+        where cps.profile_id = ${creativeProfiles.id}
+          and cd.slug = ${options.domain}
+      )`,
+    );
+  }
+
+  const where = and(...filters);
+
+  const rows = await db
+    .select({
+      id: creativeProfiles.id,
+      slug: creativeProfiles.slug,
+      displayName: creativeProfiles.displayName,
+      bio: creativeProfiles.bio,
+      createdAt: creativeProfiles.createdAt,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+      municipality: municipalities.name,
+    })
+    .from(creativeProfiles)
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
+    .where(where)
+    .orderBy(desc(creativeProfiles.createdAt))
+    .limit(options.limit)
+    .offset(offset);
+
+  const [totals] = await db
+    .select({ total: count() })
+    .from(creativeProfiles)
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
+    .where(where);
+
+  const subdomainMap = await subdomainsForProfiles(rows.map((row) => row.id));
+
+  const data: PublicProfile[] = rows.map((row) => ({
+    slug: row.slug,
+    displayName: row.displayName,
+    fullName: formatFullName(row),
+    bio: row.bio,
+    municipality: row.municipality,
+    subdomains: subdomainMap.get(row.id) ?? [],
+    memberSince: row.createdAt.toISOString(),
+  }));
+
+  return { data, total: totals?.total ?? 0 };
+}
+
+export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
+  const [row] = await db
+    .select({
+      id: creativeProfiles.id,
+      slug: creativeProfiles.slug,
+      displayName: creativeProfiles.displayName,
+      bio: creativeProfiles.bio,
+      createdAt: creativeProfiles.createdAt,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+      municipality: municipalities.name,
+    })
+    .from(creativeProfiles)
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
+    .where(and(eq(creativeProfiles.slug, slug), eq(creativeProfiles.status, 'published')))
+    .limit(1);
+
+  if (!row) throw AppError.notFound('No such creative.');
+
+  const subdomainMap = await subdomainsForProfiles([row.id]);
+
+  return {
+    slug: row.slug,
+    displayName: row.displayName,
+    fullName: formatFullName(row),
+    bio: row.bio,
+    municipality: row.municipality,
+    subdomains: subdomainMap.get(row.id) ?? [],
+    memberSince: row.createdAt.toISOString(),
+  };
+}

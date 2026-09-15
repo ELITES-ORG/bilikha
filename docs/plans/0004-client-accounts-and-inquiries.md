@@ -79,7 +79,7 @@ card, at a fraction of the cost.
 |---|---|---|
 | 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 2 / 2 | Complete |
-| 3. Backend — public profiles | 0 / 3 | Not started |
+| 3. Backend — public profiles | 3 / 3 | Complete |
 | 4. Backend — client registration | 0 / 3 | Not started |
 | 5. Backend — inquiries | 0 / 4 | Not started |
 | 6. Frontend — directory and profile | 0 / 3 | Not started |
@@ -211,7 +211,7 @@ Table exists with the three indexes.
 
 ### Step 3.1 — Public profile service
 
-- [ ] **Action.** Create `backend/src/modules/profiles/profiles.service.ts`.
+- [x] **Action.** Create `backend/src/modules/profiles/profiles.service.ts`.
 
 It exports two functions. **Both select columns explicitly** — never a whole
 user row.
@@ -237,15 +237,15 @@ export interface PublicProfile {
   One error for both cases: a 404 that differs from "exists but unpublished"
   leaks the existence of pending profiles.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 3.2 — Public routes
 
-- [ ] **Action.** Create `backend/src/modules/profiles/profiles.routes.ts` with
+- [x] **Action.** Create `backend/src/modules/profiles/profiles.routes.ts` with
   `GET /` and `GET /:slug`, validating query params with zod (`limit` capped at
   50). **No auth guard** — these are public.
-- [ ] **Action.** Mount at `/creatives` in `backend/src/routes/index.ts`.
-- [ ] **Verify.**
+- [x] **Action.** Mount at `/creatives` in `backend/src/routes/index.ts`.
+- [x] **Verify.**
 
 ```bash
 curl -s http://localhost:4000/api/v1/creatives | head -c 200
@@ -256,7 +256,7 @@ The list returns only published profiles. The pending slug returns 404.
 
 ### Step 3.3 — Prove no contact leaks
 
-- [ ] **Verify.** Publish a profile, then:
+- [x] **Verify.** Publish a profile, then:
 
 ```bash
 curl -s http://localhost:4000/api/v1/creatives/<published-slug> | grep -iE "email|phone|birth" && echo "LEAK" || echo "clean"
