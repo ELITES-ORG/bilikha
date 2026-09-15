@@ -1,13 +1,16 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   barangays,
   creativeProfiles,
   creativeProfileSubdomains,
   creativeSubdomains,
+  moderationActions,
   municipalities,
   users,
 } from '../../db/schema/index.js';
+import { AppError } from '../../lib/http-error.js';
+import type { UpdateProfileInput } from './me.schema.js';
 
 export interface OwnProfile {
   firstName: string;
@@ -26,6 +29,32 @@ export interface OwnProfile {
   editedSinceReviewAt: string | null;
   subdomainSlugs: string[];
   primarySubdomainSlug: string | null;
+}
+
+type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
+
+/** ADR 0016. The only three outcomes. */
+export function nextStatusAfterEdit(
+  current: ProfileStatus,
+  publicFieldsChanged: boolean,
+): { status: ProfileStatus; flagEdited: boolean } {
+  if (current === 'suspended') return { status: 'pending_review', flagEdited: false };
+  if (current === 'published' && publicFieldsChanged) {
+    return { status: 'published', flagEdited: true };
+  }
+  return { status: current, flagEdited: false };
+}
+
+function sameSlugSet(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((slug, i) => slug === sortedB[i]);
+}
+
+function normOptional(value: string | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  return value;
 }
 
 export async function getOwnProfile(userId: string): Promise<OwnProfile | null> {
@@ -88,4 +117,155 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile | null> 
     subdomainSlugs: subdomainRows.map((s) => s.slug),
     primarySubdomainSlug: primary?.slug ?? null,
   };
+}
+
+export async function updateOwnProfile(
+  userId: string,
+  input: UpdateProfileInput,
+): Promise<OwnProfile> {
+  const current = await getOwnProfile(userId);
+  if (!current) throw AppError.notFound('No profile to update.');
+
+  const [municipality] = await db
+    .select()
+    .from(municipalities)
+    .where(eq(municipalities.slug, input.municipalitySlug))
+    .limit(1);
+
+  if (!municipality) {
+    throw AppError.badRequest('Unknown municipality.', { field: 'municipalitySlug' });
+  }
+
+  let barangayId: string | null = null;
+  if (input.barangaySlug) {
+    const [barangay] = await db
+      .select()
+      .from(barangays)
+      .where(
+        and(eq(barangays.slug, input.barangaySlug), eq(barangays.municipalityId, municipality.id)),
+      )
+      .limit(1);
+
+    if (!barangay) {
+      throw AppError.badRequest('Unknown barangay for that municipality.', {
+        field: 'barangaySlug',
+      });
+    }
+    barangayId = barangay.id;
+  }
+
+  const subdomainRows = await db
+    .select()
+    .from(creativeSubdomains)
+    .where(inArray(creativeSubdomains.slug, input.subdomainSlugs));
+
+  if (subdomainRows.length !== input.subdomainSlugs.length) {
+    throw AppError.badRequest('One or more sub-domains are unknown.', {
+      field: 'subdomainSlugs',
+    });
+  }
+
+  const primary = subdomainRows.find((row) => row.slug === input.primarySubdomainSlug);
+  if (!primary) {
+    throw AppError.badRequest('Primary sub-domain is not among the selected.', {
+      field: 'primarySubdomainSlug',
+    });
+  }
+
+  const nextMiddle = input.middleName ?? null;
+  const nextSuffix = input.suffix ?? null;
+  const nextDisplay = input.displayName ?? null;
+  const nextBio = input.bio ?? null;
+  const nextBarangaySlug = input.barangaySlug ?? null;
+
+  const publicFieldsChanged =
+    current.firstName !== input.firstName ||
+    normOptional(current.middleName) !== normOptional(nextMiddle) ||
+    current.lastName !== input.lastName ||
+    normOptional(current.suffix) !== normOptional(nextSuffix) ||
+    normOptional(current.displayName) !== normOptional(nextDisplay) ||
+    normOptional(current.bio) !== normOptional(nextBio) ||
+    current.municipalitySlug !== input.municipalitySlug ||
+    normOptional(current.barangaySlug) !== normOptional(nextBarangaySlug) ||
+    !sameSlugSet(current.subdomainSlugs, input.subdomainSlugs) ||
+    current.primarySubdomainSlug !== input.primarySubdomainSlug;
+
+  const transition = nextStatusAfterEdit(current.status as ProfileStatus, publicFieldsChanged);
+  const now = new Date();
+
+  const [profileRow] = await db
+    .select({ id: creativeProfiles.id, status: creativeProfiles.status })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.userId, userId))
+    .limit(1);
+
+  if (!profileRow) throw AppError.notFound('No profile to update.');
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({
+        firstName: input.firstName,
+        middleName: nextMiddle,
+        lastName: input.lastName,
+        suffix: nextSuffix,
+        municipalityId: municipality.id,
+        barangayId,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId));
+
+    const profileUpdate: {
+      displayName: string | null;
+      bio: string | null;
+      contactPreference: string;
+      status: ProfileStatus;
+      rejectionReason?: string | null;
+      editedSinceReviewAt?: Date;
+      updatedAt: Date;
+    } = {
+      displayName: nextDisplay,
+      bio: nextBio,
+      contactPreference: input.contactPreference,
+      status: transition.status,
+      updatedAt: now,
+    };
+
+    if (current.status === 'suspended' && transition.status === 'pending_review') {
+      profileUpdate.rejectionReason = null;
+    }
+    if (transition.flagEdited) {
+      profileUpdate.editedSinceReviewAt = now;
+    }
+
+    await tx
+      .update(creativeProfiles)
+      .set(profileUpdate)
+      .where(eq(creativeProfiles.id, profileRow.id));
+
+    await tx
+      .delete(creativeProfileSubdomains)
+      .where(eq(creativeProfileSubdomains.profileId, profileRow.id));
+
+    await tx.insert(creativeProfileSubdomains).values(
+      subdomainRows.map((row) => ({
+        profileId: profileRow.id,
+        subdomainId: row.id,
+        isPrimary: row.id === primary.id,
+      })),
+    );
+
+    if (current.status !== transition.status) {
+      await tx.insert(moderationActions).values({
+        profileId: profileRow.id,
+        adminId: null,
+        action: 'returned_to_pending',
+        reason: null,
+      });
+    }
+  });
+
+  const updated = await getOwnProfile(userId);
+  if (!updated) throw new Error('Profile missing after update');
+  return updated;
 }

@@ -80,7 +80,7 @@ apply unchanged. Three specific to this plan:
 | 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 2 / 2 | Complete |
 | 3. Backend — read own profile | 2 / 2 | Complete |
-| 4. Backend — update profile | 0 / 4 | Not started |
+| 4. Backend — update profile | 4 / 4 | Complete |
 | 5. Backend — change password | 0 / 2 | Not started |
 | 6. Backend — admin edited queue | 0 / 3 | Not started |
 | 7. Frontend — account area | 0 / 4 | Not started |
@@ -207,7 +207,7 @@ The core of the plan. Get the status rules exactly right.
 
 ### Step 4.1 — Validation
 
-- [ ] **Action.** Create `backend/src/modules/me/me.schema.ts`:
+- [x] **Action.** Create `backend/src/modules/me/me.schema.ts`:
 
 ```ts
 export const updateProfileSchema = z.object({
@@ -231,11 +231,11 @@ export const updateProfileSchema = z.object({
 Reuse `nameField` and `optionalNameField` from `auth.schema.ts` — export them
 rather than redefining. Two copies of the Filipino-name regex will drift.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.2 — Decide the status transition
 
-- [ ] **Action.** In `me.service.ts`, write a pure helper and unit-test it by
+- [x] **Action.** In `me.service.ts`, write a pure helper and unit-test it by
   reasoning, not by running the app:
 
 ```ts
@@ -256,11 +256,11 @@ export function nextStatusAfterEdit(
 municipality or barangay differs from what is stored. It is **false** when only
 `contactPreference` changed.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.3 — Apply the update
 
-- [ ] **Action.** Write `updateOwnProfile(userId, input)` in one transaction:
+- [x] **Action.** Write `updateOwnProfile(userId, input)` in one transaction:
 
 1. Load the current profile; 404 if the user has none
 2. Resolve municipality, barangay, and sub-domain slugs — unknown slugs are 400,
@@ -276,12 +276,12 @@ municipality or barangay differs from what is stored. It is **false** when only
    `returned_to_pending` and `adminId: null` — the registrant did this, not an
    admin
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.4 — Route
 
-- [ ] **Action.** Add `PUT /profile` to `me.routes.ts`.
-- [ ] **Verify.** Signed out → 401. As a client → 404. As a creative → 200.
+- [x] **Action.** Add `PUT /profile` to `me.routes.ts`.
+- [x] **Verify.** Signed out → 401. As a client → 404. As a creative → 200.
 
 ---
 

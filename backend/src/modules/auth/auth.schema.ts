@@ -4,14 +4,14 @@ import { z } from 'zod';
  *  Peña, D'Souza. An ASCII-only rule rejects real people. */
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'\-. ]*$/u;
 
-const nameField = z
+export const nameField = z
   .string()
   .trim()
   .min(1, 'Required')
   .max(80, 'Must be 80 characters or fewer')
   .regex(NAME_PATTERN, 'Use letters, spaces, hyphens and apostrophes only');
 
-const optionalNameField = z
+export const optionalNameField = z
   .string()
   .trim()
   .max(80)
