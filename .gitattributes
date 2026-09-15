@@ -1,0 +1,34 @@
+# Normalise line endings.
+#
+# Development happens on Windows; Render and Vercel build on Linux. Without
+# this, every file committed from Windows shows as fully rewritten in a diff
+# made on another platform, and code review becomes unusable.
+#
+# Text files are stored LF in the repository and checked out LF everywhere.
+* text=auto eol=lf
+
+# Shell scripts must be LF or they fail to execute on Linux.
+*.sh text eol=lf
+*.mjs text eol=lf
+
+# Batch and PowerShell files are Windows-only and want CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary — never touch, never diff.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+
+# Generated. Collapse in pull requests so reviews show real changes.
+package-lock.json linguist-generated=true -diff
