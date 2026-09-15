@@ -16,3 +16,9 @@ Thumbs.db
 
 coverage/
 .vite/
+
+# Scratch files from manual API testing. Cookie jars and request bodies hold
+# session ids and test passwords, so they must never reach the repository.
+tmp-*
+*.cookies
+cookies.txt
