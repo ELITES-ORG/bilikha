@@ -77,7 +77,7 @@ when profile editing ships.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Schema | 4 / 4 | Complete |
-| 2. Migration | 0 / 3 | Not started |
+| 2. Migration | 3 / 3 | Complete |
 | 3. Admin bootstrap | 0 / 2 | Not started |
 | 4. Backend — guard and service | 0 / 3 | Not started |
 | 5. Backend — routes | 0 / 3 | Not started |
@@ -186,21 +186,21 @@ sequential scan on every page load.
 
 ### Step 2.1 — Generate
 
-- [ ] **Action.** `npm --prefix backend run db:generate`
-- [ ] **Verify.** A new file appears in `backend/drizzle/`.
+- [x] **Action.** `npm --prefix backend run db:generate`
+- [x] **Verify.** A new file appears in `backend/drizzle/`.
 
 ### Step 2.2 — Read the SQL
 
-- [ ] **Action.** Open the generated file and read every line.
-- [ ] **Verify.** It contains `CREATE TYPE` for `user_role` and
+- [x] **Action.** Open the generated file and read every line.
+- [x] **Verify.** It contains `CREATE TYPE` for `user_role` and
   `moderation_action`, `CREATE TABLE moderation_actions`, `ALTER TABLE users ADD
   COLUMN role`, and three added columns on `creative_profiles`. **If any
   `DROP TABLE` or `DROP COLUMN` appears, stop.**
 
 ### Step 2.3 — Apply
 
-- [ ] **Action.** `npm run db:migrate`
-- [ ] **Verify.**
+- [x] **Action.** `npm run db:migrate`
+- [x] **Verify.**
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c "\d creative_profiles" | grep -E "rejection_reason|reviewed_at|reviewed_by"
