@@ -79,7 +79,7 @@ apply unchanged. Three specific to this plan:
 |---|---|---|
 | 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 2 / 2 | Complete |
-| 3. Backend — read own profile | 0 / 2 | Not started |
+| 3. Backend — read own profile | 2 / 2 | Complete |
 | 4. Backend — update profile | 0 / 4 | Not started |
 | 5. Backend — change password | 0 / 2 | Not started |
 | 6. Backend — admin edited queue | 0 / 3 | Not started |
@@ -159,7 +159,7 @@ Column present; enum lists four values.
 
 ### Step 3.1 — Service
 
-- [ ] **Action.** Create `backend/src/modules/me/me.service.ts` with
+- [x] **Action.** Create `backend/src/modules/me/me.service.ts` with
   `getOwnProfile(userId)`.
 
 Returns the editable shape — which, unlike the public one, **does** include the
@@ -190,13 +190,13 @@ export interface OwnProfile {
 Returns `null` when the user has no creative profile — clients are not an error
 case.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 3.2 — Route
 
-- [ ] **Action.** Create `backend/src/modules/me/me.routes.ts`, mount at `/me`
+- [x] **Action.** Create `backend/src/modules/me/me.routes.ts`, mount at `/me`
   behind `requireAuth`, with `GET /profile`.
-- [ ] **Verify.** As a creative it returns the profile; as a client it returns
+- [x] **Verify.** As a creative it returns the profile; as a client it returns
   `{ "data": null }`, not a 404.
 
 ---
