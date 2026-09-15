@@ -78,7 +78,7 @@ when profile editing ships.
 |---|---|---|
 | 1. Schema | 4 / 4 | Complete |
 | 2. Migration | 3 / 3 | Complete |
-| 3. Admin bootstrap | 0 / 2 | Not started |
+| 3. Admin bootstrap | 2 / 2 | Complete |
 | 4. Backend — guard and service | 0 / 3 | Not started |
 | 5. Backend — routes | 0 / 3 | Not started |
 | 6. Frontend — data layer | 0 / 2 | Not started |
@@ -217,7 +217,7 @@ There is no admin, and only an admin can make one. Break the cycle from the CLI.
 
 ### Step 3.1 — Promotion script
 
-- [ ] **Action.** Create `backend/src/scripts/grant-admin.ts`:
+- [x] **Action.** Create `backend/src/scripts/grant-admin.ts`:
 
 ```ts
 import { eq } from 'drizzle-orm';
@@ -257,13 +257,13 @@ await closeDatabase();
 process.exit(0);
 ```
 
-- [ ] **Action.** Add to `backend/package.json` scripts:
+- [x] **Action.** Add to `backend/package.json` scripts:
 
 ```json
 "admin:grant": "tsx src/scripts/grant-admin.ts"
 ```
 
-- [ ] **Verify.** Register a test account through the app, then:
+- [x] **Verify.** Register a test account through the app, then:
 
 ```bash
 npm --prefix backend run admin:grant -- yourtestusername
@@ -273,10 +273,10 @@ Expected: `yourtestusername is now admin.`
 
 ### Step 3.2 — Document it
 
-- [ ] **Action.** Add `admin:grant` to the backend table in
+- [x] **Action.** Add `admin:grant` to the backend table in
   [`docs/reference/commands.md`](../reference/commands.md), noting that it is
   the only way to create the first administrator.
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 

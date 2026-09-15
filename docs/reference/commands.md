@@ -48,12 +48,22 @@ will re-run migrate and seed afterwards.
 | `db:studio` | Opens Drizzle Studio to browse data |
 | `db:seed` | Idempotent reference-data load, matched on slug |
 | `admin:reset-password` | Sets a new password for a username. Sprint 1 recovery path — verify identity out of band first |
+| `admin:grant` | Promotes an existing account to `admin`. **The only way to create the first administrator** |
 
 ---
 
 ## Admin
 
-Sprint 1 has no admin UI. Two operations are done by hand.
+Sprint 1 admin operations:
+
+**Grant administrator role**
+
+```bash
+npm --prefix backend run admin:grant -- <username>
+```
+
+The account must already exist (register through the app first). There is no
+UI for role management — this script is how the first admin is created.
 
 **Reset a forgotten password**
 
@@ -66,12 +76,12 @@ running this — email and phone are unverified in this sprint.
 
 **Publish a creative profile**
 
+Use the admin review queue at `/admin` once plan 0003 is running. Until then:
+
 ```sql
 UPDATE creative_profiles SET status = 'published', updated_at = now()
 WHERE slug = '<username>';
 ```
-
-A proper admin panel for review and publishing is a follow-up (plan 0003).
 
 ---
 
