@@ -24,8 +24,10 @@ export interface PublicUser {
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
   profileSlug: string | null;
   profileStatus: string | null;
+  rejectionReason: string | null;
 }
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
@@ -131,7 +133,7 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
         })),
       );
 
-      return toPublicUser(user, profile.slug, profile.status);
+      return toPublicUser(user, profile);
     });
   } catch (error) {
     throw translateUniqueViolation(error);
@@ -166,7 +168,7 @@ export async function authenticate(username: string, password: string): Promise<
     .where(eq(creativeProfiles.userId, user.id))
     .limit(1);
 
-  return toPublicUser(user, profile?.slug ?? null, profile?.status ?? null);
+  return toPublicUser(user, profile ?? null);
 }
 
 export async function getUserById(id: string): Promise<PublicUser | null> {
@@ -179,13 +181,12 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
     .where(eq(creativeProfiles.userId, user.id))
     .limit(1);
 
-  return toPublicUser(user, profile?.slug ?? null, profile?.status ?? null);
+  return toPublicUser(user, profile ?? null);
 }
 
 function toPublicUser(
   user: typeof users.$inferSelect,
-  profileSlug: string | null,
-  profileStatus: string | null,
+  profile: typeof creativeProfiles.$inferSelect | null,
 ): PublicUser {
   return {
     id: user.id,
@@ -193,8 +194,10 @@ function toPublicUser(
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-    profileSlug,
-    profileStatus,
+    role: user.role,
+    profileSlug: profile?.slug ?? null,
+    profileStatus: profile?.status ?? null,
+    rejectionReason: profile?.rejectionReason ?? null,
   };
 }
 

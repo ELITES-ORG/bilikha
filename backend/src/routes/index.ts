@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { healthRouter } from '../modules/health/health.routes.js';
 import { taxonomyRouter } from '../modules/taxonomy/taxonomy.routes.js';
 import { authRouter } from '../modules/auth/auth.routes.js';
+import { adminRouter } from '../modules/admin/admin.routes.js';
 
 /**
  * All application routes hang off /api/v1. Versioning the prefix from day one
@@ -12,4 +13,5 @@ export const apiRouter: Router = Router();
 
 apiRouter.use('/health', healthRouter);
 apiRouter.use('/auth', authRouter);
+apiRouter.use('/admin', adminRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

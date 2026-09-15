@@ -79,8 +79,8 @@ when profile editing ships.
 | 1. Schema | 4 / 4 | Complete |
 | 2. Migration | 3 / 3 | Complete |
 | 3. Admin bootstrap | 2 / 2 | Complete |
-| 4. Backend — guard and service | 0 / 3 | Not started |
-| 5. Backend — routes | 0 / 3 | Not started |
+| 4. Backend — guard and service | 3 / 3 | Complete |
+| 5. Backend — routes | 3 / 3 | Complete |
 | 6. Frontend — data layer | 0 / 2 | Not started |
 | 7. Frontend — review queue | 0 / 3 | Not started |
 | 8. Frontend — registrant status | 0 / 3 | Not started |
@@ -284,7 +284,7 @@ Expected: `yourtestusername is now admin.`
 
 ### Step 4.1 — requireAdmin
 
-- [ ] **Action.** Create `backend/src/middleware/require-admin.ts`:
+- [x] **Action.** Create `backend/src/middleware/require-admin.ts`:
 
 ```ts
 import type { RequestHandler } from 'express';
@@ -328,11 +328,11 @@ export const requireAdmin: RequestHandler = (req, _res, next) => {
 };
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.2 — Moderation service
 
-- [ ] **Action.** Create `backend/src/modules/admin/admin.service.ts`:
+- [x] **Action.** Create `backend/src/modules/admin/admin.service.ts`:
 
 ```ts
 import { and, count, desc, eq } from 'drizzle-orm';
@@ -504,11 +504,11 @@ export async function moderate(input: {
 > `rejected` status, add it to the enum in Phase 1 and change `nextStatus` —
 > but do not introduce a status the enum does not contain.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.3 — Request schemas
 
-- [ ] **Action.** Create `backend/src/modules/admin/admin.schema.ts`:
+- [x] **Action.** Create `backend/src/modules/admin/admin.schema.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -527,7 +527,7 @@ export const moderateSchema = z.object({
 });
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 
@@ -535,7 +535,7 @@ export const moderateSchema = z.object({
 
 ### Step 5.1 — Admin router
 
-- [ ] **Action.** Create `backend/src/modules/admin/admin.routes.ts`:
+- [x] **Action.** Create `backend/src/modules/admin/admin.routes.ts`:
 
 ```ts
 import { Router } from 'express';
@@ -584,27 +584,27 @@ adminRouter.post('/profiles/:id/moderate', async (req, res) => {
 Route order matters: `/profiles/counts` must be declared before
 `/profiles/:id`, or `counts` is captured as an id.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.2 — Mount it
 
-- [ ] **Action.** In `backend/src/routes/index.ts`:
+- [x] **Action.** In `backend/src/routes/index.ts`:
 
 ```ts
 apiRouter.use('/admin', adminRouter);
 ```
 
-- [ ] **Verify.** Signed out, `curl -s http://localhost:4000/api/v1/admin/profiles`
+- [x] **Verify.** Signed out, `curl -s http://localhost:4000/api/v1/admin/profiles`
   returns a `NOT_FOUND` error — not `UNAUTHORIZED`, and not a list.
 
 ### Step 5.3 — Expose status on /auth/me
 
 The registrant's own status has to reach the frontend.
 
-- [ ] **Action.** In `backend/src/modules/auth/auth.service.ts`, extend
+- [x] **Action.** In `backend/src/modules/auth/auth.service.ts`, extend
   `PublicUser` with `role`, `profileStatus`, and `rejectionReason`, and populate
   them in `toPublicUser` from the user row and profile row.
-- [ ] **Verify.** Log in and `curl` `/auth/me` with the session cookie. The
+- [x] **Verify.** Log in and `curl` `/auth/me` with the session cookie. The
   response contains `"role":"member"` and `"profileStatus":"pending_review"`.
 
 ---
