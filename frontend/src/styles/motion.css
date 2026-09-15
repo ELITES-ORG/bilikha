@@ -1,0 +1,184 @@
+/* ==========================================================================
+   Motion
+   --------------------------------------------------------------------------
+   Two rules govern everything here:
+
+   1. Motion is short. Anything a user triggers resolves in 90-200ms; only
+      entrances of large surfaces run longer. Slow UI animation reads as lag,
+      not polish.
+   2. Motion is compositor-only. Transforms and opacity exclusively — never
+      width, height, top or left, which force layout on every frame and stutter
+      on the budget Android hardware most of this audience is using.
+   ========================================================================== */
+
+@layer components {
+  /* ------------------------------------------------------------- keyframes */
+  @keyframes bk-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes bk-rise-in {
+    from { opacity: 0; transform: translate3d(0, 0.75rem, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-scale-in {
+    from { opacity: 0; transform: scale3d(0.97, 0.97, 1); }
+    to { opacity: 1; transform: scale3d(1, 1, 1); }
+  }
+
+  @keyframes bk-slide-in-right {
+    from { opacity: 0; transform: translate3d(0.75rem, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  /* Loading shimmer. A travelling highlight rather than a pulsing opacity —
+     pulsing reads as a broken element, travelling reads as work in progress. */
+  @keyframes bk-shimmer {
+    from { transform: translate3d(-100%, 0, 0); }
+    to { transform: translate3d(100%, 0, 0); }
+  }
+
+  @keyframes bk-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ------------------------------------------------------------- utilities */
+  .anim-fade-in {
+    animation: bk-fade-in var(--duration-slow) var(--ease-out-quart) both;
+  }
+
+  .anim-rise-in {
+    animation: bk-rise-in var(--duration-slower) var(--ease-out-expo) both;
+  }
+
+  .anim-scale-in {
+    animation: bk-scale-in var(--duration-base) var(--ease-out-expo) both;
+  }
+
+  .anim-slide-in-right {
+    animation: bk-slide-in-right var(--duration-slow) var(--ease-out-expo) both;
+  }
+
+  /* Stagger: set --i on each child to sequence a list entrance.
+     Capped so a long list never leaves the last row waiting. */
+  [style*='--i'] {
+    animation-delay: calc(min(var(--i, 0) * 45ms, 360ms));
+  }
+
+  /* --------------------------------------------------------- interactions */
+  /* Card lift. The shadow and the translate share one easing so they read as
+     a single gesture rather than two effects that happen to coincide. */
+  .interactive-lift {
+    transition:
+      transform var(--duration-base) var(--ease-out-quart),
+      box-shadow var(--duration-base) var(--ease-out-quart),
+      border-color var(--duration-base) var(--ease-out-quart);
+    will-change: transform;
+  }
+
+  @media (hover: hover) {
+    .interactive-lift:hover {
+      transform: translate3d(0, -2px, 0);
+    }
+  }
+
+  .interactive-lift:active {
+    transform: translate3d(0, 0, 0);
+    transition-duration: var(--duration-instant);
+  }
+
+  /* Press feedback for buttons. Subtle enough to feel physical, not bouncy. */
+  .interactive-press {
+    transition:
+      transform var(--duration-fast) var(--ease-out-quart),
+      background-color var(--duration-fast) var(--ease-out-quart),
+      border-color var(--duration-fast) var(--ease-out-quart),
+      color var(--duration-fast) var(--ease-out-quart),
+      box-shadow var(--duration-fast) var(--ease-out-quart);
+  }
+
+  .interactive-press:active:not(:disabled) {
+    transform: scale(0.978);
+  }
+
+  /* Link underline that grows from the left instead of appearing all at once. */
+  .link-underline {
+    position: relative;
+    text-decoration: none;
+  }
+
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.125em;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    opacity: 0.55;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+  }
+
+  .link-underline:hover::after,
+  .link-underline:focus-visible::after {
+    transform: scaleX(1);
+  }
+
+  /* Shimmer surface for skeletons. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-clay-200);
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 0.55),
+      transparent
+    );
+    animation: bk-shimmer 1.6s var(--ease-in-out-soft) infinite;
+  }
+
+  .anim-spin {
+    animation: bk-spin 0.7s linear infinite;
+  }
+
+  /* ------------------------------------------------------- reduced motion */
+  /* Honour the OS setting properly: cut movement, keep opacity changes so
+     state transitions remain perceptible rather than snapping. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .anim-fade-in,
+    .anim-rise-in,
+    .anim-scale-in,
+    .anim-slide-in-right {
+      animation: bk-fade-in 0.01ms both;
+    }
+
+    .interactive-lift:hover,
+    .interactive-press:active:not(:disabled) {
+      transform: none;
+    }
+
+    .skeleton::after {
+      display: none;
+    }
+  }
+}

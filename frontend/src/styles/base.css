@@ -1,0 +1,185 @@
+/* ==========================================================================
+   Element defaults
+   Sets the typographic and interaction baseline so components inherit sane
+   behaviour instead of restating it.
+   ========================================================================== */
+
+@layer base {
+  :root {
+    color-scheme: light;
+    /* Opsz is Fraunces' optical-size axis. Left at a text value here and
+       raised per display size in the .u-display utility. */
+    font-variant-ligatures: common-ligatures contextual;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    min-width: 0; /* stops flex/grid children from refusing to shrink */
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Offset for the sticky header when jumping to an anchor. */
+    scroll-padding-top: 5rem;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.6;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
+  }
+
+  /* Headings inherit the display face but never a size — size is always an
+     explicit decision at the call site, so nothing gets styled by accident. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One visible focus treatment everywhere. Two-tone so it stays legible on
+     both paper and saturated fills. */
+  :focus-visible {
+    outline: 2px solid var(--color-lawa-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: var(--color-lawa-100);
+    color: var(--color-lawa-900);
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-hairline);
+  }
+
+  /* Tabular figures wherever numbers are compared in a column. */
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+    letter-spacing: inherit;
+  }
+
+  button {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  /* Native placeholders default to a grey that fails contrast at small sizes. */
+  ::placeholder {
+    color: var(--color-ink-subtle);
+    opacity: 1;
+  }
+
+  /* Keep Chrome's autofill from repainting inputs pale yellow. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-ink);
+    box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  }
+
+  /* Slimmer, warm-toned scrollbars on the platforms that allow it. */
+  @supports (scrollbar-width: thin) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-clay-300) transparent;
+    }
+  }
+}
+
+@layer components {
+  /* Display type. Pushes Fraunces' optical-size axis above what the rendered
+     size would select automatically, which sharpens stroke contrast and
+     tightens the serifs — the reason to carry a display face at all. */
+  .u-display {
+    font-family: var(--font-display);
+    font-variation-settings: 'opsz' 48;
+  }
+
+  /* Eyebrow / kicker label above a heading. */
+  .u-eyebrow {
+    font-family: var(--font-sans);
+    font-size: var(--text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.046em;
+    text-transform: uppercase;
+    color: var(--color-ink-subtle);
+  }
+
+  /* Hairline rule that fades out — used instead of a hard full-width border
+     to separate sections without boxing the page in. */
+  .u-rule {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      var(--color-hairline-strong),
+      var(--color-hairline) 60%,
+      transparent
+    );
+  }
+
+  /* Skip link, visible only once focused. */
+  .u-skip-link {
+    position: absolute;
+    left: 50%;
+    top: 0.75rem;
+    transform: translate(-50%, -160%);
+    z-index: 100;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    transition: transform var(--duration-base) var(--ease-out-expo);
+  }
+
+  .u-skip-link:focus-visible {
+    transform: translate(-50%, 0);
+  }
+}

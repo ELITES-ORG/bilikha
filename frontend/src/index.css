@@ -1,0 +1,13 @@
+/* Variable fonts, weight axis only, self-hosted.
+   Fontsource splits by unicode-range, so a browser rendering Latin text pulls
+   roughly 35KB per family and ignores the rest. Self-hosting beats a font CDN
+   here: one less DNS lookup and TLS handshake on connections where that is the
+   dominant cost. */
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/archivo/wght.css';
+
+@import 'tailwindcss';
+
+@import './styles/theme.css';
+@import './styles/base.css';
+@import './styles/motion.css';

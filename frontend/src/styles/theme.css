@@ -1,0 +1,213 @@
+/* ==========================================================================
+   Bilikha — design tokens
+   --------------------------------------------------------------------------
+   Everything visual resolves to a token defined here. Components never carry
+   raw hex values, arbitrary pixel sizes, or one-off easings.
+
+   Colour is authored in OKLCH so that a ramp reads as evenly spaced to the eye
+   rather than evenly spaced in maths. Nudging lightness on any step keeps its
+   hue and saturation intact, which sRGB hex triplets cannot promise.
+
+   Palette rationale — "Abaca":
+     Neutrals carry a warm clay cast rather than a blue-grey one, so the UI
+     reads as paper instead of screen. Primary is a deep marine teal: calm,
+     institutional, and deliberately not the saturated indigo that every
+     framework ships as its default. Clay is the single decorative accent.
+   ========================================================================== */
+
+/* `static` emits every token to :root instead of only those Tailwind sees used
+   in a class name. A design system needs its tokens addressable from inline
+   styles, canvas code, and the style guide — tree-shaking them means
+   `var(--color-clay-950)` silently resolves to nothing. */
+@theme static {
+  /* ---------------------------------------------------------------- fonts */
+  --font-display: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Archivo Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+
+  /* ------------------------------------------------------------- neutrals */
+  /* Warm clay-tinted greys. Hue drifts slightly cooler as it darkens, which
+     is how real ink behaves and stops the darks from going muddy. */
+  --color-clay-50: oklch(0.985 0.0035 85);
+  --color-clay-100: oklch(0.967 0.0055 82);
+  --color-clay-200: oklch(0.928 0.0075 80);
+  --color-clay-300: oklch(0.872 0.0092 77);
+  --color-clay-400: oklch(0.724 0.0105 74);
+  --color-clay-500: oklch(0.592 0.0115 71);
+  --color-clay-600: oklch(0.482 0.0120 68);
+  --color-clay-700: oklch(0.392 0.0118 66);
+  --color-clay-800: oklch(0.302 0.0110 64);
+  --color-clay-900: oklch(0.232 0.0098 62);
+  --color-clay-950: oklch(0.162 0.0082 60);
+
+  /* --------------------------------------------------------------- primary */
+  /* "Lawa" — deep marine teal. Muted on purpose: chroma stays low so large
+     fills never vibrate, and the 600 step clears 4.5:1 on paper. */
+  --color-lawa-50: oklch(0.972 0.012 210);
+  --color-lawa-100: oklch(0.942 0.024 210);
+  --color-lawa-200: oklch(0.882 0.042 209);
+  --color-lawa-300: oklch(0.800 0.058 208);
+  --color-lawa-400: oklch(0.678 0.072 210);
+  --color-lawa-500: oklch(0.560 0.078 212);
+  --color-lawa-600: oklch(0.462 0.074 214);
+  --color-lawa-700: oklch(0.382 0.062 216);
+  --color-lawa-800: oklch(0.310 0.048 218);
+  --color-lawa-900: oklch(0.252 0.036 220);
+  --color-lawa-950: oklch(0.182 0.026 222);
+
+  /* ---------------------------------------------------------------- accent */
+  /* "Palayok" — fired earthenware. Decorative only: domain markers, active
+     indicators, editorial rules. Never a status colour. */
+  --color-palayok-50: oklch(0.968 0.018 52);
+  --color-palayok-100: oklch(0.938 0.038 50);
+  --color-palayok-200: oklch(0.880 0.068 48);
+  --color-palayok-300: oklch(0.806 0.098 46);
+  --color-palayok-400: oklch(0.716 0.126 44);
+  --color-palayok-500: oklch(0.644 0.138 42);
+  --color-palayok-600: oklch(0.566 0.132 40);
+  --color-palayok-700: oklch(0.472 0.110 38);
+  --color-palayok-800: oklch(0.386 0.088 37);
+  --color-palayok-900: oklch(0.318 0.070 36);
+
+  /* -------------------------------------------------------------- semantic */
+  /* Status hues sit far enough from both brand colours to stay unambiguous.
+     Rule: status is never signalled by colour alone — always an icon or a
+     label beside it. */
+  --color-success-50: oklch(0.960 0.026 152);
+  --color-success-100: oklch(0.918 0.052 152);
+  --color-success-500: oklch(0.612 0.118 150);
+  --color-success-600: oklch(0.520 0.104 150);
+  --color-success-700: oklch(0.432 0.086 150);
+
+  --color-warning-50: oklch(0.972 0.030 88);
+  --color-warning-100: oklch(0.938 0.062 87);
+  --color-warning-500: oklch(0.748 0.132 80);
+  --color-warning-600: oklch(0.652 0.124 74);
+  --color-warning-700: oklch(0.528 0.102 70);
+
+  --color-danger-50: oklch(0.962 0.018 22);
+  --color-danger-100: oklch(0.926 0.038 22);
+  --color-danger-500: oklch(0.602 0.176 24);
+  --color-danger-600: oklch(0.528 0.170 24);
+  --color-danger-700: oklch(0.444 0.142 24);
+
+  /* --------------------------------------------------------------- surface */
+  --color-paper: oklch(0.988 0.0035 85);
+  --color-surface: oklch(1 0 0);
+  --color-surface-sunken: oklch(0.968 0.0055 82);
+  --color-ink: oklch(0.212 0.0098 62);
+  --color-ink-muted: oklch(0.482 0.0120 68);
+  --color-ink-subtle: oklch(0.592 0.0115 71);
+  --color-hairline: oklch(0.912 0.0072 80);
+  --color-hairline-strong: oklch(0.858 0.0090 77);
+
+  /* ------------------------------------------------------------ type scale */
+  /* Tracking tightens and leading compresses as size grows. Skipping this is
+     the single clearest sign that type was never actually set. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.45;
+  --text-2xs--letter-spacing: 0.046em;
+  --text-2xs--font-weight: 600;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.5;
+  --text-xs--letter-spacing: 0.012em;
+
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.54;
+  --text-sm--letter-spacing: 0.006em;
+
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.6;
+  --text-base--letter-spacing: 0em;
+
+  --text-md: 1rem;
+  --text-md--line-height: 1.68;
+  --text-md--letter-spacing: -0.003em;
+
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.6;
+  --text-lg--letter-spacing: -0.007em;
+
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.42;
+  --text-xl--letter-spacing: -0.013em;
+
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.28;
+  --text-2xl--letter-spacing: -0.019em;
+
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.18;
+  --text-3xl--letter-spacing: -0.023em;
+
+  --text-4xl: 2.875rem;
+  --text-4xl--line-height: 1.11;
+  --text-4xl--letter-spacing: -0.027em;
+
+  --text-5xl: 3.75rem;
+  --text-5xl--line-height: 1.04;
+  --text-5xl--letter-spacing: -0.031em;
+
+  --text-6xl: 4.75rem;
+  --text-6xl--line-height: 0.98;
+  --text-6xl--letter-spacing: -0.035em;
+
+  /* ---------------------------------------------------------------- radius */
+  /* Radius is graded by element size. Uniform rounding on everything is the
+     fastest way to make an interface look untouched by a designer. */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* -------------------------------------------------------------- elevation */
+  /* Shadows are tinted with the ink hue, never neutral black — black alpha
+     over warm paper greys it out and reads cheap. */
+  --shadow-xs: 0 1px 2px oklch(0.212 0.0098 62 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.212 0.0098 62 / 0.05), 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.04);
+  --shadow-md: 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.05), 0 6px 12px -3px oklch(0.212 0.0098 62 / 0.06);
+  --shadow-lg: 0 4px 8px -2px oklch(0.212 0.0098 62 / 0.05), 0 14px 26px -6px oklch(0.212 0.0098 62 / 0.08);
+  --shadow-xl: 0 8px 16px -4px oklch(0.212 0.0098 62 / 0.06), 0 28px 48px -12px oklch(0.212 0.0098 62 / 0.10);
+  --shadow-inset-hairline: inset 0 0 0 1px oklch(0.212 0.0098 62 / 0.06);
+
+  /* ----------------------------------------------------------------- easing */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* --------------------------------------------------------------- content */
+  --container-prose: 68ch;
+}
+
+/* Motion timing lives outside @theme: Tailwind has no duration namespace, and
+   these are consumed by component CSS and arbitrary values alike. */
+:root {
+  --duration-instant: 90ms;
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 450ms;
+
+  /* Layout rhythm. Named so section spacing stays consistent across screens
+     instead of being re-guessed per page. */
+  --gutter: 1.25rem;
+  --section-gap: 4rem;
+  --stack-gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+    --section-gap: 5.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --gutter: 2.5rem;
+    --section-gap: 7rem;
+  }
+}

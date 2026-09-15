@@ -1,0 +1,159 @@
+# API reference
+
+Base URL: `/api/v1`
+
+The prefix is versioned from day one so a future mobile wrapper can ship against
+a stable contract — see [ADR 0012](../decisions/0012-versioned-api-prefix.md).
+
+> Maintained by hand while the surface is small. Once it stabilises, replace
+> this with a generated OpenAPI spec — hand-written API docs drift from the code
+> eventually, without exception.
+
+---
+
+## Conventions
+
+**Success** — always wrapped in `data`:
+
+```jsonc
+{ "data": { } }
+{ "data": [ ], "meta": { "page": 1, "limit": 20, "total": 134 } }
+```
+
+**Error** — one shape, produced centrally:
+
+```jsonc
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "No creative domain with slug \"nope\"",
+    "details": []
+  }
+}
+```
+
+| Code | Status | Meaning |
+|---|---|---|
+| `VALIDATION_ERROR` | 400 | Request failed schema validation. `details` lists `{ path, message }` per field |
+| `BAD_REQUEST` | 400 | Malformed request |
+| `UNAUTHORIZED` | 401 | Authentication required |
+| `FORBIDDEN` | 403 | Authenticated but not permitted |
+| `NOT_FOUND` | 404 | No such resource, or no such route |
+| `CONFLICT` | 409 | Violates a uniqueness or state constraint |
+| `INTERNAL_SERVER_ERROR` | 500 | Unhandled. `message` is generic in production |
+
+Timestamps are ISO 8601 UTC. IDs are UUID v4.
+
+---
+
+## Health
+
+### `GET /api/v1/health`
+
+Liveness — the process is up. Cheap; safe for a load balancer to poll often.
+
+```json
+{ "status": "ok", "uptime": 37.24, "timestamp": "2026-09-15T12:10:20.880Z" }
+```
+
+### `GET /api/v1/health/ready`
+
+Readiness — the process is up **and** can reach Postgres. Use this one as a
+deployment gate.
+
+`200`
+
+```json
+{ "status": "ready", "database": "connected" }
+```
+
+`503`
+
+```json
+{ "status": "not_ready", "database": "unreachable", "message": "..." }
+```
+
+Note this endpoint returns its failure shape directly rather than the standard
+error envelope — a readiness probe should describe itself, not raise.
+
+---
+
+## Taxonomy
+
+Reference data. Small, static, and requested on nearly every page.
+
+### `GET /api/v1/taxonomy/domains`
+
+All nine domains with their sub-domains nested, both ordered by `displayOrder`.
+Served in one round trip rather than as nested lookups.
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "c36524bd-…",
+      "slug": "audiovisual-media",
+      "name": "Audiovisual Media",
+      "description": null,
+      "displayOrder": 1,
+      "createdAt": "2026-09-15T12:09:33.526Z",
+      "updatedAt": "2026-09-15T12:09:33.526Z",
+      "subdomains": [
+        {
+          "id": "a229b84c-…",
+          "domainId": "c36524bd-…",
+          "slug": "music-composers",
+          "name": "Music Composers",
+          "displayOrder": 1,
+          "createdAt": "…",
+          "updatedAt": "…"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Currently returns 9 domains and 81 sub-domains.
+
+### `GET /api/v1/taxonomy/domains/:slug`
+
+One domain with its sub-domains. Same object shape as above.
+
+`404` when the slug does not exist.
+
+### `GET /api/v1/taxonomy/municipalities`
+
+The eight municipalities of Biliran, ordered by name.
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "632d7ee7-…",
+      "slug": "almeria",
+      "name": "Almeria",
+      "psgcCode": null,
+      "createdAt": "2026-09-15T12:09:33.526Z"
+    }
+  ]
+}
+```
+
+`psgcCode` is `null` until populated from the official PSA listing — deliberately
+not guessed.
+
+---
+
+## Not yet implemented
+
+Listed so the shape of the eventual surface is visible, and so nobody builds a
+parallel version:
+
+- **Auth** — phone OTP request and verify, session, logout
+- **Creative profiles** — list with filters and pagination, read by slug, create,
+  update, claim
+- **Organisations** — read, create, membership
+- **Inquiries** — send, list for a recipient, respond
+- **Search** — Postgres-native full-text plus fuzzy name matching
+- **Media** — portfolio upload, moderation queue
