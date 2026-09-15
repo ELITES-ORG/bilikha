@@ -39,12 +39,20 @@ export function SiteHeader() {
             </Link>
           )}
           {user && (
-            <Link
-              to="/inquiries"
-              className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-            >
-              Inquiries
-            </Link>
+            <>
+              <Link
+                to="/inquiries"
+                className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
+              >
+                Inquiries
+              </Link>
+              <Link
+                to="/account"
+                className="link-underline px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink"
+              >
+                Account
+              </Link>
+            </>
           )}
           {user?.role === 'admin' && (
             <Link

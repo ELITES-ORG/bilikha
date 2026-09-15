@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { queryClient } from '@/lib/query-client';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
+import { AccountPage } from '@/pages/account/AccountPage';
 import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HomePage } from '@/pages/HomePage';
@@ -13,6 +14,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage';
 import { SentInquiriesPage } from '@/pages/SentInquiriesPage';
 import { StyleGuidePage } from '@/pages/StyleGuidePage';
+import { RequireAuth } from '@/features/auth/RequireAuth';
 
 export default function App() {
   return (
@@ -24,6 +26,14 @@ export default function App() {
           <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/inquiries" element={<SentInquiriesPage />} />
+          <Route
+            path="/account"
+            element={
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
+            }
+          />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/success" element={<RegisterSuccessPage />} />
           <Route path="/login" element={<LoginPage />} />

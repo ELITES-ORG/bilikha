@@ -83,7 +83,7 @@ apply unchanged. Three specific to this plan:
 | 4. Backend — update profile | 4 / 4 | Complete |
 | 5. Backend — change password | 2 / 2 | Complete |
 | 6. Backend — admin edited queue | 3 / 3 | Complete |
-| 7. Frontend — account area | 0 / 4 | Not started |
+| 7. Frontend — account area | 4 / 4 | Complete |
 | 8. Frontend — resubmit and password | 0 / 3 | Not started |
 | 9. Verification | 0 / 5 | Not started |
 
@@ -353,21 +353,21 @@ been captured.
 
 ### Step 7.1 — Data layer
 
-- [ ] **Action.** Create `frontend/src/features/me/` with `types.ts` and
+- [x] **Action.** Create `frontend/src/features/me/` with `types.ts` and
   `api.ts`. The update mutation must invalidate both the `me` profile query and
   `authKeys.me`, since status may have changed.
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 7.2 — Account shell
 
-- [ ] **Action.** Create `frontend/src/pages/account/AccountPage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/account/AccountPage.tsx` at
   `/account`, behind `RequireAuth`, with sections for **Profile** and
   **Security**. Show Profile only when the user has a creative profile.
-- [ ] **Verify.** A client sees Security only, and no empty Profile section.
+- [x] **Verify.** A client sees Security only, and no empty Profile section.
 
 ### Step 7.3 — Profile editor
 
-- [ ] **Action.** Build the form: name fields, display name, bio with a
+- [x] **Action.** Build the form: name fields, display name, bio with a
   character counter, `SubdomainPicker` (reuse it), municipality and barangay
   selects, contact preference as a radio pair.
 
@@ -381,13 +381,13 @@ Requirements:
 - Disable save while unchanged
 - Field errors from `toFieldErrors`
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 7.4 — Route and navigation
 
-- [ ] **Action.** Add the route and an **Account** link in `SiteHeader` for any
+- [x] **Action.** Add the route and an **Account** link in `SiteHeader` for any
   signed-in user.
-- [ ] **Verify.** Present for both client and creative accounts.
+- [x] **Verify.** Present for both client and creative accounts.
 
 ---
 
