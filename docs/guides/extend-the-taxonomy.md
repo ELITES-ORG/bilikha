@@ -1,8 +1,7 @@
 # Extend the taxonomy
 
 The nine creative domains and their 81 sub-domains are **reference data**, not
-user-generated content. They come from DTI's material, which follows the RA
-11904 domain set.
+user-generated content. They follow the RA 11904 domain set.
 
 Source of truth: `backend/src/db/seed/taxonomy-data.ts`.
 Loaded by: `npm --prefix backend run db:seed`.
@@ -56,9 +55,9 @@ cannot find. That is an alias problem, not a taxonomy problem.
 
 Don't, without a conversation. The nine domains come from national legislation.
 Adding a tenth makes Bilikha's data incompatible with every other PCIDA registry
-and breaks any future reporting to DTI.
+and breaks any future statutory reporting.
 
-If DTI issues a revision, add it in `CREATIVE_DOMAINS` order — the array index
+If the statute is revised, add it in `CREATIVE_DOMAINS` order — the array index
 drives `displayOrder`, which the UI renders as the domain number.
 
 ## Aliases — the part that actually matters
@@ -88,7 +87,7 @@ fragments the directory.
 
 Also in `taxonomy-data.ts`. Biliran has eight; this list does not change. PSGC
 codes are deliberately `null` rather than guessed — populate them from the
-official PSA listing before any data exchange with DTI or the LGUs.
+official PSA listing before any external data exchange.
 
 ## Before you commit
 

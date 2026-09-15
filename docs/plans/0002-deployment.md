@@ -82,7 +82,7 @@ Know these before you promise anyone a demo.
 | **Render free has no shell or pre-deploy hook** | Migrations must run from the build command or your machine | Phase 3 uses the build command |
 
 **Before any stakeholder demo**, budget roughly $7/month for Render's starter
-instance. A DTI officer opening a link that hangs for a minute is the whole
+instance. Someone opening a link that hangs for a minute is the whole
 impression.
 
 ---

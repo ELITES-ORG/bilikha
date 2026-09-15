@@ -14,8 +14,8 @@ build of the creative dashboard. Once an app is in the Play Store, its consumers
 update on their own schedule, or never. A user on a three-month-old build still
 issues requests, and a breaking change strands them.
 
-DTI integrations are also plausible later — reporting, data exchange — and those
-consumers are entirely outside our release cycle.
+Third-party integrations are also plausible later — reporting, data exchange —
+and those consumers are entirely outside our release cycle.
 
 ## Decision
 

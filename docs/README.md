@@ -79,3 +79,4 @@ Different categories rot at different speeds. Treat them accordingly.
 - [Plan index](./plans/)
 - [0002 — Deployment (Vercel, Render, Supabase)](./plans/0002-deployment.md) — run first
 - [0001 — Registration and authentication](./plans/0001-registration-and-auth.md)
+- [0003 — Admin panel: registration moderation](./plans/0003-admin-moderation.md)

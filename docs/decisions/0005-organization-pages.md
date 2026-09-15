@@ -9,7 +9,7 @@ If creatives get public profile pages, the symmetric instinct is to give clients
 them too. Two things argue against symmetry.
 
 First, the client side is not homogeneous. Demand here is largely institutional
-— LGUs, DTI and DOT programmes, schools, festival committees, resorts — not
+— LGUs, government programmes, schools, festival committees, resorts — not
 individuals hiring a logo designer. Those two kinds of client have opposite
 needs.
 
@@ -59,13 +59,13 @@ boolean.
 get the multi-member account they actually need. A verified "Municipality of
 Caibiran" page is a legitimacy signal that makes creatives take an inquiry
 seriously. A public record of LGU creative spending emerges as a civic side
-effect, which is an easy story to tell DTI.
+effect.
 
 **Bad.** Three entities instead of two: more schema, more authorisation paths,
 and a registration flow that forks. Inquiries must be sent *as* a user or *as*
 an organisation, which is an extra choice at send time. The trust card needs its
 own visibility rules — visible to a recipient creative, to nobody else.
 
-**Open.** What evidence verifies an organisation — DTI, SEC, or CDA registration
-number, or an LGU endorsement? And who at DTI actually performs it? Unresolved,
-and [0008](./0008-publish-immediately-with-tiers.md) depends on the answer.
+**Open.** What evidence verifies an organisation — a DTI, SEC, or CDA business
+registration number, or an LGU endorsement? Verification is performed by our own
+administrators; see [plan 0003](../plans/0003-admin-moderation.md).

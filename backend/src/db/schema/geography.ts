@@ -11,7 +11,7 @@ export const municipalities = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull(),
     name: text('name').notNull(),
-    // PSGC code, kept for eventual reconciliation with PSA/DTI datasets.
+    // PSGC code, kept for eventual reconciliation with official PSA datasets.
     psgcCode: text('psgc_code'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

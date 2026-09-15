@@ -21,7 +21,7 @@ familiar pattern from GCash and every government service they have used.
 
 Phone verification also does double duty: it is the spam floor for a registry
 that publishes immediately, and it is the mechanism by which someone claims a
-profile imported from a DTI spreadsheet.
+profile imported from an existing spreadsheet.
 
 ## Decision
 

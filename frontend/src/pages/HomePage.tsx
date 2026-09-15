@@ -277,7 +277,7 @@ function SiteFooter() {
           </p>
         </div>
         <p className="text-xs text-clay-400">
-          Built with DTI Biliran under RA 11904
+          Creative domains follow RA 11904
         </p>
       </Container>
     </footer>

@@ -29,7 +29,7 @@ The nine RA 11904 domains. Seeded, never user-created.
 | `slug` | `text` | **Unique.** Permanent public identifier |
 | `name` | `text` | Display label. Freely editable |
 | `description` | `text` null | Unused so far |
-| `display_order` | `integer` | 1–9, mirrors DTI's numbering |
+| `display_order` | `integer` | 1–9, mirrors the statutory numbering |
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 

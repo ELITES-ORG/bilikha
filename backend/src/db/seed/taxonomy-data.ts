@@ -1,6 +1,5 @@
 /**
- * The nine creative domains and their sub-domains, transcribed from the DTI
- * Biliran "Who can join and register?" material, which follows the RA 11904
+ * The nine creative domains and their sub-domains, following the RA 11904
  * (Philippine Creative Industries Development Act) domain set.
  *
  * Slugs are permanent public identifiers. Labels may be edited freely; a slug
@@ -153,7 +152,7 @@ export const CREATIVE_DOMAINS: SeedDomain[] = [
 /**
  * The eight municipalities of Biliran. Naval is the provincial capital.
  * PSGC codes are intentionally omitted rather than guessed; populate them from
- * the official PSA listing before any data exchange with DTI or the LGUs.
+ * the official PSA listing before any external data exchange.
  */
 export const MUNICIPALITIES = [
   { slug: 'almeria', name: 'Almeria' },

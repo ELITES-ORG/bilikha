@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 
 /**
  * Reference data only. The nine domains and their sub-domains come from the
- * DTI / RA 11904 (Philippine Creative Industries Development Act) taxonomy, so
+ * RA 11904 (Philippine Creative Industries Development Act) domain set, so
  * they are seeded rather than user-generated. `slug` is the stable public
  * identifier used in URLs; renaming a label must never change a slug.
  */
@@ -14,8 +14,8 @@ export const creativeDomains = pgTable(
     slug: text('slug').notNull(),
     name: text('name').notNull(),
     description: text('description'),
-    // Mirrors the numbering used in the DTI material (1-9) so the UI can
-    // present domains in the order creatives already recognise.
+    // Mirrors the statutory numbering (1-9) so the UI presents domains in the
+    // order creatives already recognise.
     displayOrder: integer('display_order').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

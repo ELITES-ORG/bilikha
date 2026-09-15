@@ -5,7 +5,7 @@ connecting creative talent across Biliran with the clients, LGUs, and
 organisations that hire them.
 
 Built around the nine creative domains defined by RA 11904 (Philippine Creative
-Industries Development Act), as published by DTI Biliran.
+Industries Development Act).
 
 ---
 

@@ -41,8 +41,8 @@ raised. It remains the strongest technical answer if the team revisits this.
 Works, and can be added later without restructuring — but it is a permanently
 maintained bolt-on, and strictly worse than real SSR.
 
-**Accept the SPA and abandon SEO**, driving all traffic from DTI's Facebook
-page directly. Rejected: it gives up the discovery mechanism the product is
+**Accept the SPA and abandon SEO**, driving all traffic from social posts
+directly. Rejected: it gives up the discovery mechanism the product is
 built on.
 
 ## Consequences

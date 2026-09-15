@@ -74,7 +74,7 @@ than a schema change.
 - **Unverified email and phone are not trustworthy.** They must not be used for
   anything security-relevant — not password reset, not account recovery, not
   identity matching for profile claiming — until verified.
-- **Profile claiming from imported DTI lists does not work in this sprint.** It
+- **Profile claiming from imported lists does not work in this sprint.** It
   depended on matching a verified phone number. Import remains possible; claiming
   needs the verification flow.
 

@@ -32,7 +32,7 @@ Circus Performers, Virtual Reality Creators, Digital Streaming Platforms.
 
 ## 2. Demand is institutional, not consumer
 
-The repeat buyers are LGUs, DTI and DOT programmes, schools, festival
+The repeat buyers are LGUs, government programmes, schools, festival
 committees, and resorts — not individuals hiring a logo designer.
 
 **Consequences:**
@@ -64,7 +64,7 @@ committees, and resorts — not individuals hiring a logo designer.
 
 ## 4. Facebook is the distribution channel
 
-Most traffic will arrive from a DTI Biliran post or a Messenger share, often
+Most traffic will arrive from a shared post or a Messenger link, often
 inside Facebook's in-app browser.
 
 **Consequences:**
@@ -107,24 +107,29 @@ In a province of this size, social distance is short.
 - **Contact details are private by default.** Inquiries proxy rather than
   exposing a mobile number.
 
-## 7. It is a government-adjacent registry
+## 7. It is a public registry of named individuals
 
-DTI is the partner, and RA 11904 defines the taxonomy.
+Bilikha is a standalone product. There is no partner organisation and no
+official mandate. What it does have is a fixed taxonomy taken from legislation,
+and a database full of real people's personal data.
 
 **Consequences:**
 
-- **The nine domains are not ours to change.** Adding a tenth breaks
-  compatibility with every other PCIDA registry and any future DTI reporting.
+- **The nine domains are not ours to change.** They are the RA 11904 domain set.
+  Adding a tenth makes the data incompatible with every other registry using
+  that taxonomy and breaks any future statutory reporting.
 - **RA 10173 (Data Privacy Act) applies squarely** — explicit consent separate
   from terms, a plain-language privacy notice, per-field visibility, export and
-  deletion rights, an age gate, and likely NPC registration.
-- **DTI's existing lists are an asset.** Importing them as claimable profiles is
-  how the registry launches looking populated rather than empty — which directly
-  mitigates constraint 1.
-- Reputational risk for publishing unreviewed content is DTI's, not only ours.
-  Moderation policy is a joint decision.
-
----
+  deletion rights, an age gate, and likely NPC registration as a personal
+  information controller. This is law, and it does not depend on having a
+  government partner.
+- **Moderation risk is entirely ours.** Every profile published sits under this
+  product's name. There is no institution absorbing that risk, which is the
+  reason sprint 1 reviews before publishing rather than after.
+- **There is no external source of registrants.** An earlier version of this
+  plan assumed an existing list could be imported to launch non-empty. There is
+  none. Cold start has to be solved by direct recruitment, which makes
+  constraint 1 harder than it first appears.
 
 ## If you are about to
 

@@ -11,9 +11,9 @@
 
 ## Context
 
-A DTI-backed registry carries reputational risk for DTI if it publishes content
-nobody reviewed. The instinct is therefore to queue every registration for
-approval before it goes live.
+A registry that publishes profiles of named individuals carries reputational
+risk for whoever runs it. The instinct is therefore to queue every registration
+for approval before it goes live.
 
 Against that: the registry launches empty, and its central problem is thinness.
 If a registration drive produces 500 profiles that all sit invisible behind a
@@ -32,7 +32,7 @@ Publish immediately. Verification is a **tier**, not a gate.
 |---|---|---|
 | Unclaimed | Imported from an existing list, not yet confirmed | CSV import |
 | Registered | Phone verified | Automatic |
-| Verified | Identity or business confirmed by DTI/LGU | Manual, or vetted at an event |
+| Verified | Identity or business confirmed by a reviewer | Manual, through the admin panel |
 
 Verified profiles rank above Registered in search and browse, so the incentive
 to verify is structural rather than enforced.
@@ -48,8 +48,7 @@ That last point matters: images are the real risk surface, not text.
 
 ## Alternatives considered
 
-**Review everything before publishing.** Safest for DTI's reputation, and the
-fallback if they require it. Rejected as the default: it creates a backlog that
+**Review everything before publishing.** Safest, and the fallback position. Rejected as the default: it creates a backlog that
 scales with success, needs staffing that may not exist, and makes a registration
 drive feel like it failed.
 
@@ -67,8 +66,8 @@ government-backed registry offers over a Facebook group.
 registry looks populated at launch, especially combined with imported claimable
 profiles. Moderation load scales with reports rather than with registrations.
 
-**Bad, and it is a real risk.** Unreviewed content is publicly visible under
-DTI's name for some window. Impersonation is possible — someone could register
+**Bad, and it is a real risk.** Unreviewed content is publicly visible for some
+window. Impersonation is possible — someone could register
 as a well-known local artist — and is only caught by reports. The 24h image
 review needs an actual person; unstaffed, it is a policy that exists on paper
 only.
@@ -77,9 +76,11 @@ The tiers are meaningless if nobody performs verification. A registry where
 every profile is stuck at "Registered" forever has a tier system that signals
 nothing.
 
-**This is DTI's call, not ours.** The reputational risk is theirs. Present the
-tradeoff explicitly and take their answer; the fall-back position is
-text-live/images-held.
+**Decided in favour of review for sprint 1.** Without phone verification there
+is no spam floor, so profiles enter at `pending_review` and are published through
+the admin panel — see [plan 0003](../plans/0003-admin-moderation.md). Restore
+publish-on-registration when phone verification lands.
 
-**Open.** Who verifies, on what evidence, within what SLA, and how a rejected or
-disputed verification is appealed.
+**Open.** What evidence justifies the Verified tier, and how a rejected
+verification is appealed. Rejection reasons are shown to the registrant — see
+[plan 0003](../plans/0003-admin-moderation.md).
