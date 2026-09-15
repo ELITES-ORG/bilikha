@@ -4,6 +4,60 @@ Instructions for any AI agent or contributor working on Bilikha.
 
 ---
 
+## Start here — what to load before you work
+
+Load these in order. **Do not load the whole `docs/` tree** — it is ~20,000
+words and most of it is irrelevant to any single task. More context is not
+better context.
+
+### Always (~1,400 words)
+
+1. **This file** — the standing rules.
+2. **[`docs/explanation/constraints.md`](./docs/explanation/constraints.md)** —
+   seven realities of building for a province of 180,000 people. Several
+   decisions here look wrong by general web instinct and are correct. This is
+   what stops you "fixing" them.
+3. **Your plan** — [`docs/plans/`](./docs/plans/). The plan is the task. Read
+   its "Rules for whoever executes this" before step 1.
+
+### Then, by what you are touching
+
+**Backend**
+- [`docs/guides/add-an-api-endpoint.md`](./docs/guides/add-an-api-endpoint.md)
+- [`docs/guides/change-the-database-schema.md`](./docs/guides/change-the-database-schema.md)
+- [`docs/explanation/architecture.md`](./docs/explanation/architecture.md) — module boundaries
+
+**Frontend**
+- [`frontend/DESIGN.md`](./frontend/DESIGN.md) — tokens and rules. Not optional.
+- [`docs/guides/add-a-ui-component.md`](./docs/guides/add-a-ui-component.md)
+
+**The taxonomy**
+- [`docs/guides/extend-the-taxonomy.md`](./docs/guides/extend-the-taxonomy.md)
+
+### Read one existing file and copy its shape
+
+Faster and more reliable than any description of the conventions:
+
+| Writing | Imitate |
+|---|---|
+| A route module | `backend/src/modules/taxonomy/taxonomy.routes.ts` |
+| A schema table | `backend/src/db/schema/taxonomy.ts` |
+| Error handling | `backend/src/lib/http-error.ts` |
+| Env validation | `backend/src/config/env.ts` |
+| A UI primitive | `frontend/src/components/ui/Button.tsx` |
+| A feature's data layer | `frontend/src/features/taxonomy/api.ts` |
+| Design tokens | `frontend/src/styles/theme.css` |
+
+### Look up, do not preload
+
+- **[`docs/decisions/`](./docs/decisions/)** — ~6,700 words across 14 records.
+  Plans link the relevant ones inline; follow those links, do not read the set.
+- **[`docs/reference/`](./docs/reference/)** — API, data model, environment,
+  commands, deployments. Grep these when you need an exact name or value.
+- **Other plans** — irrelevant to yours unless it names them as a dependency.
+
+---
+
 ## Commit and pull request attribution — MUST
 
 **Never add AI attribution to a commit message or pull request description.**
