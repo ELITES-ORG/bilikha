@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, MapPin, Search, TriangleAlert } from 'lucide-react';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
+import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import {
   Badge,
@@ -25,6 +26,7 @@ export function HomePage() {
       </a>
 
       <SiteHeader />
+      <RegistrationStatusBanner />
 
       <main id="main">
         <Hero />
@@ -168,6 +170,14 @@ function SiteHeader() {
           >
             About
           </Link>
+          {user?.role === 'admin' && (
+            <Link
+              to="/admin"
+              className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
+            >
+              Admin
+            </Link>
+          )}
           {user ? (
             <>
               <span className="hidden px-2 text-sm text-ink-muted sm:inline">{user.username}</span>

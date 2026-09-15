@@ -4,8 +4,10 @@ export interface AuthUser {
   firstName: string;
   lastName: string;
   email: string;
+  role: string;
   profileSlug: string | null;
   profileStatus: string | null;
+  rejectionReason: string | null;
 }
 
 export interface RegisterPayload {

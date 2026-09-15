@@ -133,6 +133,7 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `birth_date` | `date` | Age gate (RA 10173) |
 | `account_type` | enum | `individual` \| `organization`; default `individual` |
 | `status` | enum | `active` \| `suspended` |
+| `role` | enum | `member` \| `admin`; default `member`. First admin via `admin:grant` |
 | `municipality_id` | `uuid` FK | `ON DELETE RESTRICT` |
 | `barangay_id` | `uuid` FK null | `ON DELETE SET NULL` |
 | `privacy_consent_at` / `terms_accepted_at` | `timestamptz` | |
@@ -157,7 +158,30 @@ Optional 1:1 public profile on a user. Sprint 1 creates rows at
 | `slug` | `text` | Unique public URL segment; seeded from username |
 | `display_name` / `bio` | `text` null | |
 | `status` | enum | `draft` \| `pending_review` \| `published` \| `suspended` |
+| `rejection_reason` | `text` null | Shown to the registrant after rejection |
+| `reviewed_at` | `timestamptz` null | |
+| `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
 | `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review queue.
+
+Rejection sets `status` to `suspended` and stores the reason — there is no
+separate `rejected` enum value in sprint 1.
+
+---
+
+## `moderation_actions`
+
+Append-only audit of every approve / reject / return-to-pending decision.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `profile_id` | `uuid` FK | `ON DELETE CASCADE` |
+| `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
+| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` |
+| `reason` | `text` null | Required for rejections |
+| `created_at` | `timestamptz` | |
 
 ---
 

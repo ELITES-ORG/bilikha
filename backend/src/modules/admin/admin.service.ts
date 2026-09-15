@@ -1,4 +1,4 @@
-import { count, desc, eq } from 'drizzle-orm';
+import { count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   creativeProfiles,
@@ -29,6 +29,10 @@ export async function listProfiles(options: {
       lastName: users.lastName,
       username: users.username,
       municipality: municipalities.name,
+      subdomainCount: sql<number>`(
+        select count(*)::int from creative_profile_subdomains cps
+        where cps.profile_id = ${creativeProfiles.id}
+      )`.mapWith(Number),
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))

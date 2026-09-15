@@ -1,21 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLogin } from '@/features/auth/api';
+import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Container, Input } from '@/components/ui';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const login = useLogin();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  const from =
-    (location.state as { from?: string } | null)?.from &&
-    typeof (location.state as { from?: string }).from === 'string'
-      ? (location.state as { from: string }).from
-      : '/';
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,7 +17,8 @@ export function LoginPage() {
 
     try {
       await login.mutateAsync({ username, password });
-      void navigate(from, { replace: true });
+      // Always land on home so the registration status banner is visible.
+      void navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed');
     }
@@ -41,6 +36,7 @@ export function LoginPage() {
           </ButtonLink>
         </Container>
       </header>
+      <RegistrationStatusBanner />
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">

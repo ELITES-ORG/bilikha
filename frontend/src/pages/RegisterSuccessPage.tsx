@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ButtonLink, Container } from '@/components/ui';
 
 export function RegisterSuccessPage() {
@@ -11,6 +12,7 @@ export function RegisterSuccessPage() {
           </Link>
         </Container>
       </header>
+      <RegistrationStatusBanner />
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">

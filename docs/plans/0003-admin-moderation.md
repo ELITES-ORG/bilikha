@@ -81,9 +81,9 @@ when profile editing ships.
 | 3. Admin bootstrap | 2 / 2 | Complete |
 | 4. Backend — guard and service | 3 / 3 | Complete |
 | 5. Backend — routes | 3 / 3 | Complete |
-| 6. Frontend — data layer | 0 / 2 | Not started |
-| 7. Frontend — review queue | 0 / 3 | Not started |
-| 8. Frontend — registrant status | 0 / 3 | Not started |
+| 6. Frontend — data layer | 2 / 2 | Complete |
+| 7. Frontend — review queue | 3 / 3 | Complete |
+| 8. Frontend — registrant status | 3 / 3 | Complete |
 | 9. Verification | 0 / 4 | Not started |
 
 ---

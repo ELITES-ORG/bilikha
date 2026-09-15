@@ -205,8 +205,10 @@ Request body:
     "firstName": "Juan",
     "lastName": "dela Cruz",
     "email": "juan@example.com",
+    "role": "member",
     "profileSlug": "juancruz",
-    "profileStatus": "pending_review"
+    "profileStatus": "pending_review",
+    "rejectionReason": null
   }
 }
 ```
@@ -238,9 +240,69 @@ Destroys the session and clears the cookie. `204` with an empty body.
 
 ### `GET /api/v1/auth/me`
 
-Requires a valid session. Returns the same public user shape as login.
+Requires a valid session. Returns the same public user shape as login, including
+`role`, `profileStatus`, and `rejectionReason` (set when a registration was
+rejected).
 
 `401` when unsigned-in or the session points at a deleted user.
+
+---
+
+## Admin
+
+All `/admin/*` routes require an administrator session. Non-admins and signed-out
+callers receive `404 NOT_FOUND` — the surface is default-deny and does not
+advertise itself.
+
+### `GET /api/v1/admin/profiles`
+
+Paginated review queue. Default `status=pending_review`, oldest first.
+
+Query: `status`, `page`, `limit` (max 50).
+
+```jsonc
+{
+  "data": [
+    {
+      "id": "…",
+      "slug": "juancruz",
+      "status": "pending_review",
+      "createdAt": "…",
+      "firstName": "Juan",
+      "lastName": "dela Cruz",
+      "username": "juancruz",
+      "municipality": "Naval",
+      "subdomainCount": 2
+    }
+  ],
+  "meta": { "page": 1, "limit": 20, "total": 3, "status": "pending_review" }
+}
+```
+
+### `GET /api/v1/admin/profiles/counts`
+
+Counts per status for the queue tabs.
+
+```jsonc
+{ "data": { "pending_review": 3, "published": 1, "suspended": 0 } }
+```
+
+### `GET /api/v1/admin/profiles/:id`
+
+Full registration for review: name, contact details, crafts, and moderation
+history (newest first). Contact fields are admin-only.
+
+### `POST /api/v1/admin/profiles/:id/moderate`
+
+```jsonc
+{ "action": "approved" }
+{ "action": "rejected", "reason": "Please use your real name." }
+{ "action": "returned_to_pending" }
+```
+
+Rejection requires a non-empty `reason`. Each decision writes a
+`moderation_actions` row in the same transaction. Rejection sets profile status
+to `suspended` and stores the reason for the registrant banner.
 
 ---
 
