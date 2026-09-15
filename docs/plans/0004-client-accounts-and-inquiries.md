@@ -78,7 +78,7 @@ card, at a fraction of the cost.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Schema | 3 / 3 | Complete |
-| 2. Migration | 0 / 2 | Not started |
+| 2. Migration | 2 / 2 | Complete |
 | 3. Backend — public profiles | 0 / 3 | Not started |
 | 4. Backend — client registration | 0 / 3 | Not started |
 | 5. Backend — inquiries | 0 / 4 | Not started |
@@ -188,16 +188,16 @@ A creative's contact details stay private until they respond to an inquiry.
 
 ### Step 2.1 — Generate and read
 
-- [ ] **Action.** `npm --prefix backend run db:generate`, then open the file and
+- [x] **Action.** `npm --prefix backend run db:generate`, then open the file and
   read every line.
-- [ ] **Verify.** `CREATE TYPE inquiry_status`, `CREATE TABLE inquiries`, three
+- [x] **Verify.** `CREATE TYPE inquiry_status`, `CREATE TABLE inquiries`, three
   indexes, and one added column on `creative_profiles`. **Stop if any `DROP`
   appears.**
 
 ### Step 2.2 — Apply
 
-- [ ] **Action.** `npm run db:migrate`
-- [ ] **Verify.**
+- [x] **Action.** `npm run db:migrate`
+- [x] **Verify.**
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c "\d inquiries"
