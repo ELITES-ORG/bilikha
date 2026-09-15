@@ -1,10 +1,12 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, MapPin, Search, TriangleAlert } from 'lucide-react';
+import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import {
   Badge,
   Button,
+  ButtonLink,
   Container,
   EmptyState,
   Input,
@@ -142,6 +144,9 @@ export function HomePage() {
 }
 
 function SiteHeader() {
+  const { data: user } = useCurrentUser();
+  const logout = useLogout();
+
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-sm">
       <Container width="wide" className="flex h-16 items-center justify-between gap-6">
@@ -163,9 +168,29 @@ function SiteHeader() {
           >
             About
           </Link>
-          <Button size="sm" className="ml-1">
-            Register
-          </Button>
+          {user ? (
+            <>
+              <span className="hidden px-2 text-sm text-ink-muted sm:inline">{user.username}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ml-1"
+                loading={logout.isPending}
+                onClick={() => void logout.mutateAsync()}
+              >
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <>
+              <ButtonLink to="/login" variant="ghost" size="sm" className="ml-1">
+                Sign in
+              </ButtonLink>
+              <ButtonLink to="/register" size="sm">
+                Register
+              </ButtonLink>
+            </>
+          )}
         </nav>
       </Container>
     </header>

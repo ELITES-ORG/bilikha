@@ -22,6 +22,8 @@ confusing runtime error inside a request handler.
 | `DATABASE_URL` | **yes** | — | Full `postgresql://` connection string. No default on purpose — a silent fallback to localhost in production is worse than a crash |
 | `CORS_ORIGINS` | no | `http://localhost:5173` | Comma-separated. Parsed into an array. **Add the deployed frontend origin before going live** |
 | `LOG_LEVEL` | no | `info` | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` |
+| `SESSION_SECRET` | **yes** | — | Min 32 characters. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `SESSION_TTL_DAYS` | no | `30` | Session cookie and store TTL in days |
 
 Local default:
 
@@ -31,6 +33,8 @@ PORT=4000
 DATABASE_URL=postgresql://bilikha:bilikha@localhost:5432/bilikha
 CORS_ORIGINS=http://localhost:5173
 LOG_LEVEL=debug
+SESSION_SECRET=replace-me-with-64-hex-characters-minimum-32-chars
+SESSION_TTL_DAYS=30
 ```
 
 ### Production notes

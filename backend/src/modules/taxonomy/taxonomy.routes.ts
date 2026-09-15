@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import { creativeDomains, creativeSubdomains, municipalities } from '../../db/schema/index.js';
+import {
+  barangays,
+  creativeDomains,
+  creativeSubdomains,
+  municipalities,
+} from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 
 export const taxonomyRouter: Router = Router();
@@ -43,5 +48,25 @@ taxonomyRouter.get('/domains/:slug', async (req, res) => {
 
 taxonomyRouter.get('/municipalities', async (_req, res) => {
   const rows = await db.select().from(municipalities).orderBy(asc(municipalities.name));
+  res.json({ data: rows });
+});
+
+taxonomyRouter.get('/municipalities/:slug/barangays', async (req, res) => {
+  const [municipality] = await db
+    .select()
+    .from(municipalities)
+    .where(eq(municipalities.slug, req.params.slug))
+    .limit(1);
+
+  if (!municipality) {
+    throw AppError.notFound(`No municipality with slug "${req.params.slug}"`);
+  }
+
+  const rows = await db
+    .select({ id: barangays.id, slug: barangays.slug, name: barangays.name })
+    .from(barangays)
+    .where(eq(barangays.municipalityId, municipality.id))
+    .orderBy(asc(barangays.name));
+
   res.json({ data: rows });
 });

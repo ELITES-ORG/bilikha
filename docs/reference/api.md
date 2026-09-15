@@ -143,6 +143,105 @@ The eight municipalities of Biliran, ordered by name.
 `psgcCode` is `null` until populated from the official PSA listing — deliberately
 not guessed.
 
+### `GET /api/v1/taxonomy/municipalities/:slug/barangays`
+
+Barangays for one municipality, ordered by name. Returns an empty array when
+the PSA list has not been loaded yet — not an error.
+
+```jsonc
+{
+  "data": [
+    { "id": "…", "slug": "poblacion", "name": "Poblacion" }
+  ]
+}
+```
+
+`404` when the municipality slug does not exist.
+
+---
+
+## Auth
+
+Username and password. Sessions are server-side in Postgres, carried by an
+httpOnly cookie named `bilikha.sid`. Email and phone are collected but
+**unverified** in sprint 1 — contact details only.
+
+### `POST /api/v1/auth/register`
+
+Creates a user, a creative profile in `pending_review`, and the selected
+sub-domain links (1–5, one primary). Signs the new user in. Rate limited to
+5 attempts per IP per hour.
+
+Request body:
+
+```jsonc
+{
+  "firstName": "Juan",
+  "middleName": "Santos",       // optional
+  "lastName": "dela Cruz",
+  "suffix": "Jr.",              // optional
+  "username": "juancruz",
+  "email": "juan@example.com",
+  "phone": "09171234567",
+  "birthDate": "1995-04-12",
+  "municipalitySlug": "naval",
+  "barangaySlug": "poblacion",  // optional; omit while the list is empty
+  "password": "correct horse battery",
+  "confirmPassword": "correct horse battery",
+  "subdomainSlugs": ["photographers", "filmmakers"],
+  "primarySubdomainSlug": "photographers",
+  "privacyConsent": true,
+  "termsAccepted": true
+}
+```
+
+`201`
+
+```jsonc
+{
+  "data": {
+    "id": "…",
+    "username": "juancruz",
+    "firstName": "Juan",
+    "lastName": "dela Cruz",
+    "email": "juan@example.com",
+    "profileSlug": "juancruz",
+    "profileStatus": "pending_review"
+  }
+}
+```
+
+| Status | When |
+|---|---|
+| `400` | Validation failed, or unknown municipality / sub-domain |
+| `409` | Username, email, or phone already taken; or reserved username |
+| `429` | Rate limited |
+
+### `POST /api/v1/auth/login`
+
+```jsonc
+{ "username": "juancruz", "password": "correct horse battery" }
+```
+
+`200` — same `data` shape as register. Rate limited to 10 failed attempts per
+IP per 15 minutes (`skipSuccessfulRequests`).
+
+| Status | When |
+|---|---|
+| `401` | Incorrect username or password |
+| `403` | Account suspended |
+| `429` | Rate limited |
+
+### `POST /api/v1/auth/logout`
+
+Destroys the session and clears the cookie. `204` with an empty body.
+
+### `GET /api/v1/auth/me`
+
+Requires a valid session. Returns the same public user shape as login.
+
+`401` when unsigned-in or the session points at a deleted user.
+
 ---
 
 ## Not yet implemented
@@ -150,10 +249,11 @@ not guessed.
 Listed so the shape of the eventual surface is visible, and so nobody builds a
 parallel version:
 
-- **Auth** — phone OTP request and verify, session, logout
 - **Creative profiles** — list with filters and pagination, read by slug, create,
   update, claim
 - **Organisations** — read, create, membership
 - **Inquiries** — send, list for a recipient, respond
 - **Search** — Postgres-native full-text plus fuzzy name matching
 - **Media** — portfolio upload, moderation queue
+- **Self-service password reset / phone verification** — deferred until an SMS
+  gateway is available (ADR 0013)

@@ -46,3 +46,23 @@ export function useMunicipalities() {
     staleTime: Infinity,
   });
 }
+
+export interface Barangay {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export function useBarangays(municipalitySlug: string | undefined) {
+  return useQuery({
+    queryKey: [...taxonomyKeys.all, 'barangays', municipalitySlug],
+    queryFn: async (): Promise<Barangay[]> => {
+      const { data } = await apiClient.get<{ data: Barangay[] }>(
+        `/taxonomy/municipalities/${municipalitySlug}/barangays`,
+      );
+      return data.data;
+    },
+    enabled: Boolean(municipalitySlug),
+    staleTime: Infinity,
+  });
+}

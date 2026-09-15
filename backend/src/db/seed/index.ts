@@ -1,6 +1,7 @@
-import { db, closeDatabase } from '../index.js';
+import { db, closeDatabase, type Database } from '../index.js';
 import { creativeDomains, creativeSubdomains, municipalities } from '../schema/index.js';
 import { logger } from '../../lib/logger.js';
+import { seedBarangays } from './barangays.js';
 import { CREATIVE_DOMAINS, MUNICIPALITIES } from './taxonomy-data.js';
 
 /**
@@ -22,6 +23,9 @@ async function seed(): Promise<void> {
         });
     }
     logger.info({ count: MUNICIPALITIES.length }, 'Municipalities seeded');
+
+    const barangayCount = await seedBarangays(tx as unknown as Database);
+    logger.info({ count: barangayCount }, 'Barangays seeded');
 
     let subdomainCount = 0;
 

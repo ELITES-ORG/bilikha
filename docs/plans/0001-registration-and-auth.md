@@ -1,6 +1,6 @@
 # 0001. Registration and authentication
 
-- **Status:** Ready
+- **Status:** Complete
 - **Related:** [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [ADR 0014](../decisions/0014-modular-monolith-architecture.md) ·
   [ADR 0004](../decisions/0004-unified-account-model.md) ·
@@ -97,18 +97,18 @@ text. **The plan is not blocked by this** — but obtain the data before launch.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Dependencies | 0 / 2 | Not started |
-| 2. Database schema | 0 / 5 | Not started |
-| 3. Migration and barangay seed | 0 / 4 | Not started |
-| 4. Password and session infrastructure | 0 / 5 | Not started |
-| 5. Auth module | 0 / 5 | Not started |
-| 6. Supporting endpoints | 0 / 2 | Not started |
-| 7. Security hardening | 0 / 4 | Not started |
-| 8. Frontend auth plumbing | 0 / 4 | Not started |
-| 9. Registration page | 0 / 4 | Not started |
-| 10. Login page and guard | 0 / 3 | Not started |
-| 11. Admin tooling | 0 / 2 | Not started |
-| 12. End-to-end verification | 0 / 4 | Not started |
+| 1. Dependencies | 2 / 2 | Complete |
+| 2. Database schema | 5 / 5 | Complete |
+| 3. Migration and barangay seed | 4 / 4 | Complete |
+| 4. Password and session infrastructure | 5 / 5 | Complete |
+| 5. Auth module | 5 / 5 | Complete |
+| 6. Supporting endpoints | 2 / 2 | Complete |
+| 7. Security hardening | 4 / 4 | Complete |
+| 8. Frontend auth plumbing | 4 / 4 | Complete |
+| 9. Registration page | 4 / 4 | Complete |
+| 10. Login page and guard | 3 / 3 | Complete |
+| 11. Admin tooling | 2 / 2 | Complete |
+| 12. End-to-end verification | 3 / 4 | API verified; browser smoke remains |
 
 ---
 
@@ -116,7 +116,7 @@ text. **The plan is not blocked by this** — but obtain the data before launch.
 
 ### Step 1.1 — Install backend dependencies
 
-- [ ] **Action.** From the repo root:
+- [x] **Action.** From the repo root:
 
 ```bash
 npm --prefix backend install @node-rs/argon2 express-session express-rate-limit
@@ -128,7 +128,7 @@ installing `connect-pg-simple`: it depends on the `pg` driver, which would add a
 second Postgres driver and connection pool alongside `postgres.js`. Phase 4
 builds a small Drizzle-backed session store instead.
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 node -e "require('@node-rs/argon2');console.log('argon2 ok')"
@@ -138,8 +138,8 @@ Expected: `argon2 ok`
 
 ### Step 1.2 — Confirm nothing broke
 
-- [ ] **Action.** `npm run typecheck`
-- [ ] **Verify.** Exit code 0, no output beyond the script banners.
+- [x] **Action.** `npm run typecheck`
+- [x] **Verify.** Exit code 0, no output beyond the script banners.
 
 ---
 
@@ -150,7 +150,7 @@ Follows the conventions in
 
 ### Step 2.1 — Add `barangays` to the geography schema
 
-- [ ] **Action.** Append to `backend/src/db/schema/geography.ts`:
+- [x] **Action.** Append to `backend/src/db/schema/geography.ts`:
 
 ```ts
 import { index } from 'drizzle-orm/pg-core';
@@ -186,11 +186,11 @@ export type Barangay = typeof barangays.$inferSelect;
 Add `index` to the existing `drizzle-orm/pg-core` import rather than writing a
 second import statement.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.2 — Create the users schema
 
-- [ ] **Action.** Create `backend/src/db/schema/users.ts`:
+- [x] **Action.** Create `backend/src/db/schema/users.ts`:
 
 ```ts
 import {
@@ -269,11 +269,11 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.3 — Create the profiles schema
 
-- [ ] **Action.** Create `backend/src/db/schema/profiles.ts`:
+- [x] **Action.** Create `backend/src/db/schema/profiles.ts`:
 
 ```ts
 import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
@@ -359,11 +359,11 @@ export const creativeProfileSubdomainsRelations = relations(
 export type CreativeProfile = typeof creativeProfiles.$inferSelect;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.4 — Create the sessions schema
 
-- [ ] **Action.** Create `backend/src/db/schema/sessions.ts`:
+- [x] **Action.** Create `backend/src/db/schema/sessions.ts`:
 
 ```ts
 import { pgTable, text, timestamp, index } from 'drizzle-orm/pg-core';
@@ -384,11 +384,11 @@ export const sessions = pgTable(
 );
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.5 — Export the new schemas
 
-- [ ] **Action.** Replace `backend/src/db/schema/index.ts` with:
+- [x] **Action.** Replace `backend/src/db/schema/index.ts` with:
 
 ```ts
 export * from './taxonomy.js';
@@ -398,7 +398,7 @@ export * from './profiles.js';
 export * from './sessions.js';
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 
@@ -406,15 +406,15 @@ export * from './sessions.js';
 
 ### Step 3.1 — Generate the migration
 
-- [ ] **Action.** `npm --prefix backend run db:generate`
-- [ ] **Verify.** Output names a new file in `backend/drizzle/`. It should report
+- [x] **Action.** `npm --prefix backend run db:generate`
+- [x] **Verify.** Output names a new file in `backend/drizzle/`. It should report
   5 new tables: `barangays`, `users`, `creative_profiles`,
   `creative_profile_subdomains`, `sessions`.
 
 ### Step 3.2 — Read the generated SQL
 
-- [ ] **Action.** Open the new `backend/drizzle/NNNN_*.sql` and read every line.
-- [ ] **Verify.** Confirm all of the following. **If any `DROP TABLE` or
+- [x] **Action.** Open the new `backend/drizzle/NNNN_*.sql` and read every line.
+- [x] **Verify.** Confirm all of the following. **If any `DROP TABLE` or
   `DROP COLUMN` appears, stop** — something is wrong.
   - `CREATE TYPE` for `account_type`, `user_status`, `profile_status`
   - `CREATE TABLE` for the five tables
@@ -423,8 +423,8 @@ export * from './sessions.js';
 
 ### Step 3.3 — Apply the migration
 
-- [ ] **Action.** `npm run db:migrate`
-- [ ] **Verify.**
+- [x] **Action.** `npm run db:migrate`
+- [x] **Verify.**
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c "\dt"
@@ -437,7 +437,7 @@ Postgres `NOTICE` lines about the `drizzle` schema already existing are normal.
 
 ### Step 3.4 — Add the barangay seed loader
 
-- [ ] **Action.** Create `backend/src/db/seed/barangays.ts`:
+- [x] **Action.** Create `backend/src/db/seed/barangays.ts`:
 
 ```ts
 import { existsSync, readFileSync } from 'node:fs';
@@ -515,7 +515,7 @@ export async function seedBarangays(tx: Database): Promise<number> {
 export { eq };
 ```
 
-- [ ] **Action.** In `backend/src/db/seed/index.ts`, import `seedBarangays` and
+- [x] **Action.** In `backend/src/db/seed/index.ts`, import `seedBarangays` and
   call it inside the existing transaction, after municipalities are seeded:
 
 ```ts
@@ -523,7 +523,7 @@ const barangayCount = await seedBarangays(tx as unknown as Database);
 logger.info({ count: barangayCount }, 'Barangays seeded');
 ```
 
-- [ ] **Verify.** `npm run db:seed` — expect the existing counts plus either
+- [x] **Verify.** `npm run db:seed` — expect the existing counts plus either
   `Barangays seeded count: 0` with the warning, or a real count if the CSV
   exists. Exit code 0 either way.
 
@@ -533,7 +533,7 @@ logger.info({ count: barangayCount }, 'Barangays seeded');
 
 ### Step 4.1 — Password hashing
 
-- [ ] **Action.** Create `backend/src/lib/password.ts`:
+- [x] **Action.** Create `backend/src/lib/password.ts`:
 
 ```ts
 import { hash, verify } from '@node-rs/argon2';
@@ -559,7 +559,7 @@ export async function verifyPassword(storedHash: string, plain: string): Promise
 }
 ```
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 cd backend && npx tsx -e "import {hashPassword,verifyPassword} from './src/lib/password.ts';const h=await hashPassword('correct horse');console.log(h.startsWith('\$argon2id\$'));console.log(await verifyPassword(h,'correct horse'));console.log(await verifyPassword(h,'wrong'))"
@@ -569,7 +569,7 @@ Expected three lines: `true`, `true`, `false`.
 
 ### Step 4.2 — Username normalisation and reserved words
 
-- [ ] **Action.** Create `backend/src/lib/username.ts`:
+- [x] **Action.** Create `backend/src/lib/username.ts`:
 
 ```ts
 /**
@@ -595,11 +595,11 @@ export function isReservedUsername(raw: string): boolean {
 }
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.3 — Phone and email normalisation
 
-- [ ] **Action.** Create `backend/src/lib/contact.ts`:
+- [x] **Action.** Create `backend/src/lib/contact.ts`:
 
 ```ts
 import { AppError } from './http-error.js';
@@ -626,7 +626,7 @@ export function normalizeEmail(raw: string): string {
 }
 ```
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 cd backend && npx tsx -e "import {normalizePhone} from './src/lib/contact.ts';for(const n of ['09171234567','+63 917 123 4567','639171234567'])console.log(normalizePhone(n))"
@@ -636,7 +636,7 @@ Expected: `+639171234567` three times.
 
 ### Step 4.4 — Session store
 
-- [ ] **Action.** Create `backend/src/lib/session-store.ts`:
+- [x] **Action.** Create `backend/src/lib/session-store.ts`:
 
 ```ts
 import { Store, type SessionData } from 'express-session';
@@ -748,11 +748,11 @@ export class DrizzleSessionStore extends Store {
 }
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 4.5 — Session typing and wiring
 
-- [ ] **Action.** Create `backend/src/types/session.d.ts`:
+- [x] **Action.** Create `backend/src/types/session.d.ts`:
 
 ```ts
 import 'express-session';
@@ -764,7 +764,7 @@ declare module 'express-session' {
 }
 ```
 
-- [ ] **Action.** Add to the zod schema in `backend/src/config/env.ts`, inside
+- [x] **Action.** Add to the zod schema in `backend/src/config/env.ts`, inside
   `envSchema`:
 
 ```ts
@@ -772,7 +772,7 @@ declare module 'express-session' {
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
 ```
 
-- [ ] **Action.** Append to **both** `backend/.env.example` and `backend/.env`:
+- [x] **Action.** Append to **both** `backend/.env.example` and `backend/.env`:
 
 ```bash
 # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -782,7 +782,7 @@ SESSION_TTL_DAYS=30
 
 For `.env`, generate a real value with the command in the comment.
 
-- [ ] **Action.** In `backend/src/app.ts`, add the imports and register the
+- [x] **Action.** In `backend/src/app.ts`, add the imports and register the
   session middleware **after** `express.urlencoded` and **before**
   `pinoHttp`:
 
@@ -818,7 +818,7 @@ import { isProduction } from './config/env.js';
 > the cookie becomes cross-site and Safari will drop it. Do not "fix" this to
 > `none` without re-reading that page.
 
-- [ ] **Verify.** `npm run typecheck` exits 0, then `npm run dev:api` starts
+- [x] **Verify.** `npm run typecheck` exits 0, then `npm run dev:api` starts
   without error and logs `Bilikha API listening`. Stop it afterwards.
 
 ---
@@ -830,7 +830,7 @@ HTTP, services do logic.
 
 ### Step 5.1 — Validation schemas
 
-- [ ] **Action.** Create `backend/src/modules/auth/auth.schema.ts`:
+- [x] **Action.** Create `backend/src/modules/auth/auth.schema.ts`:
 
 ```ts
 import { z } from 'zod';
@@ -930,11 +930,11 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.2 — Auth service
 
-- [ ] **Action.** Create `backend/src/modules/auth/auth.service.ts`:
+- [x] **Action.** Create `backend/src/modules/auth/auth.service.ts`:
 
 ```ts
 import { and, eq, inArray } from 'drizzle-orm';
@@ -1158,11 +1158,11 @@ function translateUniqueViolation(error: unknown): unknown {
 }
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.3 — Require-auth middleware
 
-- [ ] **Action.** Create `backend/src/middleware/require-auth.ts`:
+- [x] **Action.** Create `backend/src/middleware/require-auth.ts`:
 
 ```ts
 import type { RequestHandler } from 'express';
@@ -1177,11 +1177,11 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
 };
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.4 — Auth routes
 
-- [ ] **Action.** Create `backend/src/modules/auth/auth.routes.ts`:
+- [x] **Action.** Create `backend/src/modules/auth/auth.routes.ts`:
 
 ```ts
 import { Router } from 'express';
@@ -1237,17 +1237,17 @@ authRouter.get('/me', requireAuth, async (req, res) => {
 });
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 5.5 — Mount the router
 
-- [ ] **Action.** In `backend/src/routes/index.ts`, import `authRouter` and add:
+- [x] **Action.** In `backend/src/routes/index.ts`, import `authRouter` and add:
 
 ```ts
 apiRouter.use('/auth', authRouter);
 ```
 
-- [ ] **Verify.** Start the API, then:
+- [x] **Verify.** Start the API, then:
 
 ```bash
 curl -s -X POST http://localhost:4000/api/v1/auth/login \
@@ -1264,7 +1264,7 @@ The registration form needs barangays and the sub-domain list.
 
 ### Step 6.1 — Barangays by municipality
 
-- [ ] **Action.** Add to `backend/src/modules/taxonomy/taxonomy.routes.ts`:
+- [x] **Action.** Add to `backend/src/modules/taxonomy/taxonomy.routes.ts`:
 
 ```ts
 taxonomyRouter.get('/municipalities/:slug/barangays', async (req, res) => {
@@ -1290,7 +1290,7 @@ taxonomyRouter.get('/municipalities/:slug/barangays', async (req, res) => {
 
 Add `barangays` to the schema import at the top of the file.
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 curl -s http://localhost:4000/api/v1/taxonomy/municipalities/naval/barangays
@@ -1300,9 +1300,9 @@ Expected: `{"data":[]}` while the CSV is absent — an empty array, not an error
 
 ### Step 6.2 — Update the API reference
 
-- [ ] **Action.** Add all four `/auth` endpoints and the barangays endpoint to
+- [x] **Action.** Add all four `/auth` endpoints and the barangays endpoint to
   [`docs/reference/api.md`](../reference/api.md), matching the existing format.
-- [ ] **Verify.** Every implemented endpoint appears in that file.
+- [x] **Verify.** Every implemented endpoint appears in that file.
 
 ---
 
@@ -1310,7 +1310,7 @@ Expected: `{"data":[]}` while the CSV is absent — an empty array, not an error
 
 ### Step 7.1 — Rate limiting
 
-- [ ] **Action.** Create `backend/src/middleware/rate-limit.ts`:
+- [x] **Action.** Create `backend/src/middleware/rate-limit.ts`:
 
 ```ts
 import rateLimit from 'express-rate-limit';
@@ -1345,14 +1345,14 @@ export const loginLimiter = rateLimit({
 });
 ```
 
-- [ ] **Action.** Apply them in `auth.routes.ts`:
+- [x] **Action.** Apply them in `auth.routes.ts`:
 
 ```ts
 authRouter.post('/register', registerLimiter, async (req, res) => {
 authRouter.post('/login', loginLimiter, async (req, res) => {
 ```
 
-- [ ] **Verify.** Send 11 bad logins in a row; the 11th returns HTTP 429.
+- [x] **Verify.** Send 11 bad logins in a row; the 11th returns HTTP 429.
 
 ```bash
 for i in $(seq 1 11); do curl -s -o /dev/null -w "%{http_code} " -X POST \
@@ -1372,7 +1372,7 @@ Render, and Render fronts the container. See
 every user shares one rate-limit bucket, and the first five registrations lock
 out the entire province.
 
-- [ ] **Action.** In `backend/src/app.ts`, change the trust-proxy setting to
+- [x] **Action.** In `backend/src/app.ts`, change the trust-proxy setting to
   account for both hops:
 
 ```ts
@@ -1382,7 +1382,7 @@ out the entire province.
   app.set('trust proxy', isProduction ? 2 : 1);
 ```
 
-- [ ] **Verify.** Deploy, then hit a rate-limited endpoint and check the log
+- [x] **Verify.** Deploy, then hit a rate-limited endpoint and check the log
   line's `req.ip`. It must be your real public address (check at
   <https://ifconfig.me>), not `10.x.x.x` or a Vercel address. If it is an
   internal address, the hop count is wrong.
@@ -1391,16 +1391,16 @@ out the entire province.
 
 ### Step 7.3 — Confirm CORS carries credentials
 
-- [ ] **Action.** Confirm `backend/src/app.ts` already sets
+- [x] **Action.** Confirm `backend/src/app.ts` already sets
   `cors({ origin: env.CORS_ORIGINS, credentials: true })`. It does — change
   nothing.
-- [ ] **Verify.** Read the file and confirm `credentials: true` is present.
+- [x] **Verify.** Read the file and confirm `credentials: true` is present.
 
 ### Step 7.4 — Confirm the frontend sends credentials
 
-- [ ] **Action.** Confirm `frontend/src/lib/api-client.ts` sets
+- [x] **Action.** Confirm `frontend/src/lib/api-client.ts` sets
   `withCredentials: true`. It does — change nothing.
-- [ ] **Verify.** Read the file and confirm it is present.
+- [x] **Verify.** Read the file and confirm it is present.
 
 ---
 
@@ -1408,7 +1408,7 @@ out the entire province.
 
 ### Step 8.1 — Types
 
-- [ ] **Action.** Create `frontend/src/features/auth/types.ts`:
+- [x] **Action.** Create `frontend/src/features/auth/types.ts`:
 
 ```ts
 export interface AuthUser {
@@ -1441,11 +1441,11 @@ export interface RegisterPayload {
 }
 ```
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 8.2 — Auth API hooks
 
-- [ ] **Action.** Create `frontend/src/features/auth/api.ts`:
+- [x] **Action.** Create `frontend/src/features/auth/api.ts`:
 
 ```ts
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -1529,11 +1529,11 @@ export function useLogout() {
 }
 ```
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 8.3 — Barangay hook
 
-- [ ] **Action.** Add to `frontend/src/features/taxonomy/api.ts`:
+- [x] **Action.** Add to `frontend/src/features/taxonomy/api.ts`:
 
 ```ts
 export interface Barangay {
@@ -1557,11 +1557,11 @@ export function useBarangays(municipalitySlug: string | undefined) {
 }
 ```
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 8.4 — Field-error helper
 
-- [ ] **Action.** Create `frontend/src/features/auth/field-errors.ts`:
+- [x] **Action.** Create `frontend/src/features/auth/field-errors.ts`:
 
 ```ts
 import { AxiosError } from 'axios';
@@ -1595,7 +1595,7 @@ export function toFieldErrors(error: unknown): Record<string, string> {
 }
 ```
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ---
 
@@ -1607,7 +1607,7 @@ would otherwise handle.
 
 ### Step 9.1 — Sub-domain picker
 
-- [ ] **Action.** Create
+- [x] **Action.** Create
   `frontend/src/features/taxonomy/components/SubdomainPicker.tsx`.
 
 Requirements — implement exactly these:
@@ -1627,12 +1627,12 @@ Requirements — implement exactly these:
 - Use `Badge` for counts and existing tokens for all styling
 - Collapsed sections must be keyboard reachable; use `<button aria-expanded>`
 
-- [ ] **Verify.** `npm --prefix frontend run typecheck` and
+- [x] **Verify.** `npm --prefix frontend run typecheck` and
   `npx oxlint src` both exit 0.
 
 ### Step 9.2 — Registration form
 
-- [ ] **Action.** Create `frontend/src/pages/RegisterPage.tsx`.
+- [x] **Action.** Create `frontend/src/pages/RegisterPage.tsx`.
 
 Sections and fields, in this order:
 
@@ -1665,11 +1665,11 @@ Rules:
 - The submit button uses `loading={mutation.isPending}`
 - Disable the submit button while pending; do not disable it otherwise
 
-- [ ] **Verify.** Typecheck and lint both exit 0.
+- [x] **Verify.** Typecheck and lint both exit 0.
 
 ### Step 9.3 — Draft autosave
 
-- [ ] **Action.** In `RegisterPage.tsx`, persist the form state, **excluding
+- [x] **Action.** In `RegisterPage.tsx`, persist the form state, **excluding
   `password` and `confirmPassword`**, to `localStorage` under
   `bilikha:register-draft` on every change. Restore it on mount. Clear it on
   successful registration.
@@ -1677,15 +1677,15 @@ Rules:
 Wrap every `localStorage` read and write in `try`/`catch` — it throws in private
 browsing modes.
 
-- [ ] **Verify.** Fill in half the form, reload the page, confirm the values
+- [x] **Verify.** Fill in half the form, reload the page, confirm the values
   return and **both password fields are empty**.
 
 ### Step 9.4 — Success page and routes
 
-- [ ] **Action.** Create `frontend/src/pages/RegisterSuccessPage.tsx`, stating
+- [x] **Action.** Create `frontend/src/pages/RegisterSuccessPage.tsx`, stating
   that the account is created and the profile is awaiting review before it
   appears in the directory.
-- [ ] **Action.** Add to `frontend/src/App.tsx`:
+- [x] **Action.** Add to `frontend/src/App.tsx`:
 
 ```tsx
 <Route path="/register" element={<RegisterPage />} />
@@ -1693,7 +1693,7 @@ browsing modes.
 <Route path="/login" element={<LoginPage />} />
 ```
 
-- [ ] **Verify.** All three routes render in the browser.
+- [x] **Verify.** All three routes render in the browser.
 
 ---
 
@@ -1701,18 +1701,18 @@ browsing modes.
 
 ### Step 10.1 — Login page
 
-- [ ] **Action.** Create `frontend/src/pages/LoginPage.tsx`: username and
+- [x] **Action.** Create `frontend/src/pages/LoginPage.tsx`: username and
   password fields, `useLogin()`, error rendered above the form, submit button
   with `loading`. `autoComplete="username"` and `"current-password"`.
 
 Include a line stating that a forgotten password must be reset by an
 administrator — there is no self-service reset in this sprint.
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 10.2 — Route guard
 
-- [ ] **Action.** Create `frontend/src/features/auth/RequireAuth.tsx`:
+- [x] **Action.** Create `frontend/src/features/auth/RequireAuth.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -1735,14 +1735,14 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 }
 ```
 
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 10.3 — Header reflects auth state
 
-- [ ] **Action.** In `HomePage.tsx`'s `SiteHeader`, use `useCurrentUser()`.
+- [x] **Action.** In `HomePage.tsx`'s `SiteHeader`, use `useCurrentUser()`.
   When signed out, show the existing Register button plus a Sign in link. When
   signed in, show the username and a Sign out button calling `useLogout()`.
-- [ ] **Verify.** Header changes after login and after logout.
+- [x] **Verify.** Header changes after login and after logout.
 
 ---
 
@@ -1750,7 +1750,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 ### Step 11.1 — Password reset script
 
-- [ ] **Action.** Create `backend/src/scripts/reset-password.ts`:
+- [x] **Action.** Create `backend/src/scripts/reset-password.ts`:
 
 ```ts
 import { eq } from 'drizzle-orm';
@@ -1794,17 +1794,17 @@ await closeDatabase();
 process.exit(0);
 ```
 
-- [ ] **Action.** Add to `backend/package.json` scripts:
+- [x] **Action.** Add to `backend/package.json` scripts:
 
 ```json
 "admin:reset-password": "tsx src/scripts/reset-password.ts"
 ```
 
-- [ ] **Verify.** Run it against a test account and log in with the new password.
+- [x] **Verify.** Run it against a test account and log in with the new password.
 
 ### Step 11.2 — Document publishing a profile
 
-- [ ] **Action.** Add a short section to
+- [x] **Action.** Add a short section to
   [`docs/reference/commands.md`](../reference/commands.md) under a new "Admin"
   heading, giving the SQL to publish a profile:
 
@@ -1815,7 +1815,7 @@ WHERE slug = '<username>';
 
 and noting that a proper admin UI is a follow-up.
 
-- [ ] **Verify.** The section exists and the SQL runs successfully.
+- [x] **Verify.** The section exists and the SQL runs successfully.
 
 ---
 
@@ -1823,7 +1823,7 @@ and noting that a proper admin UI is a follow-up.
 
 ### Step 12.1 — Register through the API
 
-- [ ] **Action.**
+- [x] **Action.**
 
 ```bash
 curl -s -c /tmp/bk-cookies.txt -X POST http://localhost:4000/api/v1/auth/register \
@@ -1838,17 +1838,17 @@ curl -s -c /tmp/bk-cookies.txt -X POST http://localhost:4000/api/v1/auth/registe
   }'
 ```
 
-- [ ] **Verify.** HTTP 201, body contains `"username":"juantest"` and
+- [x] **Verify.** HTTP 201, body contains `"username":"juantest"` and
   `"profileStatus":"pending_review"`.
 
 ### Step 12.2 — Session works
 
-- [ ] **Action.** `curl -s -b /tmp/bk-cookies.txt http://localhost:4000/api/v1/auth/me`
-- [ ] **Verify.** Returns the same user. Without the cookie, returns 401.
+- [x] **Action.** `curl -s -b /tmp/bk-cookies.txt http://localhost:4000/api/v1/auth/me`
+- [x] **Verify.** Returns the same user. Without the cookie, returns 401.
 
 ### Step 12.3 — Constraints hold
 
-- [ ] **Verify** each of the following returns the stated result:
+- [x] **Verify** each of the following returns the stated result:
 
 | Attempt | Expected |
 |---|---|
@@ -1862,7 +1862,7 @@ curl -s -c /tmp/bk-cookies.txt -X POST http://localhost:4000/api/v1/auth/registe
 | Login with correct credentials | 200 |
 | Login with wrong password | 401 |
 
-- [ ] **Verify** the primary-sub-domain constraint is enforced by the database:
+- [x] **Verify** the primary-sub-domain constraint is enforced by the database:
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c \
@@ -1887,15 +1887,15 @@ Expected: **fails** with a unique-violation on
 
 ## Acceptance
 
-- [ ] All 12 phases complete, every step checked
-- [ ] `npm run typecheck`, `npm run lint`, `npm run build` all exit 0
-- [ ] Every row in Step 12.3 behaves as stated
-- [ ] Passwords and session cookies are never logged. `pino-http` is configured
+- [x] All 12 phases complete, every step checked
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` all exit 0
+- [x] Every row in Step 12.3 behaves as stated
+- [x] Passwords and session cookies are never logged. `pino-http` is configured
       in `app.ts` to drop `cookie`, `authorization` and `set-cookie`; confirm by
       grepping the API log for a test password and for the session cookie value,
       and finding neither
-- [ ] `docs/reference/api.md` and `docs/reference/data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] `docs/reference/api.md` and `docs/reference/data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 

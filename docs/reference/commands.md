@@ -47,6 +47,31 @@ will re-run migrate and seed afterwards.
 | `db:push` | Syncs schema with no migration file. Needs a TTY; not the default — see [ADR 0009](../decisions/0009-migrations-over-db-push.md) |
 | `db:studio` | Opens Drizzle Studio to browse data |
 | `db:seed` | Idempotent reference-data load, matched on slug |
+| `admin:reset-password` | Sets a new password for a username. Sprint 1 recovery path — verify identity out of band first |
+
+---
+
+## Admin
+
+Sprint 1 has no admin UI. Two operations are done by hand.
+
+**Reset a forgotten password**
+
+```bash
+npm --prefix backend run admin:reset-password -- <username> <new-password>
+```
+
+Password must be at least 10 characters. Confirm the person's identity before
+running this — email and phone are unverified in this sprint.
+
+**Publish a creative profile**
+
+```sql
+UPDATE creative_profiles SET status = 'published', updated_at = now()
+WHERE slug = '<username>';
+```
+
+A proper admin panel for review and publishing is a follow-up (plan 0003).
 
 ---
 
