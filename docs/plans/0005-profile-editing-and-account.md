@@ -77,7 +77,7 @@ apply unchanged. Three specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 0 / 3 | Not started |
+| 1. Schema | 3 / 3 | Complete |
 | 2. Migration | 0 / 2 | Not started |
 | 3. Backend — read own profile | 0 / 2 | Not started |
 | 4. Backend — update profile | 0 / 4 | Not started |
@@ -93,7 +93,7 @@ apply unchanged. Three specific to this plan:
 
 ### Step 1.1 — Flag column
 
-- [ ] **Action.** In `backend/src/db/schema/profiles.ts`, add to
+- [x] **Action.** In `backend/src/db/schema/profiles.ts`, add to
   `creativeProfiles`:
 
 ```ts
@@ -104,28 +104,28 @@ apply unchanged. Three specific to this plan:
     editedSinceReviewAt: timestamp('edited_since_review_at', { withTimezone: true }),
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.2 — Moderation action for acknowledging
 
-- [ ] **Action.** Add `'acknowledged_edit'` to `moderationActionEnum` in the
+- [x] **Action.** Add `'acknowledged_edit'` to `moderationActionEnum` in the
   same file.
 
 Acknowledging is a moderation decision and belongs in the same audit trail —
 "who looked at this edit and when" needs an answer for the same reason
 "who approved this" does.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.3 — Index the edited queue
 
-- [ ] **Action.** Add to `creativeProfiles`:
+- [x] **Action.** Add to `creativeProfiles`:
 
 ```ts
     index('creative_profiles_edited_idx').on(table.editedSinceReviewAt),
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 

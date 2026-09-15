@@ -33,6 +33,11 @@ export const creativeProfiles = pgTable(
     // Which channel is revealed to a client when this creative responds to
     // their inquiry. Nothing is ever shown on the public profile itself.
     contactPreference: text('contact_preference').notNull().default('phone'),
+    // Set when a publicly visible field changes on an already-published
+    // profile. The profile stays live; this is what puts it in the admin
+    // Edited queue. Cleared when an admin acknowledges it.
+    // See ADR 0016.
+    editedSinceReviewAt: timestamp('edited_since_review_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -40,6 +45,7 @@ export const creativeProfiles = pgTable(
     uniqueIndex('creative_profiles_user_idx').on(table.userId),
     uniqueIndex('creative_profiles_slug_idx').on(table.slug),
     index('creative_profiles_status_created_idx').on(table.status, table.createdAt),
+    index('creative_profiles_edited_idx').on(table.editedSinceReviewAt),
   ],
 );
 
@@ -71,6 +77,7 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   'approved',
   'rejected',
   'returned_to_pending',
+  'acknowledged_edit',
 ]);
 
 /**
