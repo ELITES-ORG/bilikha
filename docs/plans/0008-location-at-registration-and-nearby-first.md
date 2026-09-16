@@ -55,7 +55,7 @@ apply unchanged. Three specific to this plan:
 | 1. Backend — registration | 3 / 3 | Done |
 | 2. Backend — profile setup | 2 / 2 | Done |
 | 3. Backend — nearby-first | 3 / 3 | Done |
-| 4. Frontend — registration form | 0 / 3 | Not started |
+| 4. Frontend — registration form | 3 / 3 | Done |
 | 5. Frontend — setup and directory | 0 / 3 | Not started |
 | 6. Verification | 0 / 5 | Not started |
 
@@ -171,7 +171,7 @@ repeat or skip rows.
 
 ### Step 4.1 — Add the fields
 
-- [ ] **Action.** In `RegisterPage`, add a **Location** section with a
+- [x] **Action.** In `RegisterPage`, add a **Location** section with a
   municipality select from `useMunicipalities()` and a dependent barangay select
   from `useBarangays(selectedMunicipality)`. Both required.
 
@@ -179,21 +179,21 @@ Reset barangay to empty whenever municipality changes. Leaving a stale barangay
 selected across a municipality change is how a Culaba `looc` ends up submitted
 against Naval.
 
-- [ ] **Verify.** Changing municipality clears barangay; submitting without
+- [x] **Verify.** Changing municipality clears barangay; submitting without
   either shows field errors.
 
 ### Step 4.2 — Barangay is no longer unavailable
 
-- [ ] **Action.** Remove the "Barangay list is not yet available" degraded
+- [x] **Action.** Remove the "Barangay list is not yet available" degraded
   state. All 132 exist. If the list ever comes back empty, that is now an error
   worth surfacing rather than a normal condition.
-- [ ] **Verify.** Every municipality returns a non-empty list.
+- [x] **Verify.** Every municipality returns a non-empty list.
 
 ### Step 4.3 — Keep the draft honest
 
-- [ ] **Action.** Include both fields in the localStorage draft, and on restore
+- [x] **Action.** Include both fields in the localStorage draft, and on restore
   clear barangay if the stored municipality no longer matches.
-- [ ] **Verify.** Half-fill, reload, values return coherently.
+- [x] **Verify.** Half-fill, reload, values return coherently.
 
 ---
 

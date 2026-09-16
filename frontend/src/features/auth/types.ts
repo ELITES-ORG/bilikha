@@ -19,6 +19,8 @@ export interface RegisterPayload {
   email: string;
   phone: string;
   birthDate: string;
+  municipalitySlug: string;
+  barangaySlug: string;
   password: string;
   confirmPassword: string;
   privacyConsent: true;

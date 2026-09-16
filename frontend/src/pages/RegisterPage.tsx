@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegister } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
+import { useBarangays, useMunicipalities } from '@/features/taxonomy/api';
 import { Button, ButtonLink, Container, Input } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { cn } from '@/lib/cn';
 import { withNextParam } from '@/lib/return-path';
 
 const DRAFT_KEY = 'bilikha:register-draft';
@@ -19,6 +21,8 @@ interface FormState {
   email: string;
   phone: string;
   birthDate: string;
+  municipalitySlug: string;
+  barangaySlug: string;
   privacyConsent: boolean;
   termsAccepted: boolean;
 }
@@ -34,6 +38,8 @@ const EMPTY_FORM: FormState = {
   email: '',
   phone: '',
   birthDate: '',
+  municipalitySlug: '',
+  barangaySlug: '',
   privacyConsent: false,
   termsAccepted: false,
 };
@@ -43,9 +49,16 @@ function loadDraft(): FormState {
     const raw = localStorage.getItem(DRAFT_KEY);
     if (!raw) return EMPTY_FORM;
     const parsed = JSON.parse(raw) as Partial<FormState>;
+    const municipalitySlug =
+      typeof parsed.municipalitySlug === 'string' ? parsed.municipalitySlug : '';
+    let barangaySlug = typeof parsed.barangaySlug === 'string' ? parsed.barangaySlug : '';
+    // Stale barangay across a municipality change must not survive restore.
+    if (!municipalitySlug) barangaySlug = '';
     return {
       ...EMPTY_FORM,
       ...parsed,
+      municipalitySlug,
+      barangaySlug,
       password: '',
       confirmPassword: '',
     };
@@ -76,9 +89,15 @@ export function RegisterPage() {
   const [searchParams] = useSearchParams();
   const nextRaw = searchParams.get('next');
   const register = useRegister();
+  const municipalities = useMunicipalities();
   const [form, setForm] = useState<FormState>(() => loadDraft());
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  const barangays = useBarangays(form.municipalitySlug || undefined);
+  const barangayList = barangays.data ?? [];
+  const barangaysFailed =
+    Boolean(form.municipalitySlug) && !barangays.isPending && barangayList.length === 0;
 
   useEffect(() => {
     saveDraft(form);
@@ -88,16 +107,26 @@ export function RegisterPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function onMunicipalityChange(slug: string) {
+    setForm((current) => ({
+      ...current,
+      municipalitySlug: slug,
+      barangaySlug: '',
+    }));
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
 
-    if (!form.privacyConsent || !form.termsAccepted) {
-      setFieldErrors({
-        ...(form.privacyConsent ? {} : { privacyConsent: 'You must accept the privacy notice' }),
-        ...(form.termsAccepted ? {} : { termsAccepted: 'You must accept the terms' }),
-      });
+    const nextErrors: Record<string, string> = {};
+    if (!form.municipalitySlug) nextErrors.municipalitySlug = 'Select a municipality';
+    if (!form.barangaySlug) nextErrors.barangaySlug = 'Select a barangay';
+    if (!form.privacyConsent) nextErrors.privacyConsent = 'You must accept the privacy notice';
+    if (!form.termsAccepted) nextErrors.termsAccepted = 'You must accept the terms';
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
       return;
     }
 
@@ -111,6 +140,8 @@ export function RegisterPage() {
         email: form.email,
         phone: form.phone,
         birthDate: form.birthDate,
+        municipalitySlug: form.municipalitySlug,
+        barangaySlug: form.barangaySlug,
         password: form.password,
         confirmPassword: form.confirmPassword,
         privacyConsent: true,
@@ -259,6 +290,85 @@ export function RegisterPage() {
                 onChange={(e) => update('birthDate', e.target.value)}
                 error={fieldErrors.birthDate}
               />
+            </section>
+
+            <section className="space-y-4">
+              <h2 className="text-lg font-medium text-ink">Location</h2>
+              <p className="text-sm text-ink-muted">
+                Bilikha is for Biliran. Choose your municipality and barangay.
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="register-municipality" className="text-sm font-medium text-ink">
+                  Municipality
+                  <span className="ms-0.5 text-danger-600" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <select
+                  id="register-municipality"
+                  required
+                  value={form.municipalitySlug}
+                  onChange={(event) => onMunicipalityChange(event.target.value)}
+                  className={cn(
+                    'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
+                    'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
+                    fieldErrors.municipalitySlug && 'border-danger-500',
+                  )}
+                >
+                  <option value="">Select a municipality</option>
+                  {municipalities.data?.map((town) => (
+                    <option key={town.id} value={town.slug}>
+                      {town.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.municipalitySlug && (
+                  <p className="text-xs text-danger-700">{fieldErrors.municipalitySlug}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="register-barangay" className="text-sm font-medium text-ink">
+                  Barangay
+                  <span className="ms-0.5 text-danger-600" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <select
+                  id="register-barangay"
+                  required
+                  value={form.barangaySlug}
+                  disabled={!form.municipalitySlug || barangays.isPending || barangaysFailed}
+                  onChange={(event) => update('barangaySlug', event.target.value)}
+                  className={cn(
+                    'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
+                    'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
+                    'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
+                    fieldErrors.barangaySlug && 'border-danger-500',
+                  )}
+                >
+                  <option value="">
+                    {!form.municipalitySlug
+                      ? 'Select a municipality first'
+                      : barangays.isPending
+                        ? 'Loading…'
+                        : 'Select a barangay'}
+                  </option>
+                  {barangayList.map((barangay) => (
+                    <option key={barangay.id} value={barangay.slug}>
+                      {barangay.name}
+                    </option>
+                  ))}
+                </select>
+                {barangaysFailed && (
+                  <p className="text-xs text-danger-700">
+                    Could not load barangays for that municipality. Try again.
+                  </p>
+                )}
+                {fieldErrors.barangaySlug && (
+                  <p className="text-xs text-danger-700">{fieldErrors.barangaySlug}</p>
+                )}
+              </div>
             </section>
 
             <section className="space-y-4">
