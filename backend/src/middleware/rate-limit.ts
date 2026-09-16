@@ -71,3 +71,21 @@ export const passwordChangeLimiter = rateLimit({
     },
   },
 });
+
+/** Conversation messages — 60 per user per hour. Failures do not consume the
+ *  budget so a mistyped empty body does not lock someone out. */
+export const messageLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many messages. Try again in an hour.',
+    },
+  },
+});

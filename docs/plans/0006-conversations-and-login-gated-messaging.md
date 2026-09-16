@@ -82,7 +82,7 @@ apply unchanged. Four specific to this plan:
 |---|---|---|
 | 1. Schema | 4 / 4 | Done |
 | 2. Migration and backfill | 3 / 3 | Done |
-| 3. Backend — conversations | 0 / 4 | Not started |
+| 3. Backend — conversations | 4 / 4 | Done |
 | 4. Backend — safety | 0 / 3 | Not started |
 | 5. Frontend — sign-in gate | 0 / 5 | Not started |
 | 6. Frontend — thread UI | 0 / 4 | Not started |
@@ -307,7 +307,7 @@ SELECT (SELECT count(*) FROM inquiries) AS inquiries,
 
 ### Step 3.1 — Validation
 
-- [ ] **Action.** Create `backend/src/modules/conversations/conversations.schema.ts`:
+- [x] **Action.** Create `backend/src/modules/conversations/conversations.schema.ts`:
 
 ```ts
 export const startConversationSchema = z.object({
@@ -334,11 +334,11 @@ export const reportSchema = z.object({
 The 20-character minimum applies to the **opening** message only. A reply may be
 short — "Yes, Tuesday works" is a legitimate message.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 3.2 — Participation guard
 
-- [ ] **Action.** In `conversations.service.ts`, write one helper every other
+- [x] **Action.** In `conversations.service.ts`, write one helper every other
   function calls first:
 
 ```ts
@@ -364,11 +364,11 @@ async function requireParticipant(conversationId: string, userId: string) {
 }
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 3.3 — Service
 
-- [ ] **Action.** Implement, each taking the caller's user id:
+- [x] **Action.** Implement, each taking the caller's user id:
 
 - `startOrContinue({ userId, profileSlug, subject, body })` — the profile must be
   `published`; reject self-contact; reject if either party has blocked the other.
@@ -385,11 +385,11 @@ async function requireParticipant(conversationId: string, userId: string) {
 Unread count for a participant is messages from the **other** party newer than
 that participant's `*_last_read_at`.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 3.4 — Routes
 
-- [ ] **Action.** Create `conversations.routes.ts`, all behind `requireAuth`,
+- [x] **Action.** Create `conversations.routes.ts`, all behind `requireAuth`,
   mounted at `/conversations`:
 
 ```
@@ -405,9 +405,9 @@ POST   /conversations/:id/report      report
 `/unread-count` must be declared **before** `/:id`, or it is captured as an id.
 Validate `:id` as a UUID — a malformed id must be a 400, not a 500.
 
-- [ ] **Action.** Add `messageLimiter` to `rate-limit.ts`: 60 messages per user
+- [x] **Action.** Add `messageLimiter` to `rate-limit.ts`: 60 messages per user
   per hour, keyed on `req.session.userId`, `skipFailedRequests: true`.
-- [ ] **Verify.** Signed out, every route returns `UNAUTHORIZED`.
+- [x] **Verify.** Signed out, every route returns `UNAUTHORIZED`.
 
 ---
 
