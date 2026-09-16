@@ -1,7 +1,22 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useReceivedInquiries } from '@/features/inquiries/api';
+import {
+  defaultViewMode,
+  readStoredViewMode,
+  writeStoredViewMode,
+  type AccountViewMode,
+} from '@/features/me/view-mode';
 import { Badge, Button, ButtonLink, Container } from '@/components/ui';
+import { cn } from '@/lib/cn';
+
+function navClass(active: boolean) {
+  return cn(
+    'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
+    active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
+  );
+}
 
 export function SiteHeader() {
   const { data: user } = useCurrentUser();
@@ -9,6 +24,17 @@ export function SiteHeader() {
   const hasProfile = Boolean(user?.profileSlug);
   const inbox = useReceivedInquiries(1, hasProfile);
   const unread = inbox.data?.data.filter((row) => row.status === 'sent').length ?? 0;
+
+  const [storedMode, setStoredMode] = useState<AccountViewMode | null>(() => readStoredViewMode());
+  const viewMode = hasProfile ? (storedMode ?? defaultViewMode()) : 'hiring';
+
+  function chooseMode(mode: AccountViewMode) {
+    setStoredMode(mode);
+    writeStoredViewMode(mode);
+  }
+
+  const hiring = !hasProfile || viewMode === 'hiring';
+  const creative = hasProfile && viewMode === 'creative';
 
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-sm">
@@ -19,16 +45,48 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
-          <Link
-            to="/directory"
-            className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-          >
+          {hasProfile && (
+            <div
+              className="mr-1 hidden items-center rounded-sm border border-hairline p-0.5 sm:inline-flex"
+              role="group"
+              aria-label="Account view"
+            >
+              <button
+                type="button"
+                className={cn(
+                  'rounded-xs px-2 py-1 text-xs font-medium transition-colors',
+                  hiring
+                    ? 'bg-lawa-700 text-clay-50'
+                    : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
+                )}
+                aria-pressed={hiring}
+                onClick={() => chooseMode('hiring')}
+              >
+                Hiring
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'rounded-xs px-2 py-1 text-xs font-medium transition-colors',
+                  creative
+                    ? 'bg-lawa-700 text-clay-50'
+                    : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
+                )}
+                aria-pressed={creative}
+                onClick={() => chooseMode('creative')}
+              >
+                My creative work
+              </button>
+            </div>
+          )}
+
+          <Link to="/directory" className={navClass(hiring)}>
             Directory
           </Link>
           {hasProfile && (
             <Link
               to="/inbox"
-              className="link-underline hidden items-center gap-1.5 px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-flex"
+              className={cn(navClass(creative), 'sm:inline-flex items-center gap-1.5')}
             >
               Inbox
               {unread > 0 && (
@@ -40,25 +98,24 @@ export function SiteHeader() {
           )}
           {user && (
             <>
-              <Link
-                to="/inquiries"
-                className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-              >
+              <Link to="/inquiries" className={navClass(hiring)}>
                 Inquiries
               </Link>
               <Link
                 to="/account"
-                className="link-underline px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink"
+                className={cn(
+                  'link-underline px-2 py-1 text-base transition-colors',
+                  creative || !hasProfile
+                    ? 'font-medium text-ink'
+                    : 'text-ink-muted hover:text-ink',
+                )}
               >
                 Account
               </Link>
             </>
           )}
           {user?.role === 'admin' && (
-            <Link
-              to="/admin"
-              className="link-underline hidden px-2 py-1 text-base text-ink-muted transition-colors hover:text-ink sm:inline-block"
-            >
+            <Link to="/admin" className={navClass(false)}>
               Admin
             </Link>
           )}

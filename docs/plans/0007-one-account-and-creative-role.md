@@ -78,7 +78,7 @@ apply unchanged. Three specific to this plan:
 | 3. Frontend — registration | 3 / 3 | Done |
 | 4. Frontend — intent and continuation | 3 / 3 | Done |
 | 5. Frontend — add the role later | 2 / 2 | Done |
-| 6. Frontend — mode switch | 0 / 2 | Not started |
+| 6. Frontend — mode switch | 2 / 2 | Done |
 | 7. Verification | 0 / 5 | Not started |
 
 ---
@@ -262,7 +262,7 @@ no intent flag.
 
 ### Step 6.1 — The switch
 
-- [ ] **Action.** In `SiteHeader`, for users **with** a creative profile, show a
+- [x] **Action.** In `SiteHeader`, for users **with** a creative profile, show a
   switch between **Hiring** and **My creative work**. It changes which
   navigation is emphasised — directory and messages, versus profile, inbox and
   status — and persists the choice in `localStorage`, wrapped in `try`/`catch`.
@@ -271,15 +271,15 @@ It is a view preference, never a permission. Every route stays reachable in
 either mode; a creative can hire, per
 [ADR 0019](../decisions/0019-one-account-creative-as-attachable-role.md).
 
-- [ ] **Verify.** The switch appears only with a profile, survives a reload, and
+- [x] **Verify.** The switch appears only with a profile, survives a reload, and
   blocks nothing.
 
 ### Step 6.2 — Sensible default
 
-- [ ] **Action.** Default to **My creative work** for an account that has a
+- [x] **Action.** Default to **My creative work** for an account that has a
   profile, since that is the side with something to manage. No stored preference
   means the default applies.
-- [ ] **Verify.** A fresh browser lands on the creative view.
+- [x] **Verify.** A fresh browser lands on the creative view.
 
 ---
 
