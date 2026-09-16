@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { ProfileEditor } from '@/features/me/ProfileEditor';
+import { OfferEditor } from '@/features/offers/OfferEditor';
 import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
 
@@ -87,6 +88,25 @@ export function AccountPage() {
               <Card elevation="flat" className="mt-5">
                 <CardBody>
                   <ProfileEditor profile={profile.data} />
+                </CardBody>
+              </Card>
+            </section>
+          )}
+
+          {/* A sibling of the profile form, never inside it: OfferEditor has its
+              own form, and nesting one form in another meant saving an offer
+              also submitted the profile, which refetched and reset the editor. */}
+          {profile.isSuccess && profile.data && (
+            <section className="mt-12" aria-labelledby="offers-section-heading">
+              <h2 id="offers-section-heading" className="u-display text-2xl text-ink">
+                Offers
+              </h2>
+              <p className="mt-2 text-sm text-ink-muted">
+                What you are available to be hired for. These are what clients browse.
+              </p>
+              <Card elevation="flat" className="mt-5">
+                <CardBody>
+                  <OfferEditor />
                 </CardBody>
               </Card>
             </section>
