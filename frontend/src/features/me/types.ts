@@ -37,8 +37,6 @@ export interface UpdateProfilePayload {
 export interface CreateProfilePayload {
   displayName?: string;
   bio?: string;
-  municipalitySlug: string;
-  barangaySlug?: string;
   subdomainSlugs: string[];
   primarySubdomainSlug: string;
   contactPreference: ContactPreference;

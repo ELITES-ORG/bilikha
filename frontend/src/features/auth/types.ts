@@ -5,6 +5,8 @@ export interface AuthUser {
   lastName: string;
   email: string;
   role: string;
+  municipalitySlug: string | null;
+  municipalityName: string | null;
   profileSlug: string | null;
   profileStatus: string | null;
   rejectionReason: string | null;

@@ -56,7 +56,7 @@ apply unchanged. Three specific to this plan:
 | 2. Backend — profile setup | 2 / 2 | Done |
 | 3. Backend — nearby-first | 3 / 3 | Done |
 | 4. Frontend — registration form | 3 / 3 | Done |
-| 5. Frontend — setup and directory | 0 / 3 | Not started |
+| 5. Frontend — setup and directory | 3 / 3 | Done |
 | 6. Verification | 0 / 5 | Not started |
 
 ---
@@ -201,33 +201,33 @@ against Naval.
 
 ### Step 5.1 — Drop location from setup
 
-- [ ] **Action.** Remove municipality and barangay from `ProfileCraftFields` as
+- [x] **Action.** Remove municipality and barangay from `ProfileCraftFields` as
   used by `ProfileSetupPage`.
 
 `ProfileEditor` shares that component, and **still needs them**. Either
 parameterise the shared component or split the location fields out — do not
 delete them outright.
 
-- [ ] **Verify.** Setup shows no location fields; the profile editor still does
+- [x] **Verify.** Setup shows no location fields; the profile editor still does
   and still saves them.
 
 ### Step 5.2 — Show why the order is what it is
 
-- [ ] **Action.** On `DirectoryPage`, when the viewer has a municipality, show a
+- [x] **Action.** On `DirectoryPage`, when the viewer has a municipality, show a
   line above the results — *"Showing creatives in <Municipality> first"* — and
   mark nearby rows with a `Badge`.
 
 An unexplained reordering reads as randomness. Say it out loud.
 
-- [ ] **Verify.** The line appears for a located account and is absent for an
+- [x] **Verify.** The line appears for a located account and is absent for an
   anonymous visitor.
 
 ### Step 5.3 — Do not break filtering
 
-- [ ] **Action.** Confirm the existing municipality filter still works and takes
+- [x] **Action.** Confirm the existing municipality filter still works and takes
   precedence — filtering to Kawayan shows only Kawayan, regardless of where the
   viewer is.
-- [ ] **Verify.** Filter and ordering do not fight.
+- [x] **Verify.** Filter and ordering do not fight.
 
 ---
 

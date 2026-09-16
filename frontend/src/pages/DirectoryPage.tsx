@@ -11,6 +11,7 @@ import {
   SectionHeading,
   Skeleton,
 } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
@@ -22,6 +23,7 @@ export function DirectoryPage() {
   const municipality = params.get('municipality') ?? undefined;
   const page = Number(params.get('page') ?? '1') || 1;
 
+  const { data: user } = useCurrentUser();
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
   const list = usePublishedProfiles({ domain, subdomain, municipality, page, limit: 20 });
@@ -30,6 +32,8 @@ export function DirectoryPage() {
     () => domains.data?.find((d) => d.slug === domain),
     [domains.data, domain],
   );
+
+  const nearbyMunicipalityName = user?.municipalityName ?? null;
 
   function setFilter(next: Record<string, string | undefined>) {
     const merged = new URLSearchParams(params);
@@ -113,6 +117,12 @@ export function DirectoryPage() {
           </div>
 
           <div className="mt-10">
+            {nearbyMunicipalityName && !municipality && (
+              <p className="mb-6 text-sm text-ink-muted">
+                Showing creatives in {nearbyMunicipalityName} first
+              </p>
+            )}
+
             {list.isPending && (
               <div className="space-y-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -182,9 +192,12 @@ export function DirectoryPage() {
                         className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
                       >
                         <div>
-                          <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
-                            {profile.displayName ?? profile.fullName}
-                          </h2>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
+                              {profile.displayName ?? profile.fullName}
+                            </h2>
+                            {profile.isNearby && <Badge tone="accent">Nearby</Badge>}
+                          </div>
                           <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-muted">
                             <MapPin className="size-3.5" aria-hidden />
                             {profile.municipality}

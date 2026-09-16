@@ -11,6 +11,7 @@ export interface PublicProfile {
   fullName: string;
   bio: string | null;
   municipality: string;
+  isNearby?: boolean;
   subdomains: PublicProfileSubdomain[];
   memberSince: string;
 }

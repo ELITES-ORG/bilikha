@@ -61,8 +61,6 @@ export function ProfileSetupPage() {
     const payload: CreateProfilePayload = {
       displayName: form.displayName || undefined,
       bio: form.bio || undefined,
-      municipalitySlug: form.municipalitySlug,
-      barangaySlug: form.barangaySlug || undefined,
       subdomainSlugs: form.subdomainSlugs,
       primarySubdomainSlug: form.primarySubdomainSlug,
       contactPreference: form.contactPreference,
@@ -133,6 +131,7 @@ export function ProfileSetupPage() {
               fieldErrors={fieldErrors}
               phone="on file"
               email={user?.email ?? 'on file'}
+              includeLocation={false}
               onUpdate={update}
               onSubdomainsChange={(selected, primary) => {
                 setForm((current) => ({

@@ -245,8 +245,9 @@ Destroys the session and clears the cookie. `204` with an empty body.
 ### `GET /api/v1/auth/me`
 
 Requires a valid session. Returns the same public user shape as login, including
-`role`, `profileStatus`, and `rejectionReason` (set when a registration was
-rejected).
+`role`, `municipalitySlug`, `municipalityName` (null for legacy accounts that
+never set a location), `profileStatus`, and `rejectionReason` (set when a
+registration was rejected).
 
 `401` when unsigned-in or the session points at a deleted user.
 

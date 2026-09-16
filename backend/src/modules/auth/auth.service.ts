@@ -18,6 +18,8 @@ export interface PublicUser {
   lastName: string;
   email: string;
   role: string;
+  municipalitySlug: string | null;
+  municipalityName: string | null;
   profileSlug: string | null;
   profileStatus: string | null;
   rejectionReason: string | null;
@@ -86,7 +88,7 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
 
     if (!user) throw new Error('User insert returned no row');
 
-    return toPublicUser(user, null);
+    return await toPublicUser(user, null);
   } catch (error) {
     throw translateUniqueViolation(error);
   }
@@ -136,10 +138,23 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   return toPublicUser(user, profile ?? null);
 }
 
-function toPublicUser(
+async function municipalityForUser(
+  municipalityId: string | null,
+): Promise<{ slug: string; name: string } | null> {
+  if (!municipalityId) return null;
+  const [row] = await db
+    .select({ slug: municipalities.slug, name: municipalities.name })
+    .from(municipalities)
+    .where(eq(municipalities.id, municipalityId))
+    .limit(1);
+  return row ?? null;
+}
+
+async function toPublicUser(
   user: typeof users.$inferSelect,
   profile: typeof creativeProfiles.$inferSelect | null,
-): PublicUser {
+): Promise<PublicUser> {
+  const municipality = await municipalityForUser(user.municipalityId);
   return {
     id: user.id,
     username: user.username,
@@ -147,6 +162,8 @@ function toPublicUser(
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+    municipalitySlug: municipality?.slug ?? null,
+    municipalityName: municipality?.name ?? null,
     profileSlug: profile?.slug ?? null,
     profileStatus: profile?.status ?? null,
     rejectionReason: profile?.rejectionReason ?? null,
