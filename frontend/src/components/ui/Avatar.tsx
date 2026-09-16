@@ -17,7 +17,8 @@ function initialsFromName(name: string): string {
 }
 
 export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
-  src: string | null;
+  /** Undefined as well as null: an older API payload may omit the field. */
+  src: string | null | undefined;
   name: string;
   size?: AvatarSize;
 }

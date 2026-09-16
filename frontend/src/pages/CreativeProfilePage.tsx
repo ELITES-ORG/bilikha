@@ -18,7 +18,7 @@ export function CreativeProfilePage() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const lightboxItem = profile.data?.portfolio.find((item) => item.id === lightboxId) ?? null;
+  const lightboxItem = profile.data?.portfolio?.find((item) => item.id === lightboxId) ?? null;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -96,13 +96,13 @@ export function CreativeProfilePage() {
                 </p>
               )}
 
-              {profile.data.portfolio.length > 0 && (
+              {(profile.data.portfolio?.length ?? 0) > 0 && (
                 <section className="mt-10" aria-labelledby="portfolio-heading">
                   <h2 id="portfolio-heading" className="u-display text-2xl text-ink">
                     Portfolio
                   </h2>
                   <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {profile.data.portfolio.map((item) => (
+                    {profile.data.portfolio?.map((item) => (
                       <li key={item.id}>
                         <button
                           type="button"

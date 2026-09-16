@@ -215,9 +215,9 @@ export function DirectoryPage() {
                               {profile.bio}
                             </p>
                           )}
-                          {profile.portfolio.length > 0 && (
+                          {(profile.portfolio?.length ?? 0) > 0 && (
                             <div className="mt-3 flex gap-2">
-                              {profile.portfolio.map((item) => (
+                              {profile.portfolio?.map((item) => (
                                 <img
                                   key={item.id}
                                   src={item.thumbUrl}
