@@ -50,13 +50,13 @@ export async function resizeImage(file: File, maxEdge: number): Promise<Blob> {
     }
     ctx.drawImage(bitmap, 0, 0, width, height);
 
+    // Only reach for JPEG when WebP is unavailable. Encoding both to compare
+    // sizes doubles the work on the budget Android this is written for, and
+    // WebP wins on photographic content essentially always.
     const webp = await encodeCanvas(canvas, 'image/webp', 0.82);
-    const jpeg = await encodeCanvas(canvas, 'image/jpeg', 0.82);
+    if (webp && webp.type === 'image/webp') return webp;
 
-    if (webp && jpeg) {
-      return webp.size <= jpeg.size ? webp : jpeg;
-    }
-    if (webp) return webp;
+    const jpeg = await encodeCanvas(canvas, 'image/jpeg', 0.82);
     if (jpeg) return jpeg;
 
     throw new Error('Could not encode that photo. Try a different image.');

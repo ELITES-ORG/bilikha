@@ -313,14 +313,15 @@ export async function reviewMedia(input: {
         .set({ avatarKey: null, avatarReviewedAt: null, updatedAt: new Date() })
         .where(eq(users.id, user.id));
 
-      if (user.profileId) {
-        await tx.insert(moderationActions).values({
-          profileId: user.profileId,
-          adminId: input.adminId,
-          action: 'media_removed',
-          reason: 'Avatar removed by admin',
-        });
-      }
+      // profileId stays null for a client with no creative profile; the
+      // takedown is still recorded against subjectUserId.
+      await tx.insert(moderationActions).values({
+        profileId: user.profileId,
+        subjectUserId: user.id,
+        adminId: input.adminId,
+        action: 'media_removed',
+        reason: 'Avatar removed by admin',
+      });
     });
     await deleteObject(key);
     return { ok: true as const };
@@ -330,10 +331,12 @@ export async function reviewMedia(input: {
     .select({
       id: portfolioItems.id,
       profileId: portfolioItems.profileId,
+      ownerUserId: creativeProfiles.userId,
       objectKey: portfolioItems.objectKey,
       thumbKey: portfolioItems.thumbKey,
     })
     .from(portfolioItems)
+    .innerJoin(creativeProfiles, eq(portfolioItems.profileId, creativeProfiles.id))
     .where(eq(portfolioItems.id, input.id))
     .limit(1);
 
@@ -351,6 +354,7 @@ export async function reviewMedia(input: {
     await tx.delete(portfolioItems).where(eq(portfolioItems.id, item.id));
     await tx.insert(moderationActions).values({
       profileId: item.profileId,
+      subjectUserId: item.ownerUserId,
       adminId: input.adminId,
       action: 'media_removed',
       reason: 'Portfolio image removed by admin',

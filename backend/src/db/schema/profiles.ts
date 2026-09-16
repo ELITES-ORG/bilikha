@@ -90,9 +90,16 @@ export const moderationActions = pgTable(
   'moderation_actions',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    profileId: uuid('profile_id')
-      .notNull()
-      .references(() => creativeProfiles.id, { onDelete: 'cascade' }),
+    // Nullable since ADR 0021: an avatar takedown can target an account with no
+    // creative profile, and those removals must still be recorded.
+    profileId: uuid('profile_id').references(() => creativeProfiles.id, {
+      onDelete: 'cascade',
+    }),
+    // The account the action was taken against. Set for every media removal,
+    // including one against a client who has no profile.
+    subjectUserId: uuid('subject_user_id').references(() => users.id, {
+      onDelete: 'cascade',
+    }),
     // Nullable so the history survives an administrator's account being deleted.
     adminId: uuid('admin_id').references(() => users.id, { onDelete: 'set null' }),
     action: moderationActionEnum('action').notNull(),
@@ -101,6 +108,7 @@ export const moderationActions = pgTable(
   },
   (table) => [
     index('moderation_actions_profile_idx').on(table.profileId),
+    index('moderation_actions_subject_idx').on(table.subjectUserId),
     index('moderation_actions_created_idx').on(table.createdAt),
   ],
 );

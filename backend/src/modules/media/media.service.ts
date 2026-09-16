@@ -1,4 +1,4 @@
-import { and, asc, count, eq, inArray, max } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, max, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/index.js';
 import { creativeProfiles, portfolioItems, users } from '../../db/schema/index.js';
@@ -237,6 +237,11 @@ export async function createPortfolioItem(
   assertOwnPortfolioKey(profile.id, input.thumbKey);
 
   const created = await db.transaction(async (tx) => {
+    // A transaction alone does not make count-then-insert atomic: under READ
+    // COMMITTED two concurrent requests both see nine and both insert. This
+    // lock serialises them per profile and releases on commit.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
+
     const [tally] = await tx
       .select({ total: count() })
       .from(portfolioItems)

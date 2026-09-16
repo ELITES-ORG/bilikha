@@ -792,3 +792,6 @@ progress and deletes an object between the `PUT` and the `POST` that records it.
 | HEIC support | iPhone photos fail to decode outside Safari. A wasm decoder would fix it at real bundle cost |
 | Separate alt text | The caption stands in for it. Distinct alt text is the accessible answer |
 | Blurhash placeholders | Would remove the grey-box flash on slow connections. Needs a hash computed at upload time |
+| Real pagination on the admin media queue | `listUnreviewedMedia` fetches every unreviewed row, merges and sorts in memory, then slices. Fine at today's volume, wrong at the ~3,400-image ceiling in ADR 0021 |
+| A real upload timestamp on avatars | The queue sorts avatars by `users.updated_at`, so any profile edit reorders them. Needs its own column |
+| Backfill `moderation_actions.subject_user_id` | Added nullable in migration 0011; rows written before it are null. Derivable from `profile_id` for every existing row |
