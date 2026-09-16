@@ -96,8 +96,8 @@ Environment variables (values in the Render dashboard only):
 | `LOG_LEVEL` | `info` |
 | `CORS_ORIGINS` | The Vercel origin. Plural — the code reads `CORS_ORIGINS` |
 | `SESSION_SECRET` | Unused until auth ships |
-| `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key |
+| `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`). Optional: if absent the API still boots and images are simply disabled |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
 
 **Never set `PORT`.** Render provides it; overriding it breaks routing.

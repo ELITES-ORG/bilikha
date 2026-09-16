@@ -9,7 +9,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
-import { publicUrl } from '../../lib/storage.js';
+import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import {
   portfolioForProfile,
   portfolioThumbsForProfiles,
@@ -161,7 +161,7 @@ export async function listPublished(options: ListPublishedOptions) {
       displayName: row.displayName,
       fullName: formatFullName(row),
       bio: row.bio,
-      avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
+      avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
       municipality: row.municipality,
       subdomains: subdomainMap.get(row.id) ?? [],
       portfolio: portfolioMap.get(row.id) ?? [],
@@ -207,7 +207,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
     displayName: row.displayName,
     fullName: formatFullName(row),
     bio: row.bio,
-    avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
+    avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
     municipality: row.municipality,
     subdomains: subdomainMap.get(row.id) ?? [],
     portfolio,

@@ -8,6 +8,7 @@ import {
   avatarKey,
   createSignedUpload,
   deleteObject,
+  isStorageConfigured,
   portfolioKey,
   publicUrl,
 } from '../../lib/storage.js';
@@ -362,7 +363,9 @@ export async function reorderPortfolio(userId: string, ids: string[]) {
 
 /** First three thumbs per profile for directory cards — one query for the page. */
 export async function portfolioThumbsForProfiles(profileIds: string[]) {
-  if (profileIds.length === 0) {
+  // Without storage config there are no URLs to build, and the directory must
+  // still render. Same for portfolioForProfile below.
+  if (profileIds.length === 0 || !isStorageConfigured()) {
     return new Map<string, { id: string; url: string; thumbUrl: string; caption: string | null }[]>();
   }
 
@@ -391,6 +394,8 @@ export async function portfolioThumbsForProfiles(profileIds: string[]) {
 }
 
 export async function portfolioForProfile(profileId: string) {
+  if (!isStorageConfigured()) return [];
+
   const rows = await db
     .select({
       id: portfolioItems.id,

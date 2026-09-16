@@ -1,12 +1,20 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { isStorageConfigured } from './lib/storage.js';
 import { closeDatabase } from './db/index.js';
 
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
   logger.info(`Bilikha API listening on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+
+  // Loud, because the symptom otherwise is "images silently do nothing".
+  if (!isStorageConfigured()) {
+    logger.warn(
+      'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set — avatars and portfolio images are disabled. Everything else works.',
+    );
+  }
 });
 
 /**

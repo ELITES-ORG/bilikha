@@ -3,8 +3,8 @@ import { env } from '../config/env.js';
 import { AppError } from './http-error.js';
 
 /**
- * Supabase Storage contract — pinned with curl in plan 0009 Step 2.4
- * against project hhtyeqaxqjqepxmdlhpq. Observation wins over docs.
+ * Supabase Storage contract — pinned with curl against the live project in
+ * plan 0009 Step 2.4. Observation wins over docs.
  *
  * Sign:
  *   POST {SUPABASE_URL}/storage/v1/object/upload/sign/{bucket}/{objectKey}
@@ -31,12 +31,29 @@ import { AppError } from './http-error.js';
  *   (not HTTP 404). deleteObject treats that as already-gone.
  */
 
-const storageBase = () => `${env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1`;
+/** False when the storage env vars are absent. Images are then disabled and the
+ *  rest of the API carries on — see the note in config/env.ts. */
+export function isStorageConfigured(): boolean {
+  return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+}
 
-const serviceHeaders = (): Record<string, string> => ({
-  Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-  apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-});
+function requireStorage(): { url: string; key: string } {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new AppError(
+      503,
+      'STORAGE_UNCONFIGURED',
+      'Image uploads are unavailable right now.',
+    );
+  }
+  return { url: env.SUPABASE_URL, key: env.SUPABASE_SERVICE_ROLE_KEY };
+}
+
+const storageBase = () => `${requireStorage().url.replace(/\/$/, '')}/storage/v1`;
+
+const serviceHeaders = (): Record<string, string> => {
+  const { key } = requireStorage();
+  return { Authorization: `Bearer ${key}`, apikey: key };
+};
 
 /**
  * Object keys reach us from the client, and every ownership check in the media

@@ -96,3 +96,16 @@ is close today; both are foreseeable, and R2 is the answer when they arrive.
 **Images visible before review** is a real exposure, and the admin media queue is
 the only thing catching it. There is still no report button on profiles, so
 discovery depends on an administrator looking.
+
+**A takedown does not reach the CDN.** Measured against the live bucket: after
+`deleteObject` succeeds and the object is genuinely gone — a storage listing
+confirms it — the public URL still returns 200 from the Cloudflare edge with
+`cf-cache-status: HIT`. The same URL with a cache-busting query string returns
+400. Purging the edge is part of the Smart CDN, which is paid.
+
+So removing an image takes it out of the application immediately, but anyone
+who already holds the exact URL can keep fetching it until the edge copy
+expires. Object keys are random UUIDs and are never reused, so this only affects
+someone who already had the link — but for the abusive-image case, that is
+precisely who has it. This is the strongest argument for moving to R2, where we
+would control invalidation.

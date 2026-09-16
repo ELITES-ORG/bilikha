@@ -10,7 +10,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
-import { deleteObject, publicUrl } from '../../lib/storage.js';
+import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 
 type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
 type ProfileQueueStatus = ProfileStatus | 'edited';
@@ -222,6 +222,8 @@ export async function moderate(input: {
 }
 
 export async function listUnreviewedMedia(options: { page: number; limit: number }) {
+  if (!isStorageConfigured()) return { data: [], total: 0 };
+
   const offset = (options.page - 1) * options.limit;
 
   const portfolioRows = await db
