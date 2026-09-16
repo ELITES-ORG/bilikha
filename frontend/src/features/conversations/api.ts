@@ -4,7 +4,9 @@ import { apiClient, toApiError } from '@/lib/api-client';
 import type {
   ConversationListItem,
   ConversationThread,
+  EnsureConversationResult,
   HistoryItem,
+  SendMessagePayload,
   StartConversationPayload,
   StartConversationResult,
 } from './types';
@@ -105,6 +107,27 @@ export function useHistory() {
   });
 }
 
+export function useEnsureConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (profileSlug: string): Promise<EnsureConversationResult> => {
+      try {
+        const { data } = await apiClient.post<ApiResponse<EnsureConversationResult>>(
+          '/conversations/ensure',
+          { profileSlug },
+        );
+        return data.data;
+      } catch (error) {
+        rethrowForForms(error);
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.all });
+    },
+  });
+}
+
 export function useStartConversation() {
   const queryClient = useQueryClient();
 
@@ -131,11 +154,11 @@ export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: string) => {
+    mutationFn: async (payload: SendMessagePayload) => {
       try {
         const { data } = await apiClient.post<ApiResponse<unknown>>(
           `/conversations/${conversationId}/messages`,
-          { body },
+          payload,
         );
         return data.data;
       } catch (error) {
@@ -146,6 +169,7 @@ export function useSendMessage(conversationId: string) {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.thread(conversationId) });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.unread });
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.history });
     },
   });
 }

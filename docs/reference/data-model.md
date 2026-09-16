@@ -264,7 +264,10 @@ Indexes: unique on `(profile_id, subdomain_id)`; partial unique
 
 Two-party thread between a client and a creative profile
 ([ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md)).
-Exactly one conversation per `(profile_id, client_user_id)`.
+Exactly one conversation per `(profile_id, client_user_id)`. Offers attach to
+**messages**, not to the conversation
+([ADR 0024](../decisions/0024-offers-attach-to-messages.md)). There is no
+`subject` or `offer_id` on this table.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -272,19 +275,17 @@ Exactly one conversation per `(profile_id, client_user_id)`.
 | `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
 | `creative_user_id` | `uuid` FK → `users.id` | Denormalised from the profile |
 | `client_user_id` | `uuid` FK → `users.id` | |
-| `offer_id` | `uuid` FK → `offers.id` null | Set when started from an offer; `ON DELETE SET NULL` so deleting a listing keeps the thread |
-| `subject` | `text` | Set on first message |
 | `last_message_at` | `timestamptz` | Denormalised for the thread list |
 | `client_last_read_at` / `creative_last_read_at` | `timestamptz` null | Per-side read cursors |
 | `created_at` | `timestamptz` | |
 
 Indexes: unique `(profile_id, client_user_id)`;
-`(creative_user_id, last_message_at)`; `(client_user_id, last_message_at)`;
-`conversations_offer_idx` on `(offer_id)`.
+`(creative_user_id, last_message_at)`; `(client_user_id, last_message_at)`.
 
 ## `messages`
 
 Append-only bodies in a conversation. Never edited or deleted in this model.
+Optional `offer_id` is set at insert and only nulled when the offer is deleted.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -292,9 +293,23 @@ Append-only bodies in a conversation. Never edited or deleted in this model.
 | `conversation_id` | `uuid` FK → `conversations.id` | `ON DELETE CASCADE` |
 | `sender_user_id` | `uuid` FK → `users.id` | |
 | `body` | `text` | |
+| `offer_id` | `uuid` FK → `offers.id` null | Optional; `ON DELETE SET NULL` so deleting a listing keeps the message |
 | `created_at` | `timestamptz` | |
 
-Index: `(conversation_id, created_at)`.
+Indexes: `(conversation_id, created_at)`; `messages_offer_idx` on `(offer_id)`.
+
+## `saved_offers`
+
+Client bookmarks on offers. Saving twice cannot duplicate.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `offer_id` | `uuid` FK → `offers.id` | `ON DELETE CASCADE` |
+| `created_at` | `timestamptz` | |
+
+Indexes: unique `(user_id, offer_id)`; `(user_id, created_at)`.
 
 ## `conversation_reports`
 

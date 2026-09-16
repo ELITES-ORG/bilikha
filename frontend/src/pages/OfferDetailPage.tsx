@@ -1,26 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Avatar, Badge, Button, ButtonLink, Container, Skeleton } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Container, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { ContactComposer } from '@/features/conversations/ContactComposer';
+import { useEnsureConversation } from '@/features/conversations/api';
 import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
+import {
+  useSaveOffer,
+  useSavedOffers,
+  useUnsaveOffer,
+} from '@/features/me/saved-offers';
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
+import { toApiError } from '@/lib/api-client';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 export function OfferDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const toast = useToast();
   const offer = usePublishedOffer(id);
   const { data: user } = useCurrentUser();
-  const [composerOpen, setComposerOpen] = useState(false);
+  const ensure = useEnsureConversation();
+  const saveOffer = useSaveOffer();
+  const unsaveOffer = useUnsaveOffer();
+  const saved = useSavedOffers(Boolean(user));
   const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const [inquiring, setInquiring] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const lightboxItem = offer.data?.images.find((image) => image.id === lightboxId) ?? null;
+  const isSaved =
+    Boolean(id) &&
+    (saved.data?.some((row) => row.offer.id === id) ?? false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -50,7 +65,51 @@ export function OfferDetailPage() {
     offer.data?.creative.displayName ?? offer.data?.creative.slug ?? 'this creative';
   const profilePath = offer.data ? `/creatives/${offer.data.creative.slug}` : '/';
   const returnPath = id ? `/offers/${id}` : '/directory';
-  const initialMessage = offer.data ? `I'm interested in "${offer.data.title}".` : undefined;
+  const loginHref = `/login?next=${encodeURIComponent(returnPath)}`;
+
+  async function onInquire() {
+    if (!offer.data) return;
+    if (!user) {
+      void navigate(loginHref);
+      return;
+    }
+    setInquiring(true);
+    try {
+      const thread = await ensure.mutateAsync(offer.data.creative.slug);
+      void navigate(`/messages/${thread.id}?offerId=${encodeURIComponent(offer.data.id)}`);
+    } catch (err) {
+      toast.error(toApiError(err).message);
+    } finally {
+      setInquiring(false);
+    }
+  }
+
+  async function onToggleSave() {
+    if (!id) return;
+    if (!user) {
+      void navigate(loginHref);
+      return;
+    }
+    if (isSaved) {
+      await toast.run(
+        'Removing…',
+        () => unsaveOffer.mutateAsync(id),
+        {
+          success: 'Removed from saved',
+          error: (err) => toApiError(err).message,
+        },
+      );
+    } else {
+      await toast.run(
+        'Saving…',
+        () => saveOffer.mutateAsync(id),
+        {
+          success: 'Saved',
+          error: (err) => toApiError(err).message,
+        },
+      );
+    }
+  }
 
   return (
     <>
@@ -135,32 +194,35 @@ export function OfferDetailPage() {
 
               <div className="u-rule my-12" />
 
-              {!composerOpen && (
-                <div>
-                  {user ? (
-                    <Button size="lg" onClick={() => setComposerOpen(true)}>
-                      Contact about this offer
-                    </Button>
-                  ) : (
-                    <ButtonLink
-                      to={`/login?next=${encodeURIComponent(returnPath)}`}
-                      size="lg"
-                    >
-                      Sign in to contact
-                    </ButtonLink>
-                  )}
-                </div>
-              )}
-
-              {user && composerOpen && (
-                <ContactComposer
-                  profileSlug={offer.data.creative.slug}
-                  creativeName={creativeName}
-                  initialMessage={initialMessage}
-                  offerId={offer.data.id}
-                  onCancel={() => setComposerOpen(false)}
-                />
-              )}
+              <div className="flex flex-wrap gap-3">
+                {user ? (
+                  <Button
+                    size="lg"
+                    loading={inquiring || ensure.isPending}
+                    onClick={() => void onInquire()}
+                  >
+                    Inquire
+                  </Button>
+                ) : (
+                  <ButtonLink to={loginHref} size="lg">
+                    Inquire
+                  </ButtonLink>
+                )}
+                {user ? (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    loading={saveOffer.isPending || unsaveOffer.isPending}
+                    onClick={() => void onToggleSave().catch(() => undefined)}
+                  >
+                    {isSaved ? 'Saved' : 'Save'}
+                  </Button>
+                ) : (
+                  <ButtonLink to={loginHref} size="lg" variant="secondary">
+                    Save
+                  </ButtonLink>
+                )}
+              </div>
             </>
           )}
         </Container>

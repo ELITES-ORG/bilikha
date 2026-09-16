@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Button, ButtonLink, Badge, Container, EmptyState, SectionHeading, Skeleton } from '@/components/ui';
+import { Avatar, Button, ButtonLink, Badge, Container, EmptyState, SectionHeading, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
@@ -50,22 +50,28 @@ export function MessagesPage() {
                       to={`/messages/${row.id}`}
                       className="flex items-start justify-between gap-4 px-4 py-4 transition-colors hover:bg-clay-50"
                     >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-ink">{row.otherPartyName}</span>
-                          {row.unreadCount > 0 && (
-                            <Badge tone="accent" className="tabular-nums">
-                              {row.unreadCount}
-                            </Badge>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <Avatar
+                          src={row.otherPartyAvatarUrl}
+                          name={row.otherPartyName}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-ink">{row.otherPartyName}</span>
+                            {row.unreadCount > 0 && (
+                              <Badge tone="accent" className="tabular-nums">
+                                {row.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
+                          {row.lastMessage && (
+                            <p className="mt-1 truncate text-sm text-ink-muted">
+                              {row.lastMessage.fromSelf ? 'You: ' : ''}
+                              {row.lastMessage.body}
+                            </p>
                           )}
                         </div>
-                        <p className="mt-0.5 truncate text-sm text-ink">{row.subject}</p>
-                        {row.lastMessage && (
-                          <p className="mt-1 truncate text-sm text-ink-muted">
-                            {row.lastMessage.fromSelf ? 'You: ' : ''}
-                            {row.lastMessage.body}
-                          </p>
-                        )}
                       </div>
                       <time
                         className="shrink-0 text-xs text-ink-subtle tabular-nums"

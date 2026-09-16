@@ -3,6 +3,7 @@ import { requireAuth } from '../../middleware/require-auth.js';
 import { messageLimiter } from '../../middleware/rate-limit.js';
 import {
   conversationIdSchema,
+  ensureConversationSchema,
   listMessagesSchema,
   listThreadsSchema,
   reportSchema,
@@ -10,6 +11,7 @@ import {
   startConversationSchema,
 } from './conversations.schema.js';
 import {
+  ensureConversation,
   getThread,
   listHistory,
   listThreads,
@@ -28,6 +30,12 @@ conversationsRouter.post('/', messageLimiter, async (req, res) => {
   const input = startConversationSchema.parse(req.body);
   const data = await startOrContinue(req.session.userId!, input);
   res.status(data.continued ? 200 : 201).json({ data });
+});
+
+conversationsRouter.post('/ensure', messageLimiter, async (req, res) => {
+  const input = ensureConversationSchema.parse(req.body);
+  const data = await ensureConversation(req.session.userId!, input);
+  res.json({ data });
 });
 
 conversationsRouter.get('/', async (req, res) => {

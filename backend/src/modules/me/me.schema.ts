@@ -52,6 +52,11 @@ export const changePasswordSchema = z
     message: 'Choose a different password',
   });
 
+export const saveOfferSchema = z.object({
+  offerId: z.string().uuid('Invalid offer id'),
+});
+
 export type CreateProfileInput = z.infer<typeof createProfileSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type SaveOfferInput = z.infer<typeof saveOfferSchema>;

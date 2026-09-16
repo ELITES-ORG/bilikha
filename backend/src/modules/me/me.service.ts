@@ -1,4 +1,4 @@
-import { and, count, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   barangays,
@@ -7,17 +7,33 @@ import {
   creativeSubdomains,
   moderationActions,
   municipalities,
+  offerImages,
   offers,
+  savedOffers,
   userBlocks,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
+import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type {
   ChangePasswordInput,
   CreateProfileInput,
   UpdateProfileInput,
 } from './me.schema.js';
+
+function formatCreativeName(parts: {
+  displayName: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  suffix: string | null;
+}): string {
+  if (parts.displayName?.trim()) return parts.displayName.trim();
+  return [parts.firstName, parts.middleName, parts.lastName, parts.suffix]
+    .filter(Boolean)
+    .join(' ');
+}
 
 export interface OwnProfile {
   firstName: string;
@@ -467,4 +483,124 @@ export async function unblockUser(blockerUserId: string, blockedUserId: string) 
       ),
     );
   return { ok: true as const };
+}
+
+/** Only offers on published creatives can be saved. */
+export async function saveOffer(userId: string, offerId: string) {
+  const [offer] = await db
+    .select({ id: offers.id })
+    .from(offers)
+    .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
+    .where(and(eq(offers.id, offerId), eq(creativeProfiles.status, 'published')))
+    .limit(1);
+
+  if (!offer) {
+    throw AppError.badRequest('Only published offers can be saved.', { field: 'offerId' });
+  }
+
+  const [existing] = await db
+    .select({ id: savedOffers.id })
+    .from(savedOffers)
+    .where(and(eq(savedOffers.userId, userId), eq(savedOffers.offerId, offerId)))
+    .limit(1);
+
+  if (existing) {
+    return { id: existing.id, alreadySaved: true as const };
+  }
+
+  // The read above is not atomic with this insert, and a double-tap really does
+  // arrive twice. Without onConflictDoNothing the unique index turns the second
+  // one into a 500 on an action that is meant to be idempotent.
+  const [row] = await db
+    .insert(savedOffers)
+    .values({ userId, offerId })
+    .onConflictDoNothing({ target: [savedOffers.userId, savedOffers.offerId] })
+    .returning({ id: savedOffers.id });
+
+  if (row) return { id: row.id, alreadySaved: false as const };
+
+  const [raced] = await db
+    .select({ id: savedOffers.id })
+    .from(savedOffers)
+    .where(and(eq(savedOffers.userId, userId), eq(savedOffers.offerId, offerId)))
+    .limit(1);
+
+  return { id: raced!.id, alreadySaved: true as const };
+}
+
+/** Idempotent: missing rows still return successfully. */
+export async function unsaveOffer(userId: string, offerId: string) {
+  await db
+    .delete(savedOffers)
+    .where(and(eq(savedOffers.userId, userId), eq(savedOffers.offerId, offerId)));
+  return { ok: true as const };
+}
+
+export async function listSavedOffers(userId: string) {
+  const rows = await db
+    .select({
+      id: savedOffers.id,
+      savedAt: savedOffers.createdAt,
+      offerId: offers.id,
+      title: offers.title,
+      priceMinCentavos: offers.priceMinCentavos,
+      priceMaxCentavos: offers.priceMaxCentavos,
+      slug: creativeProfiles.slug,
+      displayName: creativeProfiles.displayName,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+      municipality: municipalities.name,
+      avatarKey: users.avatarKey,
+    })
+    .from(savedOffers)
+    .innerJoin(offers, eq(savedOffers.offerId, offers.id))
+    .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
+    .where(eq(savedOffers.userId, userId))
+    .orderBy(desc(savedOffers.createdAt));
+
+  const offerIds = rows.map((r) => r.offerId);
+  const firstImageByOfferId = new Map<string, { url: string; thumbUrl: string }>();
+  if (offerIds.length > 0 && isStorageConfigured()) {
+    const imageRows = await db
+      .select({
+        offerId: offerImages.offerId,
+        objectKey: offerImages.objectKey,
+        thumbKey: offerImages.thumbKey,
+      })
+      .from(offerImages)
+      .where(inArray(offerImages.offerId, offerIds))
+      .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
+
+    for (const row of imageRows) {
+      if (firstImageByOfferId.has(row.offerId)) continue;
+      firstImageByOfferId.set(row.offerId, {
+        url: publicUrl(row.objectKey),
+        thumbUrl: publicUrl(row.thumbKey),
+      });
+    }
+  }
+
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      savedAt: row.savedAt.toISOString(),
+      offer: {
+        id: row.offerId,
+        title: row.title,
+        priceMinCentavos: row.priceMinCentavos,
+        priceMaxCentavos: row.priceMaxCentavos,
+        image: firstImageByOfferId.get(row.offerId) ?? null,
+      },
+      creative: {
+        slug: row.slug,
+        displayName: formatCreativeName(row),
+        municipality: row.municipality,
+        avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
+      },
+    })),
+  };
 }

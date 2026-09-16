@@ -7,7 +7,7 @@ import {
   saveMessageDraft,
   type MessageDraft,
 } from '@/features/conversations/draft';
-import { Button, Input, useToast } from '@/components/ui';
+import { Button, useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 
 interface ContactComposerProps {
@@ -23,7 +23,7 @@ interface ContactComposerProps {
 type Phase = 'compose' | 'sending' | 'done';
 
 function initialDraft(profileSlug: string, initialMessage?: string): MessageDraft {
-  return loadMessageDraft(profileSlug) ?? { subject: '', message: initialMessage ?? '' };
+  return loadMessageDraft(profileSlug) ?? { message: initialMessage ?? '' };
 }
 
 /** Compose-and-send only. Starts or continues a conversation. */
@@ -39,7 +39,6 @@ export function ContactComposer({
   const start = useStartConversation();
 
   const [phase, setPhase] = useState<Phase>('compose');
-  const [subject, setSubject] = useState(() => initialDraft(profileSlug, initialMessage).subject);
   const [message, setMessage] = useState(() => initialDraft(profileSlug, initialMessage).message);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -54,7 +53,6 @@ export function ContactComposer({
         async () => {
           const result = await start.mutateAsync({
             profileSlug,
-            subject: draft.subject,
             body: draft.message,
             ...(offerId ? { offerId } : {}),
           });
@@ -75,11 +73,7 @@ export function ContactComposer({
     setError(null);
     setFieldErrors({});
 
-    const draft: MessageDraft = { subject: subject.trim(), message: message.trim() };
-    if (draft.subject.length < 3) {
-      setFieldErrors({ subject: 'Too short' });
-      return;
-    }
+    const draft: MessageDraft = { message: message.trim() };
     if (draft.message.length < 20) {
       setFieldErrors({ message: 'Give a little more detail' });
       return;
@@ -130,18 +124,6 @@ export function ContactComposer({
       {error && <p className="mt-4 text-sm text-danger-700">{error}</p>}
 
       <div className="mt-6 grid gap-4">
-        <Input
-          label="Subject"
-          required
-          value={subject}
-          onChange={(e) => {
-            const next = e.target.value;
-            setSubject(next);
-            saveMessageDraft(profileSlug, { subject: next, message });
-          }}
-          error={fieldErrors.subject}
-          maxLength={120}
-        />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="contact-message" className="text-sm font-medium text-ink">
             Message<span className="ms-0.5 text-danger-600">*</span>
@@ -155,7 +137,7 @@ export function ContactComposer({
             onChange={(e) => {
               const next = e.target.value;
               setMessage(next);
-              saveMessageDraft(profileSlug, { subject, message: next });
+              saveMessageDraft(profileSlug, { message: next });
             }}
             className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
             aria-invalid={fieldErrors.message ? true : undefined}

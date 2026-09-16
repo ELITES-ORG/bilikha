@@ -1,5 +1,4 @@
 export interface MessageDraft {
-  subject: string;
   message: string;
 }
 
@@ -11,9 +10,9 @@ export function loadMessageDraft(profileSlug: string): MessageDraft | null {
   try {
     const raw = localStorage.getItem(key(profileSlug));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as MessageDraft;
-    if (typeof parsed.subject !== 'string' || typeof parsed.message !== 'string') return null;
-    return parsed;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof parsed.message !== 'string') return null;
+    return { message: parsed.message };
   } catch {
     return null;
   }

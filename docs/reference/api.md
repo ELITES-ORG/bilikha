@@ -319,6 +319,31 @@ Blocks another user. Idempotent — a second call for the same pair returns
 
 Removes a block. Idempotent when the pair was not blocked.
 
+### `GET /api/v1/me/saved-offers`
+
+Saved offers for the caller, newest first. Each row:
+
+- `id`, `savedAt`
+- `offer` — `{ id, title, priceMinCentavos, priceMaxCentavos, image }` where
+  `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, or `null`
+- `creative` — `{ slug, displayName, municipality, avatarUrl }`
+
+Deleting an offer cascades the save row away.
+
+### `POST /api/v1/me/saved-offers`
+
+```jsonc
+{ "offerId": "…" }
+```
+
+Saves a **published** offer (creative profile must be `published`). Idempotent —
+already saved → `200`; newly saved → `201`. Unpublished or unknown offers →
+`400` with `field: "offerId"`.
+
+### `DELETE /api/v1/me/saved-offers/:offerId`
+
+Removes a save. Always `204`, including when the offer was never saved.
+
 ---
 
 ## Admin
@@ -424,38 +449,55 @@ see the previous recency order and no `isNearby` field.
 All routes require a signed-in session. Authorisation is by participation: the
 caller must be the client or the creative on that thread. Non-participants get
 `404` (never `403`, never content). See
-[ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md).
+[ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md) and
+[ADR 0024](../decisions/0024-offers-attach-to-messages.md).
 
-Rate limited to 60 successful sends per user per hour (`POST /` and
-`POST /:id/messages`).
+Rate limited to 60 successful writes per user per hour (`POST /`,
+`POST /ensure`, and `POST /:id/messages`).
 
 ### `POST /api/v1/conversations`
 
-Start or continue a conversation with a **published** profile.
+Start or continue a conversation with a **published** profile. Optional
+`offerId` is stored on the **message**, not the conversation.
 
 ```jsonc
 {
   "profileSlug": "juancruz",
-  "subject": "Mural for a café wall",
   "body": "Looking for a muralist available in October for a ~3m wall in Naval.",
   "offerId": "optional-uuid-when-contacting-from-an-offer"
 }
 ```
 
 `offerId` is optional. When set, the offer must exist and belong to the creative
-being contacted; otherwise `400` with `field: "offerId"`. On a new thread it is
-stored; on continue it updates the thread's attributed offer. Omit to leave
-`offer_id` null / unchanged (profile-level contact).
+being contacted; otherwise `400` with `field: "offerId"`. There is no subject —
+threads are identified by the other person and last message.
 
 `201` for a new thread, `200` when continuing an existing client↔profile pair
-(subject is ignored; `body` is appended). Rejects self-contact (`400`). If the
-creative has blocked the caller → `403` with a neutral “cannot be delivered”
-message. Unpublished slugs → `404`.
+(`body` is appended; a second `offerId` attaches a second card on the new
+message). Rejects self-contact (`400`). If the creative has blocked the caller →
+`403` with a neutral “cannot be delivered” message. Unpublished slugs → `404`.
+
+Message payloads include `offer` when present: `{ id, title, priceMinCentavos,
+priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` or `null`;
+`available` is `true` while the offer row exists). Deleting an offer nulls
+`messages.offer_id`, so later reads show `offer: null`.
+
+### `POST /api/v1/conversations/ensure`
+
+```jsonc
+{ "profileSlug": "juancruz" }
+```
+
+Get or create the client↔profile thread **without** sending a message. Same
+published / self / block checks as `POST /`. Returns `{ data: { id } }`. Used by
+Inquire so the composer can attach an offer before the client types.
 
 ### `GET /api/v1/conversations`
 
 Thread list for the caller (as client or creative). Newest `lastMessageAt`
-first. Query: `page`, `limit`.
+first. Query: `page`, `limit`. Each row: `id`, `profileSlug`, `otherPartyName`,
+`avatarUrl`, `role` (`client` \| `creative`), `lastMessage`, `unreadCount`,
+`lastMessageAt`. No subject.
 
 ### `GET /api/v1/conversations/unread-count`
 
@@ -464,31 +506,37 @@ last-read timestamp.
 
 ### `GET /api/v1/conversations/history`
 
-Inquiry history for the caller **as client** only (not threads where they are
-the creative). Newest `startedAt` first. Each row:
+Inquiry history for the caller **as client**: their own sent messages that carry
+an `offer_id`, **grouped by offer** (asking thrice → one row), newest
+`lastAskedAt` first. Each row:
 
-- `id`, `startedAt`
-- `replied` — true if any message from the creative exists
-- `unreadCount` — same client-side unread logic as the thread list
-- `offer` — `null`, or `{ id, title, priceMinCentavos, priceMaxCentavos, image }`
-  where `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, or
-  `null`. Deleted offers resolve to `null` (`offer_id` is `SET NULL` on delete)
+- `conversationId`, `lastAskedAt`
+- `replied` — true if the creative sent any message in that thread after the
+  client's last ask about this offer
+- `offer` — card shape as above, or `null` if the offer was deleted between
+  grouping and load (deleted offers normally vanish because `offer_id` is
+  `SET NULL`)
 - `creative` — `{ slug, displayName, municipality, avatarUrl }`
 
 ### `GET /api/v1/conversations/:id`
 
-Thread + messages. Includes `otherPartyUserId` and `otherPartyName` for the
-counterpart. Query: `after` (message uuid, for polling), `limit`.
-Non-participants → `404`.
+Thread + messages. Includes `otherPartyUserId` and `otherPartyName`. Each
+message may include `offer` (card or `null`). Query: `after` (message uuid, for
+polling), `limit`. Non-participants → `404`. No subject.
 
 ### `POST /api/v1/conversations/:id/messages`
 
 ```jsonc
-{ "body": "Happy to discuss rates this week." }
+{
+  "body": "Happy to discuss rates this week.",
+  "offerId": "optional-uuid-for-a-second-inquiry-in-the-same-thread"
+}
 ```
 
-`201`. If the other party has blocked the caller → neutral `403`.
-Non-participants → `404`.
+`201`. Optional `offerId` must belong to the conversation's creative profile
+(`400` with `field: "offerId"` otherwise). Attached only on this message; never
+rewrites earlier messages. If the other party has blocked the caller → neutral
+`403`. Non-participants → `404`.
 
 ### `POST /api/v1/conversations/:id/read`
 

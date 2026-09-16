@@ -2,13 +2,17 @@ import { z } from 'zod';
 
 export const startConversationSchema = z.object({
   profileSlug: z.string().trim().min(1),
-  subject: z.string().trim().min(3, 'Too short').max(120),
   body: z.string().trim().min(20, 'Give a little more detail').max(2000),
   offerId: z.string().uuid('Invalid offer id').optional(),
 });
 
+export const ensureConversationSchema = z.object({
+  profileSlug: z.string().trim().min(1),
+});
+
 export const sendMessageSchema = z.object({
   body: z.string().trim().min(1, 'Write a message').max(2000),
+  offerId: z.string().uuid('Invalid offer id').optional(),
 });
 
 export const listMessagesSchema = z.object({
@@ -29,6 +33,7 @@ export const reportSchema = z.object({
 export const conversationIdSchema = z.string().uuid('Invalid conversation id');
 
 export type StartConversationInput = z.infer<typeof startConversationSchema>;
+export type EnsureConversationInput = z.infer<typeof ensureConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type ListMessagesInput = z.infer<typeof listMessagesSchema>;
 export type ListThreadsInput = z.infer<typeof listThreadsSchema>;

@@ -5,6 +5,7 @@ import { passwordChangeLimiter } from '../../middleware/rate-limit.js';
 import {
   changePasswordSchema,
   createProfileSchema,
+  saveOfferSchema,
   updateProfileSchema,
 } from './me.schema.js';
 import {
@@ -13,7 +14,10 @@ import {
   createOwnProfile,
   getOwnProfile,
   listBlocks,
+  listSavedOffers,
+  saveOffer,
   unblockUser,
+  unsaveOffer,
   updateOwnProfile,
 } from './me.service.js';
 
@@ -72,4 +76,21 @@ meRouter.delete('/blocks/:userId', async (req, res) => {
   const userId = z.string().uuid('Invalid user id').parse(req.params.userId);
   const data = await unblockUser(req.session.userId!, userId);
   res.json({ data });
+});
+
+meRouter.get('/saved-offers', async (req, res) => {
+  const result = await listSavedOffers(req.session.userId!);
+  res.json(result);
+});
+
+meRouter.post('/saved-offers', async (req, res) => {
+  const input = saveOfferSchema.parse(req.body);
+  const data = await saveOffer(req.session.userId!, input.offerId);
+  res.status(data.alreadySaved ? 200 : 201).json({ data });
+});
+
+meRouter.delete('/saved-offers/:offerId', async (req, res) => {
+  const offerId = z.string().uuid('Invalid offer id').parse(req.params.offerId);
+  await unsaveOffer(req.session.userId!, offerId);
+  res.status(204).send();
 });

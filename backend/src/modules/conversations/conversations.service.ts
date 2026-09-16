@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNull, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   conversations,
@@ -14,6 +14,7 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type {
+  EnsureConversationInput,
   ListMessagesInput,
   ListThreadsInput,
   ReportInput,
@@ -33,6 +34,15 @@ function formatName(parts: {
 }
 
 const BLOCKED_MESSAGE = 'This message cannot be delivered.';
+
+type OfferCard = {
+  id: string;
+  title: string;
+  priceMinCentavos: number | null;
+  priceMaxCentavos: number | null;
+  image: { url: string; thumbUrl: string } | null;
+  available: boolean;
+};
 
 /**
  * Resolves a conversation the caller actually participates in. Returns 404 for
@@ -72,6 +82,99 @@ async function assertCanMessage(senderUserId: string, otherUserId: string) {
   if (block) throw AppError.forbidden(BLOCKED_MESSAGE);
 }
 
+/** Published creative the caller may contact (not self). */
+async function requireContactableProfile(userId: string, profileSlug: string) {
+  const [profile] = await db
+    .select({
+      id: creativeProfiles.id,
+      userId: creativeProfiles.userId,
+      status: creativeProfiles.status,
+    })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.slug, profileSlug))
+    .limit(1);
+
+  if (!profile || profile.status !== 'published') {
+    throw AppError.notFound('Creative not found.');
+  }
+
+  if (profile.userId === userId) {
+    throw AppError.badRequest('You cannot contact your own profile.');
+  }
+
+  await assertCanMessage(userId, profile.userId);
+  return profile;
+}
+
+/**
+ * Offer must belong to the creative profile on the thread. Used when attaching
+ * an offer card to a newly sent message.
+ */
+async function resolveOfferForProfile(offerId: string, profileId: string): Promise<string> {
+  const [offer] = await db
+    .select({ id: offers.id, profileId: offers.profileId })
+    .from(offers)
+    .where(eq(offers.id, offerId))
+    .limit(1);
+
+  if (!offer || offer.profileId !== profileId) {
+    throw AppError.badRequest('That offer does not belong to this creative.', {
+      field: 'offerId',
+    });
+  }
+  return offer.id;
+}
+
+/** Batch-load offer cards for a page of messages — one query each for offers and images. */
+async function loadOfferCards(offerIds: string[]): Promise<Map<string, OfferCard>> {
+  const unique = [...new Set(offerIds.filter((id): id is string => Boolean(id)))];
+  const result = new Map<string, OfferCard>();
+  if (unique.length === 0) return result;
+
+  const offerRows = await db
+    .select({
+      id: offers.id,
+      title: offers.title,
+      priceMinCentavos: offers.priceMinCentavos,
+      priceMaxCentavos: offers.priceMaxCentavos,
+    })
+    .from(offers)
+    .where(inArray(offers.id, unique));
+
+  const firstImageByOfferId = new Map<string, { url: string; thumbUrl: string }>();
+  if (isStorageConfigured()) {
+    const imageRows = await db
+      .select({
+        offerId: offerImages.offerId,
+        objectKey: offerImages.objectKey,
+        thumbKey: offerImages.thumbKey,
+      })
+      .from(offerImages)
+      .where(inArray(offerImages.offerId, unique))
+      .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
+
+    for (const row of imageRows) {
+      if (firstImageByOfferId.has(row.offerId)) continue;
+      firstImageByOfferId.set(row.offerId, {
+        url: publicUrl(row.objectKey),
+        thumbUrl: publicUrl(row.thumbKey),
+      });
+    }
+  }
+
+  for (const offer of offerRows) {
+    result.set(offer.id, {
+      id: offer.id,
+      title: offer.title,
+      priceMinCentavos: offer.priceMinCentavos,
+      priceMaxCentavos: offer.priceMaxCentavos,
+      image: firstImageByOfferId.get(offer.id) ?? null,
+      available: true,
+    });
+  }
+  return result;
+}
+
 function unreadCondition(conversation: typeof conversations.$inferSelect, userId: string) {
   const isClient = conversation.clientUserId === userId;
   const otherUserId = isClient ? conversation.creativeUserId : conversation.clientUserId;
@@ -91,42 +194,14 @@ function unreadCondition(conversation: typeof conversations.$inferSelect, userId
 }
 
 export async function startOrContinue(userId: string, input: StartConversationInput) {
-  const [profile] = await db
-    .select({
-      id: creativeProfiles.id,
-      userId: creativeProfiles.userId,
-      status: creativeProfiles.status,
-    })
-    .from(creativeProfiles)
-    .where(eq(creativeProfiles.slug, input.profileSlug))
-    .limit(1);
-
-  if (!profile || profile.status !== 'published') {
-    throw AppError.notFound('Creative not found.');
-  }
-
-  if (profile.userId === userId) {
-    throw AppError.badRequest('You cannot contact your own profile.');
-  }
+  const profile = await requireContactableProfile(userId, input.profileSlug);
 
   let resolvedOfferId: string | null = null;
   if (input.offerId) {
-    const [offer] = await db
-      .select({ id: offers.id, profileId: offers.profileId })
-      .from(offers)
-      .where(eq(offers.id, input.offerId))
-      .limit(1);
-
-    if (!offer || offer.profileId !== profile.id) {
-      throw AppError.badRequest('That offer does not belong to this creative.', {
-        field: 'offerId',
-      });
-    }
-    resolvedOfferId = offer.id;
+    resolvedOfferId = await resolveOfferForProfile(input.offerId, profile.id);
   }
 
-  await assertCanMessage(userId, profile.userId);
-
+  const offerCards = await loadOfferCards(resolvedOfferId ? [resolvedOfferId] : []);
   const now = new Date();
 
   return db.transaction(async (tx) => {
@@ -146,8 +221,6 @@ export async function startOrContinue(userId: string, input: StartConversationIn
           profileId: profile.id,
           creativeUserId: profile.userId,
           clientUserId: userId,
-          offerId: resolvedOfferId,
-          subject: input.subject,
           lastMessageAt: now,
           clientLastReadAt: now,
         })
@@ -161,6 +234,7 @@ export async function startOrContinue(userId: string, input: StartConversationIn
         conversationId: conversation.id,
         senderUserId: userId,
         body: input.body,
+        offerId: resolvedOfferId,
         createdAt: now,
       })
       .returning();
@@ -170,84 +244,118 @@ export async function startOrContinue(userId: string, input: StartConversationIn
       .set({
         lastMessageAt: now,
         clientLastReadAt: now,
-        // Contacting from an offer attributes the thread; omit leaves it as-is.
-        ...(existing && resolvedOfferId ? { offerId: resolvedOfferId } : {}),
       })
       .where(eq(conversations.id, conversation.id));
 
     return {
       id: conversation.id,
-      subject: conversation.subject,
       continued: Boolean(existing),
       message: {
         id: message!.id,
         body: message!.body,
         createdAt: message!.createdAt.toISOString(),
+        offer: resolvedOfferId ? (offerCards.get(resolvedOfferId) ?? null) : null,
       },
     };
   });
 }
 
 /**
- * Client-side inquiry history: only threads where the caller is the client,
- * newest first by when they inquired (createdAt).
+ * Get or create the client↔profile thread without sending a message. Used by
+ * Inquire so the composer can attach an offer before the client types.
+ */
+export async function ensureConversation(userId: string, input: EnsureConversationInput) {
+  const profile = await requireContactableProfile(userId, input.profileSlug);
+  const now = new Date();
+
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(
+        and(eq(conversations.profileId, profile.id), eq(conversations.clientUserId, userId)),
+      )
+      .limit(1);
+
+    if (existing) {
+      return { id: existing.id };
+    }
+
+    const [created] = await tx
+      .insert(conversations)
+      .values({
+        profileId: profile.id,
+        creativeUserId: profile.userId,
+        clientUserId: userId,
+        lastMessageAt: now,
+        clientLastReadAt: now,
+      })
+      .returning({ id: conversations.id });
+
+    return { id: created!.id };
+  });
+}
+
+/**
+ * Client inquiry history: own sent messages that carry an offer, grouped by
+ * offer (asking thrice → one row), newest lastAskedAt first.
  */
 export async function listHistory(userId: string) {
   const rows = await db
     .select({
-      id: conversations.id,
-      createdAt: conversations.createdAt,
-      offerId: conversations.offerId,
+      offerId: messages.offerId,
+      conversationId: messages.conversationId,
+      createdAt: messages.createdAt,
       profileId: conversations.profileId,
+      creativeUserId: conversations.creativeUserId,
     })
-    .from(conversations)
-    .where(eq(conversations.clientUserId, userId))
-    .orderBy(desc(conversations.createdAt));
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        eq(messages.senderUserId, userId),
+        eq(conversations.clientUserId, userId),
+        isNotNull(messages.offerId),
+      ),
+    )
+    .orderBy(desc(messages.createdAt));
 
   if (rows.length === 0) {
     return { data: [] };
   }
 
-  const conversationIds = rows.map((r) => r.id);
-  const offerIds = [
-    ...new Set(rows.map((r) => r.offerId).filter((id): id is string => Boolean(id))),
-  ];
-  const profileIds = [...new Set(rows.map((r) => r.profileId))];
-
-  const offerRows =
-    offerIds.length === 0
-      ? []
-      : await db
-          .select({
-            id: offers.id,
-            title: offers.title,
-            priceMinCentavos: offers.priceMinCentavos,
-            priceMaxCentavos: offers.priceMaxCentavos,
-          })
-          .from(offers)
-          .where(inArray(offers.id, offerIds));
-  const offerById = new Map(offerRows.map((o) => [o.id, o]));
-
-  const firstImageByOfferId = new Map<string, { url: string; thumbUrl: string }>();
-  if (offerIds.length > 0 && isStorageConfigured()) {
-    const imageRows = await db
-      .select({
-        offerId: offerImages.offerId,
-        objectKey: offerImages.objectKey,
-        thumbKey: offerImages.thumbKey,
-      })
-      .from(offerImages)
-      .where(inArray(offerImages.offerId, offerIds))
-      .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
-
-    for (const row of imageRows) {
-      if (firstImageByOfferId.has(row.offerId)) continue;
-      firstImageByOfferId.set(row.offerId, {
-        url: publicUrl(row.objectKey),
-        thumbUrl: publicUrl(row.thumbKey),
+  // One row per offer; keep the newest ask.
+  type Group = {
+    offerId: string;
+    conversationId: string;
+    profileId: string;
+    creativeUserId: string;
+    lastAskedAt: Date;
+  };
+  const byOffer = new Map<string, Group>();
+  for (const row of rows) {
+    if (!row.offerId) continue;
+    const existing = byOffer.get(row.offerId);
+    if (!existing) {
+      byOffer.set(row.offerId, {
+        offerId: row.offerId,
+        conversationId: row.conversationId,
+        profileId: row.profileId,
+        creativeUserId: row.creativeUserId,
+        lastAskedAt: row.createdAt,
       });
     }
   }
+
+  const groups = [...byOffer.values()].sort(
+    (a, b) => b.lastAskedAt.getTime() - a.lastAskedAt.getTime(),
+  );
+
+  const offerIds = groups.map((g) => g.offerId);
+  const profileIds = [...new Set(groups.map((g) => g.profileId))];
+  const conversationIds = [...new Set(groups.map((g) => g.conversationId))];
+
+  const offerCards = await loadOfferCards(offerIds);
 
   const creativeRows = await db
     .select({
@@ -267,83 +375,94 @@ export async function listHistory(userId: string) {
     .where(inArray(creativeProfiles.id, profileIds));
   const creativeByProfileId = new Map(creativeRows.map((c) => [c.profileId, c]));
 
-  const repliedRows = await db
-    .selectDistinct({ conversationId: messages.conversationId })
-    .from(messages)
-    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
-    .where(
-      and(
-        inArray(messages.conversationId, conversationIds),
-        eq(messages.senderUserId, conversations.creativeUserId),
-      ),
-    );
-  const repliedIds = new Set(repliedRows.map((r) => r.conversationId));
+  // replied = creative sent any message after the client's last ask for that offer.
+  const replyRows =
+    conversationIds.length === 0
+      ? []
+      : await db
+          .select({
+            conversationId: messages.conversationId,
+            createdAt: messages.createdAt,
+            senderUserId: messages.senderUserId,
+          })
+          .from(messages)
+          .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+          .where(
+            and(
+              inArray(messages.conversationId, conversationIds),
+              eq(messages.senderUserId, conversations.creativeUserId),
+            ),
+          );
 
-  const unreadRows = await db
-    .select({
-      conversationId: messages.conversationId,
-      unread: count(),
-    })
-    .from(messages)
-    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
-    .where(
-      and(
-        inArray(messages.conversationId, conversationIds),
-        eq(messages.senderUserId, conversations.creativeUserId),
-        or(isNull(conversations.clientLastReadAt), gt(messages.createdAt, conversations.clientLastReadAt)),
-      ),
-    )
-    .groupBy(messages.conversationId);
-  const unreadById = new Map(unreadRows.map((r) => [r.conversationId, Number(r.unread)]));
+  const repliesByConversation = new Map<string, Date[]>();
+  for (const row of replyRows) {
+    const list = repliesByConversation.get(row.conversationId) ?? [];
+    list.push(row.createdAt);
+    repliesByConversation.set(row.conversationId, list);
+  }
 
   return {
-    data: rows.map((row) => {
-      const offer = row.offerId ? offerById.get(row.offerId) : undefined;
-      const creative = creativeByProfileId.get(row.profileId);
+    data: groups
+      .map((group) => {
+        const offer = offerCards.get(group.offerId);
+        // Deleted offers null the FK on messages over time; once the card is
+        // gone, History stops listing that inquiry (plan 7.4).
+        if (!offer) return null;
 
-      return {
-        id: row.id,
-        startedAt: row.createdAt.toISOString(),
-        replied: repliedIds.has(row.id),
-        unreadCount: unreadById.get(row.id) ?? 0,
-        offer: offer
-          ? {
-              id: offer.id,
-              title: offer.title,
-              priceMinCentavos: offer.priceMinCentavos,
-              priceMaxCentavos: offer.priceMaxCentavos,
-              image: firstImageByOfferId.get(offer.id) ?? null,
-            }
-          : null,
-        creative: {
-          slug: creative?.slug ?? '',
-          displayName: creative
-            ? creative.displayName?.trim() || formatName(creative)
-            : 'Unknown',
-          municipality: creative?.municipality ?? '',
-          avatarUrl:
-            creative?.avatarKey && isStorageConfigured() ? publicUrl(creative.avatarKey) : null,
-        },
-      };
-    }),
+        const creative = creativeByProfileId.get(group.profileId);
+        const replies = repliesByConversation.get(group.conversationId) ?? [];
+        const replied = replies.some((at) => at.getTime() > group.lastAskedAt.getTime());
+
+        return {
+          conversationId: group.conversationId,
+          lastAskedAt: group.lastAskedAt.toISOString(),
+          replied,
+          offer,
+          creative: {
+            slug: creative?.slug ?? '',
+            displayName: creative
+              ? creative.displayName?.trim() || formatName(creative)
+              : 'Unknown',
+            municipality: creative?.municipality ?? '',
+            avatarUrl:
+              creative?.avatarKey && isStorageConfigured() ? publicUrl(creative.avatarKey) : null,
+          },
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null),
   };
 }
 
 export async function listThreads(userId: string, options: ListThreadsInput) {
   const offset = (options.page - 1) * options.limit;
 
+  /**
+   * ensureConversation creates the row before anything is said, so that Inquire
+   * can open a thread. Until the client actually sends, that thread is not a
+   * conversation — showing it would put an empty thread from a stranger in the
+   * creative's inbox, and make tapping Inquire a way to plant one.
+   *
+   * Applied to the count as well as the page, or pagination reports more rows
+   * than it returns.
+   */
+  const hasMessages = sql`exists (
+    select 1 from messages m where m.conversation_id = ${conversations.id}
+  )`;
+
+  const mine = and(
+    or(eq(conversations.clientUserId, userId), eq(conversations.creativeUserId, userId)),
+    hasMessages,
+  );
+
   const totalRows = await db
     .select({ total: count() })
     .from(conversations)
-    .where(
-      or(eq(conversations.clientUserId, userId), eq(conversations.creativeUserId, userId)),
-    );
+    .where(mine);
   const total = Number(totalRows[0]?.total ?? 0);
 
   const rows = await db
     .select({
       id: conversations.id,
-      subject: conversations.subject,
       lastMessageAt: conversations.lastMessageAt,
       clientUserId: conversations.clientUserId,
       creativeUserId: conversations.creativeUserId,
@@ -353,9 +472,7 @@ export async function listThreads(userId: string, options: ListThreadsInput) {
     })
     .from(conversations)
     .innerJoin(creativeProfiles, eq(conversations.profileId, creativeProfiles.id))
-    .where(
-      or(eq(conversations.clientUserId, userId), eq(conversations.creativeUserId, userId)),
-    )
+    .where(mine)
     .orderBy(desc(conversations.lastMessageAt))
     .limit(options.limit)
     .offset(offset);
@@ -373,6 +490,7 @@ export async function listThreads(userId: string, options: ListThreadsInput) {
             middleName: users.middleName,
             lastName: users.lastName,
             suffix: users.suffix,
+            avatarKey: users.avatarKey,
           })
           .from(users)
           .where(inArray(users.id, otherIds));
@@ -409,9 +527,10 @@ export async function listThreads(userId: string, options: ListThreadsInput) {
 
     data.push({
       id: row.id,
-      subject: row.subject,
       profileSlug: row.profileSlug,
       otherPartyName: other ? formatName(other) : 'Unknown',
+      avatarUrl:
+        other?.avatarKey && isStorageConfigured() ? publicUrl(other.avatarKey) : null,
       role: isClient ? ('client' as const) : ('creative' as const),
       lastMessage: last
         ? {
@@ -451,6 +570,7 @@ export async function getThread(
     .select({
       id: messages.id,
       body: messages.body,
+      offerId: messages.offerId,
       senderUserId: messages.senderUserId,
       createdAt: messages.createdAt,
       firstName: users.firstName,
@@ -461,6 +581,10 @@ export async function getThread(
     .where(and(...conditions))
     .orderBy(asc(messages.createdAt))
     .limit(options.limit);
+
+  const offerCards = await loadOfferCards(
+    rows.map((r) => r.offerId).filter((id): id is string => Boolean(id)),
+  );
 
   const isClient = conversation.clientUserId === userId;
   const otherUserId = isClient ? conversation.creativeUserId : conversation.clientUserId;
@@ -475,7 +599,6 @@ export async function getThread(
 
   return {
     id: conversation.id,
-    subject: conversation.subject,
     role: isClient ? ('client' as const) : ('creative' as const),
     otherPartyUserId: otherUserId,
     otherPartyName: other ? `${other.firstName} ${other.lastName}`.trim() : 'Unknown',
@@ -486,6 +609,7 @@ export async function getThread(
       fromSelf: row.senderUserId === userId,
       senderName: `${row.firstName} ${row.lastName}`.trim(),
       createdAt: row.createdAt.toISOString(),
+      offer: row.offerId ? (offerCards.get(row.offerId) ?? null) : null,
     })),
   };
 }
@@ -503,6 +627,11 @@ export async function sendMessage(
 
   await assertCanMessage(userId, otherId);
 
+  let resolvedOfferId: string | null = null;
+  if (input.offerId) {
+    resolvedOfferId = await resolveOfferForProfile(input.offerId, conversation.profileId);
+  }
+
   const now = new Date();
   const [message] = await db
     .insert(messages)
@@ -510,6 +639,7 @@ export async function sendMessage(
       conversationId: conversation.id,
       senderUserId: userId,
       body: input.body,
+      offerId: resolvedOfferId,
       createdAt: now,
     })
     .returning();
@@ -521,11 +651,14 @@ export async function sendMessage(
 
   await db.update(conversations).set(readPatch).where(eq(conversations.id, conversation.id));
 
+  const offerCards = await loadOfferCards(resolvedOfferId ? [resolvedOfferId] : []);
+
   return {
     id: message!.id,
     body: message!.body,
     fromSelf: true,
     createdAt: message!.createdAt.toISOString(),
+    offer: resolvedOfferId ? (offerCards.get(resolvedOfferId) ?? null) : null,
   };
 }
 

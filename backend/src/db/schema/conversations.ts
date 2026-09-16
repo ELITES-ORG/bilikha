@@ -24,12 +24,6 @@ export const conversations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
-    // Null for every conversation that predates this, and for anyone who
-    // contacts a creative from their profile rather than from an offer.
-    offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
-
-    subject: text('subject').notNull(),
-
     // Denormalised for the thread list, which would otherwise need a correlated
     // subquery per row to sort by recency.
     lastMessageAt: timestamp('last_message_at', { withTimezone: true }).notNull().defaultNow(),
@@ -45,11 +39,10 @@ export const conversations = pgTable(
     uniqueIndex('conversations_profile_client_idx').on(table.profileId, table.clientUserId),
     index('conversations_creative_recent_idx').on(table.creativeUserId, table.lastMessageAt),
     index('conversations_client_recent_idx').on(table.clientUserId, table.lastMessageAt),
-    index('conversations_offer_idx').on(table.offerId),
   ],
 );
 
-/** Append-only. Messages are never edited or deleted in this plan. */
+/** Append-only. Messages are never edited or deleted; offer_id is set at insert. */
 export const messages = pgTable(
   'messages',
   {
@@ -61,11 +54,37 @@ export const messages = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     body: text('body').notNull(),
+    // Null for every message that predates plan 0012, and for anyone who
+    // contacts a creative from their profile rather than from an offer.
+    offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     // The thread query, and the polling query filtered by createdAt.
     index('messages_conversation_created_idx').on(table.conversationId, table.createdAt),
+    index('messages_offer_idx').on(table.offerId),
+  ],
+);
+
+/**
+ * Client bookmarks on offers. Cascades both ways: leaving the account or
+ * deleting the offer removes the row.
+ */
+export const savedOffers = pgTable(
+  'saved_offers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    offerId: uuid('offer_id')
+      .notNull()
+      .references(() => offers.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('saved_offers_user_offer_idx').on(table.userId, table.offerId),
+    index('saved_offers_user_created_idx').on(table.userId, table.createdAt),
   ],
 );
 
@@ -83,7 +102,14 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [conversations.id],
   }),
   sender: one(users, { fields: [messages.senderUserId], references: [users.id] }),
+  offer: one(offers, { fields: [messages.offerId], references: [offers.id] }),
+}));
+
+export const savedOffersRelations = relations(savedOffers, ({ one }) => ({
+  user: one(users, { fields: [savedOffers.userId], references: [users.id] }),
+  offer: one(offers, { fields: [savedOffers.offerId], references: [offers.id] }),
 }));
 
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
+export type SavedOffer = typeof savedOffers.$inferSelect;

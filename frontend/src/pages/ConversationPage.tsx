@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Button, Container, Input, Skeleton } from '@/components/ui';
+import { Avatar, Button, Container, Input, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import {
   useBlockUser,
@@ -10,7 +10,13 @@ import {
   useReportConversation,
   useSendMessage,
 } from '@/features/conversations/api';
+import {
+  OfferCard,
+  OfferUnavailableNotice,
+  MessageOfferBlock,
+} from '@/features/conversations/OfferCard';
 import { relativeTime } from '@/features/conversations/relative-time';
+import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav, stickyComposerAboveNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
@@ -19,6 +25,10 @@ type MenuMode = 'closed' | 'menu' | 'report' | 'block';
 
 export function ConversationPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const attachedOfferId = searchParams.get('offerId');
+  const attachedOffer = usePublishedOffer(attachedOfferId ?? undefined);
+
   const thread = useConversationThread(id, true);
   const markRead = useMarkConversationRead();
   const send = useSendMessage(id ?? '');
@@ -47,6 +57,12 @@ export function ConversationPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [thread.data?.messages.length]);
 
+  function clearAttachedOffer() {
+    const next = new URLSearchParams(searchParams);
+    next.delete('offerId');
+    setSearchParams(next, { replace: true });
+  }
+
   async function onReply(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -55,9 +71,17 @@ export function ConversationPage() {
       setError('Write a message');
       return;
     }
+    // Only attach when the offer still resolves; a deleted offer stays detachable
+    // in the UI but must not be posted.
+    const offerIdToSend =
+      attachedOfferId && attachedOffer.data ? attachedOfferId : undefined;
     try {
-      await send.mutateAsync(text);
+      await send.mutateAsync({
+        body: text,
+        ...(offerIdToSend ? { offerId: offerIdToSend } : {}),
+      });
       setBody('');
+      if (attachedOfferId) clearAttachedOffer();
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message);
@@ -92,6 +116,11 @@ export function ConversationPage() {
     }
   }
 
+  const attachmentUnavailable =
+    Boolean(attachedOfferId) &&
+    attachedOffer.isError &&
+    attachedOffer.error instanceof OfferNotFoundError;
+
   return (
     <>
       <SiteHeader />
@@ -118,11 +147,17 @@ export function ConversationPage() {
           {thread.data && (
             <>
               <div className="mt-4 flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="u-display text-3xl text-ink">{thread.data.subject}</h1>
-                  <p className="mt-1 text-sm text-ink-muted">With {thread.data.otherPartyName}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar
+                    src={thread.data.otherPartyAvatarUrl}
+                    name={thread.data.otherPartyName}
+                    size="md"
+                  />
+                  <h1 className="u-display truncate text-3xl text-ink">
+                    {thread.data.otherPartyName}
+                  </h1>
                 </div>
-                <div className="relative">
+                <div className="relative shrink-0">
                   <Button
                     type="button"
                     variant="ghost"
@@ -243,6 +278,11 @@ export function ConversationPage() {
                         : 'mr-auto border border-hairline bg-surface text-ink',
                     )}
                   >
+                    <MessageOfferBlock
+                      offer={msg.offer ?? null}
+                      offerRemoved={msg.offerRemoved}
+                      fromSelf={msg.fromSelf}
+                    />
                     <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>
                     <p
                       className={cn(
@@ -271,6 +311,53 @@ export function ConversationPage() {
                     stickyComposerAboveNav,
                   )}
                 >
+                  {attachedOfferId && (
+                    <div className="mb-3">
+                      {attachedOffer.isPending && <Skeleton className="h-16 w-full" />}
+                      {attachmentUnavailable && (
+                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                          <OfferUnavailableNotice />
+                          <button
+                            type="button"
+                            className="shrink-0 text-sm text-ink-muted hover:text-ink"
+                            onClick={clearAttachedOffer}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      {attachedOffer.data && (
+                        <OfferCard
+                          offer={{
+                            id: attachedOffer.data.id,
+                            title: attachedOffer.data.title,
+                            priceMinCentavos: attachedOffer.data.priceMinCentavos,
+                            priceMaxCentavos: attachedOffer.data.priceMaxCentavos,
+                            image: attachedOffer.data.images[0]
+                              ? {
+                                  url: attachedOffer.data.images[0].url,
+                                  thumbUrl: attachedOffer.data.images[0].thumbUrl,
+                                }
+                              : null,
+                          }}
+                          footer={
+                            <div className="border-t border-hairline px-2 py-1.5">
+                              <button
+                                type="button"
+                                className="text-xs text-ink-muted hover:text-ink"
+                                onClick={clearAttachedOffer}
+                              >
+                                Remove offer
+                              </button>
+                            </div>
+                          }
+                        />
+                      )}
+                      {attachedOffer.isError && !attachmentUnavailable && (
+                        <p className="text-sm text-danger-700">{attachedOffer.error.message}</p>
+                      )}
+                    </div>
+                  )}
                   {error && <p className="mb-3 text-sm text-danger-700">{error}</p>}
                   <label htmlFor="reply-body" className="sr-only">
                     Reply
