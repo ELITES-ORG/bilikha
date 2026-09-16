@@ -38,6 +38,30 @@ const serviceHeaders = (): Record<string, string> => ({
   apikey: env.SUPABASE_SERVICE_ROLE_KEY,
 });
 
+/**
+ * Object keys reach us from the client, and every ownership check in the media
+ * module is a `startsWith` on a prefix. A key like
+ * `portfolio/<own-id>/../../avatars/<victim-id>/x.webp` passes that check, and
+ * both `new URL()` and fetch then resolve the dot segments away — so the
+ * request lands on someone else's object. Reject anything that is not a plain
+ * segment before the key is ever trusted or used to build a URL.
+ */
+const SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/;
+
+export function assertSafeObjectKey(objectKey: string): void {
+  const segments = objectKey.split('/');
+
+  if (segments.length < 2) {
+    throw AppError.badRequest('Invalid image key');
+  }
+
+  for (const segment of segments) {
+    if (segment === '' || segment === '.' || segment === '..' || !SAFE_SEGMENT.test(segment)) {
+      throw AppError.badRequest('Invalid image key');
+    }
+  }
+}
+
 function encodeObjectKey(objectKey: string): string {
   return objectKey
     .split('/')

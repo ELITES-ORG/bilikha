@@ -4,6 +4,7 @@ import { db } from '../../db/index.js';
 import { creativeProfiles, portfolioItems, users } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import {
+  assertSafeObjectKey,
   avatarKey,
   createSignedUpload,
   deleteObject,
@@ -67,6 +68,8 @@ async function markPublishedProfileEdited(userId: string) {
 }
 
 function assertOwnAvatarKey(userId: string, objectKey: string) {
+  // Must run before the prefix test — see assertSafeObjectKey.
+  assertSafeObjectKey(objectKey);
   const expectedPrefix = `avatars/${userId}/`;
   if (!objectKey.startsWith(expectedPrefix)) {
     throw AppError.forbidden('That image does not belong to your account');
@@ -74,6 +77,7 @@ function assertOwnAvatarKey(userId: string, objectKey: string) {
 }
 
 function assertOwnPortfolioKey(profileId: string, objectKey: string) {
+  assertSafeObjectKey(objectKey);
   const expectedPrefix = `portfolio/${profileId}/`;
   if (!objectKey.startsWith(expectedPrefix)) {
     throw AppError.forbidden('That image does not belong to your profile');
@@ -190,8 +194,10 @@ export async function clearAvatar(userId: string) {
 
 /** Deletes an uploaded object that never got a row — half-finished portfolio pairs. */
 export async function abandonObject(userId: string, objectKey: string) {
-  const avatarPrefix = `avatars/${userId}/`;
-  if (objectKey.startsWith(avatarPrefix)) {
+  assertSafeObjectKey(objectKey);
+
+  if (objectKey.startsWith(`avatars/${userId}/`)) {
+    assertOwnAvatarKey(userId, objectKey);
     await deleteObject(objectKey);
     return { ok: true as const };
   }
