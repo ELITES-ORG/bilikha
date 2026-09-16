@@ -8,7 +8,7 @@ import {
   writeStoredViewMode,
   type AccountViewMode,
 } from '@/features/me/view-mode';
-import { Badge, Button, ButtonLink, Container } from '@/components/ui';
+import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 function navClass(active: boolean) {
@@ -120,7 +120,18 @@ export function SiteHeader() {
           )}
           {user ? (
             <>
-              <span className="hidden px-2 text-sm text-ink-muted sm:inline">{user.username}</span>
+              <Link
+                to="/account"
+                className="ml-1 hidden items-center gap-2 sm:inline-flex"
+                aria-label="Your account"
+              >
+                <Avatar
+                  src={user.avatarUrl}
+                  name={`${user.firstName} ${user.lastName}`}
+                  size="sm"
+                />
+                <span className="text-sm text-ink-muted">{user.username}</span>
+              </Link>
               <Button
                 size="sm"
                 variant="secondary"

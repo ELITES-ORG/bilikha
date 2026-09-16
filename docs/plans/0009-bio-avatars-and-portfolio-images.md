@@ -95,7 +95,7 @@ apply unchanged. Five specific to this plan:
 | 2. The bucket and its contract | 4 / 4 | Done |
 | 3. Backend — upload tickets | 5 / 5 | Done |
 | 4. Frontend — the resize pipeline | 4 / 4 | Done |
-| 5. Avatars | 0 / 6 | Not started |
+| 5. Avatars | 6 / 6 | Done |
 | 6. Portfolio | 0 / 7 | Not started |
 | 7. Admin media review and cleanup | 0 / 4 | Not started |
 | 8. Verification | 0 / 7 | Not started |
@@ -421,7 +421,7 @@ third-party origin.
 
 ### Step 5.1 — Schema
 
-- [ ] **Action.** Add to `users` in `backend/src/db/schema/users.ts`:
+- [x] **Action.** Add to `users` in `backend/src/db/schema/users.ts`:
 
 ```ts
     avatarKey: text('avatar_key'),
@@ -434,14 +434,14 @@ person, not to a role
 client has no creative profile but still appears in conversations, and putting it
 on the profile would mean a second column and a second upload path later.
 
-- [ ] **Action.** Run `npm run db:generate`, then `npm run db:migrate`.
-- [ ] **Verify.** The generated SQL adds two nullable columns and **nothing
+- [x] **Action.** Run `npm run db:generate`, then `npm run db:migrate`.
+- [x] **Verify.** The generated SQL adds two nullable columns and **nothing
   else**. If it drops or renames anything, stop and inspect — a stray diff here
   means the migration folder is out of sync with the schema files.
 
 ### Step 5.2 — Endpoints
 
-- [ ] **Action.** In the media module add:
+- [x] **Action.** In the media module add:
 
 | Method | Path | Does |
 |---|---|---|
@@ -452,24 +452,24 @@ on the profile would mean a second column and a second upload path later.
 caller's own user id**. Without that check any signed-in user can point their
 avatar at any object in the bucket, including someone else's.
 
-- [ ] **Action.** Both, when the caller has a **published** creative profile, set
+- [x] **Action.** Both, when the caller has a **published** creative profile, set
   `editedSinceReviewAt` on it — rule 5.
-- [ ] **Verify.** Posting another user's object key is a 403. Uploading a
+- [x] **Verify.** Posting another user's object key is a 403. Uploading a
   replacement leaves exactly one object under `avatars/<id>/`.
 
 ### Step 5.3 — Serve it
 
-- [ ] **Action.** Add `avatarUrl: string | null` to the `PublicProfile` interface
+- [x] **Action.** Add `avatarUrl: string | null` to the `PublicProfile` interface
   in `backend/src/modules/profiles/profiles.service.ts`, selected from the
   already-joined `users` table and passed through `publicUrl()`. Add it in
   `listPublished` **and** in `getPublishedBySlug`.
-- [ ] **Action.** Mirror the field in `frontend/src/features/profiles/types.ts`.
-- [ ] **Verify.** `GET /api/v1/creatives` returns an absolute `avatarUrl`, or
+- [x] **Action.** Mirror the field in `frontend/src/features/profiles/types.ts`.
+- [x] **Verify.** `GET /api/v1/creatives` returns an absolute `avatarUrl`, or
   `null`, on every row. No bucket name appears anywhere in the response.
 
 ### Step 5.4 — An Avatar component
 
-- [ ] **Action.** Create `frontend/src/components/ui/Avatar.tsx` and export it
+- [x] **Action.** Create `frontend/src/components/ui/Avatar.tsx` and export it
   from `components/ui/index.ts`, following
   [add-a-ui-component.md](../guides/add-a-ui-component.md).
 
@@ -482,12 +482,12 @@ time, so the fallback is the common case and should look deliberate.
 Set `loading="lazy"` and explicit `width` and `height` so the directory does not
 reflow as images arrive.
 
-- [ ] **Verify.** It appears on the style guide page at all three sizes, with and
+- [x] **Verify.** It appears on the style guide page at all three sizes, with and
   without a source.
 
 ### Step 5.5 — Use it
 
-- [ ] **Action.** Place the avatar in three places:
+- [x] **Action.** Place the avatar in three places:
   - the directory card, `size="md"`, left of the name block
   - `CreativeProfilePage`, `size="lg"`, beside the `h1`
   - `SiteHeader`, `size="sm"`, for the signed-in user
@@ -495,12 +495,12 @@ reflow as images arrive.
 The header needs `avatarUrl` on the current-user payload — add it to whatever
 `/auth/me` returns.
 
-- [ ] **Verify.** All three render, and the directory card keeps its layout when
+- [x] **Verify.** All three render, and the directory card keeps its layout when
   every profile in view has no avatar.
 
 ### Step 5.6 — Upload UI
 
-- [ ] **Action.** Add an avatar field to `ProfileEditor` **and** to the account
+- [x] **Action.** Add an avatar field to `ProfileEditor` **and** to the account
   area, so a client with no creative profile can set one too.
 
 The flow: pick file → `resizeImage(file, THUMB_EDGE)` → request ticket → `PUT` to
@@ -510,7 +510,7 @@ plain error if any step fails.
 One size only for avatars. They are never displayed larger than 400px, so a
 1600px version would be pure waste against a 1 GB budget.
 
-- [ ] **Verify.** Upload, reload, the avatar persists. Upload a second and the
+- [x] **Verify.** Upload, reload, the avatar persists. Upload a second and the
   first object is gone from the bucket.
 
 ---

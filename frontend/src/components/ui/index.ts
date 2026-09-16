@@ -13,3 +13,4 @@ export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Input, type InputProps } from './Input';
 export { SectionHeading, type SectionHeadingProps } from './SectionHeading';
 export { Skeleton, type SkeletonProps } from './Skeleton';
+export { Avatar, type AvatarProps } from './Avatar';

@@ -139,6 +139,8 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `privacy_consent_at` / `terms_accepted_at` | `timestamptz` | |
 | `consent_version` | `text` | Bumped when policy text changes |
 | `last_login_at` | `timestamptz` null | |
+| `avatar_key` | `text` null | Storage object key; one avatar per account |
+| `avatar_reviewed_at` | `timestamptz` null | Cleared on upload; set by admin media review |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `username_normalized`, `email_normalized`, `phone`; index on

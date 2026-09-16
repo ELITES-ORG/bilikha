@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Check, Inbox, Search, Send, Trash2 } from 'lucide-react';
 import {
+  Avatar,
   Badge,
   Button,
   Card,
@@ -164,6 +165,27 @@ export function StyleGuidePage() {
               </Button>
               <Button disabled>Disabled</Button>
             </Row>
+          </div>
+        </Section>
+
+        <Section title="Avatar" note="Initials on a token background when there is no photo.">
+          <div className="flex flex-wrap items-end gap-6 border-t border-hairline pt-6">
+            {(['sm', 'md', 'lg'] as const).map((size) => (
+              <div key={size} className="flex flex-col items-center gap-2">
+                <Avatar src={null} name="Juan dela Cruz" size={size} />
+                <code className="text-xs text-ink-subtle">{size} · initials</code>
+              </div>
+            ))}
+            {(['sm', 'md', 'lg'] as const).map((size) => (
+              <div key={`src-${size}`} className="flex flex-col items-center gap-2">
+                <Avatar
+                  src="https://picsum.photos/seed/bilikha-avatar/160"
+                  name="Maria Santos"
+                  size={size}
+                />
+                <code className="text-xs text-ink-subtle">{size} · photo</code>
+              </div>
+            ))}
           </div>
         </Section>
 

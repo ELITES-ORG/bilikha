@@ -57,6 +57,13 @@
       "when": 1789564942483,
       "tag": "0007_medical_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789583918335,
+      "tag": "0008_sturdy_martin_li",
+      "breakpoints": true
     }
   ]
 }

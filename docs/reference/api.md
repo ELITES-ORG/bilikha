@@ -506,6 +506,21 @@ for a portfolio ticket.
 The browser `PUT`s the resized image to `uploadUrl`, then confirms the key with
 a later media endpoint.
 
+### `PUT /api/v1/media/avatar`
+
+```jsonc
+{ "objectKey": "avatars/<userId>/<uuid>.webp" }
+```
+
+Records the key, clears `avatarReviewedAt`, deletes any previous object, and
+flags a published creative profile as edited. `objectKey` must start with
+`avatars/<callerUserId>/` — otherwise `403`.
+
+### `DELETE /api/v1/media/avatar`
+
+Removes the object and nulls the column. Also flags a published profile as
+edited.
+
 ---
 
 ## Not yet implemented

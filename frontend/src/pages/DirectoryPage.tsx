@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { MapPin, TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import {
+  Avatar,
   Badge,
   Button,
   ButtonLink,
@@ -191,7 +192,14 @@ export function DirectoryPage() {
                         to={`/creatives/${profile.slug}`}
                         className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                       >
-                        <div>
+                        <div className="flex gap-4">
+                          <Avatar
+                            src={profile.avatarUrl}
+                            name={profile.displayName ?? profile.fullName}
+                            size="md"
+                            className="mt-0.5"
+                          />
+                          <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
                               {profile.displayName ?? profile.fullName}
@@ -207,6 +215,7 @@ export function DirectoryPage() {
                               {profile.bio}
                             </p>
                           )}
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {primary && <Badge tone="brand">{primary.name}</Badge>}

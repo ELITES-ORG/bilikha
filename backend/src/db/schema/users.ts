@@ -64,6 +64,9 @@ export const users = pgTable(
     consentVersion: text('consent_version').notNull(),
 
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    // One avatar per account — on the user, not the creative profile (ADR 0019).
+    avatarKey: text('avatar_key'),
+    avatarReviewedAt: timestamp('avatar_reviewed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

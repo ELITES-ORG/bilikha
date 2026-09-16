@@ -5,6 +5,7 @@ import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
 import { normalizeEmail, normalizePhone } from '../../lib/contact.js';
+import { publicUrl } from '../../lib/storage.js';
 import type { RegisterInput } from './auth.schema.js';
 
 /** Bump when the privacy notice or terms change; existing users then need
@@ -23,6 +24,7 @@ export interface PublicUser {
   profileSlug: string | null;
   profileStatus: string | null;
   rejectionReason: string | null;
+  avatarUrl: string | null;
 }
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
@@ -167,6 +169,7 @@ async function toPublicUser(
     profileSlug: profile?.slug ?? null,
     profileStatus: profile?.status ?? null,
     rejectionReason: profile?.rejectionReason ?? null,
+    avatarUrl: user.avatarKey ? publicUrl(user.avatarKey) : null,
   };
 }
 

@@ -1,13 +1,16 @@
 import { TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
+import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { ProfileEditor } from '@/features/me/ProfileEditor';
 import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
 
 export function AccountPage() {
   const profile = useOwnProfile();
+  const { data: user } = useCurrentUser();
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -37,6 +40,25 @@ export function AccountPage() {
                 description={profile.error.message}
               />
             </div>
+          )}
+
+          {profile.isSuccess && !profile.data && user && (
+            <section className="mt-10" aria-labelledby="photo-section-heading">
+              <h2 id="photo-section-heading" className="u-display text-2xl text-ink">
+                Photo
+              </h2>
+              <p className="mt-2 text-sm text-ink-muted">
+                Shown on your account and in conversations.
+              </p>
+              <Card elevation="flat" className="mt-5">
+                <CardBody>
+                  <AvatarUploader
+                    name={`${user.firstName} ${user.lastName}`}
+                    avatarUrl={user.avatarUrl}
+                  />
+                </CardBody>
+              </Card>
+            </section>
           )}
 
           {profile.isSuccess && !profile.data && (

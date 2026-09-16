@@ -46,3 +46,19 @@ export async function uploadImage(blob: Blob, uploadUrl: string): Promise<void> 
     throw new Error('Upload failed. Check your connection and try again.');
   }
 }
+
+export async function confirmAvatar(objectKey: string): Promise<void> {
+  try {
+    await apiClient.put('/media/avatar', { objectKey });
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function removeAvatar(): Promise<void> {
+  try {
+    await apiClient.delete('/media/avatar');
+  } catch (error) {
+    throw toApiError(error);
+  }
+}

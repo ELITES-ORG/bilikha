@@ -10,6 +10,7 @@ export interface PublicProfile {
   displayName: string | null;
   fullName: string;
   bio: string | null;
+  avatarUrl: string | null;
   municipality: string;
   isNearby?: boolean;
   subdomains: PublicProfileSubdomain[];

@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Button, Input } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
+import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { toApiError } from '@/lib/api-client';
 import { useUpdateOwnProfile } from './api';
 import { ProfileCraftFields, type ProfileCraftFormState } from './ProfileCraftFields';
@@ -46,6 +48,7 @@ function toPayload(form: ProfileFormState): UpdateProfilePayload {
 }
 
 export function ProfileEditor({ profile }: { profile: OwnProfile }) {
+  const { data: user } = useCurrentUser();
   const updateProfile = useUpdateOwnProfile();
   const [saved, setSaved] = useState<ProfileFormState>(() => toFormState(profile));
   const [form, setForm] = useState<ProfileFormState>(() => toFormState(profile));
@@ -124,6 +127,14 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
           {confirmation}
         </p>
       )}
+
+      <section className="space-y-4">
+        <h3 className="text-lg font-medium text-ink">Photo</h3>
+        <AvatarUploader
+          name={`${form.firstName} ${form.lastName}`.trim() || profile.displayName || 'You'}
+          avatarUrl={user?.avatarUrl ?? null}
+        />
+      </section>
 
       <section className="space-y-4">
         <h3 className="text-lg font-medium text-ink">Name</h3>

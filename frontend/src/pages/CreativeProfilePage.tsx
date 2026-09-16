@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Badge, Button, ButtonLink, Container, Skeleton } from '@/components/ui';
+import { Badge, Button, ButtonLink, Container, Skeleton, Avatar } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ContactComposer } from '@/features/conversations/ContactComposer';
@@ -41,9 +41,16 @@ export function CreativeProfilePage() {
           {profile.data && (
             <>
               <p className="u-eyebrow">Creative profile</p>
-              <h1 className="u-display mt-3 text-4xl text-ink">
-                {profile.data.displayName ?? profile.data.fullName}
-              </h1>
+              <div className="mt-3 flex items-start gap-4">
+                <Avatar
+                  src={profile.data.avatarUrl}
+                  name={profile.data.displayName ?? profile.data.fullName}
+                  size="lg"
+                />
+                <h1 className="u-display text-4xl text-ink">
+                  {profile.data.displayName ?? profile.data.fullName}
+                </h1>
+              </div>
               <p className="mt-3 flex items-center gap-1.5 text-base text-ink-muted">
                 <MapPin className="size-4" aria-hidden />
                 {profile.data.municipality}

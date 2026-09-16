@@ -9,6 +9,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { publicUrl } from '../../lib/storage.js';
 
 // Public shape. Note what is absent: email, phone, birthDate, barangay.
 export interface PublicProfile {
@@ -16,6 +17,7 @@ export interface PublicProfile {
   displayName: string | null;
   fullName: string;
   bio: string | null;
+  avatarUrl: string | null;
   municipality: string;
   /** Present when the viewer has a municipality; true if it matches this row. */
   isNearby?: boolean;
@@ -128,6 +130,7 @@ export async function listPublished(options: ListPublishedOptions) {
       suffix: users.suffix,
       municipality: municipalities.name,
       municipalityId: users.municipalityId,
+      avatarKey: users.avatarKey,
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
@@ -152,6 +155,7 @@ export async function listPublished(options: ListPublishedOptions) {
       displayName: row.displayName,
       fullName: formatFullName(row),
       bio: row.bio,
+      avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
       municipality: row.municipality,
       subdomains: subdomainMap.get(row.id) ?? [],
       memberSince: row.createdAt.toISOString(),
@@ -178,6 +182,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
       lastName: users.lastName,
       suffix: users.suffix,
       municipality: municipalities.name,
+      avatarKey: users.avatarKey,
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
@@ -194,6 +199,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
     displayName: row.displayName,
     fullName: formatFullName(row),
     bio: row.bio,
+    avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
     municipality: row.municipality,
     subdomains: subdomainMap.get(row.id) ?? [],
     memberSince: row.createdAt.toISOString(),

@@ -10,6 +10,7 @@ export interface AuthUser {
   profileSlug: string | null;
   profileStatus: string | null;
   rejectionReason: string | null;
+  avatarUrl: string | null;
 }
 
 export interface RegisterPayload {
