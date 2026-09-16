@@ -394,8 +394,14 @@ Public payloads never include `email`, `phone`, or `birthDate`.
 
 ### `GET /api/v1/creatives`
 
-Query: `domain`, `subdomain`, `municipality` (slugs, optional), `page` (default
-1), `limit` (default 20, max 50).
+Public. Session-aware, not session-required. Query: `domain`, `subdomain`,
+`municipality` (slugs, optional), `page` (default 1), `limit` (default 20,
+max 50).
+
+When the caller is signed in and has a municipality, rows from that municipality
+lead the list (`createdAt` desc as tiebreaker). Each row then includes
+`isNearby: true|false`. Anonymous visitors and accounts with a null municipality
+see the previous recency order and no `isNearby` field.
 
 `200` — `{ data: PublicProfile[], meta: { page, limit, total } }`
 
@@ -404,7 +410,8 @@ Query: `domain`, `subdomain`, `municipality` (slugs, optional), `page` (default
 `200` — `{ data: PublicProfile }`. `404` when missing or not published.
 
 `PublicProfile`: `slug`, `displayName`, `fullName`, `bio`, `municipality`,
-`subdomains[]` (`slug`, `name`, `domain`, `isPrimary`), `memberSince`.
+optional `isNearby`, `subdomains[]` (`slug`, `name`, `domain`, `isPrimary`),
+`memberSince`.
 
 ---
 

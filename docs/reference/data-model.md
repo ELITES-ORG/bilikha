@@ -134,8 +134,8 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `account_type` | enum | `individual` \| `organization`; default `individual` |
 | `status` | enum | `active` \| `suspended` |
 | `role` | enum | `member` \| `admin`; default `member`. First admin via `admin:grant` |
-| `municipality_id` | `uuid` FK null | `ON DELETE RESTRICT`; null for clients (ADR 0015) |
-| `barangay_id` | `uuid` FK null | `ON DELETE SET NULL` |
+| `municipality_id` | `uuid` FK null | `ON DELETE RESTRICT`; required for new registrations ([ADR 0020](../decisions/0020-location-required-biliran-only.md)); legacy nulls remain |
+| `barangay_id` | `uuid` FK null | `ON DELETE SET NULL`; required for new registrations with municipality |
 | `privacy_consent_at` / `terms_accepted_at` | `timestamptz` | |
 | `consent_version` | `text` | Bumped when policy text changes |
 | `last_login_at` | `timestamptz` null | |

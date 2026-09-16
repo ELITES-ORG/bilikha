@@ -1,5 +1,8 @@
 import { Router } from 'express';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { db } from '../../db/index.js';
+import { users } from '../../db/schema/index.js';
 import { getPublishedBySlug, listPublished } from './profiles.service.js';
 
 export const profilesRouter: Router = Router();
@@ -14,7 +17,22 @@ const listQuerySchema = z.object({
 
 profilesRouter.get('/', async (req, res) => {
   const query = listQuerySchema.parse(req.query);
-  const { data, total } = await listPublished(query);
+
+  let viewerMunicipalityId: string | null = null;
+  const userId = req.session.userId;
+  if (userId) {
+    const [viewer] = await db
+      .select({ municipalityId: users.municipalityId })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    viewerMunicipalityId = viewer?.municipalityId ?? null;
+  }
+
+  const { data, total } = await listPublished({
+    ...query,
+    viewerMunicipalityId,
+  });
 
   res.json({
     data,

@@ -17,6 +17,8 @@ export interface PublicProfile {
   fullName: string;
   bio: string | null;
   municipality: string;
+  /** Present when the viewer has a municipality; true if it matches this row. */
+  isNearby?: boolean;
   subdomains: { slug: string; name: string; domain: string; isPrimary: boolean }[];
   memberSince: string;
 }
@@ -27,6 +29,8 @@ export interface ListPublishedOptions {
   municipality?: string;
   page: number;
   limit: number;
+  /** Null for anonymous viewers and for accounts with no municipality yet. */
+  viewerMunicipalityId?: string | null;
 }
 
 function formatFullName(parts: {
@@ -104,6 +108,13 @@ export async function listPublished(options: ListPublishedOptions) {
 
   const where = and(...filters);
 
+  const nearbyFirst = options.viewerMunicipalityId
+    ? [
+        desc(sql`${users.municipalityId} = ${options.viewerMunicipalityId}`),
+        desc(creativeProfiles.createdAt),
+      ]
+    : [desc(creativeProfiles.createdAt)];
+
   const rows = await db
     .select({
       id: creativeProfiles.id,
@@ -116,12 +127,13 @@ export async function listPublished(options: ListPublishedOptions) {
       lastName: users.lastName,
       suffix: users.suffix,
       municipality: municipalities.name,
+      municipalityId: users.municipalityId,
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
     .where(where)
-    .orderBy(desc(creativeProfiles.createdAt))
+    .orderBy(...nearbyFirst)
     .limit(options.limit)
     .offset(offset);
 
@@ -134,15 +146,21 @@ export async function listPublished(options: ListPublishedOptions) {
 
   const subdomainMap = await subdomainsForProfiles(rows.map((row) => row.id));
 
-  const data: PublicProfile[] = rows.map((row) => ({
-    slug: row.slug,
-    displayName: row.displayName,
-    fullName: formatFullName(row),
-    bio: row.bio,
-    municipality: row.municipality,
-    subdomains: subdomainMap.get(row.id) ?? [],
-    memberSince: row.createdAt.toISOString(),
-  }));
+  const data: PublicProfile[] = rows.map((row) => {
+    const profile: PublicProfile = {
+      slug: row.slug,
+      displayName: row.displayName,
+      fullName: formatFullName(row),
+      bio: row.bio,
+      municipality: row.municipality,
+      subdomains: subdomainMap.get(row.id) ?? [],
+      memberSince: row.createdAt.toISOString(),
+    };
+    if (options.viewerMunicipalityId) {
+      profile.isNearby = row.municipalityId === options.viewerMunicipalityId;
+    }
+    return profile;
+  });
 
   return { data, total: totals?.total ?? 0 };
 }

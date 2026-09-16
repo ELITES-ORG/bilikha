@@ -54,7 +54,7 @@ apply unchanged. Three specific to this plan:
 |---|---|---|
 | 1. Backend — registration | 3 / 3 | Done |
 | 2. Backend — profile setup | 2 / 2 | Done |
-| 3. Backend — nearby-first | 0 / 3 | Not started |
+| 3. Backend — nearby-first | 3 / 3 | Done |
 | 4. Frontend — registration form | 0 / 3 | Not started |
 | 5. Frontend — setup and directory | 0 / 3 | Not started |
 | 6. Verification | 0 / 5 | Not started |
@@ -127,7 +127,7 @@ later edit; supplying it twice at signup is not.
 
 ### Step 3.1 — Session-aware public endpoint
 
-- [ ] **Action.** In `profiles.routes.ts`, read `req.session.userId` **without**
+- [x] **Action.** In `profiles.routes.ts`, read `req.session.userId` **without**
   requiring it, look up that user's `municipalityId`, and pass it to
   `listPublished` as `viewerMunicipalityId`.
 
@@ -135,12 +135,12 @@ Signed out, or signed in with a null municipality, it is `null` and ordering is
 unchanged. **Do not add `requireAuth`** — the directory is public and must stay
 so ([ADR 0017](../decisions/0017-sign-in-before-contacting.md)).
 
-- [ ] **Verify.** `GET /creatives` signed out still returns 200 with the full
+- [x] **Verify.** `GET /creatives` signed out still returns 200 with the full
   list.
 
 ### Step 3.2 — Order by proximity, then recency
 
-- [ ] **Action.** In `listPublished`, when `viewerMunicipalityId` is present,
+- [x] **Action.** In `listPublished`, when `viewerMunicipalityId` is present,
   order by whether the profile's municipality matches, then by the existing
   `createdAt desc`:
 
@@ -154,15 +154,15 @@ A boolean sorts false-then-true ascending, so `desc` puts matches on top. Keep
 `createdAt` as the tiebreaker — without a stable second key, pagination can
 repeat or skip rows.
 
-- [ ] **Action.** Return `isNearby` per row so the UI can label it.
-- [ ] **Verify.** As a Naval client, Naval creatives lead the list; as a Kawayan
+- [x] **Action.** Return `isNearby` per row so the UI can label it.
+- [x] **Verify.** As a Naval client, Naval creatives lead the list; as a Kawayan
   client the Kawayan ones do; signed out the order matches the old behaviour.
 
 ### Step 3.3 — Index
 
-- [ ] **Action.** Confirm `users_municipality_idx` exists — it does, from plan
+- [x] **Action.** Confirm `users_municipality_idx` exists — it does, from plan
   0001. No new migration.
-- [ ] **Verify.** `EXPLAIN` on the list query shows no sequential scan on
+- [x] **Verify.** `EXPLAIN` on the list query shows no sequential scan on
   `users`.
 
 ---
