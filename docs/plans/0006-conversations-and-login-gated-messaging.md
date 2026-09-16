@@ -82,7 +82,7 @@ apply unchanged. Four specific to this plan:
 | 2. Migration and backfill | 0 / 3 | Not started |
 | 3. Backend — conversations | 0 / 4 | Not started |
 | 4. Backend — safety | 0 / 3 | Not started |
-| 5. Frontend — sign-in gate | 0 / 3 | Not started |
+| 5. Frontend — sign-in gate | 0 / 4 | Not started |
 | 6. Frontend — thread UI | 0 / 4 | Not started |
 | 7. Frontend — unread and safety | 0 / 3 | Not started |
 | 8. Retire the inquiries model | 0 / 3 | Not started |
@@ -456,7 +456,33 @@ the click, not after.
   single `/` — an open redirect is a phishing vector.
 - [ ] **Verify.** `?next=https://evil.example.com` is ignored and lands on `/`.
 
-### Step 5.3 — Strip inline registration
+### Step 5.3 — Give clients somewhere to register
+
+**Without this the plan breaks client signup entirely.** Step 5.4 removes the
+inline registration from the composer, and `/register` is the *creative* form —
+municipality, barangay, sub-domains, primary craft. A new client sent there is
+asked for a craft they do not have.
+
+- [ ] **Action.** Turn `/register` into a chooser: two cards, **Offer creative
+  work** and **Hire creatives**, linking to `/register/creative` and
+  `/register/client`. Propagate `?next=` through both.
+- [ ] **Action.** Move the existing creative form to `/register/creative`
+  unchanged.
+- [ ] **Action.** Create `/register/client` with the short form — first name,
+  last name, username, email, phone, birth date, password, confirm, both consent
+  checkboxes — posting `kind: 'client'`. Lift it out of `InquiryComposer` rather
+  than rewriting it; the fields and validation are already correct.
+
+Registration is a destination again, which restores the two-front-doors framing
+in [ADR 0004](../decisions/0004-unified-account-model.md) that
+[ADR 0015](../decisions/0015-clients-register-through-the-inquiry-flow.md) had
+walked back. The chooser is that fork made explicit.
+
+- [ ] **Verify.** `/register` shows the choice; `/register/client` registers an
+  account with no creative profile; `/register/creative` still works; `?next=`
+  survives both.
+
+### Step 5.4 — Strip inline registration
 
 - [ ] **Action.** Remove the register and login phases from `InquiryComposer`.
   It becomes compose-and-send only, for signed-in users.
@@ -640,6 +666,7 @@ runs the originals are gone.
 
 | Item | Why deferred |
 |---|---|
+| **Letting a client add a creative profile later** | [ADR 0004](../decisions/0004-unified-account-model.md) argued for exactly this — roles are fluid in a small market — and the schema supports it, since `creative_profiles` is an optional 1:1. Only the code path is missing. Today a client who starts creating needs a second account |
 | **Email notifications** | The main risk in [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md). Without them a creative who checks weekly replies weekly |
 | Admin review screen for reports | Reports are stored and queryable; the UI is a follow-up |
 | Message retention, export, deletion | RA 10173. Conversations make this obligation larger |
