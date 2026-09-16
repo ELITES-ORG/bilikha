@@ -52,7 +52,7 @@ apply unchanged. Three specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Backend — registration | 0 / 3 | Not started |
+| 1. Backend — registration | 3 / 3 | Done |
 | 2. Backend — profile setup | 0 / 2 | Not started |
 | 3. Backend — nearby-first | 0 / 3 | Not started |
 | 4. Frontend — registration form | 0 / 3 | Not started |
@@ -65,7 +65,7 @@ apply unchanged. Three specific to this plan:
 
 ### Step 1.1 — Require location
 
-- [ ] **Action.** In `backend/src/modules/auth/auth.schema.ts`, add to
+- [x] **Action.** In `backend/src/modules/auth/auth.schema.ts`, add to
   `registerSchema`:
 
 ```ts
@@ -75,12 +75,12 @@ apply unchanged. Three specific to this plan:
 
 Both required. Barangay is no longer optional — all 132 exist now.
 
-- [ ] **Verify.** `npm run typecheck` exits 0; a registration without them is a
+- [x] **Verify.** `npm run typecheck` exits 0; a registration without them is a
   400 naming both fields.
 
 ### Step 1.2 — Resolve and store
 
-- [ ] **Action.** In `registerUser`, resolve the municipality by slug and the
+- [x] **Action.** In `registerUser`, resolve the municipality by slug and the
   barangay by slug **scoped to that municipality**, then store both on the user.
 
 An unknown municipality, an unknown barangay, or a barangay belonging to a
@@ -88,15 +88,15 @@ different municipality are each a 400 naming the offending field. The last case
 matters: barangay slugs are unique per municipality, not globally, so `looc`
 exists in Cabucgayan, Caibiran and Culaba.
 
-- [ ] **Verify.** Registering with `municipalitySlug: 'naval'` and
+- [x] **Verify.** Registering with `municipalitySlug: 'naval'` and
   `barangaySlug: 'looc'` — a Culaba barangay — returns 400, not a silently wrong
   row.
 
 ### Step 1.3 — Reference
 
-- [ ] **Action.** Update the register endpoint in
+- [x] **Action.** Update the register endpoint in
   [`api.md`](../reference/api.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 

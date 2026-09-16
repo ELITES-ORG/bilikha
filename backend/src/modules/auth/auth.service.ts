@@ -1,6 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import { creativeProfiles, users } from '../../db/schema/index.js';
+import { barangays, creativeProfiles, municipalities, users } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
@@ -32,6 +32,30 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
     });
   }
 
+  const [municipality] = await db
+    .select()
+    .from(municipalities)
+    .where(eq(municipalities.slug, input.municipalitySlug))
+    .limit(1);
+
+  if (!municipality) {
+    throw AppError.badRequest('Unknown municipality.', { field: 'municipalitySlug' });
+  }
+
+  const [barangay] = await db
+    .select()
+    .from(barangays)
+    .where(
+      and(eq(barangays.slug, input.barangaySlug), eq(barangays.municipalityId, municipality.id)),
+    )
+    .limit(1);
+
+  if (!barangay) {
+    throw AppError.badRequest('Unknown barangay for that municipality.', {
+      field: 'barangaySlug',
+    });
+  }
+
   const emailNormalized = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
   const passwordHash = await hashPassword(input.password);
@@ -52,8 +76,8 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
         lastName: input.lastName,
         suffix: input.suffix ?? null,
         birthDate: input.birthDate.toISOString().slice(0, 10),
-        municipalityId: null,
-        barangayId: null,
+        municipalityId: municipality.id,
+        barangayId: barangay.id,
         privacyConsentAt: now,
         termsAcceptedAt: now,
         consentVersion: CONSENT_VERSION,

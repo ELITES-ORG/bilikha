@@ -169,8 +169,10 @@ httpOnly cookie named `bilikha.sid`. Email and phone are collected but
 ### `POST /api/v1/auth/register`
 
 Creates a base account only — a `users` row with no creative profile. Signs the
-new user in. Rate limited to 5 attempts per IP per hour. Municipality,
-sub-domains, and profile fields are collected later via `POST /me/profile`.
+new user in. Rate limited to 5 attempts per IP per hour. Municipality and
+barangay are required (Biliran only —
+[ADR 0020](../decisions/0020-location-required-biliran-only.md)). Creative
+profile fields are collected later via `POST /me/profile`.
 
 Request body:
 
@@ -184,12 +186,18 @@ Request body:
   "email": "juan@example.com",
   "phone": "09171234567",
   "birthDate": "1995-04-12",
+  "municipalitySlug": "naval",
+  "barangaySlug": "atipolo",
   "password": "correct horse battery",
   "confirmPassword": "correct horse battery",
   "privacyConsent": true,
   "termsAccepted": true
 }
 ```
+
+`barangaySlug` is validated **scoped to** `municipalitySlug`. A barangay that
+exists only under another municipality (e.g. Naval + Culaba's `looc`) is a
+`400` on `barangaySlug`.
 
 `201`
 
@@ -211,7 +219,7 @@ Request body:
 
 | Status | When |
 |---|---|
-| `400` | Validation failed |
+| `400` | Validation failed; unknown municipality / barangay; or mismatched pair |
 | `409` | Username, email, or phone already taken; or reserved username |
 | `429` | Rate limited |
 

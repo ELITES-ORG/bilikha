@@ -48,6 +48,8 @@ export const registerSchema = z
     email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254),
     phone: z.string().trim().min(1, 'Required'),
     birthDate: z.coerce.date({ message: 'Enter a valid date' }),
+    municipalitySlug: z.string().trim().min(1, 'Select a municipality'),
+    barangaySlug: z.string().trim().min(1, 'Select a barangay'),
     password: passwordField,
     confirmPassword: z.string(),
     privacyConsent: z.literal(true, { message: 'You must accept the privacy notice' }),
