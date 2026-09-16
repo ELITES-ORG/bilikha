@@ -10,7 +10,14 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
 
-  DATABASE_URL: z.string().url({ message: 'DATABASE_URL must be a valid postgres:// connection string' }),
+  // Every secret here is pasted into a dashboard by hand, and a textarea makes
+  // a trailing newline invisible. An untrimmed value fails far from its cause:
+  // a stray newline in a JWT is a rejected token, in SESSION_SECRET it is a
+  // different secret. Trim everything that arrives as free text.
+  DATABASE_URL: z
+    .string()
+    .trim()
+    .url({ message: 'DATABASE_URL must be a valid postgres:// connection string' }),
 
   // Comma-separated list of origins allowed to call the API with credentials.
   CORS_ORIGINS: z
@@ -20,7 +27,7 @@ const envSchema = z.object({
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
+  SESSION_SECRET: z.string().trim().min(32, 'SESSION_SECRET must be at least 32 characters'),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
   // Optional on purpose. If these are required, a deploy that forgets one
@@ -29,10 +36,11 @@ const envSchema = z.object({
   // image storage and leaves everything else working. See isStorageConfigured.
   SUPABASE_URL: z
     .string()
+    .trim()
     .url('SUPABASE_URL must be the project URL, e.g. https://abc.supabase.co')
     .optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
-  SUPABASE_STORAGE_BUCKET: z.string().default('media'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(20).optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().trim().default('media'),
 });
 
 const parsed = envSchema.safeParse(process.env);
