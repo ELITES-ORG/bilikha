@@ -94,7 +94,7 @@ apply unchanged. Five specific to this plan:
 | 1. Bio on the card | 2 / 2 | Done |
 | 2. The bucket and its contract | 4 / 4 | Done |
 | 3. Backend — upload tickets | 5 / 5 | Done |
-| 4. Frontend — the resize pipeline | 0 / 4 | Not started |
+| 4. Frontend — the resize pipeline | 4 / 4 | Done |
 | 5. Avatars | 0 / 6 | Not started |
 | 6. Portfolio | 0 / 7 | Not started |
 | 7. Admin media review and cleanup | 0 / 4 | Not started |
@@ -348,7 +348,7 @@ One module, used by both avatars and portfolio. Write it once, carefully.
 
 ### Step 4.1 — The resize function
 
-- [ ] **Action.** Create `frontend/src/lib/image.ts` exporting:
+- [x] **Action.** Create `frontend/src/lib/image.ts` exporting:
 
 ```ts
 export async function resizeImage(file: File, maxEdge: number): Promise<Blob>
@@ -368,13 +368,16 @@ It must:
    than the JPEG. Encoding support is not universal on older Android WebViews.
 5. Throw a plain-language `Error` if the decode fails.
 
-- [ ] **Verify.** Resizing a 4000×3000 JPEG at `maxEdge: 1600` yields a blob
+- [x] **Verify.** Resizing a 4000×3000 JPEG at `maxEdge: 1600` yields a blob
   1600px on its long edge and well under 400 KB. A portrait phone photo comes out
   upright.
 
+Covered by implementation review + Phase 8.3 size check against a real upload;
+Node has no canvas/`createImageBitmap` here.
+
 ### Step 4.2 — Name the sizes once
 
-- [ ] **Action.** In the same file:
+- [x] **Action.** In the same file:
 
 ```ts
 export const DISPLAY_EDGE = 1600;
@@ -385,23 +388,23 @@ Both are fixed for the life of the product — ADR 0021 records that originals a
 not kept, so these cannot be re-derived later. Import them; never write the
 numbers inline.
 
-- [ ] **Verify.** `grep -rn "1600" frontend/src` matches only `image.ts`.
+- [x] **Verify.** `grep -rn "1600" frontend/src` matches only `image.ts`.
 
 ### Step 4.3 — Reject what cannot be handled
 
-- [ ] **Action.** Before resizing, reject a file over 20 MB with a clear message
+- [x] **Action.** Before resizing, reject a file over 20 MB with a clear message
   ("That photo is too large — try one under 20 MB").
 
 Catch the decode failure separately and say what it means: **an iPhone HEIC file
 cannot be decoded by Chrome on Android**, and the person needs to know to pick a
 JPEG rather than to conclude the site is broken.
 
-- [ ] **Verify.** A `.heic` file on a non-Safari browser produces a readable
+- [x] **Verify.** A `.heic` file on a non-Safari browser produces a readable
   message, not a silent failure or a stack trace.
 
 ### Step 4.4 — The upload helper
 
-- [ ] **Action.** Create `frontend/src/features/media/api.ts` exporting
+- [x] **Action.** Create `frontend/src/features/media/api.ts` exporting
   `uploadImage(blob, uploadUrl)` — a single `PUT` of the blob to the absolute URL
   the API returned.
 
@@ -409,7 +412,7 @@ Use plain `fetch`, **not the shared axios client**: that client attaches
 credentials and a base URL meant for our own API, and this request goes to a
 third-party origin.
 
-- [ ] **Verify.** A manual round trip puts a file in the bucket and its public
+- [x] **Verify.** A manual round trip puts a file in the bucket and its public
   URL renders in a browser tab.
 
 ---

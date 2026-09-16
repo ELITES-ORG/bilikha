@@ -157,7 +157,7 @@ export function StyleGuidePage() {
                 loading={loading}
                 onClick={() => {
                   setLoading(true);
-                  window.setTimeout(() => setLoading(false), 1600);
+                  window.setTimeout(() => setLoading(false), 1500);
                 }}
               >
                 Click to load
