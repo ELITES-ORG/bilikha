@@ -60,10 +60,14 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 
 | # | Plan | Status |
 |---|---|---|
-| [0002](./0002-deployment.md) | Deployment — Vercel, Render, Supabase | Ready |
-| [0001](./0001-registration-and-auth.md) | Registration and authentication | Ready — run after 0002 |
-| [0003](./0003-admin-moderation.md) | Admin panel — registration moderation | Ready — run after 0001 |
+| [0002](./0002-deployment.md) | Deployment — Vercel, Render, Supabase | Complete |
+| [0001](./0001-registration-and-auth.md) | Registration and authentication | Complete |
+| [0003](./0003-admin-moderation.md) | Admin panel — registration moderation | Complete |
 | [0004](./0004-client-accounts-and-inquiries.md) | Client accounts and inquiries | Complete |
 | [0005](./0005-profile-editing-and-account.md) | Profile editing and the account area | Complete |
 | [0007](./0007-one-account-and-creative-role.md) | One account, creative as an added role | Complete |
 | [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Complete |
+| [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | **Ready** |
+
+Listed in execution order, which is not numeric order — 0002 ran first, and
+0007 before 0006.
