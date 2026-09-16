@@ -1,6 +1,6 @@
 # 0007. One account, creative as an added role
 
-- **Status:** Ready
+- **Status:** Complete
 - **Run before:** [plan 0006](./0006-conversations-and-login-gated-messaging.md)
   — that plan's sign-in gate sends people to registration, and this plan is what
   registration becomes
@@ -79,7 +79,7 @@ apply unchanged. Three specific to this plan:
 | 4. Frontend — intent and continuation | 3 / 3 | Done |
 | 5. Frontend — add the role later | 2 / 2 | Done |
 | 6. Frontend — mode switch | 2 / 2 | Done |
-| 7. Verification | 0 / 5 | Not started |
+| 7. Verification | 5 / 5 | Done |
 
 ---
 
@@ -296,41 +296,41 @@ either mode; a creative can hire, per
 
 ### Step 7.2 — The continuous creative path
 
-- [ ] **Verify** in a private window: register → intent → profile setup →
+- [x] **Verify** in a private window: register → intent → profile setup →
   confirmation, **without a dashboard and without hunting for a link**.
-- [ ] **Verify** the profile is `pending_review` and appears in the admin
+- [x] **Verify** the profile is `pending_review` and appears in the admin
   Pending tab.
 
 ### Step 7.3 — Adding the role later
 
-- [ ] **Verify.** Register, choose hire, go to the account area, use *Offer your
+- [x] **Verify.** Register, choose hire, go to the account area, use *Offer your
   creative work*, complete setup. Result is identical to the continuous path.
-- [ ] **Verify.** `POST /me/profile` a second time → 409.
+- [x] **Verify.** `POST /me/profile` a second time → 409.
 
 ### Step 7.4 — Roles are not exclusive
 
-- [ ] **Verify.** An account with a published profile can still open another
+- [x] **Verify.** An account with a published profile can still open another
   creative's profile and contact them.
-- [ ] **Verify.** The mode switch changes emphasis only; every route stays
+- [x] **Verify.** The mode switch changes emphasis only; every route stays
   reachable in both modes.
 
 ### Step 7.5 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] One registration form; `kind` is gone from schema, service, and frontend
-- [ ] Registering creates no creative profile and no moderation entry
-- [ ] The creative path runs register → intent → setup with no dashboard between
-- [ ] An existing account can add a creative profile and reach the same result
-- [ ] A creative can contact other creatives
-- [ ] The mode switch is a view preference, not a permission
-- [ ] `api.md` and `data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] One registration form; `kind` is gone from schema, service, and frontend
+- [x] Registering creates no creative profile and no moderation entry
+- [x] The creative path runs register → intent → setup with no dashboard between
+- [x] An existing account can add a creative profile and reach the same result
+- [x] A creative can contact other creatives
+- [x] The mode switch is a view preference, not a permission
+- [x] `api.md` and `data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 
