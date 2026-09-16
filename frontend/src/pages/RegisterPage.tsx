@@ -2,11 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useRegister } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
-import { useBarangays, useMunicipalities } from '@/features/taxonomy/api';
-import { SubdomainPicker } from '@/features/taxonomy/components/SubdomainPicker';
 import { Button, ButtonLink, Container, Input } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
-import { cn } from '@/lib/cn';
 
 const DRAFT_KEY = 'bilikha:register-draft';
 
@@ -20,11 +17,7 @@ interface FormState {
   confirmPassword: string;
   email: string;
   phone: string;
-  municipalitySlug: string;
-  barangaySlug: string;
   birthDate: string;
-  subdomainSlugs: string[];
-  primarySubdomainSlug: string | null;
   privacyConsent: boolean;
   termsAccepted: boolean;
 }
@@ -39,11 +32,7 @@ const EMPTY_FORM: FormState = {
   confirmPassword: '',
   email: '',
   phone: '',
-  municipalitySlug: '',
-  barangaySlug: '',
   birthDate: '',
-  subdomainSlugs: [],
-  primarySubdomainSlug: null,
   privacyConsent: false,
   termsAccepted: false,
 };
@@ -84,14 +73,9 @@ function clearDraft(): void {
 export function RegisterPage() {
   const navigate = useNavigate();
   const register = useRegister();
-  const municipalities = useMunicipalities();
   const [form, setForm] = useState<FormState>(() => loadDraft());
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-
-  const barangays = useBarangays(form.municipalitySlug || undefined);
-  const barangayList = barangays.data ?? [];
-  const barangaysUnavailable = Boolean(form.municipalitySlug) && !barangays.isPending && barangayList.length === 0;
 
   useEffect(() => {
     saveDraft(form);
@@ -105,11 +89,6 @@ export function RegisterPage() {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
-
-    if (!form.primarySubdomainSlug) {
-      setFieldErrors({ subdomainSlugs: 'Choose at least one', primarySubdomainSlug: 'Choose a primary' });
-      return;
-    }
 
     if (!form.privacyConsent || !form.termsAccepted) {
       setFieldErrors({
@@ -129,12 +108,8 @@ export function RegisterPage() {
         email: form.email,
         phone: form.phone,
         birthDate: form.birthDate,
-        municipalitySlug: form.municipalitySlug,
-        barangaySlug: form.barangaySlug || undefined,
         password: form.password,
         confirmPassword: form.confirmPassword,
-        subdomainSlugs: form.subdomainSlugs,
-        primarySubdomainSlug: form.primarySubdomainSlug,
         privacyConsent: true,
         termsAccepted: true,
       });
@@ -165,15 +140,18 @@ export function RegisterPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">Register as a creative</p>
-          <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Create your account</h1>
+          <h1 className="u-display text-3xl text-ink md:text-4xl">Create your account</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Your profile will be reviewed before it appears in the directory.
+            You can list your creative work in the next step, or add a profile
+            later from your account.
           </p>
 
           <form onSubmit={(event) => void onSubmit(event)} className="mt-10 space-y-10" noValidate>
             {formError && (
-              <p className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700" role="alert">
+              <p
+                className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+                role="alert"
+              >
                 {formError}
               </p>
             )}
@@ -269,78 +247,6 @@ export function RegisterPage() {
                 onChange={(e) => update('phone', e.target.value)}
                 error={fieldErrors.phone}
               />
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-lg font-medium text-ink">Location</h2>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="municipality" className="text-sm font-medium text-ink">
-                  Municipality
-                  <span className="ms-0.5 text-danger-600" aria-hidden="true">
-                    *
-                  </span>
-                </label>
-                <select
-                  id="municipality"
-                  required
-                  value={form.municipalitySlug}
-                  onChange={(e) => {
-                    update('municipalitySlug', e.target.value);
-                    update('barangaySlug', '');
-                  }}
-                  className={cn(
-                    'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
-                    'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
-                    fieldErrors.municipalitySlug && 'border-danger-500',
-                  )}
-                >
-                  <option value="">Select a municipality</option>
-                  {municipalities.data?.map((town) => (
-                    <option key={town.id} value={town.slug}>
-                      {town.name}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.municipalitySlug && (
-                  <p className="text-xs text-danger-700">{fieldErrors.municipalitySlug}</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="barangay" className="text-sm font-medium text-ink">
-                  Barangay
-                </label>
-                <select
-                  id="barangay"
-                  value={form.barangaySlug}
-                  disabled={barangaysUnavailable || !form.municipalitySlug}
-                  onChange={(e) => update('barangaySlug', e.target.value)}
-                  className={cn(
-                    'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
-                    'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
-                    'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
-                  )}
-                >
-                  <option value="">
-                    {barangaysUnavailable ? 'Not yet available' : 'Select a barangay (optional)'}
-                  </option>
-                  {barangayList.map((barangay) => (
-                    <option key={barangay.id} value={barangay.slug}>
-                      {barangay.name}
-                    </option>
-                  ))}
-                </select>
-                {barangaysUnavailable && (
-                  <p className="text-xs text-ink-subtle">Barangay list is not yet available.</p>
-                )}
-                {fieldErrors.barangaySlug && (
-                  <p className="text-xs text-danger-700">{fieldErrors.barangaySlug}</p>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h2 className="text-lg font-medium text-ink">About you</h2>
               <Input
                 label="Date of birth"
                 type="date"
@@ -349,18 +255,6 @@ export function RegisterPage() {
                 value={form.birthDate}
                 onChange={(e) => update('birthDate', e.target.value)}
                 error={fieldErrors.birthDate}
-              />
-              <SubdomainPicker
-                selected={form.subdomainSlugs}
-                primary={form.primarySubdomainSlug}
-                onChange={(selected, primary) => {
-                  setForm((current) => ({
-                    ...current,
-                    subdomainSlugs: selected,
-                    primarySubdomainSlug: primary,
-                  }));
-                }}
-                error={fieldErrors.subdomainSlugs ?? fieldErrors.primarySubdomainSlug}
               />
             </section>
 

@@ -10,8 +10,7 @@ export interface AuthUser {
   rejectionReason: string | null;
 }
 
-export interface CreativeRegisterPayload {
-  kind?: 'creative';
+export interface RegisterPayload {
   firstName: string;
   middleName?: string;
   lastName: string;
@@ -20,28 +19,8 @@ export interface CreativeRegisterPayload {
   email: string;
   phone: string;
   birthDate: string;
-  municipalitySlug: string;
-  barangaySlug?: string;
-  password: string;
-  confirmPassword: string;
-  subdomainSlugs: string[];
-  primarySubdomainSlug: string;
-  privacyConsent: true;
-  termsAccepted: true;
-}
-
-export interface ClientRegisterPayload {
-  kind: 'client';
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-  phone: string;
-  birthDate: string;
   password: string;
   confirmPassword: string;
   privacyConsent: true;
   termsAccepted: true;
 }
-
-export type RegisterPayload = CreativeRegisterPayload | ClientRegisterPayload;

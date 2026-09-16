@@ -75,7 +75,7 @@ apply unchanged. Three specific to this plan:
 |---|---|---|
 | 1. Backend — simplify registration | 3 / 3 | Done |
 | 2. Backend — create a profile later | 3 / 3 | Done |
-| 3. Frontend — registration | 0 / 3 | Not started |
+| 3. Frontend — registration | 3 / 3 | Done |
 | 4. Frontend — intent and continuation | 0 / 3 | Not started |
 | 5. Frontend — add the role later | 0 / 2 | Not started |
 | 6. Frontend — mode switch | 0 / 2 | Not started |
@@ -167,28 +167,28 @@ user. Derive one from the other rather than writing the sub-domain rules twice.
 
 ### Step 3.1 — Shorten the form
 
-- [ ] **Action.** Rewrite `RegisterPage` as the short form only. Remove the
+- [x] **Action.** Rewrite `RegisterPage` as the short form only. Remove the
   municipality and barangay selects, the `SubdomainPicker`, and everything
   posting creative fields.
 
 Keep the draft autosave, the password exclusion, and the field-error handling —
 all of it still applies.
 
-- [ ] **Verify.** Typecheck and lint exit 0. Registering creates an account with
+- [x] **Verify.** Typecheck and lint exit 0. Registering creates an account with
   no profile.
 
 ### Step 3.2 — Honest heading
 
-- [ ] **Action.** The page no longer says "Register as a creative". It is
+- [x] **Action.** The page no longer says "Register as a creative". It is
   **Create your account**, with a line stating you can list your creative work
   in the next step or later.
-- [ ] **Verify.** Nothing on the page implies the account is creative-only.
+- [x] **Verify.** Nothing on the page implies the account is creative-only.
 
 ### Step 3.3 — Retire the inline client form
 
-- [ ] **Action.** Remove the registration and login phases from
+- [x] **Action.** Remove the registration and login phases from
   `InquiryComposer`, and delete `RegisterPayload`'s `kind` field.
-- [ ] **Verify.** No `kind: 'client'` remains anywhere in `frontend/src`.
+- [x] **Verify.** No `kind: 'client'` remains anywhere in `frontend/src`.
 
 ---
 
