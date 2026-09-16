@@ -84,7 +84,7 @@ apply unchanged. Four specific to this plan:
 | 2. Migration and backfill | 0 / 3 | Not started |
 | 3. Backend — conversations | 0 / 4 | Not started |
 | 4. Backend — safety | 0 / 3 | Not started |
-| 5. Frontend — sign-in gate | 0 / 4 | Not started |
+| 5. Frontend — sign-in gate | 0 / 5 | Not started |
 | 6. Frontend — thread UI | 0 / 4 | Not started |
 | 7. Frontend — unread and safety | 0 / 3 | Not started |
 | 8. Retire the inquiries model | 0 / 3 | Not started |
@@ -465,8 +465,18 @@ a single short form and owns the client/creative split, so this plan no longer
 needs a chooser. **Run 0007 first.**
 
 - [ ] **Action.** Confirm `/register` is the short base-account form from
-  [plan 0007](./0007-one-account-and-creative-role.md), and that `?next=`
-  survives registration, the intent step, and sign-in.
+  [plan 0007](./0007-one-account-and-creative-role.md). It is — no change needed
+  there.
+
+- [ ] **Action.** **Make `IntentPage` propagate `?next=`.** Plan 0007 built the
+  intent step before this gate existed, so it does not know about the parameter
+  at all. Both choices must carry it: **I'm looking to hire** returns to `next`
+  when present and falls back to `/directory`; **offer my work** appends it to
+  `/welcome/profile`, and the submitted step returns there too.
+
+  Without this the parameter is silently dropped between registration and the
+  intent question, and a new client lands on the directory having forgotten
+  which creative they were trying to contact.
 
 A signed-out visitor pressing Contact registers, answers the intent question,
 and returns to the profile they came from — the `next` parameter must not be
