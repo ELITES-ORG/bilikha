@@ -437,9 +437,15 @@ Start or continue a conversation with a **published** profile.
 {
   "profileSlug": "juancruz",
   "subject": "Mural for a café wall",
-  "body": "Looking for a muralist available in October for a ~3m wall in Naval."
+  "body": "Looking for a muralist available in October for a ~3m wall in Naval.",
+  "offerId": "optional-uuid-when-contacting-from-an-offer"
 }
 ```
+
+`offerId` is optional. When set, the offer must exist and belong to the creative
+being contacted; otherwise `400` with `field: "offerId"`. On a new thread it is
+stored; on continue it updates the thread's attributed offer. Omit to leave
+`offer_id` null / unchanged (profile-level contact).
 
 `201` for a new thread, `200` when continuing an existing client↔profile pair
 (subject is ignored; `body` is appended). Rejects self-contact (`400`). If the
@@ -455,6 +461,19 @@ first. Query: `page`, `limit`.
 
 `{ data: { count } }` — messages from the other party newer than the caller's
 last-read timestamp.
+
+### `GET /api/v1/conversations/history`
+
+Inquiry history for the caller **as client** only (not threads where they are
+the creative). Newest `startedAt` first. Each row:
+
+- `id`, `startedAt`
+- `replied` — true if any message from the creative exists
+- `unreadCount` — same client-side unread logic as the thread list
+- `offer` — `null`, or `{ id, title, priceMinCentavos, priceMaxCentavos, image }`
+  where `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, or
+  `null`. Deleted offers resolve to `null` (`offer_id` is `SET NULL` on delete)
+- `creative` — `{ slug, displayName, municipality, avatarUrl }`
 
 ### `GET /api/v1/conversations/:id`
 

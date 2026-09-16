@@ -16,6 +16,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function CreativesPage() {
   const [params, setParams] = useSearchParams();
@@ -53,7 +54,7 @@ export function CreativesPage() {
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
             eyebrow="Find a creative"

@@ -16,6 +16,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedOffers } from '@/features/offers/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
+import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
 
 export function DirectoryPage() {
@@ -55,7 +56,7 @@ export function DirectoryPage() {
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
             eyebrow="Find a service"

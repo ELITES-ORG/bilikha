@@ -70,6 +70,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | Complete |
 | [0009](./0009-bio-avatars-and-portfolio-images.md) | Bio on cards, avatars, and portfolio images | Complete |
 | [0010](./0010-offers-and-an-offer-directory.md) | Offers, and a directory that indexes them | Complete |
+| [0011](./0011-bottom-navigation-and-history.md) | Bottom navigation, and a history of what you inquired about | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006.

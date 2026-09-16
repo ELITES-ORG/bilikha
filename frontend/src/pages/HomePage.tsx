@@ -13,6 +13,7 @@ import {
   SectionHeading,
   Skeleton,
 } from '@/components/ui';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function HomePage() {
   const domains = useCreativeDomains();
@@ -27,7 +28,7 @@ export function HomePage() {
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main id="main">
+      <main id="main" className={pbBottomNav}>
         <Hero />
 
         <Container width="wide" className="pb-(--section-gap)">

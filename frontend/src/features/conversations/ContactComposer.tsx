@@ -15,6 +15,8 @@ interface ContactComposerProps {
   creativeName: string;
   /** Prefill when no saved draft exists (e.g. contact about an offer). */
   initialMessage?: string;
+  /** When contacting about a specific offer; omit for profile-level contact. */
+  offerId?: string;
   onCancel?: () => void;
 }
 
@@ -29,6 +31,7 @@ export function ContactComposer({
   profileSlug,
   creativeName,
   initialMessage,
+  offerId,
   onCancel,
 }: ContactComposerProps) {
   const toast = useToast();
@@ -53,6 +56,7 @@ export function ContactComposer({
             profileSlug,
             subject: draft.subject,
             body: draft.message,
+            ...(offerId ? { offerId } : {}),
           });
           clearMessageDraft(profileSlug);
           setConversationId(result.id);

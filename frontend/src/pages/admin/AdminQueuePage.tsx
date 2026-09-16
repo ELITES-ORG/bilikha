@@ -7,6 +7,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { Badge, Button, ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
@@ -58,7 +59,7 @@ function AdminQueueInner() {
       </header>
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <p className="u-eyebrow">Administration</p>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Review queue</h1>

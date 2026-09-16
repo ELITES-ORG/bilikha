@@ -1,14 +1,18 @@
-import { and, asc, count, desc, eq, gt, inArray, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNull, or } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   conversations,
   conversationReports,
   creativeProfiles,
   messages,
+  municipalities,
+  offerImages,
+  offers,
   userBlocks,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type {
   ListMessagesInput,
   ListThreadsInput,
@@ -105,6 +109,22 @@ export async function startOrContinue(userId: string, input: StartConversationIn
     throw AppError.badRequest('You cannot contact your own profile.');
   }
 
+  let resolvedOfferId: string | null = null;
+  if (input.offerId) {
+    const [offer] = await db
+      .select({ id: offers.id, profileId: offers.profileId })
+      .from(offers)
+      .where(eq(offers.id, input.offerId))
+      .limit(1);
+
+    if (!offer || offer.profileId !== profile.id) {
+      throw AppError.badRequest('That offer does not belong to this creative.', {
+        field: 'offerId',
+      });
+    }
+    resolvedOfferId = offer.id;
+  }
+
   await assertCanMessage(userId, profile.userId);
 
   const now = new Date();
@@ -126,6 +146,7 @@ export async function startOrContinue(userId: string, input: StartConversationIn
           profileId: profile.id,
           creativeUserId: profile.userId,
           clientUserId: userId,
+          offerId: resolvedOfferId,
           subject: input.subject,
           lastMessageAt: now,
           clientLastReadAt: now,
@@ -146,7 +167,12 @@ export async function startOrContinue(userId: string, input: StartConversationIn
 
     await tx
       .update(conversations)
-      .set({ lastMessageAt: now, clientLastReadAt: now })
+      .set({
+        lastMessageAt: now,
+        clientLastReadAt: now,
+        // Contacting from an offer attributes the thread; omit leaves it as-is.
+        ...(existing && resolvedOfferId ? { offerId: resolvedOfferId } : {}),
+      })
       .where(eq(conversations.id, conversation.id));
 
     return {
@@ -160,6 +186,147 @@ export async function startOrContinue(userId: string, input: StartConversationIn
       },
     };
   });
+}
+
+/**
+ * Client-side inquiry history: only threads where the caller is the client,
+ * newest first by when they inquired (createdAt).
+ */
+export async function listHistory(userId: string) {
+  const rows = await db
+    .select({
+      id: conversations.id,
+      createdAt: conversations.createdAt,
+      offerId: conversations.offerId,
+      profileId: conversations.profileId,
+    })
+    .from(conversations)
+    .where(eq(conversations.clientUserId, userId))
+    .orderBy(desc(conversations.createdAt));
+
+  if (rows.length === 0) {
+    return { data: [] };
+  }
+
+  const conversationIds = rows.map((r) => r.id);
+  const offerIds = [
+    ...new Set(rows.map((r) => r.offerId).filter((id): id is string => Boolean(id))),
+  ];
+  const profileIds = [...new Set(rows.map((r) => r.profileId))];
+
+  const offerRows =
+    offerIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: offers.id,
+            title: offers.title,
+            priceMinCentavos: offers.priceMinCentavos,
+            priceMaxCentavos: offers.priceMaxCentavos,
+          })
+          .from(offers)
+          .where(inArray(offers.id, offerIds));
+  const offerById = new Map(offerRows.map((o) => [o.id, o]));
+
+  const firstImageByOfferId = new Map<string, { url: string; thumbUrl: string }>();
+  if (offerIds.length > 0 && isStorageConfigured()) {
+    const imageRows = await db
+      .select({
+        offerId: offerImages.offerId,
+        objectKey: offerImages.objectKey,
+        thumbKey: offerImages.thumbKey,
+      })
+      .from(offerImages)
+      .where(inArray(offerImages.offerId, offerIds))
+      .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
+
+    for (const row of imageRows) {
+      if (firstImageByOfferId.has(row.offerId)) continue;
+      firstImageByOfferId.set(row.offerId, {
+        url: publicUrl(row.objectKey),
+        thumbUrl: publicUrl(row.thumbKey),
+      });
+    }
+  }
+
+  const creativeRows = await db
+    .select({
+      profileId: creativeProfiles.id,
+      slug: creativeProfiles.slug,
+      displayName: creativeProfiles.displayName,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+      municipality: municipalities.name,
+      avatarKey: users.avatarKey,
+    })
+    .from(creativeProfiles)
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
+    .where(inArray(creativeProfiles.id, profileIds));
+  const creativeByProfileId = new Map(creativeRows.map((c) => [c.profileId, c]));
+
+  const repliedRows = await db
+    .selectDistinct({ conversationId: messages.conversationId })
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        inArray(messages.conversationId, conversationIds),
+        eq(messages.senderUserId, conversations.creativeUserId),
+      ),
+    );
+  const repliedIds = new Set(repliedRows.map((r) => r.conversationId));
+
+  const unreadRows = await db
+    .select({
+      conversationId: messages.conversationId,
+      unread: count(),
+    })
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        inArray(messages.conversationId, conversationIds),
+        eq(messages.senderUserId, conversations.creativeUserId),
+        or(isNull(conversations.clientLastReadAt), gt(messages.createdAt, conversations.clientLastReadAt)),
+      ),
+    )
+    .groupBy(messages.conversationId);
+  const unreadById = new Map(unreadRows.map((r) => [r.conversationId, Number(r.unread)]));
+
+  return {
+    data: rows.map((row) => {
+      const offer = row.offerId ? offerById.get(row.offerId) : undefined;
+      const creative = creativeByProfileId.get(row.profileId);
+
+      return {
+        id: row.id,
+        startedAt: row.createdAt.toISOString(),
+        replied: repliedIds.has(row.id),
+        unreadCount: unreadById.get(row.id) ?? 0,
+        offer: offer
+          ? {
+              id: offer.id,
+              title: offer.title,
+              priceMinCentavos: offer.priceMinCentavos,
+              priceMaxCentavos: offer.priceMaxCentavos,
+              image: firstImageByOfferId.get(offer.id) ?? null,
+            }
+          : null,
+        creative: {
+          slug: creative?.slug ?? '',
+          displayName: creative
+            ? creative.displayName?.trim() || formatName(creative)
+            : 'Unknown',
+          municipality: creative?.municipality ?? '',
+          avatarUrl:
+            creative?.avatarKey && isStorageConfigured() ? publicUrl(creative.avatarKey) : null,
+        },
+      };
+    }),
+  };
 }
 
 export async function listThreads(userId: string, options: ListThreadsInput) {

@@ -1,4 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Button, ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
@@ -8,24 +9,87 @@ import { ProfileEditor } from '@/features/me/ProfileEditor';
 import { OfferEditor } from '@/features/offers/OfferEditor';
 import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
+import {
+  defaultViewMode,
+  readStoredViewMode,
+  writeStoredViewMode,
+  type AccountViewMode,
+} from '@/features/me/view-mode';
+import { pbBottomNav } from '@/lib/bottom-nav';
+import { cn } from '@/lib/cn';
 
 export function AccountPage() {
   const profile = useOwnProfile();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
+  const hasProfile = Boolean(user?.profileSlug);
+
+  const [storedMode, setStoredMode] = useState<AccountViewMode | null>(() => readStoredViewMode());
+  const viewMode = hasProfile ? (storedMode ?? defaultViewMode()) : 'hiring';
+  const hiring = !hasProfile || viewMode === 'hiring';
+  const creative = hasProfile && viewMode === 'creative';
+
+  function chooseMode(mode: AccountViewMode) {
+    setStoredMode(mode);
+    writeStoredViewMode(mode);
+  }
 
   return (
     <div className="min-h-dvh bg-paper">
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <p className="u-eyebrow">Account</p>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Your account</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             Keep your public details and sign-in security up to date.
           </p>
+
+          {/* Relocated from the phone header — reachable via the Profile tab. */}
+          {hasProfile && (
+            <section className="mt-8" aria-labelledby="view-mode-heading">
+              <h2 id="view-mode-heading" className="u-display text-2xl text-ink">
+                How you use Bilikha
+              </h2>
+              <p className="mt-2 text-sm text-ink-muted">
+                Switch between browsing to hire and managing your creative work.
+              </p>
+              <div
+                className="mt-4 inline-flex items-center rounded-sm border border-hairline p-0.5"
+                role="group"
+                aria-label="Account view"
+              >
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-xs px-3 py-1.5 text-sm font-medium transition-colors',
+                    hiring
+                      ? 'bg-lawa-700 text-clay-50'
+                      : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
+                  )}
+                  aria-pressed={hiring}
+                  onClick={() => chooseMode('hiring')}
+                >
+                  Hiring
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-xs px-3 py-1.5 text-sm font-medium transition-colors',
+                    creative
+                      ? 'bg-lawa-700 text-clay-50'
+                      : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
+                  )}
+                  aria-pressed={creative}
+                  onClick={() => chooseMode('creative')}
+                >
+                  My creative work
+                </button>
+              </div>
+            </section>
+          )}
 
           {profile.isPending && (
             <div className="mt-10 space-y-4">

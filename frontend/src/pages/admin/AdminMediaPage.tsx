@@ -6,6 +6,7 @@ import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { apiClient, toApiError } from '@/lib/api-client';
 import { formatPriceRange } from '@/lib/money';
 import { Badge, Button, ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 type MediaKind = 'avatar' | 'offer';
 
@@ -97,7 +98,7 @@ function AdminMediaInner() {
       </header>
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <p className="u-eyebrow">Administration</p>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Media review</h1>

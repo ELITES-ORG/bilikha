@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { Bell } from 'lucide-react';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useUnreadCount } from '@/features/conversations/api';
 import {
@@ -45,6 +46,13 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
+          {/* Decorative bell — phones only, signed-in. Not a control (ADR 0023). */}
+          {user && (
+            <span aria-hidden="true" className="inline-flex text-ink-muted sm:hidden">
+              <Bell className="size-5" />
+            </span>
+          )}
+
           {hasProfile && (
             <div
               className="mr-1 hidden items-center rounded-sm border border-hairline p-0.5 sm:inline-flex"
@@ -80,10 +88,12 @@ export function SiteHeader() {
             </div>
           )}
 
+          {/* Below sm + signed in: tabs own these destinations. Signed out keeps Directory. */}
           <Link
             to="/directory"
             className={cn(
               'link-underline px-2 py-1 text-base transition-colors',
+              user && 'hidden sm:inline-block',
               hiring ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
             )}
           >
@@ -94,9 +104,8 @@ export function SiteHeader() {
               <Link
                 to="/messages"
                 className={cn(
-                  'link-underline inline-flex items-center gap-1.5 px-2 py-1 text-base transition-colors',
-                  'font-medium text-ink sm:font-normal',
-                  'text-ink-muted hover:text-ink sm:inline-flex',
+                  'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
+                  'text-ink-muted hover:text-ink',
                 )}
               >
                 Messages
@@ -109,7 +118,7 @@ export function SiteHeader() {
               <Link
                 to="/account"
                 className={cn(
-                  'link-underline px-2 py-1 text-base transition-colors',
+                  'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
                   creative || !hasProfile
                     ? 'font-medium text-ink'
                     : 'text-ink-muted hover:text-ink',

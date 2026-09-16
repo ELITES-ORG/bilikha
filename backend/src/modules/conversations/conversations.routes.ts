@@ -11,6 +11,7 @@ import {
 } from './conversations.schema.js';
 import {
   getThread,
+  listHistory,
   listThreads,
   markRead,
   reportConversation,
@@ -38,6 +39,12 @@ conversationsRouter.get('/', async (req, res) => {
 conversationsRouter.get('/unread-count', async (req, res) => {
   const data = await unreadCount(req.session.userId!);
   res.json({ data });
+});
+
+// Before /:id so "history" is not parsed as a conversation uuid.
+conversationsRouter.get('/history', async (req, res) => {
+  const result = await listHistory(req.session.userId!);
+  res.json(result);
 });
 
 conversationsRouter.get('/:id', async (req, res) => {

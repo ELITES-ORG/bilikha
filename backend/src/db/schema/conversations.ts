@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users.js';
-import { creativeProfiles } from './profiles.js';
+import { creativeProfiles, offers } from './profiles.js';
 
 /**
  * Exactly two parties: the client who started it and the creative whose profile
@@ -24,6 +24,10 @@ export const conversations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
+    // Null for every conversation that predates this, and for anyone who
+    // contacts a creative from their profile rather than from an offer.
+    offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
+
     subject: text('subject').notNull(),
 
     // Denormalised for the thread list, which would otherwise need a correlated
@@ -41,6 +45,7 @@ export const conversations = pgTable(
     uniqueIndex('conversations_profile_client_idx').on(table.profileId, table.clientUserId),
     index('conversations_creative_recent_idx').on(table.creativeUserId, table.lastMessageAt),
     index('conversations_client_recent_idx').on(table.clientUserId, table.lastMessageAt),
+    index('conversations_offer_idx').on(table.offerId),
   ],
 );
 

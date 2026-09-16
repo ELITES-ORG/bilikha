@@ -9,6 +9,7 @@ import { ContactComposer } from '@/features/conversations/ContactComposer';
 import type { OfferImage } from '@/features/offers/api';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
 import { formatPriceRange } from '@/lib/money';
+import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 type LightboxTarget = { url: string; alt: string };
@@ -18,7 +19,7 @@ export function CreativeProfilePage() {
   const profile = usePublishedProfile(slug);
   const { data: user } = useCurrentUser();
   const [composerOpen, setComposerOpen] = useState(false);
-  const [contactOfferTitle, setContactOfferTitle] = useState<string | null>(null);
+  const [contactOffer, setContactOffer] = useState<{ id: string; title: string } | null>(null);
   const [lightbox, setLightbox] = useState<LightboxTarget | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -43,14 +44,14 @@ export function CreativeProfilePage() {
     queueMicrotask(() => triggerRef.current?.focus());
   }
 
-  function openContact(offerTitle?: string) {
-    setContactOfferTitle(offerTitle ?? null);
+  function openContact(offer?: { id: string; title: string }) {
+    setContactOffer(offer ?? null);
     setComposerOpen(true);
   }
 
   function closeComposer() {
     setComposerOpen(false);
-    setContactOfferTitle(null);
+    setContactOffer(null);
   }
 
   if (profile.isError && profile.error instanceof ProfileNotFoundError) {
@@ -59,8 +60,8 @@ export function CreativeProfilePage() {
 
   const nextPath = slug ? `/creatives/${slug}` : '/';
   const offers = profile.data?.offers ?? [];
-  const initialMessage = contactOfferTitle
-    ? `I'm interested in "${contactOfferTitle}".`
+  const initialMessage = contactOffer
+    ? `I'm interested in "${contactOffer.title}".`
     : undefined;
 
   return (
@@ -68,7 +69,7 @@ export function CreativeProfilePage() {
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           {profile.isPending && (
             <div className="space-y-4">
@@ -164,7 +165,7 @@ export function CreativeProfilePage() {
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => openContact(offer.title)}
+                                onClick={() => openContact({ id: offer.id, title: offer.title })}
                               >
                                 Contact about this offer
                               </Button>
@@ -214,10 +215,11 @@ export function CreativeProfilePage() {
 
               {user && composerOpen && (
                 <ContactComposer
-                  key={contactOfferTitle ?? 'profile'}
+                  key={contactOffer?.id ?? 'profile'}
                   profileSlug={profile.data.slug}
                   creativeName={profile.data.displayName ?? profile.data.fullName}
                   initialMessage={initialMessage}
+                  offerId={contactOffer?.id}
                   onCancel={closeComposer}
                 />
               )}

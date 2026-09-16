@@ -54,9 +54,10 @@ Number sequentially. Never renumber.
 | [0015](./0015-clients-register-through-the-inquiry-flow.md) | Clients register through the inquiry flow | Partly superseded by 0017, 0020 |
 | [0016](./0016-edits-never-unpublish.md) | Edits never un-publish; public edits flag for re-review | Accepted |
 | [0017](./0017-sign-in-before-contacting.md) | Sign in before contacting a creative | Accepted |
-| [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted |
+| [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted (amended by 0024) |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
 | [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted |
 | [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted |
 | [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted |
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
+| [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |

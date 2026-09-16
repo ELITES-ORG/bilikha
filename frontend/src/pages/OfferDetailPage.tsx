@@ -8,6 +8,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { ContactComposer } from '@/features/conversations/ContactComposer';
 import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
 import { formatPriceRange } from '@/lib/money';
+import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 export function OfferDetailPage() {
@@ -56,7 +57,7 @@ export function OfferDetailPage() {
       <SiteHeader />
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           {offer.isPending && (
             <div className="space-y-4">
@@ -156,6 +157,7 @@ export function OfferDetailPage() {
                   profileSlug={offer.data.creative.slug}
                   creativeName={creativeName}
                   initialMessage={initialMessage}
+                  offerId={offer.data.id}
                   onCancel={() => setComposerOpen(false)}
                 />
               )}

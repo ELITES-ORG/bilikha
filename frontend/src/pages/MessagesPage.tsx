@@ -5,6 +5,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { Link } from 'react-router-dom';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function MessagesPage() {
   const [page, setPage] = useState(1);
@@ -18,7 +19,7 @@ export function MessagesPage() {
     <>
       <SiteHeader />
       <RegistrationStatusBanner />
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <SectionHeading
             eyebrow="Messages"

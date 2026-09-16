@@ -12,6 +12,7 @@ import {
 } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { toApiError } from '@/lib/api-client';
+import { pbBottomNav, stickyComposerAboveNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
@@ -95,7 +96,7 @@ export function ConversationPage() {
     <>
       <SiteHeader />
       <RegistrationStatusBanner />
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <p className="text-sm">
             <Link to="/messages" className="link-underline text-ink-muted">
@@ -263,7 +264,13 @@ export function ConversationPage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={(e) => void onReply(e)} className="mt-8 border-t border-hairline pt-6">
+                <form
+                  onSubmit={(e) => void onReply(e)}
+                  className={cn(
+                    'mt-8 border-t border-hairline bg-paper pt-6',
+                    stickyComposerAboveNav,
+                  )}
+                >
                   {error && <p className="mb-3 text-sm text-danger-700">{error}</p>}
                   <label htmlFor="reply-body" className="sr-only">
                     Reply

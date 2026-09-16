@@ -4,6 +4,7 @@ import { apiClient, toApiError } from '@/lib/api-client';
 import type {
   ConversationListItem,
   ConversationThread,
+  HistoryItem,
   StartConversationPayload,
   StartConversationResult,
 } from './types';
@@ -24,6 +25,7 @@ export const conversationKeys = {
   thread: (id: string, after?: string) =>
     ['conversations', 'thread', id, after ?? ''] as const,
   unread: ['conversations', 'unread'] as const,
+  history: ['conversations', 'history'] as const,
 };
 
 function rethrowForForms(error: unknown): never {
@@ -87,6 +89,22 @@ export function useUnreadCount(enabled = true) {
   });
 }
 
+export function useHistory() {
+  return useQuery({
+    queryKey: conversationKeys.history,
+    queryFn: async (): Promise<HistoryItem[]> => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<HistoryItem[]>>(
+          '/conversations/history',
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}
+
 export function useStartConversation() {
   const queryClient = useQueryClient();
 
@@ -104,6 +122,7 @@ export function useStartConversation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.all });
+      void queryClient.invalidateQueries({ queryKey: conversationKeys.history });
     },
   });
 }

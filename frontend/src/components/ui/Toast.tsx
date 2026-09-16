@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Check, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { bottomAboveNav } from '@/lib/bottom-nav';
 import { ToastContext, type ToastApi } from './toast-context';
 
 type ToastTone = 'pending' | 'success' | 'error';
@@ -141,7 +142,8 @@ function Toaster({
     // pointer-events-none on the stack so the empty area never blocks the page.
     <div
       className={cn(
-        'pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 p-4',
+        'pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 p-4',
+        bottomAboveNav,
         'sm:inset-x-auto sm:right-0 sm:items-end',
       )}
       aria-live="polite"

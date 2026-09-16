@@ -4,6 +4,7 @@ export const startConversationSchema = z.object({
   profileSlug: z.string().trim().min(1),
   subject: z.string().trim().min(3, 'Too short').max(120),
   body: z.string().trim().min(20, 'Give a little more detail').max(2000),
+  offerId: z.string().uuid('Invalid offer id').optional(),
 });
 
 export const sendMessageSchema = z.object({

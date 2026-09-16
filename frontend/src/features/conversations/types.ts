@@ -35,6 +35,29 @@ export interface StartConversationPayload {
   profileSlug: string;
   subject: string;
   body: string;
+  /** Set when starting from an offer; omitted for profile-level contact. */
+  offerId?: string;
+}
+
+/** One row from GET /conversations/history — inquiries this user made as client. */
+export interface HistoryItem {
+  id: string;
+  startedAt: string;
+  replied: boolean;
+  unreadCount: number;
+  offer: {
+    id: string;
+    title: string;
+    priceMinCentavos: number | null;
+    priceMaxCentavos: number | null;
+    image: { thumbUrl: string } | null;
+  } | null;
+  creative: {
+    slug: string;
+    displayName: string;
+    municipality: string;
+    avatarUrl: string | null;
+  };
 }
 
 export interface StartConversationResult {

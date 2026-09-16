@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BottomNav } from '@/components/BottomNav';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
 import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
@@ -10,6 +11,7 @@ import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
 import { CreativesPage } from '@/pages/CreativesPage';
 import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
+import { HistoryPage } from '@/pages/HistoryPage';
 import { HomePage } from '@/pages/HomePage';
 import { OfferDetailPage } from '@/pages/OfferDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -47,6 +49,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <ConversationPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <RequireAuth>
+                  <HistoryPage />
                 </RequireAuth>
               }
             />
@@ -94,6 +104,7 @@ export default function App() {
             <Route path="/styleguide" element={<StyleGuidePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          <BottomNav />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>

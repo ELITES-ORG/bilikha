@@ -5,6 +5,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { Badge, Button, ButtonLink, Container, EmptyState, Input, Skeleton } from '@/components/ui';
 import { TriangleAlert } from 'lucide-react';
+import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function AdminProfilePage() {
   return (
@@ -52,7 +53,7 @@ function AdminProfileInner() {
       </header>
       <RegistrationStatusBanner />
 
-      <main>
+      <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           {profile.isPending && (
             <div className="space-y-4">

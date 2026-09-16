@@ -272,13 +272,15 @@ Exactly one conversation per `(profile_id, client_user_id)`.
 | `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
 | `creative_user_id` | `uuid` FK → `users.id` | Denormalised from the profile |
 | `client_user_id` | `uuid` FK → `users.id` | |
+| `offer_id` | `uuid` FK → `offers.id` null | Set when started from an offer; `ON DELETE SET NULL` so deleting a listing keeps the thread |
 | `subject` | `text` | Set on first message |
 | `last_message_at` | `timestamptz` | Denormalised for the thread list |
 | `client_last_read_at` / `creative_last_read_at` | `timestamptz` null | Per-side read cursors |
 | `created_at` | `timestamptz` | |
 
 Indexes: unique `(profile_id, client_user_id)`;
-`(creative_user_id, last_message_at)`; `(client_user_id, last_message_at)`.
+`(creative_user_id, last_message_at)`; `(client_user_id, last_message_at)`;
+`conversations_offer_idx` on `(offer_id)`.
 
 ## `messages`
 
