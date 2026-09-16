@@ -86,7 +86,7 @@ apply unchanged. Four specific to this plan:
 | 4. Backend — safety | 3 / 3 | Done |
 | 5. Frontend — sign-in gate | 5 / 5 | Done |
 | 6. Frontend — thread UI | 4 / 4 | Done |
-| 7. Frontend — unread and safety | 0 / 3 | Not started |
+| 7. Frontend — unread and safety | 3 / 3 | Done |
 | 8. Retire the inquiries model | 0 / 3 | Not started |
 | 9. Verification | 0 / 6 | Not started |
 
@@ -545,7 +545,7 @@ continuously. Do not poll the thread list.
 
 ### Step 7.1 — Header badge
 
-- [ ] **Action.** In `SiteHeader`, show a **Messages** link with an unread count
+- [x] **Action.** In `SiteHeader`, show a **Messages** link with an unread count
   for any signed-in user, polling `/conversations/unread-count` every 60
   seconds.
 
@@ -553,21 +553,21 @@ This badge is the **only** way anyone learns a message arrived
 ([ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md)). It
 must be visible on every page, not only inside the messages area.
 
-- [ ] **Verify.** The count appears, and clears after reading the thread.
+- [x] **Verify.** The count appears, and clears after reading the thread.
 
 ### Step 7.2 — Honest send confirmation
 
-- [ ] **Action.** After starting a conversation, state plainly that the creative
+- [x] **Action.** After starting a conversation, state plainly that the creative
   will see it **next time they sign in**, and that there is no email or SMS
   notification.
-- [ ] **Verify.** The copy does not imply delivery to a phone.
+- [x] **Verify.** The copy does not imply delivery to a phone.
 
 ### Step 7.3 — Report and block
 
-- [ ] **Action.** In the thread view, an overflow menu with **Report
+- [x] **Action.** In the thread view, an overflow menu with **Report
   conversation** (reason required) and **Block this person** (confirm first,
   explain it stops further messages).
-- [ ] **Verify.** After blocking, the reply box is replaced with an explanation
+- [x] **Verify.** After blocking, the reply box is replaced with an explanation
   and sending is refused server-side too.
 
 ---

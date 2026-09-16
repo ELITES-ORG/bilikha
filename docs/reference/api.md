@@ -439,7 +439,8 @@ last-read timestamp.
 
 ### `GET /api/v1/conversations/:id`
 
-Thread + messages. Query: `after` (message uuid, for polling), `limit`.
+Thread + messages. Includes `otherPartyUserId` and `otherPartyName` for the
+counterpart. Query: `after` (message uuid, for polling), `limit`.
 Non-participants → `404`.
 
 ### `POST /api/v1/conversations/:id/messages`

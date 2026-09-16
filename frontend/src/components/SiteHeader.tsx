@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
-import { useReceivedInquiries } from '@/features/inquiries/api';
+import { useUnreadCount } from '@/features/conversations/api';
 import {
   defaultViewMode,
   readStoredViewMode,
@@ -22,8 +22,8 @@ export function SiteHeader() {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const hasProfile = Boolean(user?.profileSlug);
-  const inbox = useReceivedInquiries(1, hasProfile);
-  const unread = inbox.data?.data.filter((row) => row.status === 'sent').length ?? 0;
+  const unreadQuery = useUnreadCount(Boolean(user));
+  const unread = unreadQuery.data ?? 0;
 
   const [storedMode, setStoredMode] = useState<AccountViewMode | null>(() => readStoredViewMode());
   const viewMode = hasProfile ? (storedMode ?? defaultViewMode()) : 'hiring';
@@ -83,23 +83,22 @@ export function SiteHeader() {
           <Link to="/directory" className={navClass(hiring)}>
             Directory
           </Link>
-          {hasProfile && (
-            <Link
-              to="/inbox"
-              className={cn(navClass(creative), 'sm:inline-flex items-center gap-1.5')}
-            >
-              Inbox
-              {unread > 0 && (
-                <Badge tone="accent" className="tabular-nums">
-                  {unread}
-                </Badge>
-              )}
-            </Link>
-          )}
           {user && (
             <>
-              <Link to="/inquiries" className={navClass(hiring)}>
-                Inquiries
+              <Link
+                to="/messages"
+                className={cn(
+                  'link-underline inline-flex items-center gap-1.5 px-2 py-1 text-base transition-colors',
+                  'font-medium text-ink sm:font-normal',
+                  'text-ink-muted hover:text-ink sm:inline-flex',
+                )}
+              >
+                Messages
+                {unread > 0 && (
+                  <Badge tone="accent" className="tabular-nums">
+                    {unread > 99 ? '99+' : unread}
+                  </Badge>
+                )}
               </Link>
               <Link
                 to="/account"
