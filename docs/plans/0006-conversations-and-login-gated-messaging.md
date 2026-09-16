@@ -80,7 +80,7 @@ apply unchanged. Four specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 0 / 4 | Not started |
+| 1. Schema | 4 / 4 | Done |
 | 2. Migration and backfill | 0 / 3 | Not started |
 | 3. Backend — conversations | 0 / 4 | Not started |
 | 4. Backend — safety | 0 / 3 | Not started |
@@ -96,7 +96,7 @@ apply unchanged. Four specific to this plan:
 
 ### Step 1.1 — Conversations
 
-- [ ] **Action.** Create `backend/src/db/schema/conversations.ts`:
+- [x] **Action.** Create `backend/src/db/schema/conversations.ts`:
 
 ```ts
 import { pgTable, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
@@ -146,11 +146,11 @@ export const conversations = pgTable(
 );
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.2 — Messages
 
-- [ ] **Action.** Append to the same file:
+- [x] **Action.** Append to the same file:
 
 ```ts
 /** Append-only. Messages are never edited or deleted in this plan. */
@@ -193,11 +193,11 @@ export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.3 — Reports and blocks
 
-- [ ] **Action.** Create `backend/src/db/schema/safety.ts`:
+- [x] **Action.** Create `backend/src/db/schema/safety.ts`:
 
 ```ts
 import { pgTable, pgEnum, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
@@ -243,12 +243,12 @@ export const userBlocks = pgTable(
 );
 ```
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.4 — Export
 
-- [ ] **Action.** Add both files to `backend/src/db/schema/index.ts`.
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Action.** Add both files to `backend/src/db/schema/index.ts`.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ---
 
