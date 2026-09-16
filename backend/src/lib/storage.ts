@@ -45,14 +45,27 @@ export function isStorageConfigured(): boolean {
  * The role is in the (unsigned) payload, so it can be checked at boot.
  * Returns null when there is no key, or it is not a decodable JWT.
  */
-export function storageKeyRole(): string | null {
+export function storageKeyClaims(): { role: string | null; ref: string | null } {
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) return null;
+  if (!key) return { role: null, ref: null };
   try {
     const payload = key.split('.')[1];
-    if (!payload) return null;
-    const claims = JSON.parse(Buffer.from(payload, 'base64').toString()) as { role?: string };
-    return claims.role ?? null;
+    if (!payload) return { role: null, ref: null };
+    const claims = JSON.parse(Buffer.from(payload, 'base64').toString()) as {
+      role?: string;
+      ref?: string;
+    };
+    return { role: claims.role ?? null, ref: claims.ref ?? null };
+  } catch {
+    return { role: null, ref: null };
+  }
+}
+
+/** The project ref is the first label of the Supabase hostname. */
+export function projectRefFromUrl(): string | null {
+  if (!env.SUPABASE_URL) return null;
+  try {
+    return new URL(env.SUPABASE_URL).hostname.split('.')[0] ?? null;
   } catch {
     return null;
   }
