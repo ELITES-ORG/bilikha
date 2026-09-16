@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useRegister } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { Button, ButtonLink, Container, Input } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { withNextParam } from '@/lib/return-path';
 
 const DRAFT_KEY = 'bilikha:register-draft';
 
@@ -72,6 +73,8 @@ function clearDraft(): void {
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const nextRaw = searchParams.get('next');
   const register = useRegister();
   const [form, setForm] = useState<FormState>(() => loadDraft());
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -114,7 +117,7 @@ export function RegisterPage() {
         termsAccepted: true,
       });
       clearDraft();
-      void navigate('/welcome');
+      void navigate(withNextParam('/welcome', nextRaw));
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {
@@ -132,7 +135,7 @@ export function RegisterPage() {
           <Link to="/" className="u-display text-xl font-semibold text-ink">
             Bilikha
           </Link>
-          <ButtonLink to="/login" variant="ghost" size="sm">
+          <ButtonLink to={withNextParam('/login', nextRaw)} variant="ghost" size="sm">
             Sign in
           </ButtonLink>
         </Container>

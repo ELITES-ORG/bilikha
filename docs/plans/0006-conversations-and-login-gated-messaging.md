@@ -84,7 +84,7 @@ apply unchanged. Four specific to this plan:
 | 2. Migration and backfill | 3 / 3 | Done |
 | 3. Backend — conversations | 4 / 4 | Done |
 | 4. Backend — safety | 3 / 3 | Done |
-| 5. Frontend — sign-in gate | 0 / 5 | Not started |
+| 5. Frontend — sign-in gate | 5 / 5 | Done |
 | 6. Frontend — thread UI | 0 / 4 | Not started |
 | 7. Frontend — unread and safety | 0 / 3 | Not started |
 | 8. Retire the inquiries model | 0 / 3 | Not started |
@@ -441,22 +441,22 @@ delivered. Confirming a block invites retaliation through other channels.
 
 ### Step 5.1 — Gate the Contact button
 
-- [ ] **Action.** On `CreativeProfilePage`, when `useCurrentUser()` returns null,
+- [x] **Action.** On `CreativeProfilePage`, when `useCurrentUser()` returns null,
   Contact links to `/login?next=/creatives/<slug>` instead of opening the
   composer.
 
 Label it plainly — **Sign in to contact** — so the requirement is visible before
 the click, not after.
 
-- [ ] **Verify.** Signed out, Contact navigates to login; signed in, it opens
+- [x] **Verify.** Signed out, Contact navigates to login; signed in, it opens
   the composer.
 
 ### Step 5.2 — Return path
 
-- [ ] **Action.** `LoginPage` and `RegisterPage` read `?next=` and redirect
+- [x] **Action.** `LoginPage` and `RegisterPage` read `?next=` and redirect
   there on success. **Only accept same-origin relative paths** beginning with a
   single `/` — an open redirect is a phishing vector.
-- [ ] **Verify.** `?next=https://evil.example.com` is ignored and lands on `/`.
+- [x] **Verify.** `?next=https://evil.example.com` is ignored and lands on `/`.
 
 ### Step 5.3 — Wire the return path through registration
 
@@ -464,11 +464,11 @@ the click, not after.
 a single short form and owns the client/creative split, so this plan no longer
 needs a chooser. **Run 0007 first.**
 
-- [ ] **Action.** Confirm `/register` is the short base-account form from
+- [x] **Action.** Confirm `/register` is the short base-account form from
   [plan 0007](./0007-one-account-and-creative-role.md). It is — no change needed
   there.
 
-- [ ] **Action.** **Make `IntentPage` propagate `?next=`.** Plan 0007 built the
+- [x] **Action.** **Make `IntentPage` propagate `?next=`.** Plan 0007 built the
   intent step before this gate existed, so it does not know about the parameter
   at all. Both choices must carry it: **I'm looking to hire** returns to `next`
   when present and falls back to `/directory`; **offer my work** appends it to
@@ -482,18 +482,18 @@ A signed-out visitor pressing Contact registers, answers the intent question,
 and returns to the profile they came from — the `next` parameter must not be
 lost at the intent step.
 
-- [ ] **Verify.** From a profile, signed out: Contact → register → intent →
+- [x] **Verify.** From a profile, signed out: Contact → register → intent →
   back on that profile with the draft intact.
 
 ### Step 5.4 — Strip inline registration
 
-- [ ] **Action.** Remove the register and login phases from `InquiryComposer`.
+- [x] **Action.** Remove the register and login phases from `InquiryComposer`.
   It becomes compose-and-send only, for signed-in users.
 
 This deletes the stale-`user` bounce that sent a newly registered user back to
 the account form — see [ADR 0017](../decisions/0017-sign-in-before-contacting.md).
 
-- [ ] **Verify.** The component no longer imports `useRegister` or `useLogin`.
+- [x] **Verify.** The component no longer imports `useRegister` or `useLogin`.
 
 ---
 

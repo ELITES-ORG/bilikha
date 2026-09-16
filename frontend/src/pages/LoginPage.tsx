@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Container, Input } from '@/components/ui';
+import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = safeReturnPath(searchParams.get('next'));
   const login = useLogin();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -17,8 +20,7 @@ export function LoginPage() {
 
     try {
       await login.mutateAsync({ username, password });
-      // Always land on home so the registration status banner is visible.
-      void navigate('/', { replace: true });
+      void navigate(next, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed');
     }
@@ -31,7 +33,7 @@ export function LoginPage() {
           <Link to="/" className="u-display text-xl font-semibold text-ink">
             Bilikha
           </Link>
-          <ButtonLink to="/register" variant="ghost" size="sm">
+          <ButtonLink to={withNextParam('/register', searchParams.get('next'))} variant="ghost" size="sm">
             Register
           </ButtonLink>
         </Container>

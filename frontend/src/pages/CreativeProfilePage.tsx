@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Badge, Container, Skeleton } from '@/components/ui';
+import { Badge, Button, ButtonLink, Container, Skeleton } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { InquiryComposer } from '@/features/inquiries/InquiryComposer';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
@@ -10,10 +12,14 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 export function CreativeProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const profile = usePublishedProfile(slug);
+  const { data: user } = useCurrentUser();
+  const [composerOpen, setComposerOpen] = useState(false);
 
   if (profile.isError && profile.error instanceof ProfileNotFoundError) {
     return <NotFoundPage />;
   }
+
+  const nextPath = slug ? `/creatives/${slug}` : '/';
 
   return (
     <>
@@ -68,10 +74,30 @@ export function CreativeProfilePage() {
 
               <div className="u-rule my-12" />
 
-              <InquiryComposer
-                profileSlug={profile.data.slug}
-                creativeName={profile.data.displayName ?? profile.data.fullName}
-              />
+              {!composerOpen && (
+                <div>
+                  {user ? (
+                    <Button size="lg" onClick={() => setComposerOpen(true)}>
+                      Contact
+                    </Button>
+                  ) : (
+                    <ButtonLink
+                      to={`/login?next=${encodeURIComponent(nextPath)}`}
+                      size="lg"
+                    >
+                      Sign in to contact
+                    </ButtonLink>
+                  )}
+                </div>
+              )}
+
+              {user && composerOpen && (
+                <InquiryComposer
+                  profileSlug={profile.data.slug}
+                  creativeName={profile.data.displayName ?? profile.data.fullName}
+                  onCancel={() => setComposerOpen(false)}
+                />
+              )}
             </>
           )}
         </Container>

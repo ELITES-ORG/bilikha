@@ -10,6 +10,7 @@ import {
 import type { CreateProfilePayload } from '@/features/me/types';
 import { Button, Container, Skeleton } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
 const EMPTY_FORM: ProfileCraftFormState = {
   displayName: '',
@@ -25,6 +26,7 @@ export function ProfileSetupPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromAccount = searchParams.get('from') === 'account';
+  const next = safeReturnPath(searchParams.get('next'), '');
   const { data: user } = useCurrentUser();
   const existing = useOwnProfile();
   const createProfile = useCreateOwnProfile();
@@ -68,7 +70,7 @@ export function ProfileSetupPage() {
 
     try {
       await createProfile.mutateAsync(payload);
-      void navigate('/welcome/submitted');
+      void navigate(withNextParam('/welcome/submitted', next || null));
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {
@@ -91,7 +93,7 @@ export function ProfileSetupPage() {
   }
 
   if (existing.data) {
-    return <Navigate to="/welcome/submitted" replace />;
+    return <Navigate to={withNextParam('/welcome/submitted', next || null)} replace />;
   }
 
   return (

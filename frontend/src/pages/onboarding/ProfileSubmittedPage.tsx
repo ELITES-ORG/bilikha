@@ -1,8 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ButtonLink, Container } from '@/components/ui';
+import { safeReturnPath } from '@/lib/return-path';
 
 export function ProfileSubmittedPage() {
+  const [searchParams] = useSearchParams();
+  const next = safeReturnPath(searchParams.get('next'), '');
+
   return (
     <div className="min-h-dvh bg-paper">
       <header className="border-b border-hairline">
@@ -25,7 +29,11 @@ export function ProfileSubmittedPage() {
             The status banner above stays with you until then.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink to="/directory">Browse the directory</ButtonLink>
+            {next ? (
+              <ButtonLink to={next}>Continue where you left off</ButtonLink>
+            ) : (
+              <ButtonLink to="/directory">Browse the directory</ButtonLink>
+            )}
             <ButtonLink to="/account" variant="secondary">
               Go to your account
             </ButtonLink>
