@@ -1,13 +1,6 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import {
-  barangays,
-  creativeProfiles,
-  creativeProfileSubdomains,
-  creativeSubdomains,
-  municipalities,
-  users,
-} from '../../db/schema/index.js';
+import { creativeProfiles, users } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
@@ -31,15 +24,6 @@ export interface PublicUser {
 }
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
-  if (input.kind === 'client') {
-    return registerClient(input);
-  }
-  return registerCreative(input);
-}
-
-async function registerClient(
-  input: Extract<RegisterInput, { kind: 'client' }>,
-): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);
 
   if (isReservedUsername(usernameNormalized)) {
@@ -64,9 +48,12 @@ async function registerClient(
         phone,
         passwordHash,
         firstName: input.firstName,
+        middleName: input.middleName ?? null,
         lastName: input.lastName,
+        suffix: input.suffix ?? null,
         birthDate: input.birthDate.toISOString().slice(0, 10),
         municipalityId: null,
+        barangayId: null,
         privacyConsentAt: now,
         termsAcceptedAt: now,
         consentVersion: CONSENT_VERSION,
@@ -76,118 +63,6 @@ async function registerClient(
     if (!user) throw new Error('User insert returned no row');
 
     return toPublicUser(user, null);
-  } catch (error) {
-    throw translateUniqueViolation(error);
-  }
-}
-
-async function registerCreative(
-  input: Extract<RegisterInput, { kind: 'creative' }>,
-): Promise<PublicUser> {
-  const usernameNormalized = normalizeUsername(input.username);
-
-  if (isReservedUsername(usernameNormalized)) {
-    throw AppError.conflict('That username is not available.', {
-      field: 'username',
-    });
-  }
-
-  const emailNormalized = normalizeEmail(input.email);
-  const phone = normalizePhone(input.phone);
-
-  const [municipality] = await db
-    .select()
-    .from(municipalities)
-    .where(eq(municipalities.slug, input.municipalitySlug))
-    .limit(1);
-
-  if (!municipality) {
-    throw AppError.badRequest('Unknown municipality.', { field: 'municipalitySlug' });
-  }
-
-  let barangayId: string | null = null;
-  if (input.barangaySlug) {
-    const [barangay] = await db
-      .select()
-      .from(barangays)
-      .where(
-        and(eq(barangays.slug, input.barangaySlug), eq(barangays.municipalityId, municipality.id)),
-      )
-      .limit(1);
-
-    if (!barangay) {
-      throw AppError.badRequest('Unknown barangay for that municipality.', {
-        field: 'barangaySlug',
-      });
-    }
-    barangayId = barangay.id;
-  }
-
-  // Resolve every sub-domain slug up front so a bad slug fails before any write.
-  const subdomainRows = await db
-    .select()
-    .from(creativeSubdomains)
-    .where(inArray(creativeSubdomains.slug, input.subdomainSlugs));
-
-  if (subdomainRows.length !== input.subdomainSlugs.length) {
-    throw AppError.badRequest('One or more sub-domains are unknown.', {
-      field: 'subdomainSlugs',
-    });
-  }
-
-  const primary = subdomainRows.find((row) => row.slug === input.primarySubdomainSlug);
-  if (!primary) {
-    throw AppError.badRequest('Primary sub-domain is not among the selected.', {
-      field: 'primarySubdomainSlug',
-    });
-  }
-
-  const passwordHash = await hashPassword(input.password);
-  const now = new Date();
-
-  try {
-    return await db.transaction(async (tx) => {
-      const [user] = await tx
-        .insert(users)
-        .values({
-          username: input.username.trim(),
-          usernameNormalized,
-          email: input.email.trim(),
-          emailNormalized,
-          phone,
-          passwordHash,
-          firstName: input.firstName,
-          middleName: input.middleName ?? null,
-          lastName: input.lastName,
-          suffix: input.suffix ?? null,
-          birthDate: input.birthDate.toISOString().slice(0, 10),
-          municipalityId: municipality.id,
-          barangayId,
-          privacyConsentAt: now,
-          termsAcceptedAt: now,
-          consentVersion: CONSENT_VERSION,
-        })
-        .returning();
-
-      if (!user) throw new Error('User insert returned no row');
-
-      const [profile] = await tx
-        .insert(creativeProfiles)
-        .values({ userId: user.id, slug: usernameNormalized })
-        .returning();
-
-      if (!profile) throw new Error('Profile insert returned no row');
-
-      await tx.insert(creativeProfileSubdomains).values(
-        subdomainRows.map((row) => ({
-          profileId: profile.id,
-          subdomainId: row.id,
-          isPrimary: row.id === primary.id,
-        })),
-      );
-
-      return toPublicUser(user, profile);
-    });
   } catch (error) {
     throw translateUniqueViolation(error);
   }

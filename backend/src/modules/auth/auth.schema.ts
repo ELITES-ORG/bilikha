@@ -38,77 +38,36 @@ export const passwordField = z
   .min(10, 'At least 10 characters')
   .max(128, 'At most 128 characters');
 
-const sharedRegisterFields = {
-  firstName: nameField,
-  lastName: nameField,
-  username: usernameField,
-  email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254),
-  phone: z.string().trim().min(1, 'Required'),
-  birthDate: z.coerce.date({ message: 'Enter a valid date' }),
-  password: passwordField,
-  confirmPassword: z.string(),
-  privacyConsent: z.literal(true, { message: 'You must accept the privacy notice' }),
-  termsAccepted: z.literal(true, { message: 'You must accept the terms' }),
-};
-
-const creativeRegisterObject = z.object({
-  kind: z.literal('creative'),
-  ...sharedRegisterFields,
-  middleName: optionalNameField,
-  suffix: z.string().trim().max(12).optional().or(z.literal('').transform(() => undefined)),
-  municipalitySlug: z.string().trim().min(1, 'Select a municipality'),
-  barangaySlug: z.string().trim().optional().or(z.literal('').transform(() => undefined)),
-  subdomainSlugs: z
-    .array(z.string().trim().min(1))
-    .min(1, 'Choose at least one')
-    .max(5, 'Choose at most 5'),
-  primarySubdomainSlug: z.string().trim().min(1, 'Choose a primary'),
-});
-
-const clientRegisterObject = z.object({
-  kind: z.literal('client'),
-  ...sharedRegisterFields,
-});
-
-const registerUnion = z.discriminatedUnion('kind', [creativeRegisterObject, clientRegisterObject]);
-
-/** Absent `kind` defaults to creative so the existing frontend keeps working. */
-export const registerSchema = z.preprocess(
-  (raw) => {
-    if (raw && typeof raw === 'object' && !Array.isArray(raw) && !('kind' in raw)) {
-      return { ...raw, kind: 'creative' };
-    }
-    return raw;
-  },
-  registerUnion
-    .refine((data) => data.password === data.confirmPassword, {
-      path: ['confirmPassword'],
-      message: 'Passwords do not match',
-    })
-    .refine((data) => !data.password.toLowerCase().includes(data.username.toLowerCase()), {
-      path: ['password'],
-      message: 'Password must not contain your username',
-    })
-    .refine(
-      (data) => {
-        const age = (Date.now() - data.birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-        return age >= 18 && age < 120;
-      },
-      { path: ['birthDate'], message: 'You must be at least 18 years old to register' },
-    )
-    .superRefine((data, ctx) => {
-      if (
-        data.kind === 'creative' &&
-        !data.subdomainSlugs.includes(data.primarySubdomainSlug)
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['primarySubdomainSlug'],
-          message: 'The primary must be one of your selected sub-domains',
-        });
-      }
-    }),
-);
+export const registerSchema = z
+  .object({
+    firstName: nameField,
+    middleName: optionalNameField,
+    lastName: nameField,
+    suffix: z.string().trim().max(12).optional().or(z.literal('').transform(() => undefined)),
+    username: usernameField,
+    email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254),
+    phone: z.string().trim().min(1, 'Required'),
+    birthDate: z.coerce.date({ message: 'Enter a valid date' }),
+    password: passwordField,
+    confirmPassword: z.string(),
+    privacyConsent: z.literal(true, { message: 'You must accept the privacy notice' }),
+    termsAccepted: z.literal(true, { message: 'You must accept the terms' }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  })
+  .refine((data) => !data.password.toLowerCase().includes(data.username.toLowerCase()), {
+    path: ['password'],
+    message: 'Password must not contain your username',
+  })
+  .refine(
+    (data) => {
+      const age = (Date.now() - data.birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+      return age >= 18 && age < 120;
+    },
+    { path: ['birthDate'], message: 'You must be at least 18 years old to register' },
+  );
 
 export const loginSchema = z.object({
   username: z.string().trim().min(1, 'Required'),

@@ -168,17 +168,14 @@ httpOnly cookie named `bilikha.sid`. Email and phone are collected but
 
 ### `POST /api/v1/auth/register`
 
-Discriminated on `kind` (`creative` default when omitted, or `client`).
-
-**Creative** — creates a user, a creative profile in `pending_review`, and the
-selected sub-domain links (1–5, one primary). Signs the new user in. Rate
-limited to 5 attempts per IP per hour.
+Creates a base account only — a `users` row with no creative profile. Signs the
+new user in. Rate limited to 5 attempts per IP per hour. Municipality,
+sub-domains, and profile fields are collected later via `POST /me/profile`.
 
 Request body:
 
 ```jsonc
 {
-  "kind": "creative",            // optional; default
   "firstName": "Juan",
   "middleName": "Santos",       // optional
   "lastName": "dela Cruz",
@@ -187,29 +184,6 @@ Request body:
   "email": "juan@example.com",
   "phone": "09171234567",
   "birthDate": "1995-04-12",
-  "municipalitySlug": "naval",
-  "barangaySlug": "poblacion",  // optional; omit while the list is empty
-  "password": "correct horse battery",
-  "confirmPassword": "correct horse battery",
-  "subdomainSlugs": ["photographers", "filmmakers"],
-  "primarySubdomainSlug": "photographers",
-  "privacyConsent": true,
-  "termsAccepted": true
-}
-```
-
-**Client** — creates a user with no creative profile (`municipality_id` null).
-Same age gate on `birthDate`. No municipality, barangay, suffix, or sub-domains.
-
-```jsonc
-{
-  "kind": "client",
-  "firstName": "Ana",
-  "lastName": "Reyes",
-  "username": "anareyes",
-  "email": "ana@example.com",
-  "phone": "09181234567",
-  "birthDate": "1995-06-01",
   "password": "correct horse battery",
   "confirmPassword": "correct horse battery",
   "privacyConsent": true,
@@ -228,8 +202,8 @@ Same age gate on `birthDate`. No municipality, barangay, suffix, or sub-domains.
     "lastName": "dela Cruz",
     "email": "juan@example.com",
     "role": "member",
-    "profileSlug": "juancruz",   // null for clients
-    "profileStatus": "pending_review", // null for clients
+    "profileSlug": null,
+    "profileStatus": null,
     "rejectionReason": null
   }
 }
@@ -237,7 +211,7 @@ Same age gate on `birthDate`. No municipality, barangay, suffix, or sub-domains.
 
 | Status | When |
 |---|---|
-| `400` | Validation failed, or unknown municipality / sub-domain |
+| `400` | Validation failed |
 | `409` | Username, email, or phone already taken; or reserved username |
 | `429` | Rate limited |
 

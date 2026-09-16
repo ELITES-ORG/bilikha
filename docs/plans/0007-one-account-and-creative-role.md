@@ -73,7 +73,7 @@ apply unchanged. Three specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Backend — simplify registration | 0 / 3 | Not started |
+| 1. Backend — simplify registration | 3 / 3 | Done |
 | 2. Backend — create a profile later | 0 / 3 | Not started |
 | 3. Frontend — registration | 0 / 3 | Not started |
 | 4. Frontend — intent and continuation | 0 / 3 | Not started |
@@ -87,7 +87,7 @@ apply unchanged. Three specific to this plan:
 
 ### Step 1.1 — Collapse the discriminated union
 
-- [ ] **Action.** In `backend/src/modules/auth/auth.schema.ts`, replace the
+- [x] **Action.** In `backend/src/modules/auth/auth.schema.ts`, replace the
   `kind` union with a single `registerSchema` — the current **client** shape:
   first name, middle name, last name, suffix, username, email, phone, birth
   date, password, confirm, both consent flags.
@@ -96,18 +96,18 @@ Drop `municipalitySlug`, `barangaySlug`, `subdomainSlugs`, `primarySubdomainSlug
 and the `kind` discriminator entirely. Keep every shared validator as-is —
 `nameField`, `usernameField`, `passwordField`, the 18+ refinement.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 1.2 — Registration creates a user only
 
-- [ ] **Action.** In `auth.service.ts`, strip profile creation from
+- [x] **Action.** In `auth.service.ts`, strip profile creation from
   `registerUser`. It inserts a `users` row and nothing else — no
   `creative_profiles`, no `creative_profile_subdomains`, no municipality lookup.
 
 `users.municipalityId` is already nullable (plan 0004). Leave it null at
 registration; it is collected during profile setup.
 
-- [ ] **Verify.** Register, then:
+- [x] **Verify.** Register, then:
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -t -A -c \
@@ -118,10 +118,10 @@ Returns `0`. The admin queue shows no new entry under any status.
 
 ### Step 1.3 — Update the reference
 
-- [ ] **Action.** Update the register endpoint in
+- [x] **Action.** Update the register endpoint in
   [`api.md`](../reference/api.md): one body shape, no `kind`, response has
   `profileSlug: null`.
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
