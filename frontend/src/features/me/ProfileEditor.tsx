@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
@@ -48,13 +48,13 @@ function toPayload(form: ProfileFormState): UpdateProfilePayload {
 }
 
 export function ProfileEditor({ profile }: { profile: OwnProfile }) {
+  const toast = useToast();
   const { data: user } = useCurrentUser();
   const updateProfile = useUpdateOwnProfile();
   const [saved, setSaved] = useState<ProfileFormState>(() => toFormState(profile));
   const [form, setForm] = useState<ProfileFormState>(() => toFormState(profile));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   const unchanged = JSON.stringify(form) === JSON.stringify(saved);
 
@@ -66,14 +66,12 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
       delete next[key];
       return next;
     });
-    setConfirmation(null);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
-    setConfirmation(null);
 
     if (!form.primarySubdomainSlug) {
       setFieldErrors({
@@ -84,11 +82,24 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
     }
 
     try {
-      const updated = await updateProfile.mutateAsync(toPayload(form));
-      const next = toFormState(updated);
-      setForm(next);
-      setSaved(next);
-      setConfirmation('Profile saved.');
+      await toast.run(
+        'Saving profile…',
+        async () => {
+          const updated = await updateProfile.mutateAsync(toPayload(form));
+          const next = toFormState(updated);
+          setForm(next);
+          setSaved(next);
+        },
+        {
+          success: 'Profile saved',
+          // Field errors are rendered against their inputs, but those can be
+          // scrolled out of view — the toast says where to look.
+          error: (error) =>
+            Object.keys(toFieldErrors(error)).length > 0
+              ? 'Check the highlighted fields'
+              : toApiError(error).message,
+        },
+      );
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {
@@ -116,15 +127,6 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
           role="alert"
         >
           {formError}
-        </p>
-      )}
-
-      {confirmation && (
-        <p
-          className="rounded-md border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700"
-          role="status"
-        >
-          {confirmation}
         </p>
       )}
 
@@ -184,7 +186,6 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
             delete next[key];
             return next;
           });
-          setConfirmation(null);
         }}
         onSubdomainsChange={(selected, primary) => {
           setForm((current) => ({
@@ -192,7 +193,6 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
             subdomainSlugs: selected,
             primarySubdomainSlug: primary ?? '',
           }));
-          setConfirmation(null);
         }}
       />
 

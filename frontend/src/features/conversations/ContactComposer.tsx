@@ -7,7 +7,7 @@ import {
   saveMessageDraft,
   type MessageDraft,
 } from '@/features/conversations/draft';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 
 interface ContactComposerProps {
@@ -31,6 +31,7 @@ export function ContactComposer({
   initialMessage,
   onCancel,
 }: ContactComposerProps) {
+  const toast = useToast();
   const navigate = useNavigate();
   const start = useStartConversation();
 
@@ -45,14 +46,20 @@ export function ContactComposer({
     setPhase('sending');
     setError(null);
     try {
-      const result = await start.mutateAsync({
-        profileSlug,
-        subject: draft.subject,
-        body: draft.message,
-      });
-      clearMessageDraft(profileSlug);
-      setConversationId(result.id);
-      setPhase('done');
+      await toast.run(
+        'Sending message…',
+        async () => {
+          const result = await start.mutateAsync({
+            profileSlug,
+            subject: draft.subject,
+            body: draft.message,
+          });
+          clearMessageDraft(profileSlug);
+          setConversationId(result.id);
+          setPhase('done');
+        },
+        { success: 'Message sent', error: (err) => toApiError(err).message },
+      );
     } catch (err) {
       setPhase('compose');
       setError(toApiError(err).message);

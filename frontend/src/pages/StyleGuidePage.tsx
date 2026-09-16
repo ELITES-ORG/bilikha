@@ -11,6 +11,7 @@ import {
   EmptyState,
   Input,
   Skeleton,
+  useToast,
 } from '@/components/ui';
 
 /**
@@ -24,6 +25,7 @@ import {
  * `bg-${x}-${y}` would render unstyled.
  */
 export function StyleGuidePage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(false);
 
   return (
@@ -243,6 +245,50 @@ export function StyleGuidePage() {
                 <p className="mt-1.5 text-sm text-ink-muted">Hover to see the lift.</p>
               </CardBody>
             </Card>
+          </div>
+        </Section>
+
+        <Section
+          title="Action feedback"
+          note="Every action that touches the network says it is working, then says whether it worked. Successes clear themselves; errors stay long enough to read."
+        >
+          <div className="flex flex-wrap gap-2 border-t border-hairline pt-6">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                void toast.run(
+                  'Saving changes…',
+                  () => new Promise((resolve) => setTimeout(resolve, 1200)),
+                  { success: 'Changes saved' },
+                )
+              }
+            >
+              Pending, then success
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                void toast
+                  .run(
+                    'Uploading photo…',
+                    () =>
+                      new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('That photo is too large — try one under 20 MB')), 1200),
+                      ),
+                  )
+                  .catch(() => {})
+              }
+            >
+              Pending, then failure
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => toast.success('Offer created')}>
+              Success only
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => toast.error('Could not reach the server.')}>
+              Error only
+            </Button>
           </div>
         </Section>
 

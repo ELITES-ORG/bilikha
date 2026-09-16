@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { AxiosError } from 'axios';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, useToast } from '@/components/ui';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { toApiError } from '@/lib/api-client';
 import { useChangePassword } from './api';
@@ -18,11 +18,11 @@ const EMPTY_FORM: PasswordFormState = {
 };
 
 export function PasswordForm() {
+  const toast = useToast();
   const changePassword = useChangePassword();
   const [form, setForm] = useState<PasswordFormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   function update(key: keyof PasswordFormState, value: string) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -32,19 +32,28 @@ export function PasswordForm() {
       delete next[key];
       return next;
     });
-    setConfirmation(null);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
-    setConfirmation(null);
 
     try {
-      await changePassword.mutateAsync(form);
-      setForm(EMPTY_FORM);
-      setConfirmation('Password changed. You are still signed in.');
+      await toast.run(
+        'Changing password…',
+        async () => {
+          await changePassword.mutateAsync(form);
+          setForm(EMPTY_FORM);
+        },
+        {
+          success: 'Password changed — you are still signed in',
+          error: (error) =>
+            Object.keys(toFieldErrors(error)).length > 0
+              ? 'Check the highlighted fields'
+              : toApiError(error).message,
+        },
+      );
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {
@@ -72,15 +81,6 @@ export function PasswordForm() {
           {formError}
         </p>
       )}
-      {confirmation && (
-        <p
-          className="rounded-md border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700"
-          role="status"
-        >
-          {confirmation}
-        </p>
-      )}
-
       <Input
         label="Current password"
         type="password"

@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Avatar, Button } from '@/components/ui';
+import { Avatar, Button, useToast } from '@/components/ui';
 import { authKeys } from '@/features/auth/api';
 import { confirmAvatar, removeAvatar, requestUploadUrl, uploadImage } from '@/features/media/api';
 import { THUMB_EDGE, resizeImage } from '@/lib/image';
@@ -11,7 +11,13 @@ interface AvatarUploaderProps {
   avatarUrl: string | null;
 }
 
+/** resizeImage throws plain Errors; everything else is an API failure. */
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : toApiError(error).message;
+}
+
 export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
+  const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
@@ -31,18 +37,23 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
     setError(null);
 
     try {
-      const blob = await resizeImage(file, THUMB_EDGE);
-      const ticket = await requestUploadUrl('avatar');
-      if (ticket.kind !== 'avatar') {
-        throw new Error('Unexpected upload ticket.');
-      }
-      await uploadImage(blob, ticket.uploadUrl);
-      await confirmAvatar(ticket.objectKey);
-      setPreviewUrl(URL.createObjectURL(blob));
-      await refreshUser();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : toApiError(err).message;
-      setError(message);
+      await toast.run(
+        'Uploading photo…',
+        async () => {
+          const blob = await resizeImage(file, THUMB_EDGE);
+          const ticket = await requestUploadUrl('avatar');
+          if (ticket.kind !== 'avatar') {
+            throw new Error('Unexpected upload ticket.');
+          }
+          await uploadImage(blob, ticket.uploadUrl);
+          await confirmAvatar(ticket.objectKey);
+          setPreviewUrl(URL.createObjectURL(blob));
+          await refreshUser();
+        },
+        { success: 'Photo updated', error: describe },
+      );
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }
@@ -52,11 +63,17 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
     setBusy(true);
     setError(null);
     try {
-      await removeAvatar();
-      setPreviewUrl(null);
-      await refreshUser();
-    } catch (err) {
-      setError(toApiError(err).message);
+      await toast.run(
+        'Removing photo…',
+        async () => {
+          await removeAvatar();
+          setPreviewUrl(null);
+          await refreshUser();
+        },
+        { success: 'Photo removed', error: describe },
+      );
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }

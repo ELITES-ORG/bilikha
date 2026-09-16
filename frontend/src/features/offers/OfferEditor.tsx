@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Button, Input } from '@/components/ui';
+import { Button, Input, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
   abandonUpload,
@@ -77,7 +77,13 @@ function buildWritePayload(form: FormState, mode: 'create' | 'update') {
   };
 }
 
+/** resizeImage throws plain Errors; everything else is an API failure. */
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : toApiError(error).message;
+}
+
 export function OfferEditor() {
+  const toast = useToast();
   const profile = useOwnProfile();
   const domains = useCreativeDomains();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -153,19 +159,25 @@ export function OfferEditor() {
     setBusy(true);
     setError(null);
     try {
-      if (creating) {
-        const created = await createOffer(buildWritePayload(form, 'create'));
-        setOffers((current) => [...current, created]);
-        setCreating(false);
-        setEditingId(created.id);
-        setForm(offerToForm(created));
-      } else if (editingId) {
-        const updated = await updateOffer(editingId, buildWritePayload(form, 'update'));
-        setOffers((current) => current.map((o) => (o.id === updated.id ? updated : o)));
-        setForm(offerToForm(updated));
-      }
-    } catch (err) {
-      setError(toApiError(err).message);
+      await toast.run(
+        creating ? 'Creating offer…' : 'Saving changes…',
+        async () => {
+          if (creating) {
+            const created = await createOffer(buildWritePayload(form, 'create'));
+            setOffers((current) => [...current, created]);
+            setCreating(false);
+            setEditingId(created.id);
+            setForm(offerToForm(created));
+          } else if (editingId) {
+            const updated = await updateOffer(editingId, buildWritePayload(form, 'update'));
+            setOffers((current) => current.map((o) => (o.id === updated.id ? updated : o)));
+            setForm(offerToForm(updated));
+          }
+        },
+        { success: creating ? 'Offer created' : 'Changes saved', error: describe },
+      );
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }
@@ -175,11 +187,17 @@ export function OfferEditor() {
     setBusy(true);
     setError(null);
     try {
-      await deleteOffer(id);
-      setOffers((current) => current.filter((o) => o.id !== id));
-      if (editingId === id) cancelForm();
-    } catch (err) {
-      setError(toApiError(err).message);
+      await toast.run(
+        'Deleting offer…',
+        async () => {
+          await deleteOffer(id);
+          setOffers((current) => current.filter((o) => o.id !== id));
+          if (editingId === id) cancelForm();
+        },
+        { success: 'Offer deleted', error: describe },
+      );
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }
@@ -195,10 +213,12 @@ export function OfferEditor() {
     next.splice(target, 0, removed!);
     setOffers(next);
 
+    // No pending toast: the list has already moved optimistically, so the only
+    // thing worth saying is that it failed and has been put back.
     try {
       setOffers(await reorderOffers(next.map((o) => o.id)));
     } catch (err) {
-      setError(toApiError(err).message);
+      toast.error(describe(err));
       setOffers(await listMine());
     }
   }
@@ -218,6 +238,7 @@ export function OfferEditor() {
     setBusy(true);
     setError(null);
     try {
+      await toast.run('Uploading image…', async () => {
       const [fullBlob, thumbBlob] = await Promise.all([
         resizeImage(file, DISPLAY_EDGE),
         resizeImage(file, THUMB_EDGE),
@@ -242,8 +263,9 @@ export function OfferEditor() {
           o.id === editingId ? { ...o, images: [...o.images, image] } : o,
         ),
       );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : toApiError(err).message);
+      }, { success: 'Image added', error: describe });
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }
@@ -254,16 +276,22 @@ export function OfferEditor() {
     setBusy(true);
     setError(null);
     try {
-      await deleteOfferImage(imageId);
-      setOffers((current) =>
-        current.map((o) =>
-          o.id === editingId
-            ? { ...o, images: o.images.filter((img) => img.id !== imageId) }
-            : o,
-        ),
+      await toast.run(
+        'Removing image…',
+        async () => {
+          await deleteOfferImage(imageId);
+          setOffers((current) =>
+            current.map((o) =>
+              o.id === editingId
+                ? { ...o, images: o.images.filter((img) => img.id !== imageId) }
+                : o,
+            ),
+          );
+        },
+        { success: 'Image removed', error: describe },
       );
-    } catch (err) {
-      setError(toApiError(err).message);
+    } catch {
+      // Already reported in the toast.
     } finally {
       setBusy(false);
     }
