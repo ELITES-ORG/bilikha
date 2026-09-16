@@ -22,6 +22,10 @@ const envSchema = z.object({
 
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 characters'),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+
+  SUPABASE_URL: z.string().url('SUPABASE_URL must be the project URL, e.g. https://abc.supabase.co'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  SUPABASE_STORAGE_BUCKET: z.string().default('media'),
 });
 
 const parsed = envSchema.safeParse(process.env);

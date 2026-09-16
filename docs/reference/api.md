@@ -482,6 +482,32 @@ Marks the caller's side as read up to now.
 
 ---
 
+## Media
+
+Signed-in only. Image bytes never pass through the API — the backend issues a
+signed upload URL and later records the object key. The service role key never
+appears in responses.
+
+### `POST /api/v1/media/upload-url`
+
+Rate-limited to 40 requests per user per hour.
+
+```jsonc
+{ "kind": "avatar" }        // or "portfolio"
+```
+
+`kind: "avatar"` → `{ data: { kind: "avatar", uploadUrl, objectKey } }`
+
+`kind: "portfolio"` → `{ data: { kind: "portfolio", full: { uploadUrl, objectKey }, thumb: { uploadUrl, objectKey } } }`
+
+`401` when signed out. `403` when a client account (no creative profile) asks
+for a portfolio ticket.
+
+The browser `PUT`s the resized image to `uploadUrl`, then confirms the key with
+a later media endpoint.
+
+---
+
 ## Not yet implemented
 
 Listed so the shape of the eventual surface is visible, and so nobody builds a
@@ -489,7 +515,7 @@ parallel version:
 
 - **Organisations** — read, create, membership
 - **Search** — Postgres-native full-text plus fuzzy name matching
-- **Media** — portfolio upload, moderation queue
+- **Media confirm / portfolio CRUD / admin media queue** — upload tickets only so far
 - **Admin report review UI** — reports are stored; the screen is a follow-up
 - **Self-service password reset / phone verification** — deferred until an SMS
   gateway is available (ADR 0013)

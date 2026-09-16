@@ -1,0 +1,124 @@
+import { randomUUID } from 'node:crypto';
+import { env } from '../config/env.js';
+import { AppError } from './http-error.js';
+
+/**
+ * Supabase Storage contract — pinned with curl in plan 0009 Step 2.4
+ * against project hhtyeqaxqjqepxmdlhpq. Observation wins over docs.
+ *
+ * Sign:
+ *   POST {SUPABASE_URL}/storage/v1/object/upload/sign/{bucket}/{objectKey}
+ *   Authorization: Bearer {SERVICE_ROLE_KEY}
+ *   → 200 { url: "/object/upload/sign/...?token=...", token: "..." }
+ *   Absolute upload URL = {SUPABASE_URL}/storage/v1 + url
+ *
+ * Upload (browser):
+ *   PUT {absolute upload URL}
+ *   Content-Type: image/webp (or image/jpeg)
+ *   → 200 { Key: "{bucket}/{objectKey}" }
+ *
+ * Public read:
+ *   GET {SUPABASE_URL}/storage/v1/object/public/{bucket}/{objectKey}
+ *   → 200 image bytes (no auth)
+ *
+ * Delete:
+ *   DELETE {SUPABASE_URL}/storage/v1/object/{bucket}/{objectKey}
+ *   Authorization: Bearer {SERVICE_ROLE_KEY}
+ *   → 200 { message: "Successfully deleted" }
+ *
+ * Missing object (public GET or DELETE):
+ *   Body { statusCode: "404", code: "NoSuchKey", ... } with HTTP 400
+ *   (not HTTP 404). deleteObject treats that as already-gone.
+ */
+
+const storageBase = () => `${env.SUPABASE_URL.replace(/\/$/, '')}/storage/v1`;
+
+const serviceHeaders = (): Record<string, string> => ({
+  Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+  apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+});
+
+function encodeObjectKey(objectKey: string): string {
+  return objectKey
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+}
+
+export async function createSignedUpload(
+  objectKey: string,
+): Promise<{ uploadUrl: string; objectKey: string }> {
+  const bucket = env.SUPABASE_STORAGE_BUCKET;
+  const path = `${storageBase()}/object/upload/sign/${bucket}/${encodeObjectKey(objectKey)}`;
+
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: serviceHeaders(),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new AppError(
+      502,
+      'STORAGE_ERROR',
+      `Could not create an upload URL (${response.status})`,
+      body,
+    );
+  }
+
+  const payload = (await response.json()) as { url?: string; token?: string };
+  if (!payload.url || !payload.url.startsWith('/')) {
+    throw new AppError(502, 'STORAGE_ERROR', 'Storage sign response was missing a relative url');
+  }
+
+  return {
+    uploadUrl: `${storageBase()}${payload.url}`,
+    objectKey,
+  };
+}
+
+export function publicUrl(objectKey: string): string {
+  const bucket = env.SUPABASE_STORAGE_BUCKET;
+  return `${storageBase()}/object/public/${bucket}/${encodeObjectKey(objectKey)}`;
+}
+
+export async function deleteObject(objectKey: string): Promise<void> {
+  const bucket = env.SUPABASE_STORAGE_BUCKET;
+  const path = `${storageBase()}/object/${bucket}/${encodeObjectKey(objectKey)}`;
+
+  const response = await fetch(path, {
+    method: 'DELETE',
+    headers: serviceHeaders(),
+  });
+
+  if (response.ok) return;
+
+  // Observed: missing objects return HTTP 400 with code NoSuchKey (not 404).
+  let code: string | undefined;
+  let statusCode: string | number | undefined;
+  try {
+    const body = (await response.json()) as {
+      code?: string;
+      statusCode?: string | number;
+    };
+    code = body.code;
+    statusCode = body.statusCode;
+  } catch {
+    // non-JSON body — fall through to throw
+  }
+
+  if (code === 'NoSuchKey' || statusCode === '404' || statusCode === 404 || response.status === 404) {
+    return;
+  }
+
+  throw new AppError(
+    502,
+    'STORAGE_ERROR',
+    `Could not delete storage object (${response.status})`,
+  );
+}
+
+export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
+
+export const portfolioKey = (profileId: string) =>
+  `portfolio/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp

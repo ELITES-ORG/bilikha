@@ -70,3 +70,20 @@ export const messageLimiter = rateLimit({
     },
   },
 });
+
+/** Upload tickets — 40 per user per hour. Covers a full ten-image portfolio
+ *  with retries, and caps how fast one account can fill a 1 GB bucket. */
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 40,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many uploads. Try again in an hour.',
+    },
+  },
+});

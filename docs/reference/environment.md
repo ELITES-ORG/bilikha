@@ -24,6 +24,9 @@ confusing runtime error inside a request handler.
 | `LOG_LEVEL` | no | `info` | `fatal` \| `error` \| `warn` \| `info` \| `debug` \| `trace` |
 | `SESSION_SECRET` | **yes** | — | Min 32 characters. Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `SESSION_TTL_DAYS` | no | `30` | Session cookie and store TTL in days |
+| `SUPABASE_URL` | **yes** | — | Project URL, e.g. `https://abc.supabase.co`. Used only by the backend storage client |
+| `SUPABASE_SERVICE_ROLE_KEY` | **yes** | — | Service role secret from Settings → API. **Never** put this in `frontend/` or a `VITE_` variable |
+| `SUPABASE_STORAGE_BUCKET` | no | `media` | Public bucket for avatars and portfolio images |
 
 Local default:
 
@@ -35,6 +38,9 @@ CORS_ORIGINS=http://localhost:5173
 LOG_LEVEL=debug
 SESSION_SECRET=replace-me-with-64-hex-characters-minimum-32-chars
 SESSION_TTL_DAYS=30
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=replace-me-with-service-role-key
+SUPABASE_STORAGE_BUCKET=media
 ```
 
 ### Production notes
@@ -47,6 +53,9 @@ SESSION_TTL_DAYS=30
 - Connection pool size is set in code (`src/db/index.ts`), not by environment:
   10 in production, 5 otherwise. Managed Postgres tiers cap total connections
   well below what a naive default opens.
+- `SUPABASE_SERVICE_ROLE_KEY` is a full read-write bypass of every storage
+  policy. It must exist only in the backend environment — never in the frontend
+  bundle, never in a response body.
 
 ---
 

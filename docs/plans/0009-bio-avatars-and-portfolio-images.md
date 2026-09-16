@@ -91,9 +91,9 @@ apply unchanged. Five specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Bio on the card | 0 / 2 | Not started |
-| 2. The bucket and its contract | 0 / 4 | Not started |
-| 3. Backend — upload tickets | 0 / 5 | Not started |
+| 1. Bio on the card | 2 / 2 | Done |
+| 2. The bucket and its contract | 4 / 4 | Done |
+| 3. Backend — upload tickets | 5 / 5 | Done |
 | 4. Frontend — the resize pipeline | 0 / 4 | Not started |
 | 5. Avatars | 0 / 6 | Not started |
 | 6. Portfolio | 0 / 7 | Not started |
@@ -109,7 +109,7 @@ No backend work. `bio` is already selected in `listPublished` and already on the
 
 ### Step 1.1 — Render a bio snippet
 
-- [ ] **Action.** In `frontend/src/pages/DirectoryPage.tsx`, inside the card's
+- [x] **Action.** In `frontend/src/pages/DirectoryPage.tsx`, inside the card's
   left-hand `<div>`, directly after the municipality paragraph, add:
 
 ```tsx
@@ -127,19 +127,19 @@ thousand-character bio cannot push everyone else off the screen.
 multi-line block in the left column, baseline alignment drags the tag list down
 to the last line of the bio.
 
-- [ ] **Verify.** Run the frontend, open `/creatives`. Profiles with a bio show
+- [x] **Verify.** Run the frontend, open `/creatives`. Profiles with a bio show
   at most two lines of it; profiles without one look exactly as before, with no
   empty gap. A very long bio truncates rather than stretching the card.
 
 ### Step 1.2 — Commit this on its own
 
-- [ ] **Action.** Confirm `npm run typecheck` and `npm run lint` exit 0, then
+- [x] **Action.** Confirm `npm run typecheck` and `npm run lint` exit 0, then
   commit Phase 1 by itself before starting Phase 2.
 
 It is independently valuable and it makes the image work — which touches the
 same file — reviewable on its own.
 
-- [ ] **Verify.** `git log --oneline -1` shows a commit containing only
+- [x] **Verify.** `git log --oneline -1` shows a commit containing only
   `DirectoryPage.tsx`, with **no AI attribution trailer**
   ([`CLAUDE.md`](../../CLAUDE.md)).
 
@@ -153,7 +153,7 @@ shape of that response.
 
 ### Step 2.1 — Create the bucket
 
-- [ ] **Action.** In the Supabase dashboard → Storage → New bucket:
+- [x] **Action.** In the Supabase dashboard → Storage → New bucket:
 
 | Setting | Value |
 |---|---|
@@ -169,11 +169,11 @@ The size limit and the MIME list are the **only real enforcement** of either
 constraint. Bytes never reach the API, so the backend cannot check them — the
 bucket is where a 12 MB upload gets rejected.
 
-- [ ] **Verify.** The bucket appears in the Storage list marked Public.
+- [x] **Verify.** The bucket appears in the Storage list marked Public.
 
 ### Step 2.2 — Add the backend environment variables
 
-- [ ] **Action.** In `backend/src/config/env.ts`, add to `envSchema`:
+- [x] **Action.** In `backend/src/config/env.ts`, add to `envSchema`:
 
 ```ts
   SUPABASE_URL: z.string().url('SUPABASE_URL must be the project URL, e.g. https://abc.supabase.co'),
@@ -181,26 +181,30 @@ bucket is where a 12 MB upload gets rejected.
   SUPABASE_STORAGE_BUCKET: z.string().default('media'),
 ```
 
-- [ ] **Action.** Add all three to `backend/.env`, to `backend/.env.example`
+- [x] **Action.** Add all three to `backend/.env`, to `backend/.env.example`
   (with placeholder values, **never the real key**), and to the Render service's
   environment.
+
+Local `.env` and `.env.example` are done. Render dashboard still needs the three
+variables set manually (no Render API token in this environment) — see
+[`deployments.md`](../reference/deployments.md).
 
 Both values are in the Supabase dashboard under Settings → API. The service role
 key is the one marked secret — not the `anon` key.
 
-- [ ] **Verify.** `npm run dev` in `backend/` boots. Removing
+- [x] **Verify.** `npm run dev` in `backend/` boots. Removing
   `SUPABASE_SERVICE_ROLE_KEY` makes it exit with a named error rather than
   starting and failing later.
 
 ### Step 2.3 — Confirm the key is not reachable from the browser
 
-- [ ] **Action.** Run from the repo root:
+- [x] **Action.** Run from the repo root:
 
 ```bash
 grep -ri "service_role\|SERVICE_ROLE" frontend/ --exclude-dir=node_modules
 ```
 
-- [ ] **Verify.** No output. If anything matches, remove it before continuing —
+- [x] **Verify.** No output. If anything matches, remove it before continuing —
   rule 3.
 
 ### Step 2.4 — Pin the signed-upload contract with curl
@@ -209,7 +213,7 @@ grep -ri "service_role\|SERVICE_ROLE" frontend/ --exclude-dir=node_modules
 the exact request and response shape against your own project before any code
 depends on it.
 
-- [ ] **Action.** With `SUPABASE_URL` and `KEY` set in your shell, create a
+- [x] **Action.** With `SUPABASE_URL` and `KEY` set in your shell, create a
   signed upload URL:
 
 ```bash
@@ -220,28 +224,38 @@ curl -s -X POST \
 
 Record the exact response. It contains a token and a path.
 
-- [ ] **Action.** Upload a real image file to that signed URL, then fetch it back
+- [x] **Action.** Upload a real image file to that signed URL, then fetch it back
   from the public URL:
 
 ```bash
 curl -s "$SUPABASE_URL/storage/v1/object/public/media/test/hello.webp" -o out.webp
 ```
 
-- [ ] **Action.** Delete the test object:
+- [x] **Action.** Delete the test object:
 
 ```bash
 curl -s -X DELETE "$SUPABASE_URL/storage/v1/object/media/test/hello.webp" \
   -H "Authorization: Bearer $KEY"
 ```
 
-- [ ] **Verify.** The upload succeeds, the public fetch returns the same bytes
+- [x] **Verify.** The upload succeeds, the public fetch returns the same bytes
   with no authentication, and the delete removes it — a second public fetch
   404s.
 
-- [ ] **Verify.** Copy the three confirmed URL shapes into a comment at the top
+- [x] **Verify.** Copy the three confirmed URL shapes into a comment at the top
   of the storage client you create in Step 3.1. **If what you observed differs
   from what Step 3.1 assumes, the observation wins** — adjust the code, not the
   observation.
+
+Observed against project `hhtyeqaxqjqepxmdlhpq` (2026-09-16):
+
+| Call | Shape |
+|---|---|
+| Sign | `POST {SUPABASE_URL}/storage/v1/object/upload/sign/{bucket}/{objectKey}` → `{ url, token }` where `url` is `/object/upload/sign/...?token=...`. Absolute upload URL = `{SUPABASE_URL}/storage/v1` + `url`. |
+| PUT | `PUT` that absolute URL with `Content-Type: image/webp` → `{ Key: "{bucket}/{objectKey}" }` HTTP 200 |
+| Public | `GET {SUPABASE_URL}/storage/v1/object/public/{bucket}/{objectKey}` → bytes HTTP 200 |
+| Delete | `DELETE {SUPABASE_URL}/storage/v1/object/{bucket}/{objectKey}` + Bearer → `{ message: "Successfully deleted" }` HTTP 200 |
+| Missing object | Public GET and DELETE both return body `{ statusCode: "404", code: "NoSuchKey", ... }` with **HTTP 400** (not HTTP 404). `deleteObject` must treat that as already-gone. CDN may briefly `HIT` a deleted public URL without a cache-buster. |
 
 ---
 
@@ -249,7 +263,7 @@ curl -s -X DELETE "$SUPABASE_URL/storage/v1/object/media/test/hello.webp" \
 
 ### Step 3.1 — A storage client
 
-- [ ] **Action.** Create `backend/src/lib/storage.ts`. No SDK — three `fetch`
+- [x] **Action.** Create `backend/src/lib/storage.ts`. No SDK — three `fetch`
   calls against the endpoints confirmed in Step 2.4. Adding `@supabase/supabase-js`
   for this would pull in a realtime client, an auth client and a Postgres client
   this project uses none of.
@@ -265,12 +279,12 @@ It exports:
 `deleteObject` tolerating a missing object matters: it is called whenever a row
 is removed, and a failure there would leave a row the user cannot delete.
 
-- [ ] **Verify.** A scratch `tsx` script calls `createSignedUpload('test/x.webp')`
+- [x] **Verify.** A scratch `tsx` script calls `createSignedUpload('test/x.webp')`
   and prints an absolute `https://` URL.
 
 ### Step 3.2 — Key naming
 
-- [ ] **Action.** In the same file, export two key builders:
+- [x] **Action.** In the same file, export two key builders:
 
 ```ts
 export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
@@ -283,11 +297,11 @@ key leaves the old image in every CDN and browser cache that has it, so someone
 who replaces their photo keeps seeing the old one. A new key each time makes
 replacement immediate and cache-safe.
 
-- [ ] **Verify.** Two calls with the same `userId` return different keys.
+- [x] **Verify.** Two calls with the same `userId` return different keys.
 
 ### Step 3.3 — Rate limit uploads
 
-- [ ] **Action.** In `backend/src/middleware/rate-limit.ts`, add an
+- [x] **Action.** In `backend/src/middleware/rate-limit.ts`, add an
   `uploadLimiter`: 40 requests per hour, keyed on `req.session.userId`, following
   the `messageLimiter` already in that file — including
   `validate: { keyGeneratorIpFallback: false }`.
@@ -295,11 +309,11 @@ replacement immediate and cache-safe.
 Forty an hour covers a full ten-image portfolio with retries, and caps how fast
 one account can fill a 1 GB bucket.
 
-- [ ] **Verify.** The 41st ticket request within an hour returns 429.
+- [x] **Verify.** The 41st ticket request within an hour returns 429.
 
 ### Step 3.4 — The ticket endpoint
 
-- [ ] **Action.** Create a `media` module —
+- [x] **Action.** Create a `media` module —
   `backend/src/modules/media/media.routes.ts` and `media.service.ts` — mounted at
   `/media` in `backend/src/routes/index.ts`. Guard the whole router with
   `requireAuth`, the way `meRouter` does.
@@ -313,14 +327,18 @@ since both sizes are uploaded separately.
 It must **reject `kind: 'portfolio'` from a user with no creative profile**, and
 reject it when that profile already holds ten items.
 
-- [ ] **Verify.** A signed-out request is 401. A client account asking for a
+- [x] **Verify.** A signed-out request is 401. A client account asking for a
   portfolio ticket is 403 with a message naming the reason.
+
+Note: the ten-item ticket pre-check is completed in Phase 6 once
+`portfolio_items` exists; POST `/media/portfolio` will also enforce the cap
+inside its insert transaction.
 
 ### Step 3.5 — Reference
 
-- [ ] **Action.** Document the endpoint in [`api.md`](../reference/api.md) and
+- [x] **Action.** Document the endpoint in [`api.md`](../reference/api.md) and
   the three new variables in [`environment.md`](../reference/environment.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
