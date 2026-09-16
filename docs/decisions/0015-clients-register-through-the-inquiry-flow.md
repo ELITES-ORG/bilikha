@@ -4,6 +4,11 @@
 - **Date:** 2026-09-16
 - **Refines:** [0004](./0004-unified-account-model.md)
 
+> **Location scoping superseded by
+> [0020](./0020-location-required-biliran-only.md).** Municipality and barangay
+> are now required for every account, and the options are Biliran only — the
+> demand side is geographically scoped after all.
+>
 > **Partly superseded by
 > [0017](./0017-sign-in-before-contacting.md).** Anonymous browsing below is
 > unchanged and still correct. Registration no longer happens inside the inquiry

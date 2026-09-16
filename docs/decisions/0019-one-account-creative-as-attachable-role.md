@@ -9,6 +9,11 @@
 - **Related:** [0004](./0004-unified-account-model.md) ·
   [0017](./0017-sign-in-before-contacting.md)
 
+> **Amended by [0020](./0020-location-required-biliran-only.md).** The short
+> registration form below now also collects municipality and barangay, which are
+> required for everyone. The one-account model is unchanged; only the field list
+> grew.
+
 ## Context
 
 [0004](./0004-unified-account-model.md) decided that there is one `users` table
