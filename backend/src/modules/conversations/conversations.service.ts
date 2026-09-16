@@ -51,14 +51,16 @@ async function requireParticipant(conversationId: string, userId: string) {
   return row;
 }
 
-async function assertNotBlockedEitherWay(userA: string, userB: string) {
+async function assertCanMessage(senderUserId: string, otherUserId: string) {
+  // Directional: the other party blocking the sender stops delivery. The
+  // sender having blocked the other does not — see ADR 0018 / schema comment.
   const [block] = await db
     .select({ id: userBlocks.id })
     .from(userBlocks)
     .where(
-      or(
-        and(eq(userBlocks.blockerUserId, userA), eq(userBlocks.blockedUserId, userB)),
-        and(eq(userBlocks.blockerUserId, userB), eq(userBlocks.blockedUserId, userA)),
+      and(
+        eq(userBlocks.blockerUserId, otherUserId),
+        eq(userBlocks.blockedUserId, senderUserId),
       ),
     )
     .limit(1);
@@ -103,7 +105,7 @@ export async function startOrContinue(userId: string, input: StartConversationIn
     throw AppError.badRequest('You cannot contact your own profile.');
   }
 
-  await assertNotBlockedEitherWay(userId, profile.userId);
+  await assertCanMessage(userId, profile.userId);
 
   const now = new Date();
 
@@ -321,7 +323,7 @@ export async function sendMessage(
       ? conversation.creativeUserId
       : conversation.clientUserId;
 
-  await assertNotBlockedEitherWay(userId, otherId);
+  await assertCanMessage(userId, otherId);
 
   const now = new Date();
   const [message] = await db
@@ -400,4 +402,4 @@ export async function reportConversation(
   return { id: row!.id, status: row!.status };
 }
 
-export { assertNotBlockedEitherWay, requireParticipant, BLOCKED_MESSAGE };
+export { assertCanMessage, requireParticipant, BLOCKED_MESSAGE };

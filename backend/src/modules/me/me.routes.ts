@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/require-auth.js';
 import { passwordChangeLimiter } from '../../middleware/rate-limit.js';
@@ -7,9 +8,12 @@ import {
   updateProfileSchema,
 } from './me.schema.js';
 import {
+  blockUser,
   changePassword,
   createOwnProfile,
   getOwnProfile,
+  listBlocks,
+  unblockUser,
   updateOwnProfile,
 } from './me.service.js';
 
@@ -47,4 +51,25 @@ meRouter.post('/password', passwordChangeLimiter, async (req, res) => {
   req.session.userId = userId;
 
   res.status(200).json({ data: { ok: true } });
+});
+
+const blockBodySchema = z.object({
+  userId: z.string().uuid('Invalid user id'),
+});
+
+meRouter.get('/blocks', async (req, res) => {
+  const data = await listBlocks(req.session.userId!);
+  res.json({ data });
+});
+
+meRouter.post('/blocks', async (req, res) => {
+  const input = blockBodySchema.parse(req.body);
+  const data = await blockUser(req.session.userId!, input.userId);
+  res.status(data.alreadyBlocked ? 200 : 201).json({ data });
+});
+
+meRouter.delete('/blocks/:userId', async (req, res) => {
+  const userId = z.string().uuid('Invalid user id').parse(req.params.userId);
+  const data = await unblockUser(req.session.userId!, userId);
+  res.json({ data });
 });

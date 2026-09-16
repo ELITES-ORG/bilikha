@@ -213,11 +213,73 @@ Indexes: unique on `(profile_id, subdomain_id)`; partial unique
 
 ---
 
-## `inquiries`
+## `conversations`
 
-First contact from a signed-in client (or any user) to a published creative
-profile. One message and one response — not a thread
-([plan 0004](../plans/0004-client-accounts-and-inquiries.md)).
+Two-party thread between a client and a creative profile
+([ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md)).
+Exactly one conversation per `(profile_id, client_user_id)`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
+| `creative_user_id` | `uuid` FK → `users.id` | Denormalised from the profile |
+| `client_user_id` | `uuid` FK → `users.id` | |
+| `subject` | `text` | Set on first message |
+| `last_message_at` | `timestamptz` | Denormalised for the thread list |
+| `client_last_read_at` / `creative_last_read_at` | `timestamptz` null | Per-side read cursors |
+| `created_at` | `timestamptz` | |
+
+Indexes: unique `(profile_id, client_user_id)`;
+`(creative_user_id, last_message_at)`; `(client_user_id, last_message_at)`.
+
+## `messages`
+
+Append-only bodies in a conversation. Never edited or deleted in this model.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `conversation_id` | `uuid` FK → `conversations.id` | `ON DELETE CASCADE` |
+| `sender_user_id` | `uuid` FK → `users.id` | |
+| `body` | `text` | |
+| `created_at` | `timestamptz` | |
+
+Index: `(conversation_id, created_at)`.
+
+## `conversation_reports`
+
+Participant reports a conversation for later admin review. No auto-action.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `conversation_id` | `uuid` FK → `conversations.id` | |
+| `reporter_user_id` | `uuid` FK → `users.id` | Must be a participant |
+| `reason` | `text` | |
+| `status` | enum | `open` \| `reviewed` \| `dismissed` |
+| `created_at` | `timestamptz` | |
+
+Index: `(status, created_at)`.
+
+## `user_blocks`
+
+Directional. A blocks B stops B starting or continuing a conversation with A;
+it does not stop A messaging B. Mutual blocking is two rows.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `blocker_user_id` | `uuid` FK → `users.id` | |
+| `blocked_user_id` | `uuid` FK → `users.id` | |
+| `created_at` | `timestamptz` | |
+
+Unique index on `(blocker_user_id, blocked_user_id)`.
+
+## `inquiries` (legacy — pending drop)
+
+Migrated into `conversations` + `messages` by plan 0006. Table retained until
+the new model is verified; then dropped. Do not write new rows here.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -230,12 +292,6 @@ profile. One message and one response — not a thread
 | `response` | `text` null | Creative's reply |
 | `read_at` / `responded_at` | `timestamptz` null | |
 | `created_at` / `updated_at` | `timestamptz` | |
-
-Indexes: `(profile_id, created_at)`, `(sender_user_id, created_at)`, `status`.
-
-Both `responded` and `declined` count as answered for response-rate metrics.
-On `responded`, the creative's preferred contact channel becomes visible to
-that sender only.
 
 ---
 
@@ -278,5 +334,6 @@ Sketched only. Nothing below is built, and the shapes will change.
 Two constraints already settled and worth carrying into the schema:
 
 - A creative may hold **at most 5** sub-domains, exactly **one** marked primary.
-- Individual contact details are private by default; visibility is per-field,
-  and inquiries proxy rather than exposing a mobile number.
+- Individual contact details are private by default; visibility is per-field.
+  Messaging is login-gated and stays on-platform until a creative chooses to
+  share contact details in a reply.

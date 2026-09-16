@@ -83,7 +83,7 @@ apply unchanged. Four specific to this plan:
 | 1. Schema | 4 / 4 | Done |
 | 2. Migration and backfill | 3 / 3 | Done |
 | 3. Backend — conversations | 4 / 4 | Done |
-| 4. Backend — safety | 0 / 3 | Not started |
+| 4. Backend — safety | 3 / 3 | Done |
 | 5. Frontend — sign-in gate | 0 / 5 | Not started |
 | 6. Frontend — thread UI | 0 / 4 | Not started |
 | 7. Frontend — unread and safety | 0 / 3 | Not started |
@@ -415,25 +415,25 @@ Validate `:id` as a UUID — a malformed id must be a 400, not a 500.
 
 ### Step 4.1 — Block and unblock
 
-- [ ] **Action.** Add to `me.routes.ts`: `POST /me/blocks` and
+- [x] **Action.** Add to `me.routes.ts`: `POST /me/blocks` and
   `DELETE /me/blocks/:userId`, plus `GET /me/blocks`.
-- [ ] **Verify.** Blocking is idempotent; blocking yourself is a 400.
+- [x] **Verify.** Blocking is idempotent; blocking yourself is a 400.
 
 ### Step 4.2 — Enforce blocks
 
-- [ ] **Action.** `startOrContinue` and `sendMessage` both check **both
+- [x] **Action.** `startOrContinue` and `sendMessage` both check **both
   directions** and return 403 with a neutral message.
 
 Do not tell the sender they have been blocked — say the message cannot be
 delivered. Confirming a block invites retaliation through other channels.
 
-- [ ] **Verify.** A blocked user gets 403 on both start and reply.
+- [x] **Verify.** A blocked user gets 403 on both start and reply.
 
 ### Step 4.3 — Reference docs
 
-- [ ] **Action.** Update [`api.md`](../reference/api.md) and
+- [x] **Action.** Update [`api.md`](../reference/api.md) and
   [`data-model.md`](../reference/data-model.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 

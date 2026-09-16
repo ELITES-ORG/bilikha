@@ -293,6 +293,23 @@ and keeps the user signed in. A wrong current password returns `401`. Limited to
 five failed attempts per user per hour; successful requests do not consume the
 budget.
 
+### `GET /api/v1/me/blocks`
+
+Lists users the caller has blocked (`userId`, `username`, `name`, `createdAt`).
+
+### `POST /api/v1/me/blocks`
+
+```jsonc
+{ "userId": "…" }
+```
+
+Blocks another user. Idempotent — a second call for the same pair returns
+`200`. Blocking yourself returns `400`. Unknown users return `404`.
+
+### `DELETE /api/v1/me/blocks/:userId`
+
+Removes a block. Idempotent when the pair was not blocked.
+
 ---
 
 ## Admin
@@ -383,53 +400,68 @@ Query: `domain`, `subdomain`, `municipality` (slugs, optional), `page` (default
 
 ---
 
-## Inquiries
+## Conversations
 
-All routes require a signed-in session. One message, one response — not a chat.
+All routes require a signed-in session. Authorisation is by participation: the
+caller must be the client or the creative on that thread. Non-participants get
+`404` (never `403`, never content). See
+[ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md).
 
-### `POST /api/v1/inquiries`
+Rate limited to 60 successful sends per user per hour (`POST /` and
+`POST /:id/messages`).
 
-Send an inquiry to a **published** profile. Rate limited to 10 successful
-sends per user per day.
+### `POST /api/v1/conversations`
+
+Start or continue a conversation with a **published** profile.
 
 ```jsonc
 {
   "profileSlug": "juancruz",
   "subject": "Mural for a café wall",
-  "message": "Looking for a muralist available in October for a ~3m wall in Naval."
+  "body": "Looking for a muralist available in October for a ~3m wall in Naval."
 }
 ```
 
-`201`. Rejects self-inquiry (`400`) and a second open inquiry (`sent`/`read`)
-to the same profile (`409`). Unpublished slugs → `404`.
+`201` for a new thread, `200` when continuing an existing client↔profile pair
+(subject is ignored; `body` is appended). Rejects self-contact (`400`). If the
+creative has blocked the caller → `403` with a neutral “cannot be delivered”
+message. Unpublished slugs → `404`.
 
-### `GET /api/v1/inquiries/received`
+### `GET /api/v1/conversations`
 
-Inbox for the caller's own creative profile. Newest first. Empty when the
-caller has no profile.
+Thread list for the caller (as client or creative). Newest `lastMessageAt`
+first. Query: `page`, `limit`.
 
-### `GET /api/v1/inquiries/sent`
+### `GET /api/v1/conversations/unread-count`
 
-What the caller sent. When status is `responded`, includes `contact`
-(`channel` + `value`) from the creative's `contactPreference`. Declined
-inquiries do not reveal contact.
+`{ data: { count } }` — messages from the other party newer than the caller's
+last-read timestamp.
 
-### `POST /api/v1/inquiries/:id/read`
+### `GET /api/v1/conversations/:id`
 
-Recipient only. Marks `sent` → `read`.
+Thread + messages. Query: `after` (message uuid, for polling), `limit`.
+Non-participants → `404`.
 
-### `POST /api/v1/inquiries/:id/respond`
-
-Recipient only.
+### `POST /api/v1/conversations/:id/messages`
 
 ```jsonc
-{ "action": "responded", "response": "Yes — message me on this number." }
-// or
-{ "action": "declined", "response": "Fully booked until December." }
+{ "body": "Happy to discuss rates this week." }
 ```
 
-`responded` requires a non-empty `response` and reveals the preferred contact
-channel to the sender. Already-answered inquiries → `409`.
+`201`. If the other party has blocked the caller → neutral `403`.
+Non-participants → `404`.
+
+### `POST /api/v1/conversations/:id/read`
+
+Marks the caller's side as read up to now.
+
+### `POST /api/v1/conversations/:id/report`
+
+```jsonc
+{ "reason": "Unsolicited commercial spam after I said I was not interested." }
+```
+
+`201`. Stored as `open` for later admin review. Non-participants → `404`.
 
 ---
 
@@ -438,10 +470,9 @@ channel to the sender. Already-answered inquiries → `409`.
 Listed so the shape of the eventual surface is visible, and so nobody builds a
 parallel version:
 
-- **Creative profile creation and claiming** — editing and public list/read are
-  live above
 - **Organisations** — read, create, membership
 - **Search** — Postgres-native full-text plus fuzzy name matching
 - **Media** — portfolio upload, moderation queue
+- **Admin report review UI** — reports are stored; the screen is a follow-up
 - **Self-service password reset / phone verification** — deferred until an SMS
   gateway is available (ADR 0013)

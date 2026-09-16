@@ -7,6 +7,7 @@ import {
   creativeSubdomains,
   moderationActions,
   municipalities,
+  userBlocks,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
@@ -406,4 +407,74 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
     .update(users)
     .set({ passwordHash, updatedAt: new Date() })
     .where(eq(users.id, userId));
+}
+
+export async function listBlocks(userId: string) {
+  const rows = await db
+    .select({
+      id: userBlocks.id,
+      blockedUserId: userBlocks.blockedUserId,
+      username: users.username,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      createdAt: userBlocks.createdAt,
+    })
+    .from(userBlocks)
+    .innerJoin(users, eq(userBlocks.blockedUserId, users.id))
+    .where(eq(userBlocks.blockerUserId, userId));
+
+  return rows.map((row) => ({
+    id: row.id,
+    userId: row.blockedUserId,
+    username: row.username,
+    name: `${row.firstName} ${row.lastName}`.trim(),
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
+
+export async function blockUser(blockerUserId: string, blockedUserId: string) {
+  if (blockerUserId === blockedUserId) {
+    throw AppError.badRequest('You cannot block yourself.');
+  }
+
+  const [target] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, blockedUserId))
+    .limit(1);
+  if (!target) throw AppError.notFound('User not found.');
+
+  const [existing] = await db
+    .select({ id: userBlocks.id })
+    .from(userBlocks)
+    .where(
+      and(
+        eq(userBlocks.blockerUserId, blockerUserId),
+        eq(userBlocks.blockedUserId, blockedUserId),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    return { id: existing.id, alreadyBlocked: true as const };
+  }
+
+  const [row] = await db
+    .insert(userBlocks)
+    .values({ blockerUserId, blockedUserId })
+    .returning();
+
+  return { id: row!.id, alreadyBlocked: false as const };
+}
+
+export async function unblockUser(blockerUserId: string, blockedUserId: string) {
+  await db
+    .delete(userBlocks)
+    .where(
+      and(
+        eq(userBlocks.blockerUserId, blockerUserId),
+        eq(userBlocks.blockedUserId, blockedUserId),
+      ),
+    );
+  return { ok: true as const };
 }
