@@ -60,6 +60,12 @@ apply unchanged. Three specific to this plan:
 
 ## Why one message and one response, not a chat
 
+> **Superseded by
+> [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md).**
+> Messaging is now a two-party conversation; the reasoning below is kept as the
+> record of why the handoff was built first.
+
+
 [Operating constraints](../explanation/constraints.md) records that deals here
 will close on Messenger and GCash regardless of what we build. An inquiry is
 therefore **first contact**, not a conversation: the client explains what they

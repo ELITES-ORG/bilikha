@@ -4,6 +4,11 @@
 - **Date:** 2026-09-16
 - **Refines:** [0004](./0004-unified-account-model.md)
 
+> **Partly superseded by
+> [0017](./0017-sign-in-before-contacting.md).** Anonymous browsing below is
+> unchanged and still correct. Registration no longer happens inside the inquiry
+> flow — contacting a creative now requires an existing session.
+
 ## Context
 
 [0004](./0004-unified-account-model.md) established one account model with a
