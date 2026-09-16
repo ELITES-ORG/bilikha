@@ -50,6 +50,13 @@
       "when": 1789562868668,
       "tag": "0006_lame_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789564942483,
+      "tag": "0007_medical_garia",
+      "breakpoints": true
     }
   ]
 }

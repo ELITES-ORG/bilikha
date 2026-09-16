@@ -2,15 +2,15 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStartConversation } from '@/features/conversations/api';
 import {
-  clearInquiryDraft,
-  loadInquiryDraft,
-  saveInquiryDraft,
-  type InquiryDraft,
-} from '@/features/inquiries/draft';
+  clearMessageDraft,
+  loadMessageDraft,
+  saveMessageDraft,
+  type MessageDraft,
+} from '@/features/conversations/draft';
 import { Button, Input } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 
-interface InquiryComposerProps {
+interface ContactComposerProps {
   profileSlug: string;
   creativeName: string;
   onCancel?: () => void;
@@ -18,12 +18,12 @@ interface InquiryComposerProps {
 
 type Phase = 'compose' | 'sending' | 'done';
 
-function initialDraft(profileSlug: string): InquiryDraft {
-  return loadInquiryDraft(profileSlug) ?? { subject: '', message: '' };
+function initialDraft(profileSlug: string): MessageDraft {
+  return loadMessageDraft(profileSlug) ?? { subject: '', message: '' };
 }
 
 /** Compose-and-send only. Starts or continues a conversation. */
-export function InquiryComposer({ profileSlug, creativeName, onCancel }: InquiryComposerProps) {
+export function ContactComposer({ profileSlug, creativeName, onCancel }: ContactComposerProps) {
   const navigate = useNavigate();
   const start = useStartConversation();
 
@@ -34,7 +34,7 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [conversationId, setConversationId] = useState<string | null>(null);
 
-  async function submitConversation(draft: InquiryDraft) {
+  async function submitConversation(draft: MessageDraft) {
     setPhase('sending');
     setError(null);
     try {
@@ -43,7 +43,7 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
         subject: draft.subject,
         body: draft.message,
       });
-      clearInquiryDraft(profileSlug);
+      clearMessageDraft(profileSlug);
       setConversationId(result.id);
       setPhase('done');
     } catch (err) {
@@ -57,7 +57,7 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
     setError(null);
     setFieldErrors({});
 
-    const draft: InquiryDraft = { subject: subject.trim(), message: message.trim() };
+    const draft: MessageDraft = { subject: subject.trim(), message: message.trim() };
     if (draft.subject.length < 3) {
       setFieldErrors({ subject: 'Too short' });
       return;
@@ -67,7 +67,7 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
       return;
     }
 
-    saveInquiryDraft(profileSlug, draft);
+    saveMessageDraft(profileSlug, draft);
     await submitConversation(draft);
   }
 
@@ -119,17 +119,17 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
           onChange={(e) => {
             const next = e.target.value;
             setSubject(next);
-            saveInquiryDraft(profileSlug, { subject: next, message });
+            saveMessageDraft(profileSlug, { subject: next, message });
           }}
           error={fieldErrors.subject}
           maxLength={120}
         />
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="inquiry-message" className="text-sm font-medium text-ink">
+          <label htmlFor="contact-message" className="text-sm font-medium text-ink">
             Message<span className="ms-0.5 text-danger-600">*</span>
           </label>
           <textarea
-            id="inquiry-message"
+            id="contact-message"
             required
             rows={6}
             maxLength={2000}
@@ -137,7 +137,7 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
             onChange={(e) => {
               const next = e.target.value;
               setMessage(next);
-              saveInquiryDraft(profileSlug, { subject, message: next });
+              saveMessageDraft(profileSlug, { subject, message: next });
             }}
             className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
             aria-invalid={fieldErrors.message ? true : undefined}

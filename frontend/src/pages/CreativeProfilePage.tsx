@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { Badge, Button, ButtonLink, Container, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { InquiryComposer } from '@/features/inquiries/InquiryComposer';
+import { ContactComposer } from '@/features/conversations/ContactComposer';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -92,7 +92,7 @@ export function CreativeProfilePage() {
               )}
 
               {user && composerOpen && (
-                <InquiryComposer
+                <ContactComposer
                   profileSlug={profile.data.slug}
                   creativeName={profile.data.displayName ?? profile.data.fullName}
                   onCancel={() => setComposerOpen(false)}

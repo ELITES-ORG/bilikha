@@ -4,7 +4,6 @@ import { taxonomyRouter } from '../modules/taxonomy/taxonomy.routes.js';
 import { authRouter } from '../modules/auth/auth.routes.js';
 import { adminRouter } from '../modules/admin/admin.routes.js';
 import { profilesRouter } from '../modules/profiles/profiles.routes.js';
-import { inquiriesRouter } from '../modules/inquiries/inquiries.routes.js';
 import { conversationsRouter } from '../modules/conversations/conversations.routes.js';
 import { meRouter } from '../modules/me/me.routes.js';
 
@@ -19,7 +18,6 @@ apiRouter.use('/health', healthRouter);
 apiRouter.use('/auth', authRouter);
 apiRouter.use('/admin', adminRouter);
 apiRouter.use('/creatives', profilesRouter);
-apiRouter.use('/inquiries', inquiriesRouter);
 apiRouter.use('/conversations', conversationsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

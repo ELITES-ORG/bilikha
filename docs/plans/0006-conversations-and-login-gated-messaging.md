@@ -1,6 +1,6 @@
 # 0006. Conversations and login-gated messaging
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0004](./0004-client-accounts-and-inquiries.md) — the
   `inquiries` rows this plan migrates — and
   [plan 0007](./0007-one-account-and-creative-role.md), which owns registration
@@ -87,8 +87,8 @@ apply unchanged. Four specific to this plan:
 | 5. Frontend — sign-in gate | 5 / 5 | Done |
 | 6. Frontend — thread UI | 4 / 4 | Done |
 | 7. Frontend — unread and safety | 3 / 3 | Done |
-| 8. Retire the inquiries model | 0 / 3 | Not started |
-| 9. Verification | 0 / 6 | Not started |
+| 8. Retire the inquiries model | 3 / 3 | Done |
+| 9. Verification | 6 / 6 | Done |
 
 ---
 
@@ -578,29 +578,29 @@ Only after Phase 9 passes on the new model.
 
 ### Step 8.1 — Remove the old surface
 
-- [ ] **Action.** Delete `modules/inquiries/`, `features/inquiries/`,
+- [x] **Action.** Delete `modules/inquiries/`, `features/inquiries/`,
   `InboxPage`, `SentInquiriesPage`, and their routes. Redirect `/inbox` and
   `/inquiries` to `/messages`.
-- [ ] **Verify.** No import of `inquiries` remains outside the schema and the
+- [x] **Verify.** No import of `inquiries` remains outside the schema and the
   migration script.
 
 ### Step 8.2 — Drop the table
 
-- [ ] **Action.** Remove `inquiries` from the schema, generate a migration, read
+- [x] **Action.** Remove `inquiries` from the schema, generate a migration, read
   it, apply it.
 
 **Re-run the count check from Step 2.3 immediately before applying.** Once this
 runs the originals are gone.
 
-- [ ] **Verify.** `inquiries` no longer exists; conversation and message counts
+- [x] **Verify.** `inquiries` no longer exists; conversation and message counts
   are unchanged.
 
 ### Step 8.3 — Update the record
 
-- [ ] **Action.** Mark plan 0004's messaging sections superseded, pointing at
+- [x] **Action.** Mark plan 0004's messaging sections superseded, pointing at
   [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md).
   Update `api.md` and `data-model.md`.
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
@@ -635,33 +635,33 @@ runs the originals are gone.
 
 ### Step 9.4 — Blocks
 
-- [ ] **Verify.** A blocks B → B cannot start or reply, gets a neutral 403 that
+- [x] **Verify.** A blocks B → B cannot start or reply, gets a neutral 403 that
   does not say "blocked". A can still message B. Unblocking restores it.
 
 ### Step 9.5 — Unread and polling
 
-- [ ] **Verify.** Two accounts in two browsers: sending raises the other's badge
+- [x] **Verify.** Two accounts in two browsers: sending raises the other's badge
   within 60s and appears in the open thread within ~10s. Reading clears it.
 
 ### Step 9.6 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] All 9 phases complete
-- [ ] Every inquiry migrated, counts reconciled before `inquiries` was dropped
-- [ ] Contacting requires a session; the draft survives the detour
-- [ ] A second contact continues one thread rather than forking
-- [ ] Non-participants get 404 on every conversation route
-- [ ] Report and block both work, and block is enforced server-side
-- [ ] The unread badge is visible on every page
-- [ ] Send copy states there is no notification
-- [ ] `api.md` and `data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] All 9 phases complete
+- [x] Every inquiry migrated, counts reconciled before `inquiries` was dropped
+- [x] Contacting requires a session; the draft survives the detour
+- [x] A second contact continues one thread rather than forking
+- [x] Non-participants get 404 on every conversation route
+- [x] Report and block both work, and block is enforced server-side
+- [x] The unread badge is visible on every page
+- [x] Send copy states there is no notification
+- [x] `api.md` and `data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 

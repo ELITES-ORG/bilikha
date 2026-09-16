@@ -1,12 +1,19 @@
 # 0004. Client accounts and inquiries
 
-- **Status:** Complete
+- **Status:** Complete — **messaging superseded** by
+  [plan 0006](./0006-conversations-and-login-gated-messaging.md) /
+  [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md)
 - **Depends on:** [plan 0001](./0001-registration-and-auth.md) (auth) and
   [plan 0003](./0003-admin-moderation.md) — nothing is `published` until
   moderation exists, and only published profiles are publicly visible
 - **Related:** [ADR 0015](../decisions/0015-clients-register-through-the-inquiry-flow.md) ·
   [ADR 0005](../decisions/0005-organization-pages.md) ·
   [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md)
+
+> **Messaging note.** The one-shot `inquiries` model this plan built has been
+> migrated into `conversations` + `messages` and the table dropped. Public
+> directory/profile surfaces from this plan remain. See
+> [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md).
 
 ---
 

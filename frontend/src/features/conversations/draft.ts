@@ -1,4 +1,4 @@
-export interface InquiryDraft {
+export interface MessageDraft {
   subject: string;
   message: string;
 }
@@ -7,11 +7,11 @@ function key(profileSlug: string) {
   return `bilikha:inquiry-draft:${profileSlug}`;
 }
 
-export function loadInquiryDraft(profileSlug: string): InquiryDraft | null {
+export function loadMessageDraft(profileSlug: string): MessageDraft | null {
   try {
     const raw = localStorage.getItem(key(profileSlug));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as InquiryDraft;
+    const parsed = JSON.parse(raw) as MessageDraft;
     if (typeof parsed.subject !== 'string' || typeof parsed.message !== 'string') return null;
     return parsed;
   } catch {
@@ -19,7 +19,7 @@ export function loadInquiryDraft(profileSlug: string): InquiryDraft | null {
   }
 }
 
-export function saveInquiryDraft(profileSlug: string, draft: InquiryDraft): void {
+export function saveMessageDraft(profileSlug: string, draft: MessageDraft): void {
   try {
     localStorage.setItem(key(profileSlug), JSON.stringify(draft));
   } catch {
@@ -27,7 +27,7 @@ export function saveInquiryDraft(profileSlug: string, draft: InquiryDraft): void
   }
 }
 
-export function clearInquiryDraft(profileSlug: string): void {
+export function clearMessageDraft(profileSlug: string): void {
   try {
     localStorage.removeItem(key(profileSlug));
   } catch {

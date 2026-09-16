@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { queryClient } from '@/lib/query-client';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
@@ -8,7 +8,6 @@ import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
 import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HomePage } from '@/pages/HomePage';
-import { InboxPage } from '@/pages/InboxPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -17,7 +16,6 @@ import { ProfileSetupPage } from '@/pages/onboarding/ProfileSetupPage';
 import { ProfileSubmittedPage } from '@/pages/onboarding/ProfileSubmittedPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage';
-import { SentInquiriesPage } from '@/pages/SentInquiriesPage';
 import { StyleGuidePage } from '@/pages/StyleGuidePage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 
@@ -45,8 +43,8 @@ export default function App() {
               </RequireAuth>
             }
           />
-          <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/inquiries" element={<SentInquiriesPage />} />
+          <Route path="/inbox" element={<Navigate to="/messages" replace />} />
+          <Route path="/inquiries" element={<Navigate to="/messages" replace />} />
           <Route
             path="/account"
             element={

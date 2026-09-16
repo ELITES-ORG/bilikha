@@ -276,23 +276,6 @@ it does not stop A messaging B. Mutual blocking is two rows.
 
 Unique index on `(blocker_user_id, blocked_user_id)`.
 
-## `inquiries` (legacy — pending drop)
-
-Migrated into `conversations` + `messages` by plan 0006. Table retained until
-the new model is verified; then dropped. Do not write new rows here.
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | `uuid` PK | |
-| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
-| `sender_user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
-| `subject` | `text` | |
-| `message` | `text` | |
-| `status` | enum | `sent` \| `read` \| `responded` \| `declined` |
-| `response` | `text` null | Creative's reply |
-| `read_at` / `responded_at` | `timestamptz` null | |
-| `created_at` / `updated_at` | `timestamptz` | |
-
 ---
 
 ## `sessions`
