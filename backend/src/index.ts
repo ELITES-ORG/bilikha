@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
-import { isStorageConfigured } from './lib/storage.js';
+import { isStorageConfigured, storageKeyRole } from './lib/storage.js';
 import { closeDatabase } from './db/index.js';
 
 const app = createApp();
@@ -14,6 +14,14 @@ const server = app.listen(env.PORT, () => {
     logger.warn(
       'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set — avatars and portfolio images are disabled. Everything else works.',
     );
+  } else {
+    const role = storageKeyRole();
+    if (role !== 'service_role') {
+      logger.warn(
+        { role: role ?? 'unknown' },
+        'SUPABASE_SERVICE_ROLE_KEY does not carry the service_role claim — this is probably the anon key. Uploads will fail with a 400 until it is replaced.',
+      );
+    }
   }
 });
 

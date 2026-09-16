@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { env } from '../config/env.js';
 import { AppError } from './http-error.js';
+import { logger } from './logger.js';
 
 /**
  * Supabase Storage contract — pinned with curl against the live project in
@@ -35,6 +36,26 @@ import { AppError } from './http-error.js';
  *  rest of the API carries on — see the note in config/env.ts. */
 export function isStorageConfigured(): boolean {
   return Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+/**
+ * The anon and service_role keys are both JWTs beginning `eyJ`, the same
+ * length, and sit next to each other in the dashboard. Pasting the wrong one
+ * fails only at the first upload, as an HTTP 400 that says nothing useful.
+ * The role is in the (unsigned) payload, so it can be checked at boot.
+ * Returns null when there is no key, or it is not a decodable JWT.
+ */
+export function storageKeyRole(): string | null {
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return null;
+  try {
+    const payload = key.split('.')[1];
+    if (!payload) return null;
+    const claims = JSON.parse(Buffer.from(payload, 'base64').toString()) as { role?: string };
+    return claims.role ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function requireStorage(): { url: string; key: string } {
@@ -98,13 +119,16 @@ export async function createSignedUpload(
   });
 
   if (!response.ok) {
+    // Storage reports most failures as HTTP 400 with the real code in the body
+    // — an unauthorised key and a missing bucket both arrive that way. Without
+    // logging the body there is nothing to diagnose from, and it does not
+    // belong in the client response.
     const body = await response.text();
-    throw new AppError(
-      502,
-      'STORAGE_ERROR',
-      `Could not create an upload URL (${response.status})`,
-      body,
+    logger.error(
+      { status: response.status, body: body.slice(0, 500), objectKey },
+      'Supabase refused to sign an upload',
     );
+    throw new AppError(502, 'STORAGE_ERROR', 'Could not prepare the upload. Try again.');
   }
 
   const payload = (await response.json()) as { url?: string; token?: string };
