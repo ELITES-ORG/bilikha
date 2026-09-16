@@ -14,6 +14,7 @@ export interface PublicProfile {
   municipality: string;
   isNearby?: boolean;
   subdomains: PublicProfileSubdomain[];
+  portfolio: { id: string; url: string; thumbUrl: string; caption: string | null }[];
   memberSince: string;
 }
 

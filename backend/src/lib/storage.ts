@@ -118,6 +118,53 @@ export async function deleteObject(objectKey: string): Promise<void> {
   );
 }
 
+/** Lists object names under an optional prefix. Paginates until exhausted. */
+export async function listObjects(prefix = ''): Promise<
+  { name: string; updatedAt: string | null }[]
+> {
+  const bucket = env.SUPABASE_STORAGE_BUCKET;
+  const results: { name: string; updatedAt: string | null }[] = [];
+  let offset = 0;
+  const limit = 100;
+
+  for (;;) {
+    const response = await fetch(`${storageBase()}/object/list/${bucket}`, {
+      method: 'POST',
+      headers: {
+        ...serviceHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prefix, limit, offset }),
+    });
+
+    if (!response.ok) {
+      throw new AppError(502, 'STORAGE_ERROR', `Could not list storage objects (${response.status})`);
+    }
+
+    const batch = (await response.json()) as Array<{
+      name: string;
+      updated_at?: string | null;
+      id?: string | null;
+    }>;
+
+    // Folders come back with id null and no updated_at — recurse into them.
+    for (const entry of batch) {
+      const path = prefix ? `${prefix}${entry.name}` : entry.name;
+      if (entry.id == null && !entry.updated_at) {
+        const nested = await listObjects(`${path}/`);
+        results.push(...nested);
+      } else {
+        results.push({ name: path, updatedAt: entry.updated_at ?? null });
+      }
+    }
+
+    if (batch.length < limit) break;
+    offset += limit;
+  }
+
+  return results;
+}
+
 export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
 
 export const portfolioKey = (profileId: string) =>

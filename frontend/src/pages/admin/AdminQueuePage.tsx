@@ -67,6 +67,12 @@ function AdminQueueInner() {
             will see.
           </p>
 
+          <div className="mt-4 flex gap-3">
+            <ButtonLink to="/admin/media" variant="secondary" size="sm">
+              Media review
+            </ButtonLink>
+          </div>
+
           <div className="mt-8 flex flex-wrap gap-2 border-b border-hairline pb-px">
             {TABS.map((tab) => {
               const count = counts.data?.[tab.status] ?? 0;

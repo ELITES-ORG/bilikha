@@ -1,6 +1,6 @@
 # 0009. Bio on cards, avatars, and portfolio images
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0008](./0008-location-at-registration-and-nearby-first.md) — the
   directory card and its nearby ordering are what this changes
 - **Related:** [ADR 0021](../decisions/0021-image-storage-and-upload-path.md) ·
@@ -96,9 +96,9 @@ apply unchanged. Five specific to this plan:
 | 3. Backend — upload tickets | 5 / 5 | Done |
 | 4. Frontend — the resize pipeline | 4 / 4 | Done |
 | 5. Avatars | 6 / 6 | Done |
-| 6. Portfolio | 0 / 7 | Not started |
-| 7. Admin media review and cleanup | 0 / 4 | Not started |
-| 8. Verification | 0 / 7 | Not started |
+| 6. Portfolio | 7 / 7 | Done |
+| 7. Admin media review and cleanup | 4 / 4 | Done |
+| 8. Verification | 7 / 7 | Done |
 
 ---
 
@@ -765,19 +765,19 @@ progress and deletes an object between the `PUT` and the `POST` that records it.
 
 ## Acceptance
 
-- [ ] Bio shows on the directory card, clamped to two lines
-- [ ] Any account can set and replace an avatar; replacing removes the old object
-- [ ] A creative can add up to ten portfolio images, caption them and reorder them
-- [ ] Cards show the avatar and up to three thumbnails; the profile page shows the
+- [x] Bio shows on the directory card, clamped to two lines
+- [x] Any account can set and replace an avatar; replacing removes the old object
+- [x] A creative can add up to ten portfolio images, caption them and reorder them
+- [x] Cards show the avatar and up to three thumbnails; the profile page shows the
       full gallery
-- [ ] Every image is resized in the browser; no original is ever stored
-- [ ] Image bytes never pass through the API
-- [ ] The service role key exists only in backend environment variables
-- [ ] Image changes flag a published profile as edited
-- [ ] The admin media queue lists unreviewed images and can remove them
-- [ ] `npm run media:prune` reports orphans and deletes only with `--delete`
-- [ ] `api.md`, `data-model.md`, `environment.md` and `commands.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] Every image is resized in the browser; no original is ever stored
+- [x] Image bytes never pass through the API
+- [x] The service role key exists only in backend environment variables
+- [x] Image changes flag a published profile as edited
+- [x] The admin media queue lists unreviewed images and can remove them
+- [x] `npm run media:prune` reports orphans and deletes only with `--delete`
+- [x] `api.md`, `data-model.md`, `environment.md` and `commands.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 

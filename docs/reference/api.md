@@ -482,6 +482,23 @@ Marks the caller's side as read up to now.
 
 ---
 
+## Admin media
+
+Admin session required (`403` otherwise).
+
+### `GET /api/v1/admin/media`
+
+Unreviewed avatars and portfolio items, newest first, paginated. Each row has
+`kind`, absolute `url`/`thumbUrl`, owner name, and profile slug when present.
+
+### `POST /api/v1/admin/media/:kind/:id/review`
+
+`kind` is `avatar` or `portfolio`. Body `{ "action": "approve" | "remove" }`.
+Approve stamps the reviewed timestamp; remove deletes the object(s) and writes
+a `media_removed` moderation action when a profile exists.
+
+---
+
 ## Media
 
 Signed-in only. Image bytes never pass through the API — the backend issues a
@@ -521,6 +538,44 @@ flags a published creative profile as edited. `objectKey` must start with
 Removes the object and nulls the column. Also flags a published profile as
 edited.
 
+### `POST /api/v1/media/abandon`
+
+```jsonc
+{ "objectKey": "portfolio/<profileId>/<uuid>.webp" }
+```
+
+Deletes an object that was uploaded but never recorded — used when a portfolio
+thumb upload fails after the display upload succeeded. Ownership-checked.
+
+### `GET /api/v1/media/portfolio`
+
+Own portfolio items in `sortOrder`, with absolute `url` and `thumbUrl`.
+
+### `POST /api/v1/media/portfolio`
+
+```jsonc
+{ "objectKey": "…", "thumbKey": "…", "caption": "optional" }
+```
+
+`201`. Enforces the ten-item cap inside the insert transaction. Keys must start
+with `portfolio/<callerProfileId>/`.
+
+### `PATCH /api/v1/media/portfolio/:id`
+
+Caption only. Another creative's id → `404`. Malformed uuid → `400`.
+
+### `DELETE /api/v1/media/portfolio/:id`
+
+Deletes both objects, then the row. Another creative's id → `404`.
+
+### `PUT /api/v1/media/portfolio/order`
+
+```jsonc
+{ "ids": ["uuid", "uuid"] }
+```
+
+Rewrites `sortOrder`. The list must be exactly the caller's current items.
+
 ---
 
 ## Not yet implemented
@@ -530,7 +585,6 @@ parallel version:
 
 - **Organisations** — read, create, membership
 - **Search** — Postgres-native full-text plus fuzzy name matching
-- **Media confirm / portfolio CRUD / admin media queue** — upload tickets only so far
 - **Admin report review UI** — reports are stored; the screen is a follow-up
 - **Self-service password reset / phone verification** — deferred until an SMS
   gateway is available (ADR 0013)

@@ -215,6 +215,22 @@ export function DirectoryPage() {
                               {profile.bio}
                             </p>
                           )}
+                          {profile.portfolio.length > 0 && (
+                            <div className="mt-3 flex gap-2">
+                              {profile.portfolio.map((item) => (
+                                <img
+                                  key={item.id}
+                                  src={item.thumbUrl}
+                                  alt={item.caption ?? ''}
+                                  width={72}
+                                  height={72}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="size-[72px] object-cover"
+                                />
+                              ))}
+                            </div>
+                          )}
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1.5">

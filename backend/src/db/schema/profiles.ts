@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index, integer } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { creativeSubdomains } from './taxonomy.js';
@@ -78,6 +78,7 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   'rejected',
   'returned_to_pending',
   'acknowledged_edit',
+  'media_removed',
 ]);
 
 /**
@@ -104,9 +105,30 @@ export const moderationActions = pgTable(
   ],
 );
 
+export const portfolioItems = pgTable(
+  'portfolio_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    profileId: uuid('profile_id')
+      .notNull()
+      .references(() => creativeProfiles.id, { onDelete: 'cascade' }),
+    objectKey: text('object_key').notNull(),
+    thumbKey: text('thumb_key').notNull(),
+    caption: text('caption'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('portfolio_items_profile_order_idx').on(table.profileId, table.sortOrder),
+    index('portfolio_items_reviewed_idx').on(table.reviewedAt),
+  ],
+);
+
 export const creativeProfilesRelations = relations(creativeProfiles, ({ one, many }) => ({
   user: one(users, { fields: [creativeProfiles.userId], references: [users.id] }),
   subdomains: many(creativeProfileSubdomains),
+  portfolioItems: many(portfolioItems),
 }));
 
 export const creativeProfileSubdomainsRelations = relations(
@@ -123,5 +145,13 @@ export const creativeProfileSubdomainsRelations = relations(
   }),
 );
 
+export const portfolioItemsRelations = relations(portfolioItems, ({ one }) => ({
+  profile: one(creativeProfiles, {
+    fields: [portfolioItems.profileId],
+    references: [creativeProfiles.id],
+  }),
+}));
+
 export type CreativeProfile = typeof creativeProfiles.$inferSelect;
 export type ModerationAction = typeof moderationActions.$inferSelect;
+export type PortfolioItem = typeof portfolioItems.$inferSelect;

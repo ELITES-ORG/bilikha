@@ -6,9 +6,11 @@ import {
   creativeSubdomains,
   moderationActions,
   municipalities,
+  portfolioItems,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { deleteObject, publicUrl } from '../../lib/storage.js';
 
 type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
 type ProfileQueueStatus = ProfileStatus | 'edited';
@@ -217,4 +219,143 @@ export async function moderate(input: {
 
     return updated;
   });
+}
+
+export async function listUnreviewedMedia(options: { page: number; limit: number }) {
+  const offset = (options.page - 1) * options.limit;
+
+  const portfolioRows = await db
+    .select({
+      id: portfolioItems.id,
+      kind: sql<'portfolio'>`'portfolio'`,
+      createdAt: portfolioItems.createdAt,
+      objectKey: portfolioItems.objectKey,
+      thumbKey: portfolioItems.thumbKey,
+      caption: portfolioItems.caption,
+      ownerName: sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`,
+      profileSlug: creativeProfiles.slug,
+      profileId: creativeProfiles.id,
+    })
+    .from(portfolioItems)
+    .innerJoin(creativeProfiles, eq(portfolioItems.profileId, creativeProfiles.id))
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
+    .where(sql`${portfolioItems.reviewedAt} is null`)
+    .orderBy(desc(portfolioItems.createdAt));
+
+  const avatarRows = await db
+    .select({
+      id: users.id,
+      kind: sql<'avatar'>`'avatar'`,
+      createdAt: users.updatedAt,
+      objectKey: users.avatarKey,
+      thumbKey: sql<string | null>`null`,
+      caption: sql<string | null>`null`,
+      ownerName: sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`,
+      profileSlug: creativeProfiles.slug,
+      profileId: creativeProfiles.id,
+    })
+    .from(users)
+    .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
+    .where(and(isNotNull(users.avatarKey), sql`${users.avatarReviewedAt} is null`))
+    .orderBy(desc(users.updatedAt));
+
+  const merged = [...portfolioRows, ...avatarRows]
+    .map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      createdAt: row.createdAt.toISOString(),
+      url: row.objectKey ? publicUrl(row.objectKey) : null,
+      thumbUrl: row.thumbKey ? publicUrl(row.thumbKey) : row.objectKey ? publicUrl(row.objectKey) : null,
+      caption: row.caption,
+      ownerName: row.ownerName,
+      profileSlug: row.profileSlug,
+      profileId: row.profileId,
+    }))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+  const total = merged.length;
+  const data = merged.slice(offset, offset + options.limit);
+  return { data, total };
+}
+
+export async function reviewMedia(input: {
+  kind: 'avatar' | 'portfolio';
+  id: string;
+  adminId: string;
+  action: 'approve' | 'remove';
+}) {
+  if (input.kind === 'avatar') {
+    const [user] = await db
+      .select({
+        id: users.id,
+        avatarKey: users.avatarKey,
+        profileId: creativeProfiles.id,
+      })
+      .from(users)
+      .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
+      .where(eq(users.id, input.id))
+      .limit(1);
+
+    if (!user?.avatarKey) throw AppError.notFound('No such avatar.');
+
+    if (input.action === 'approve') {
+      await db
+        .update(users)
+        .set({ avatarReviewedAt: new Date(), updatedAt: new Date() })
+        .where(eq(users.id, user.id));
+      return { ok: true as const };
+    }
+
+    const key = user.avatarKey;
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ avatarKey: null, avatarReviewedAt: null, updatedAt: new Date() })
+        .where(eq(users.id, user.id));
+
+      if (user.profileId) {
+        await tx.insert(moderationActions).values({
+          profileId: user.profileId,
+          adminId: input.adminId,
+          action: 'media_removed',
+          reason: 'Avatar removed by admin',
+        });
+      }
+    });
+    await deleteObject(key);
+    return { ok: true as const };
+  }
+
+  const [item] = await db
+    .select({
+      id: portfolioItems.id,
+      profileId: portfolioItems.profileId,
+      objectKey: portfolioItems.objectKey,
+      thumbKey: portfolioItems.thumbKey,
+    })
+    .from(portfolioItems)
+    .where(eq(portfolioItems.id, input.id))
+    .limit(1);
+
+  if (!item) throw AppError.notFound('No such portfolio item.');
+
+  if (input.action === 'approve') {
+    await db
+      .update(portfolioItems)
+      .set({ reviewedAt: new Date() })
+      .where(eq(portfolioItems.id, item.id));
+    return { ok: true as const };
+  }
+
+  await db.transaction(async (tx) => {
+    await tx.delete(portfolioItems).where(eq(portfolioItems.id, item.id));
+    await tx.insert(moderationActions).values({
+      profileId: item.profileId,
+      adminId: input.adminId,
+      action: 'media_removed',
+      reason: 'Portfolio image removed by admin',
+    });
+  });
+  await Promise.all([deleteObject(item.objectKey), deleteObject(item.thumbKey)]);
+  return { ok: true as const };
 }

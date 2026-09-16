@@ -10,6 +10,10 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { publicUrl } from '../../lib/storage.js';
+import {
+  portfolioForProfile,
+  portfolioThumbsForProfiles,
+} from '../media/media.service.js';
 
 // Public shape. Note what is absent: email, phone, birthDate, barangay.
 export interface PublicProfile {
@@ -22,6 +26,7 @@ export interface PublicProfile {
   /** Present when the viewer has a municipality; true if it matches this row. */
   isNearby?: boolean;
   subdomains: { slug: string; name: string; domain: string; isPrimary: boolean }[];
+  portfolio: { id: string; url: string; thumbUrl: string; caption: string | null }[];
   memberSince: string;
 }
 
@@ -148,6 +153,7 @@ export async function listPublished(options: ListPublishedOptions) {
     .where(where);
 
   const subdomainMap = await subdomainsForProfiles(rows.map((row) => row.id));
+  const portfolioMap = await portfolioThumbsForProfiles(rows.map((row) => row.id));
 
   const data: PublicProfile[] = rows.map((row) => {
     const profile: PublicProfile = {
@@ -158,6 +164,7 @@ export async function listPublished(options: ListPublishedOptions) {
       avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
       municipality: row.municipality,
       subdomains: subdomainMap.get(row.id) ?? [],
+      portfolio: portfolioMap.get(row.id) ?? [],
       memberSince: row.createdAt.toISOString(),
     };
     if (options.viewerMunicipalityId) {
@@ -193,6 +200,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
   if (!row) throw AppError.notFound('No such creative.');
 
   const subdomainMap = await subdomainsForProfiles([row.id]);
+  const portfolio = await portfolioForProfile(row.id);
 
   return {
     slug: row.slug,
@@ -202,6 +210,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
     avatarUrl: row.avatarKey ? publicUrl(row.avatarKey) : null,
     municipality: row.municipality,
     subdomains: subdomainMap.get(row.id) ?? [],
+    portfolio,
     memberSince: row.createdAt.toISOString(),
   };
 }

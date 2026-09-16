@@ -166,6 +166,27 @@ phone verification.
 | `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
 | `contact_preference` | `text` | Default `phone`; channel revealed when the creative responds to an inquiry |
 | `edited_since_review_at` | `timestamptz` null | Set when a published profile's public fields change; cleared when an admin acknowledges the edit |
+
+---
+
+## `portfolio_items`
+
+Up to ten images per creative profile. Cascade deletes the row when the profile
+goes; storage objects are cleaned by `npm run media:prune` or by the delete
+endpoints.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
+| `object_key` | `text` | Display-size object |
+| `thumb_key` | `text` | Thumbnail object |
+| `caption` | `text` null | Doubles as alt text for now |
+| `sort_order` | `integer` | Default 0 |
+| `reviewed_at` | `timestamptz` null | Cleared on create; set by admin media review |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(profile_id, sort_order)`, `reviewed_at`.
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review

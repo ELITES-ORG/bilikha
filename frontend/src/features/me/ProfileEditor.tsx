@@ -3,6 +3,7 @@ import { Button, Input } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
+import { PortfolioEditor } from '@/features/media/PortfolioEditor';
 import { toApiError } from '@/lib/api-client';
 import { useUpdateOwnProfile } from './api';
 import { ProfileCraftFields, type ProfileCraftFormState } from './ProfileCraftFields';
@@ -195,6 +196,11 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
           setConfirmation(null);
         }}
       />
+
+      <section className="space-y-4">
+        <h3 className="text-lg font-medium text-ink">Portfolio</h3>
+        <PortfolioEditor />
+      </section>
 
       {profile.status === 'published' && (
         <p className="rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">

@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { queryClient } from '@/lib/query-client';
+import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AccountPage } from '@/pages/account/AccountPage';
@@ -81,6 +82,7 @@ export default function App() {
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin" element={<AdminQueuePage />} />
+          <Route path="/admin/media" element={<AdminMediaPage />} />
           <Route path="/admin/profiles/:id" element={<AdminProfilePage />} />
           {/* Internal design-system reference. Not linked from the product. */}
           <Route path="/styleguide" element={<StyleGuidePage />} />

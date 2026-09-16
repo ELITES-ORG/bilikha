@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Badge, Button, ButtonLink, Container, Skeleton, Avatar } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Container, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ContactComposer } from '@/features/conversations/ContactComposer';
@@ -14,6 +14,31 @@ export function CreativeProfilePage() {
   const profile = usePublishedProfile(slug);
   const { data: user } = useCurrentUser();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const lightboxItem = profile.data?.portfolio.find((item) => item.id === lightboxId) ?? null;
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (lightboxItem) {
+      if (!dialog.open) dialog.showModal();
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [lightboxItem]);
+
+  function openLightbox(id: string, button: HTMLButtonElement) {
+    triggerRef.current = button;
+    setLightboxId(id);
+  }
+
+  function closeLightbox() {
+    setLightboxId(null);
+    queueMicrotask(() => triggerRef.current?.focus());
+  }
 
   if (profile.isError && profile.error instanceof ProfileNotFoundError) {
     return <NotFoundPage />;
@@ -71,6 +96,35 @@ export function CreativeProfilePage() {
                 </p>
               )}
 
+              {profile.data.portfolio.length > 0 && (
+                <section className="mt-10" aria-labelledby="portfolio-heading">
+                  <h2 id="portfolio-heading" className="u-display text-2xl text-ink">
+                    Portfolio
+                  </h2>
+                  <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {profile.data.portfolio.map((item) => (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          className="block w-full overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lawa-700"
+                          onClick={(event) => openLightbox(item.id, event.currentTarget)}
+                        >
+                          <img
+                            src={item.thumbUrl}
+                            alt={item.caption ?? 'Portfolio image'}
+                            width={400}
+                            height={400}
+                            loading="lazy"
+                            decoding="async"
+                            className="aspect-square w-full object-cover"
+                          />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
               <p className="mt-6 text-sm text-ink-subtle">
                 Member since{' '}
                 {new Date(profile.data.memberSince).toLocaleDateString(undefined, {
@@ -109,6 +163,23 @@ export function CreativeProfilePage() {
           )}
         </Container>
       </main>
+
+      <dialog
+        ref={dialogRef}
+        className="m-auto max-h-[90vh] max-w-3xl border-0 bg-transparent p-0 backdrop:bg-ink/70"
+        onClose={closeLightbox}
+        onClick={(event) => {
+          if (event.target === dialogRef.current) closeLightbox();
+        }}
+      >
+        {lightboxItem && (
+          <img
+            src={lightboxItem.url}
+            alt={lightboxItem.caption ?? 'Portfolio image'}
+            className="max-h-[85vh] w-auto max-w-full"
+          />
+        )}
+      </dialog>
     </>
   );
 }

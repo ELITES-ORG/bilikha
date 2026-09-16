@@ -62,3 +62,74 @@ export async function removeAvatar(): Promise<void> {
     throw toApiError(error);
   }
 }
+
+export type PortfolioItem = {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  caption: string | null;
+  sortOrder?: number;
+};
+
+export async function listOwnPortfolio(): Promise<PortfolioItem[]> {
+  try {
+    const { data } = await apiClient.get<ApiResponse<PortfolioItem[]>>('/media/portfolio');
+    return data.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function createPortfolioItem(input: {
+  objectKey: string;
+  thumbKey: string;
+  caption?: string;
+}): Promise<PortfolioItem> {
+  try {
+    const { data } = await apiClient.post<ApiResponse<PortfolioItem>>('/media/portfolio', input);
+    return data.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function updatePortfolioCaption(
+  id: string,
+  caption: string | null,
+): Promise<PortfolioItem> {
+  try {
+    const { data } = await apiClient.patch<ApiResponse<PortfolioItem>>(`/media/portfolio/${id}`, {
+      caption,
+    });
+    return data.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function deletePortfolioItem(id: string): Promise<void> {
+  try {
+    await apiClient.delete(`/media/portfolio/${id}`);
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function reorderPortfolio(ids: string[]): Promise<PortfolioItem[]> {
+  try {
+    const { data } = await apiClient.put<ApiResponse<PortfolioItem[]>>('/media/portfolio/order', {
+      ids,
+    });
+    return data.data;
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+export async function abandonUpload(objectKey: string): Promise<void> {
+  try {
+    await apiClient.post('/media/abandon', { objectKey });
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
