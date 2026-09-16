@@ -6,8 +6,13 @@ const offerFields = {
   subdomainSlug: z.string().trim().min(1),
   description: z.string().trim().max(2000).optional()
     .or(z.literal('').transform(() => undefined)),
-  priceMinCentavos: z.number().int().positive().max(100_000_000).optional(),
-  priceMaxCentavos: z.number().int().positive().max(100_000_000).optional(),
+  // 100_000_000 centavos is ₱1,000,000. The ceiling is not about realism, it
+  // stops a typo putting a nine-digit price on the directory - so it needs a
+  // message a person can act on rather than Zod's default.
+  priceMinCentavos: z.number().int().positive()
+    .max(100_000_000, 'Price must be ₱1,000,000 or less').optional(),
+  priceMaxCentavos: z.number().int().positive()
+    .max(100_000_000, 'Price must be ₱1,000,000 or less').optional(),
 };
 
 const validPriceRange = (data: {

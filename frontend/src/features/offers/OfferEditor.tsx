@@ -17,10 +17,11 @@ import {
   type OwnOffer,
 } from '@/features/offers/api';
 import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from '@/features/offers/limits';
+import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
 import { toApiError } from '@/lib/api-client';
 import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
-import { formatPriceRange } from '@/lib/money';
+import { centavosToPesoInput, formatPriceRange, pesoInputToCentavos } from '@/lib/money';
 
 type FormState = {
   title: string;
@@ -38,32 +39,19 @@ const emptyForm = (): FormState => ({
   priceTo: '',
 });
 
-function centavosToPesoField(centavos: number | null): string {
-  if (centavos == null) return '';
-  return String(Math.round(centavos) / 100);
-}
-
-function pesosFieldToCentavos(raw: string): number | null | undefined {
-  const trimmed = raw.trim();
-  if (!trimmed) return undefined;
-  const pesos = Number(trimmed);
-  if (!Number.isFinite(pesos) || pesos <= 0) return undefined;
-  return Math.round(pesos * 100);
-}
-
 function offerToForm(offer: OwnOffer): FormState {
   return {
     title: offer.title,
     subdomainSlug: offer.subdomainSlug,
     description: offer.description ?? '',
-    priceFrom: centavosToPesoField(offer.priceMinCentavos),
-    priceTo: centavosToPesoField(offer.priceMaxCentavos),
+    priceFrom: centavosToPesoInput(offer.priceMinCentavos),
+    priceTo: centavosToPesoInput(offer.priceMaxCentavos),
   };
 }
 
 function buildWritePayload(form: FormState, mode: 'create' | 'update') {
-  const min = pesosFieldToCentavos(form.priceFrom);
-  const max = pesosFieldToCentavos(form.priceTo);
+  const min = pesoInputToCentavos(form.priceFrom);
+  const max = pesoInputToCentavos(form.priceTo);
   const base = {
     title: form.title.trim(),
     subdomainSlug: form.subdomainSlug,
@@ -430,23 +418,15 @@ export function OfferEditor() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
+            <PesoInput
               label="From (₱)"
-              type="number"
-              inputMode="decimal"
-              min={1}
-              step={1}
               value={form.priceFrom}
-              onChange={(e) => setForm((c) => ({ ...c, priceFrom: e.target.value }))}
+              onValueChange={(priceFrom) => setForm((c) => ({ ...c, priceFrom }))}
             />
-            <Input
+            <PesoInput
               label="To (₱)"
-              type="number"
-              inputMode="decimal"
-              min={1}
-              step={1}
               value={form.priceTo}
-              onChange={(e) => setForm((c) => ({ ...c, priceTo: e.target.value }))}
+              onValueChange={(priceTo) => setForm((c) => ({ ...c, priceTo }))}
             />
           </div>
           <p className="text-xs text-ink-subtle">Leave both blank for Price on request</p>
