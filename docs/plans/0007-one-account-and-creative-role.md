@@ -77,7 +77,7 @@ apply unchanged. Three specific to this plan:
 | 2. Backend — create a profile later | 3 / 3 | Done |
 | 3. Frontend — registration | 3 / 3 | Done |
 | 4. Frontend — intent and continuation | 3 / 3 | Done |
-| 5. Frontend — add the role later | 0 / 2 | Not started |
+| 5. Frontend — add the role later | 2 / 2 | Done |
 | 6. Frontend — mode switch | 0 / 2 | Not started |
 | 7. Verification | 0 / 5 | Not started |
 
@@ -237,7 +237,7 @@ that continues the flow, a progress indication, and a single primary action.
 
 ### Step 5.1 — Offer your work
 
-- [ ] **Action.** In the account area, when the user has **no** creative
+- [x] **Action.** In the account area, when the user has **no** creative
   profile, show an **Offer your creative work** section explaining that a
   profile is reviewed before appearing, linking to `/welcome/profile`.
 
@@ -246,15 +246,15 @@ changed their mind, and someone who dropped out of setup. That is why
 [ADR 0019](../decisions/0019-one-account-creative-as-attachable-role.md) stores
 no intent flag.
 
-- [ ] **Verify.** Visible for an account with no profile; absent once one
+- [x] **Verify.** Visible for an account with no profile; absent once one
   exists.
 
 ### Step 5.2 — Reuse the setup page
 
-- [ ] **Action.** `/welcome/profile` serves both entry points. When reached
+- [x] **Action.** `/welcome/profile` serves both entry points. When reached
   from the account area rather than registration, the copy reads as adding a
   profile rather than continuing signup.
-- [ ] **Verify.** Both routes produce an identical `pending_review` profile.
+- [x] **Verify.** Both routes produce an identical `pending_review` profile.
 
 ---
 
