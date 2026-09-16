@@ -57,3 +57,4 @@ Number sequentially. Never renumber.
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
 | [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted |
+| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted |
