@@ -3,7 +3,7 @@ import { Button, Input } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
-import { PortfolioEditor } from '@/features/media/PortfolioEditor';
+import { OfferEditor } from '@/features/offers/OfferEditor';
 import { toApiError } from '@/lib/api-client';
 import { useUpdateOwnProfile } from './api';
 import { ProfileCraftFields, type ProfileCraftFormState } from './ProfileCraftFields';
@@ -198,8 +198,8 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
       />
 
       <section className="space-y-4">
-        <h3 className="text-lg font-medium text-ink">Portfolio</h3>
-        <PortfolioEditor />
+        <h3 className="text-lg font-medium text-ink">Offers</h3>
+        <OfferEditor />
       </section>
 
       {profile.status === 'published' && (

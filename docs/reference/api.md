@@ -410,9 +410,12 @@ see the previous recency order and no `isNearby` field.
 
 `200` — `{ data: PublicProfile }`. `404` when missing or not published.
 
-`PublicProfile`: `slug`, `displayName`, `fullName`, `bio`, `municipality`,
-optional `isNearby`, `subdomains[]` (`slug`, `name`, `domain`, `isPrimary`),
-`memberSince`.
+`PublicProfile`: `slug`, `displayName`, `fullName`, `bio`, `avatarUrl`,
+`municipality`, optional `isNearby`, `subdomains[]` (`slug`, `name`, `domain`,
+`isPrimary`), `offers[]` (`id`, `title`, `description`, `priceMinCentavos`,
+`priceMaxCentavos`, `subdomainSlug`, `subdomainName`, `images[]` with
+`id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
+`GET /creatives` omit `offers` — the offer listing is `GET /offers`.
 
 ---
 
@@ -488,14 +491,93 @@ Admin session required (`403` otherwise).
 
 ### `GET /api/v1/admin/media`
 
-Unreviewed avatars and portfolio items, newest first, paginated. Each row has
-`kind`, absolute `url`/`thumbUrl`, owner name, and profile slug when present.
+Unreviewed avatars and offers (`reviewedAt` null), paginated. Flagged offers
+(`flaggedAt` set) sort first; then remaining unreviewed rows by `createdAt`
+desc. Each row has `kind` (`avatar` \| `offer`), absolute `url`/`thumbUrl`
+when images exist, owner name, and profile slug when present. Offer rows also
+include `title`, `description`, `priceMinCentavos`, `priceMaxCentavos`,
+`flaggedAt`, and `images[]`.
 
 ### `POST /api/v1/admin/media/:kind/:id/review`
 
-`kind` is `avatar` or `portfolio`. Body `{ "action": "approve" | "remove" }`.
-Approve stamps the reviewed timestamp; remove deletes the object(s) and writes
-a `media_removed` moderation action when a profile exists.
+`kind` is `avatar` or `offer`. Body `{ "action": "approve" | "remove" }`.
+Approve stamps the reviewed timestamp. Remove deletes the avatar object or the
+offer (and its storage objects) and writes a `media_removed` moderation action
+with `subjectUserId` set to the owner.
+
+---
+
+## Offers
+
+Signed-in creatives manage their own offers. Public listing and detail need no
+auth (session-aware for nearby ranking, like creatives). Cap: 6 offers per
+profile, 4 images per offer.
+
+### `GET /api/v1/offers/mine`
+
+Own offers in `sortOrder`, with images (`url`, `thumbUrl`), subdomain, and
+moderation fields (`flaggedAt`, `reviewedAt`). Requires a creative profile.
+
+### `POST /api/v1/offers`
+
+```jsonc
+{
+  "title": "Wedding photography package",
+  "subdomainSlug": "photography",
+  "description": "optional",
+  "priceMinCentavos": 500000,
+  "priceMaxCentavos": 1500000
+}
+```
+
+`201`. Enforces the six-offer cap. Sub-domain must be registered on the
+caller's profile — otherwise `400`. Published profiles set
+`editedSinceReviewAt`.
+
+### `PATCH /api/v1/offers/:id`
+
+Any of title, `subdomainSlug`, description, price. Another creative's id →
+`404`. Changing title, description, or price clears `reviewedAt` (offer stays
+live); subdomain-only edits do not. Contact-detail patterns in the description
+set `flaggedAt`.
+
+### `DELETE /api/v1/offers/:id`
+
+Deletes images from storage, then the row. Another creative's id → `404`.
+
+### `PUT /api/v1/offers/order`
+
+```jsonc
+{ "ids": ["uuid", "uuid"] }
+```
+
+Rewrites `sortOrder`. The list must be exactly the caller's current offers.
+
+### `POST /api/v1/offers/:id/images`
+
+```jsonc
+{ "objectKey": "offers/<profileId>/<uuid>.webp", "thumbKey": "…-thumb.webp" }
+```
+
+`201`. Enforces the four-image cap. Keys must start with
+`offers/<callerProfileId>/` (migrated legacy `portfolio/…` keys are never
+re-asserted on upload).
+
+### `DELETE /api/v1/offers/images/:imageId`
+
+Deletes both objects, then the row. Another creative's image → `404`.
+
+### `GET /api/v1/offers`
+
+Public. Session-aware, not session-required. Query: `domain`, `subdomain`,
+`municipality` (slugs, optional), `page` (default 1), `limit` (default 20,
+max 50). Only offers whose profile is `published` appear. When the caller is
+signed in with a municipality, nearby creatives' offers lead the list.
+
+### `GET /api/v1/offers/:id`
+
+Public detail for one published offer, including all images and creative
+summary. `404` when missing or the profile is not published.
 
 ---
 
@@ -510,18 +592,18 @@ appears in responses.
 Rate-limited to 40 requests per user per hour.
 
 ```jsonc
-{ "kind": "avatar" }        // or "portfolio"
+{ "kind": "avatar" }        // or "offer"
 ```
 
 `kind: "avatar"` → `{ data: { kind: "avatar", uploadUrl, objectKey } }`
 
-`kind: "portfolio"` → `{ data: { kind: "portfolio", full: { uploadUrl, objectKey }, thumb: { uploadUrl, objectKey } } }`
+`kind: "offer"` → `{ data: { kind: "offer", full: { uploadUrl, objectKey }, thumb: { uploadUrl, objectKey } } }`
 
 `401` when signed out. `403` when a client account (no creative profile) asks
-for a portfolio ticket.
+for an offer ticket.
 
 The browser `PUT`s the resized image to `uploadUrl`, then confirms the key with
-a later media endpoint.
+a later media or offers endpoint.
 
 ### `PUT /api/v1/media/avatar`
 
@@ -541,40 +623,11 @@ edited.
 ### `POST /api/v1/media/abandon`
 
 ```jsonc
-{ "objectKey": "portfolio/<profileId>/<uuid>.webp" }
+{ "objectKey": "offers/<profileId>/<uuid>.webp" }
 ```
 
-Deletes an object that was uploaded but never recorded — used when a portfolio
+Deletes an object that was uploaded but never recorded — used when an offer
 thumb upload fails after the display upload succeeded. Ownership-checked.
-
-### `GET /api/v1/media/portfolio`
-
-Own portfolio items in `sortOrder`, with absolute `url` and `thumbUrl`.
-
-### `POST /api/v1/media/portfolio`
-
-```jsonc
-{ "objectKey": "…", "thumbKey": "…", "caption": "optional" }
-```
-
-`201`. Enforces the ten-item cap inside the insert transaction. Keys must start
-with `portfolio/<callerProfileId>/`.
-
-### `PATCH /api/v1/media/portfolio/:id`
-
-Caption only. Another creative's id → `404`. Malformed uuid → `400`.
-
-### `DELETE /api/v1/media/portfolio/:id`
-
-Deletes both objects, then the row. Another creative's id → `404`.
-
-### `PUT /api/v1/media/portfolio/order`
-
-```jsonc
-{ "ids": ["uuid", "uuid"] }
-```
-
-Rewrites `sortOrder`. The list must be exactly the caller's current items.
 
 ---
 

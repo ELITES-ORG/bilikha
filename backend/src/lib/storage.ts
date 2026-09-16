@@ -92,7 +92,7 @@ const serviceHeaders = (): Record<string, string> => {
 /**
  * Object keys reach us from the client, and every ownership check in the media
  * module is a `startsWith` on a prefix. A key like
- * `portfolio/<own-id>/../../avatars/<victim-id>/x.webp` passes that check, and
+ * `offers/<own-id>/../../avatars/<victim-id>/x.webp` passes that check, and
  * both `new URL()` and fetch then resolve the dot segments away — so the
  * request lands on someone else's object. Reject anything that is not a plain
  * segment before the key is ever trusted or used to build a URL.
@@ -245,5 +245,5 @@ export async function listObjects(prefix = ''): Promise<
 
 export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
 
-export const portfolioKey = (profileId: string) =>
-  `portfolio/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp
+export const offerKey = (profileId: string) =>
+  `offers/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp

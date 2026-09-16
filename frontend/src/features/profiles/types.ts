@@ -1,3 +1,5 @@
+import type { ProfileOffer } from '@/features/offers/api';
+
 export interface PublicProfileSubdomain {
   slug: string;
   name: string;
@@ -17,7 +19,9 @@ export interface PublicProfile {
   municipality: string;
   isNearby?: boolean;
   subdomains: PublicProfileSubdomain[];
+  /** @deprecated Replaced by offers; kept optional for older API responses. */
   portfolio?: { id: string; url: string; thumbUrl: string; caption: string | null }[];
+  offers?: ProfileOffer[];
   memberSince: string;
 }
 

@@ -12,7 +12,7 @@ const server = app.listen(env.PORT, () => {
   // Loud, because the symptom otherwise is "images silently do nothing".
   if (!isStorageConfigured()) {
     logger.warn(
-      'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set — avatars and portfolio images are disabled. Everything else works.',
+      'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set — avatar and offer images are disabled. Everything else works.',
     );
   } else {
     const { role, ref } = storageKeyClaims();

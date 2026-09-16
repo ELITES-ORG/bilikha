@@ -4,17 +4,26 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { apiClient, toApiError } from '@/lib/api-client';
-import { Button, ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
+import { formatPriceRange } from '@/lib/money';
+import { Badge, Button, ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
+
+type MediaKind = 'avatar' | 'offer';
 
 type MediaRow = {
   id: string;
-  kind: 'avatar' | 'portfolio';
+  kind: MediaKind;
   createdAt: string;
   url: string | null;
   thumbUrl: string | null;
   caption: string | null;
   ownerName: string;
   profileSlug: string | null;
+  title?: string | null;
+  description?: string | null;
+  priceMinCentavos?: number | null;
+  priceMaxCentavos?: number | null;
+  flaggedAt?: string | null;
+  images?: Array<{ id: string; url: string; thumbUrl: string }>;
 };
 
 interface ListResponse {
@@ -52,7 +61,7 @@ function AdminMediaInner() {
 
   const review = useMutation({
     mutationFn: async (input: {
-      kind: 'avatar' | 'portfolio';
+      kind: MediaKind;
       id: string;
       action: 'approve' | 'remove';
     }) => {
@@ -93,8 +102,8 @@ function AdminMediaInner() {
           <p className="u-eyebrow">Administration</p>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Media review</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Images are live as soon as they are uploaded. Approve to clear the
-            queue, or remove to take one down.
+            Images and offers are live as soon as they are uploaded. Approve to
+            clear the queue, or remove to take one down.
           </p>
 
           <div className="mt-10">
@@ -112,7 +121,7 @@ function AdminMediaInner() {
               <EmptyState
                 icon={<Inbox className="size-5" />}
                 title="Nothing to review"
-                description="New avatars and portfolio images will appear here."
+                description="New avatars and offers will appear here."
               />
             )}
 
@@ -120,10 +129,22 @@ function AdminMediaInner() {
               <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {list.data.data.map((item) => (
                   <li key={`${item.kind}-${item.id}`} className="space-y-3">
-                    {item.thumbUrl ? (
+                    {item.kind === 'offer' && (item.images?.length ?? 0) > 0 ? (
+                      <div className="grid grid-cols-2 gap-1">
+                        {item.images!.slice(0, 4).map((image) => (
+                          <img
+                            key={image.id}
+                            src={image.thumbUrl}
+                            alt=""
+                            className="aspect-square w-full object-cover"
+                            loading="lazy"
+                          />
+                        ))}
+                      </div>
+                    ) : item.thumbUrl ? (
                       <img
                         src={item.thumbUrl}
-                        alt={item.caption ?? `${item.kind} by ${item.ownerName}`}
+                        alt={item.caption ?? item.title ?? `${item.kind} by ${item.ownerName}`}
                         className="aspect-square w-full object-cover"
                         loading="lazy"
                       />
@@ -131,12 +152,33 @@ function AdminMediaInner() {
                       <div className="aspect-square bg-clay-100" />
                     )}
                     <div>
-                      <p className="text-sm font-medium text-ink">{item.ownerName}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-ink">{item.ownerName}</p>
+                        {item.flaggedAt && <Badge tone="warning">Flagged</Badge>}
+                      </div>
                       <p className="text-xs text-ink-muted capitalize">{item.kind}</p>
+                      {item.kind === 'offer' && (
+                        <div className="mt-2 space-y-1">
+                          {item.title && (
+                            <p className="text-sm font-medium text-ink">{item.title}</p>
+                          )}
+                          {(item.priceMinCentavos != null || item.priceMaxCentavos != null
+                            || item.title) && (
+                            <p className="text-xs text-ink-muted">
+                              {formatPriceRange(item.priceMinCentavos, item.priceMaxCentavos)}
+                            </p>
+                          )}
+                          {item.description && (
+                            <p className="line-clamp-3 text-xs text-ink-muted text-pretty">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       {item.profileSlug && (
                         <Link
                           to={`/creatives/${item.profileSlug}`}
-                          className="text-sm text-lawa-800 underline-offset-2 hover:underline"
+                          className="mt-1 inline-block text-sm text-lawa-800 underline-offset-2 hover:underline"
                         >
                           View profile
                         </Link>

@@ -1,40 +1,22 @@
-import { and, asc, count, eq, inArray, max, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/index.js';
-import { creativeProfiles, portfolioItems, users } from '../../db/schema/index.js';
+import { creativeProfiles, users } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import {
   assertSafeObjectKey,
   avatarKey,
   createSignedUpload,
   deleteObject,
-  isStorageConfigured,
-  portfolioKey,
-  publicUrl,
+  offerKey,
 } from '../../lib/storage.js';
 
-export const PORTFOLIO_LIMIT = 10;
-
 export const uploadUrlBodySchema = z.object({
-  kind: z.enum(['avatar', 'portfolio']),
+  kind: z.enum(['avatar', 'offer']),
 });
 
 export const setAvatarBodySchema = z.object({
   objectKey: z.string().min(1).max(512),
-});
-
-export const createPortfolioBodySchema = z.object({
-  objectKey: z.string().min(1).max(512),
-  thumbKey: z.string().min(1).max(512),
-  caption: z.string().trim().max(280).optional(),
-});
-
-export const patchPortfolioBodySchema = z.object({
-  caption: z.string().trim().max(280).nullable(),
-});
-
-export const reorderPortfolioBodySchema = z.object({
-  ids: z.array(z.string().uuid()).min(1).max(PORTFOLIO_LIMIT),
 });
 
 export type UploadUrlBody = z.infer<typeof uploadUrlBodySchema>;
@@ -47,7 +29,7 @@ async function requireOwnCreativeProfile(userId: string) {
     .limit(1);
 
   if (!profile) {
-    throw AppError.forbidden('A creative profile is required to upload portfolio images');
+    throw AppError.forbidden('A creative profile is required to upload offer images');
   }
 
   return profile;
@@ -77,26 +59,13 @@ function assertOwnAvatarKey(userId: string, objectKey: string) {
   }
 }
 
-function assertOwnPortfolioKey(profileId: string, objectKey: string) {
+export function assertOwnOfferKey(profileId: string, objectKey: string) {
+  // Must run before the prefix test — see assertSafeObjectKey.
   assertSafeObjectKey(objectKey);
-  const expectedPrefix = `portfolio/${profileId}/`;
+  const expectedPrefix = `offers/${profileId}/`;
   if (!objectKey.startsWith(expectedPrefix)) {
     throw AppError.forbidden('That image does not belong to your profile');
   }
-}
-
-function toPortfolioPublic(row: {
-  id: string;
-  objectKey: string;
-  thumbKey: string;
-  caption: string | null;
-}) {
-  return {
-    id: row.id,
-    url: publicUrl(row.objectKey),
-    thumbUrl: publicUrl(row.thumbKey),
-    caption: row.caption,
-  };
 }
 
 export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
@@ -107,17 +76,7 @@ export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
   }
 
   const profile = await requireOwnCreativeProfile(userId);
-
-  const [tally] = await db
-    .select({ total: count() })
-    .from(portfolioItems)
-    .where(eq(portfolioItems.profileId, profile.id));
-
-  if ((tally?.total ?? 0) >= PORTFOLIO_LIMIT) {
-    throw AppError.badRequest(`A portfolio can hold at most ${PORTFOLIO_LIMIT} images`);
-  }
-
-  const base = portfolioKey(profile.id);
+  const base = offerKey(profile.id);
   const fullKey = `${base}.webp`;
   const thumbKey = `${base}-thumb.webp`;
 
@@ -127,7 +86,7 @@ export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
   ]);
 
   return {
-    kind: 'portfolio' as const,
+    kind: 'offer' as const,
     full: { uploadUrl: full.uploadUrl, objectKey: full.objectKey },
     thumb: { uploadUrl: thumb.uploadUrl, objectKey: thumb.objectKey },
   };
@@ -193,7 +152,7 @@ export async function clearAvatar(userId: string) {
   return { ok: true as const };
 }
 
-/** Deletes an uploaded object that never got a row — half-finished portfolio pairs. */
+/** Deletes an uploaded object that never got attached to an avatar or offer. */
 export async function abandonObject(userId: string, objectKey: string) {
   assertSafeObjectKey(objectKey);
 
@@ -204,208 +163,7 @@ export async function abandonObject(userId: string, objectKey: string) {
   }
 
   const profile = await requireOwnCreativeProfile(userId);
-  assertOwnPortfolioKey(profile.id, objectKey);
+  assertOwnOfferKey(profile.id, objectKey);
   await deleteObject(objectKey);
   return { ok: true as const };
-}
-
-export async function listOwnPortfolio(userId: string) {
-  const profile = await requireOwnCreativeProfile(userId);
-  const rows = await db
-    .select({
-      id: portfolioItems.id,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-      caption: portfolioItems.caption,
-      sortOrder: portfolioItems.sortOrder,
-    })
-    .from(portfolioItems)
-    .where(eq(portfolioItems.profileId, profile.id))
-    .orderBy(asc(portfolioItems.sortOrder), asc(portfolioItems.createdAt));
-
-  return rows.map((row) => ({
-    ...toPortfolioPublic(row),
-    sortOrder: row.sortOrder,
-  }));
-}
-
-export async function createPortfolioItem(
-  userId: string,
-  input: z.infer<typeof createPortfolioBodySchema>,
-) {
-  const profile = await requireOwnCreativeProfile(userId);
-  assertOwnPortfolioKey(profile.id, input.objectKey);
-  assertOwnPortfolioKey(profile.id, input.thumbKey);
-
-  const created = await db.transaction(async (tx) => {
-    // A transaction alone does not make count-then-insert atomic: under READ
-    // COMMITTED two concurrent requests both see nine and both insert. This
-    // lock serialises them per profile and releases on commit.
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
-
-    const [tally] = await tx
-      .select({ total: count() })
-      .from(portfolioItems)
-      .where(eq(portfolioItems.profileId, profile.id));
-
-    if ((tally?.total ?? 0) >= PORTFOLIO_LIMIT) {
-      throw AppError.badRequest(`A portfolio can hold at most ${PORTFOLIO_LIMIT} images`);
-    }
-
-    const [peak] = await tx
-      .select({ maxOrder: max(portfolioItems.sortOrder) })
-      .from(portfolioItems)
-      .where(eq(portfolioItems.profileId, profile.id));
-
-    const [row] = await tx
-      .insert(portfolioItems)
-      .values({
-        profileId: profile.id,
-        objectKey: input.objectKey,
-        thumbKey: input.thumbKey,
-        caption: input.caption || null,
-        sortOrder: (peak?.maxOrder ?? -1) + 1,
-      })
-      .returning({
-        id: portfolioItems.id,
-        objectKey: portfolioItems.objectKey,
-        thumbKey: portfolioItems.thumbKey,
-        caption: portfolioItems.caption,
-      });
-
-    if (profile.status === 'published') {
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: new Date(), updatedAt: new Date() })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
-
-    return row!;
-  });
-
-  return toPortfolioPublic(created);
-}
-
-export async function updatePortfolioCaption(
-  userId: string,
-  itemId: string,
-  caption: string | null,
-) {
-  const profile = await requireOwnCreativeProfile(userId);
-
-  const [row] = await db
-    .update(portfolioItems)
-    .set({ caption })
-    .where(and(eq(portfolioItems.id, itemId), eq(portfolioItems.profileId, profile.id)))
-    .returning({
-      id: portfolioItems.id,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-      caption: portfolioItems.caption,
-    });
-
-  if (!row) throw AppError.notFound('No such portfolio item.');
-
-  await markPublishedProfileEdited(userId);
-  return toPortfolioPublic(row);
-}
-
-export async function deletePortfolioItem(userId: string, itemId: string) {
-  const profile = await requireOwnCreativeProfile(userId);
-
-  const [row] = await db
-    .delete(portfolioItems)
-    .where(and(eq(portfolioItems.id, itemId), eq(portfolioItems.profileId, profile.id)))
-    .returning({
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-    });
-
-  if (!row) throw AppError.notFound('No such portfolio item.');
-
-  await markPublishedProfileEdited(userId);
-  await Promise.all([deleteObject(row.objectKey), deleteObject(row.thumbKey)]);
-
-  return { ok: true as const };
-}
-
-export async function reorderPortfolio(userId: string, ids: string[]) {
-  const profile = await requireOwnCreativeProfile(userId);
-
-  const existing = await db
-    .select({ id: portfolioItems.id })
-    .from(portfolioItems)
-    .where(eq(portfolioItems.profileId, profile.id));
-
-  const existingIds = new Set(existing.map((row) => row.id));
-  if (ids.length !== existingIds.size || ids.some((id) => !existingIds.has(id))) {
-    throw AppError.notFound('No such portfolio item.');
-  }
-
-  await db.transaction(async (tx) => {
-    for (const [index, id] of ids.entries()) {
-      await tx
-        .update(portfolioItems)
-        .set({ sortOrder: index })
-        .where(and(eq(portfolioItems.id, id), eq(portfolioItems.profileId, profile.id)));
-    }
-
-    if (profile.status === 'published') {
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: new Date(), updatedAt: new Date() })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
-  });
-
-  return listOwnPortfolio(userId);
-}
-
-/** First three thumbs per profile for directory cards — one query for the page. */
-export async function portfolioThumbsForProfiles(profileIds: string[]) {
-  // Without storage config there are no URLs to build, and the directory must
-  // still render. Same for portfolioForProfile below.
-  if (profileIds.length === 0 || !isStorageConfigured()) {
-    return new Map<string, { id: string; url: string; thumbUrl: string; caption: string | null }[]>();
-  }
-
-  const rows = await db
-    .select({
-      id: portfolioItems.id,
-      profileId: portfolioItems.profileId,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-      caption: portfolioItems.caption,
-      sortOrder: portfolioItems.sortOrder,
-      createdAt: portfolioItems.createdAt,
-    })
-    .from(portfolioItems)
-    .where(inArray(portfolioItems.profileId, profileIds))
-    .orderBy(asc(portfolioItems.profileId), asc(portfolioItems.sortOrder), asc(portfolioItems.createdAt));
-
-  const map = new Map<string, { id: string; url: string; thumbUrl: string; caption: string | null }[]>();
-  for (const row of rows) {
-    const list = map.get(row.profileId) ?? [];
-    if (list.length >= 3) continue;
-    list.push(toPortfolioPublic(row));
-    map.set(row.profileId, list);
-  }
-  return map;
-}
-
-export async function portfolioForProfile(profileId: string) {
-  if (!isStorageConfigured()) return [];
-
-  const rows = await db
-    .select({
-      id: portfolioItems.id,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-      caption: portfolioItems.caption,
-    })
-    .from(portfolioItems)
-    .where(eq(portfolioItems.profileId, profileId))
-    .orderBy(asc(portfolioItems.sortOrder), asc(portfolioItems.createdAt));
-
-  return rows.map(toPortfolioPublic);
 }

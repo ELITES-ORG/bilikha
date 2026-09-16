@@ -113,30 +113,58 @@ export const moderationActions = pgTable(
   ],
 );
 
-export const portfolioItems = pgTable(
-  'portfolio_items',
+export const offers = pgTable(
+  'offers',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     profileId: uuid('profile_id')
       .notNull()
       .references(() => creativeProfiles.id, { onDelete: 'cascade' }),
-    objectKey: text('object_key').notNull(),
-    thumbKey: text('thumb_key').notNull(),
-    caption: text('caption'),
+    // Exactly one. The creative must have registered it — enforced in the
+    // service, not by a composite FK. See ADR 0022.
+    subdomainId: uuid('subdomain_id')
+      .notNull()
+      .references(() => creativeSubdomains.id, { onDelete: 'restrict' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    // Integer centavos. Null means "Price on request"; a minimum alone renders
+    // "from ₱X". Never a float.
+    priceMinCentavos: integer('price_min_centavos'),
+    priceMaxCentavos: integer('price_max_centavos'),
     sortOrder: integer('sort_order').notNull().default(0),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    // Set when the description matches a contact-details pattern. Advisory —
+    // it sorts the review queue, it does not hide the offer.
+    flaggedAt: timestamp('flagged_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('portfolio_items_profile_order_idx').on(table.profileId, table.sortOrder),
-    index('portfolio_items_reviewed_idx').on(table.reviewedAt),
+    index('offers_profile_order_idx').on(table.profileId, table.sortOrder),
+    index('offers_subdomain_created_idx').on(table.subdomainId, table.createdAt),
+    index('offers_reviewed_idx').on(table.reviewedAt),
   ],
+);
+
+export const offerImages = pgTable(
+  'offer_images',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    offerId: uuid('offer_id')
+      .notNull()
+      .references(() => offers.id, { onDelete: 'cascade' }),
+    objectKey: text('object_key').notNull(),
+    thumbKey: text('thumb_key').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('offer_images_offer_order_idx').on(table.offerId, table.sortOrder)],
 );
 
 export const creativeProfilesRelations = relations(creativeProfiles, ({ one, many }) => ({
   user: one(users, { fields: [creativeProfiles.userId], references: [users.id] }),
   subdomains: many(creativeProfileSubdomains),
-  portfolioItems: many(portfolioItems),
+  offers: many(offers),
 }));
 
 export const creativeProfileSubdomainsRelations = relations(
@@ -153,13 +181,26 @@ export const creativeProfileSubdomainsRelations = relations(
   }),
 );
 
-export const portfolioItemsRelations = relations(portfolioItems, ({ one }) => ({
+export const offersRelations = relations(offers, ({ one, many }) => ({
   profile: one(creativeProfiles, {
-    fields: [portfolioItems.profileId],
+    fields: [offers.profileId],
     references: [creativeProfiles.id],
+  }),
+  subdomain: one(creativeSubdomains, {
+    fields: [offers.subdomainId],
+    references: [creativeSubdomains.id],
+  }),
+  images: many(offerImages),
+}));
+
+export const offerImagesRelations = relations(offerImages, ({ one }) => ({
+  offer: one(offers, {
+    fields: [offerImages.offerId],
+    references: [offers.id],
   }),
 }));
 
 export type CreativeProfile = typeof creativeProfiles.$inferSelect;
 export type ModerationAction = typeof moderationActions.$inferSelect;
-export type PortfolioItem = typeof portfolioItems.$inferSelect;
+export type Offer = typeof offers.$inferSelect;
+export type OfferImage = typeof offerImages.$inferSelect;

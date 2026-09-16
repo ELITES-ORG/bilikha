@@ -166,27 +166,6 @@ phone verification.
 | `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
 | `contact_preference` | `text` | Default `phone`; channel revealed when the creative responds to an inquiry |
 | `edited_since_review_at` | `timestamptz` null | Set when a published profile's public fields change; cleared when an admin acknowledges the edit |
-
----
-
-## `portfolio_items`
-
-Up to ten images per creative profile. Cascade deletes the row when the profile
-goes; storage objects are cleaned by `npm run media:prune` or by the delete
-endpoints.
-
-| Column | Type | Notes |
-|---|---|---|
-| `id` | `uuid` PK | |
-| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
-| `object_key` | `text` | Display-size object |
-| `thumb_key` | `text` | Thumbnail object |
-| `caption` | `text` null | Doubles as alt text for now |
-| `sort_order` | `integer` | Default 0 |
-| `reviewed_at` | `timestamptz` null | Cleared on create; set by admin media review |
-| `created_at` | `timestamptz` | |
-
-Indexes: `(profile_id, sort_order)`, `reviewed_at`.
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review
@@ -202,19 +181,64 @@ changes such as `contact_preference` do not set the flag.
 
 ---
 
-## `moderation_actions`
+## `offers`
 
-Append-only audit of every approve / reject / return-to-pending / edit
-acknowledgement decision.
+Up to six service listings per creative profile. Cascade deletes when the
+profile goes. Storage objects under `offer_images` are cleaned by
+`npm run media:prune` or by the delete / admin-remove paths. See
+[ADR 0022](../decisions/0022-offers-replace-portfolio.md).
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
-| `profile_id` | `uuid` FK | `ON DELETE CASCADE` |
+| `profile_id` | `uuid` FK → `creative_profiles.id` | `ON DELETE CASCADE` |
+| `subdomain_id` | `uuid` FK → `creative_subdomains.id` | `ON DELETE RESTRICT`; must be registered on the profile (enforced in the service) |
+| `title` | `text` | |
+| `description` | `text` null | |
+| `price_min_centavos` | `integer` null | Integer centavos; null with no max → "Price on request" |
+| `price_max_centavos` | `integer` null | Minimum alone renders "from ₱X" |
+| `sort_order` | `integer` | Default 0 |
+| `reviewed_at` | `timestamptz` null | Cleared when title, description, or price changes; set by admin media review |
+| `flagged_at` | `timestamptz` null | Set when the description matches a contact-details pattern; sorts the review queue, does not hide the offer |
+| `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes: `(profile_id, sort_order)`, `(subdomain_id, created_at)`, `reviewed_at`.
+
+---
+
+## `offer_images`
+
+Up to four images per offer. Cascade deletes when the offer goes.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `offer_id` | `uuid` FK → `offers.id` | `ON DELETE CASCADE` |
+| `object_key` | `text` | Display-size object (`offers/<profileId>/…` or legacy `portfolio/…`) |
+| `thumb_key` | `text` | Thumbnail object |
+| `sort_order` | `integer` | Default 0 |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(offer_id, sort_order)`.
+
+---
+
+## `moderation_actions`
+
+Append-only audit of every approve / reject / return-to-pending / edit
+acknowledgement / media-removal decision.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `profile_id` | `uuid` FK null | `ON DELETE CASCADE`; null when a client avatar is removed with no creative profile |
+| `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
-| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` |
+| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` |
 | `reason` | `text` null | Required for rejections |
 | `created_at` | `timestamptz` | |
+
+Indexes: `profile_id`, `subject_user_id`, `created_at`.
 
 ---
 
@@ -333,7 +357,6 @@ Sketched only. Nothing below is built, and the shapes will change.
 |---|---|---|
 | `organizations` | Public pages for companies, cooperatives, LGUs | [ADR 0005](../decisions/0005-organization-pages.md) |
 | `organization_members` | Many users per organisation, with roles | [ADR 0005](../decisions/0005-organization-pages.md) |
-| `portfolio_items` | Images and links per profile | |
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
 

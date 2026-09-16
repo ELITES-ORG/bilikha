@@ -1,6 +1,6 @@
 # 0010. Offers, and a directory that indexes them
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0009](./0009-bio-avatars-and-portfolio-images.md) — the
   image pipeline this reuses, and the portfolio this replaces
 - **Related:** [ADR 0022](../decisions/0022-offers-replace-portfolio.md) ·
@@ -69,14 +69,14 @@ edited. Four more:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema and migration | 0 / 4 | Not started |
-| 2. Backend — own offers | 0 / 6 | Not started |
-| 3. Backend — public listing | 0 / 4 | Not started |
-| 4. Frontend — the offer editor | 0 / 5 | Not started |
-| 5. Frontend — the directory | 0 / 4 | Not started |
-| 6. Frontend — the profile page | 0 / 2 | Not started |
-| 7. Moderation | 0 / 3 | Not started |
-| 8. Verification | 0 / 6 | Not started |
+| 1. Schema and migration | 4 / 4 | Done |
+| 2. Backend — own offers | 6 / 6 | Done |
+| 3. Backend — public listing | 4 / 4 | Done |
+| 4. Frontend — the offer editor | 5 / 5 | Done |
+| 5. Frontend — the directory | 4 / 4 | Done |
+| 6. Frontend — the profile page | 2 / 2 | Done |
+| 7. Moderation | 3 / 3 | Done |
+| 8. Verification | 6 / 6 | Done |
 
 ---
 
@@ -84,7 +84,7 @@ edited. Four more:
 
 ### Step 1.1 — The tables
 
-- [ ] **Action.** In `backend/src/db/schema/profiles.ts`, add:
+- [x] **Action.** In `backend/src/db/schema/profiles.ts`, add:
 
 ```ts
 export const offers = pgTable(
@@ -139,14 +139,14 @@ export const offerImages = pgTable(
 `offers_subdomain_created_idx` is the index the public listing runs on. Without
 it every filtered directory page is a sequential scan.
 
-- [ ] **Action.** Add the relations, export both row types, and **do not remove
+- [x] **Action.** Add the relations, export both row types, and **do not remove
   `portfolioItems` yet** — Step 1.3 reads from it.
-- [ ] **Verify.** `npm run db:generate` produces a migration that only adds. If
+- [x] **Verify.** `npm run db:generate` produces a migration that only adds. If
   it drops anything, stop.
 
 ### Step 1.2 — Limits in one place
 
-- [ ] **Action.** Export from the offers service:
+- [x] **Action.** Export from the offers service:
 
 ```ts
 export const OFFER_LIMIT = 6;          // per profile
@@ -156,12 +156,12 @@ export const OFFER_IMAGE_LIMIT = 4;    // per offer
 Both are storage decisions as much as product ones — ADR 0022 does the
 arithmetic. Import them; never write the numbers inline.
 
-- [ ] **Verify.** `grep -rn "= 6\|= 4" backend/src/modules/offers` finds them
+- [x] **Verify.** `grep -rn "= 6\|= 4" backend/src/modules/offers` finds them
   only in that one file.
 
 ### Step 1.3 — Migrate the portfolio
 
-- [ ] **Action.** Write `backend/src/scripts/migrate-portfolio-to-offers.ts`,
+- [x] **Action.** Write `backend/src/scripts/migrate-portfolio-to-offers.ts`,
   registered as `npm run migrate:offers`. For each profile holding portfolio
   items, in one transaction:
   - create a single offer titled `Portfolio`, under that profile's **primary**
@@ -173,29 +173,29 @@ Keys are kept because the objects are not moving. Rewriting them would mean
 re-uploading every image, and any key you fail to rewrite becomes an orphan the
 prune script deletes 24 hours later.
 
-- [ ] **Action.** A profile with more than `OFFER_IMAGE_LIMIT` items keeps them
+- [x] **Action.** A profile with more than `OFFER_IMAGE_LIMIT` items keeps them
   all. The cap applies to new uploads, not to migrated history — refusing to
   migrate someone's existing images would be data loss.
-- [ ] **Action.** Make it idempotent: skip a profile that already has an offer
+- [x] **Action.** Make it idempotent: skip a profile that already has an offer
   titled `Portfolio`. It will be run once locally and once in production, and a
   second accidental run must not duplicate.
-- [ ] **Verify.** Run locally. Every former portfolio item appears as an offer
+- [x] **Verify.** Run locally. Every former portfolio item appears as an offer
   image, `select count(*)` before and after match, and every `object_key` is
   byte-identical to what it was.
 
 ### Step 1.4 — Drop the old table
 
-- [ ] **Action.** Only after Step 1.3 verifies: remove `portfolioItems` and its
+- [x] **Action.** Only after Step 1.3 verifies: remove `portfolioItems` and its
   relation from the schema, generate the migration, and remove the now-dead
   portfolio code from the media module.
-- [ ] **Action.** Update `prune-orphan-media.ts` to collect keys from
+- [x] **Action.** Update `prune-orphan-media.ts` to collect keys from
   `offer_images` instead of `portfolio_items`.
 
 **Get this one right.** If the prune script stops seeing a table that still
 holds live keys, it classifies every one of those objects as an orphan and
 deletes the lot on the next `--delete` run.
 
-- [ ] **Verify.** `npm run media:prune` (dry run) reports **no** orphans after
+- [x] **Verify.** `npm run media:prune` (dry run) reports **no** orphans after
   the migration. If it lists the migrated images, the key collection is wrong —
   stop and fix before anyone runs it with `--delete`.
 
@@ -209,7 +209,7 @@ write routes here sit behind `requireAuth`.
 
 ### Step 2.1 — Validation
 
-- [ ] **Action.** In `offers.schema.ts`:
+- [x] **Action.** In `offers.schema.ts`:
 
 ```ts
 export const offerBodySchema = z
@@ -231,22 +231,22 @@ export const offerBodySchema = z
 The ceiling is ₱1,000,000. It is not about realism; it stops a typo putting a
 nine-digit price on the directory.
 
-- [ ] **Verify.** A max below the min is a 400 naming `priceMaxCentavos`. Both
+- [x] **Verify.** A max below the min is a 400 naming `priceMaxCentavos`. Both
   absent is valid.
 
 ### Step 2.2 — The sub-domain rule
 
-- [ ] **Action.** Write `assertRegisteredSubdomain(profileId, subdomainSlug)`:
+- [x] **Action.** Write `assertRegisteredSubdomain(profileId, subdomainSlug)`:
   resolve the slug, confirm a `creative_profile_subdomains` row joins it to this
   profile, and 400 otherwise with a message naming the sub-domain.
-- [ ] **Action.** Call it on create **and** on update. An offer whose sub-domain
+- [x] **Action.** Call it on create **and** on update. An offer whose sub-domain
   is edited to one the creative never registered is the same violation.
-- [ ] **Verify.** Posting an offer under a sub-domain the creative did not
+- [x] **Verify.** Posting an offer under a sub-domain the creative did not
   register is a 400, not a silently stored row.
 
 ### Step 2.3 — CRUD
 
-- [ ] **Action.** Behind `requireAuth`, all resolving the caller's own profile:
+- [x] **Action.** Behind `requireAuth`, all resolving the caller's own profile:
 
 | Method | Path | Notes |
 |---|---|---|
@@ -260,49 +260,49 @@ Each one: validates `:id` with `z.string().uuid()`, **404s on an id belonging to
 another profile** (never 403, which confirms it exists), and sets
 `editedSinceReviewAt` when the profile is published.
 
-- [ ] **Action.** `POST` takes `pg_advisory_xact_lock(hashtext(profileId))`
+- [x] **Action.** `POST` takes `pg_advisory_xact_lock(hashtext(profileId))`
   before counting, exactly as `createPortfolioItem` does. A count inside a
   transaction is not atomic under READ COMMITTED — two parallel requests both
   see five and both insert.
-- [ ] **Verify.** The seventh offer is a 400 naming the limit. Another
+- [x] **Verify.** The seventh offer is a 400 naming the limit. Another
   creative's offer id is a 404 on `PATCH`, `DELETE` and reorder alike.
 
 ### Step 2.4 — Offer images
 
-- [ ] **Action.** Extend the media module: `kind: 'offer'` on
+- [x] **Action.** Extend the media module: `kind: 'offer'` on
   `POST /media/upload-url` returns the `full` and `thumb` ticket pair, keyed
   `offers/<profileId>/<uuid>.webp` and `-thumb.webp`.
-- [ ] **Action.** Add `assertOwnOfferKey(profileId, key)` mirroring
+- [x] **Action.** Add `assertOwnOfferKey(profileId, key)` mirroring
   `assertOwnPortfolioKey`, and **call `assertSafeObjectKey` first**. The prefix
   test alone is what the traversal fix in `4c59349` was about.
-- [ ] **Action.** `POST /offers/:id/images` and `DELETE /offers/images/:imageId`,
+- [x] **Action.** `POST /offers/:id/images` and `DELETE /offers/images/:imageId`,
   enforcing `OFFER_IMAGE_LIMIT` under the same advisory lock pattern.
 
 Migrated images keep their legacy `portfolio/...` keys. They are never
 re-asserted, because the check runs on upload only. Deletion uses the stored
 key, so both prefixes work.
 
-- [ ] **Verify.** A key under another profile's prefix is 403. A key containing
+- [x] **Verify.** A key under another profile's prefix is 403. A key containing
   `..` is 400.
 
 ### Step 2.5 — Do not strand offers
 
-- [ ] **Action.** In `updateOwnProfile`, before rewriting the sub-domain rows,
+- [x] **Action.** In `updateOwnProfile`, before rewriting the sub-domain rows,
   refuse with a 400 if any sub-domain being **removed** still has offers, naming
   them: *"Remove your 2 offers under Game Developers first."*
 
 Without this a creative silently keeps offers under a sub-domain they no longer
 claim, and those offers stay in the filtered directory.
 
-- [ ] **Verify.** Removing a sub-domain with offers is a 400 naming it. Removing
+- [x] **Verify.** Removing a sub-domain with offers is a 400 naming it. Removing
   one with none still works.
 
 ### Step 2.6 — Reference
 
-- [ ] **Action.** Document every endpoint in [`api.md`](../reference/api.md) and
+- [x] **Action.** Document every endpoint in [`api.md`](../reference/api.md) and
   both tables in [`data-model.md`](../reference/data-model.md), and add
   `migrate:offers` to [`commands.md`](../reference/commands.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
@@ -310,7 +310,7 @@ claim, and those offers stay in the filtered directory.
 
 ### Step 3.1 — The endpoint
 
-- [ ] **Action.** `GET /offers` — public, **no `requireAuth`**, session-*aware*
+- [x] **Action.** `GET /offers` — public, **no `requireAuth`**, session-*aware*
   the way `GET /creatives` is. Query: `domain`, `subdomain`, `municipality`,
   `page`, `limit`.
 
@@ -318,12 +318,12 @@ Only offers whose profile is `published` appear. A pending or suspended profile
 must not reach the directory through its offers — that would be a way around
 moderation entirely.
 
-- [ ] **Verify.** Signed out, 200 with results. An offer belonging to a
+- [x] **Verify.** Signed out, 200 with results. An offer belonging to a
   `pending_review` profile never appears.
 
 ### Step 3.2 — Ordering
 
-- [ ] **Action.** Nearby first, then newest, then id:
+- [x] **Action.** Nearby first, then newest, then id:
 
 ```ts
 const order = viewerMunicipalityId
@@ -334,26 +334,26 @@ const order = viewerMunicipalityId
 The id is the stable tiebreaker. Two offers created in the same transaction
 share a `createdAt`, and without it pagination can repeat or skip one.
 
-- [ ] **Verify.** As a Kawayan client, Kawayan offers lead. Signed out, newest
+- [x] **Verify.** As a Kawayan client, Kawayan offers lead. Signed out, newest
   first. Paging through twice returns the same set.
 
 ### Step 3.3 — The payload
 
-- [ ] **Action.** Each row returns the offer, its **first image only**, and its
+- [x] **Action.** Each row returns the offer, its **first image only**, and its
   creative: `slug`, display name, municipality, `avatarUrl`, `isNearby`.
 
 One image per card. Four would be sixteen images on a twenty-row page, and
 [constraints §3](../explanation/constraints.md) is about exactly that.
 
-- [ ] **Action.** Fetch images and creatives for the whole page in **one query
+- [x] **Action.** Fetch images and creatives for the whole page in **one query
   each**, keyed by id, the way `subdomainsForProfiles` does. Never per row.
-- [ ] **Verify.** A twenty-row page issues a fixed number of queries.
+- [x] **Verify.** A twenty-row page issues a fixed number of queries.
 
 ### Step 3.4 — One offer
 
-- [ ] **Action.** `GET /offers/:id` returns one published offer with all its
+- [x] **Action.** `GET /offers/:id` returns one published offer with all its
   images and its creative. 404 when the profile is not published.
-- [ ] **Verify.** A real id on an unpublished profile is 404.
+- [x] **Verify.** A real id on an unpublished profile is 404.
 
 ---
 
@@ -361,47 +361,47 @@ One image per card. Four would be sixteen images on a twenty-row page, and
 
 ### Step 4.1 — Replace the portfolio editor
 
-- [ ] **Action.** Delete `PortfolioEditor` and build
+- [x] **Action.** Delete `PortfolioEditor` and build
   `frontend/src/features/offers/OfferEditor.tsx` in its place, listing the
   creative's offers with edit, delete and reorder, and showing the remaining
   allowance ("2 of 6 used").
-- [ ] **Verify.** The account page no longer references the portfolio.
+- [x] **Verify.** The account page no longer references the portfolio.
 
 ### Step 4.2 — The form
 
-- [ ] **Action.** Title, sub-domain, description, price, images.
+- [x] **Action.** Title, sub-domain, description, price, images.
 
 The sub-domain control lists **only the sub-domains on the creative's own
 profile**, grouped by domain. Do not fetch the full taxonomy — offering all
 eighty-one and rejecting eighty of them server-side is a trap.
 
-- [ ] **Verify.** The select contains exactly the creative's registered
+- [x] **Verify.** The select contains exactly the creative's registered
   sub-domains.
 
 ### Step 4.3 — Price input
 
-- [ ] **Action.** Two optional peso fields, "From" and "To", converted to
+- [x] **Action.** Two optional peso fields, "From" and "To", converted to
   centavos at the boundary — `Math.round(pesos * 100)`.
 
 Never hold money as a float beyond that conversion, and never send pesos to the
 API. Show the helper text "Leave both blank for *Price on request*" so the empty
 state reads as a choice.
 
-- [ ] **Verify.** ₱15,000 posts as `1500000`. Both blank saves and renders
+- [x] **Verify.** ₱15,000 posts as `1500000`. Both blank saves and renders
   "Price on request".
 
 ### Step 4.4 — Images
 
-- [ ] **Action.** Reuse `resizeImage` at `DISPLAY_EDGE` and `THUMB_EDGE`
+- [x] **Action.** Reuse `resizeImage` at `DISPLAY_EDGE` and `THUMB_EDGE`
   unchanged, with the same two-size upload and the same rollback: if the second
   upload fails, delete the first object before surfacing the error.
-- [ ] **Verify.** Four images upload; the fifth is refused with the limit named.
+- [x] **Verify.** Four images upload; the fifth is refused with the limit named.
 
 ### Step 4.5 — Formatting in one place
 
-- [ ] **Action.** `frontend/src/lib/money.ts` exporting `formatPriceRange(min, max)`
+- [x] **Action.** `frontend/src/lib/money.ts` exporting `formatPriceRange(min, max)`
   returning "from ₱15,000", "₱5,000 – ₱15,000", or "Price on request".
-- [ ] **Verify.** All three shapes render; nothing formats money inline.
+- [x] **Verify.** All three shapes render; nothing formats money inline.
 
 ---
 
@@ -409,24 +409,24 @@ state reads as a choice.
 
 ### Step 5.1 — Offer cards
 
-- [ ] **Action.** `DirectoryPage` lists offers. Each card: image, title, price,
+- [x] **Action.** `DirectoryPage` lists offers. Each card: image, title, price,
   sub-domain badge, and the creative's avatar, name, municipality and Nearby
   badge. The card links to the offer.
-- [ ] **Action.** `loading="lazy"`, `decoding="async"` and explicit dimensions
+- [x] **Action.** `loading="lazy"`, `decoding="async"` and explicit dimensions
   on every image, as in plan 0009.
-- [ ] **Verify.** On throttled Fast 3G the text is readable before images land,
+- [x] **Verify.** On throttled Fast 3G the text is readable before images land,
   and nothing shifts as they arrive.
 
 ### Step 5.2 — Filters
 
-- [ ] **Action.** Keep the existing domain, sub-domain and municipality selects
+- [x] **Action.** Keep the existing domain, sub-domain and municipality selects
   and the URL-parameter behaviour. Only what they filter changes.
-- [ ] **Verify.** Existing directory URLs with `?domain=&subdomain=` still
+- [x] **Verify.** Existing directory URLs with `?domain=&subdomain=` still
   resolve.
 
 ### Step 5.3 — The empty state is the normal state
 
-- [ ] **Action.** When no offers match, say so plainly and link to the creative
+- [x] **Action.** When no offers match, say so plainly and link to the creative
   listing: *"No offers here yet — browse creatives in this sub-domain instead."*
 
 [ADR 0022](../decisions/0022-offers-replace-portfolio.md) names this as the
@@ -434,15 +434,15 @@ decision's main cost. With two published profiles, **empty is what most filters
 return on day one.** It has to read as a young registry rather than a broken
 page.
 
-- [ ] **Verify.** Filtering to a sub-domain with no offers shows the message and
+- [x] **Verify.** Filtering to a sub-domain with no offers shows the message and
   the link works.
 
 ### Step 5.4 — Keep creatives reachable
 
-- [ ] **Action.** Keep the existing creative listing on its own route with a
+- [x] **Action.** Keep the existing creative listing on its own route with a
   link from the directory. ADR 0022 requires that offers not gate
   discoverability.
-- [ ] **Verify.** A published creative with no offers is still findable.
+- [x] **Verify.** A published creative with no offers is still findable.
 
 ---
 
@@ -450,15 +450,15 @@ page.
 
 ### Step 6.1 — Offers replace the gallery
 
-- [ ] **Action.** `CreativeProfilePage` shows offers — title, price, sub-domain,
+- [x] **Action.** `CreativeProfilePage` shows offers — title, price, sub-domain,
   description, images — instead of the portfolio grid. Keep the lightbox and its
   focus handling.
-- [ ] **Verify.** Keyboard only: reachable by Tab, Enter opens, Escape closes,
+- [x] **Verify.** Keyboard only: reachable by Tab, Enter opens, Escape closes,
   focus returns.
 
 ### Step 6.2 — Contact about an offer
 
-- [ ] **Action.** Each offer gets a Contact button opening the existing
+- [x] **Action.** Each offer gets a Contact button opening the existing
   composer, pre-filled with `I'm interested in "<title>".` Signed out, it routes
   to `/login?next=…` exactly as the profile Contact does
   ([ADR 0017](../decisions/0017-sign-in-before-contacting.md)).
@@ -466,7 +466,7 @@ page.
 Pre-filled text only. Recording which offer a conversation is about is a
 follow-up.
 
-- [ ] **Verify.** Signed out, Contact goes to login and returns to the offer.
+- [x] **Verify.** Signed out, Contact goes to login and returns to the offer.
 
 ---
 
@@ -474,7 +474,7 @@ follow-up.
 
 ### Step 7.1 — Flag contact details
 
-- [ ] **Action.** On create and update, set `flaggedAt` when the description
+- [x] **Action.** On create and update, set `flaggedAt` when the description
   matches a phone number, a URL, or a social handle. Advisory only — **never
   block the save and never hide the offer**.
 
@@ -482,25 +482,25 @@ This is what [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiri
 is worth protecting: an offer saying "message me on Facebook" routes around
 in-app conversations entirely.
 
-- [ ] **Verify.** A description containing `09171234567` or `fb.com/x` saves,
+- [x] **Verify.** A description containing `09171234567` or `fb.com/x` saves,
   appears publicly, and is flagged.
 
 ### Step 7.2 — The queue
 
-- [ ] **Action.** Extend the admin media queue to offers: unreviewed first,
+- [x] **Action.** Extend the admin media queue to offers: unreviewed first,
   flagged ones on top, each showing title, description, price, images and owner.
   Approve stamps `reviewedAt`; Remove deletes the offer and its objects and
   writes a `moderation_actions` row with `subjectUserId`.
-- [ ] **Verify.** A flagged offer sorts above an unflagged one. Removing it
+- [x] **Verify.** A flagged offer sorts above an unflagged one. Removing it
   leaves an audit row.
 
 ### Step 7.3 — Edits re-enter review
 
-- [ ] **Action.** Editing a published offer's title, description or price clears
+- [x] **Action.** Editing a published offer's title, description or price clears
   `reviewedAt` and sets `editedSinceReviewAt` on the profile
   ([ADR 0016](../decisions/0016-edits-never-unpublish.md)). The offer stays
   live.
-- [ ] **Verify.** Editing a reviewed offer returns it to the queue without
+- [x] **Verify.** Editing a reviewed offer returns it to the queue without
   hiding it.
 
 ---
@@ -520,58 +520,58 @@ in-app conversations entirely.
 | Image key under another profile's prefix | 403 |
 | Image key containing `..` | 400 |
 
-- [ ] **Verify.** Every row behaves as stated.
+- [x] **Verify.** Every row behaves as stated.
 
 ### Step 8.2 — Money
 
-- [ ] **Verify.** Min only renders "from ₱X". Both render a range. Neither
+- [x] **Verify.** Min only renders "from ₱X". Both render a range. Neither
   renders "Price on request". Max below min is refused.
-- [ ] **Verify.** No column, payload or variable holds pesos as a float.
+- [x] **Verify.** No column, payload or variable holds pesos as a float.
 
 ### Step 8.3 — Moderation cannot be bypassed
 
-- [ ] **Verify.** An offer on a `pending_review` profile appears nowhere public
+- [x] **Verify.** An offer on a `pending_review` profile appears nowhere public
   — not in `GET /offers`, not at `GET /offers/:id`.
-- [ ] **Verify.** Suspending a published profile removes its offers from the
+- [x] **Verify.** Suspending a published profile removes its offers from the
   directory.
 
 ### Step 8.4 — The migration
 
-- [ ] **Verify.** Every former portfolio image is an offer image with an
+- [x] **Verify.** Every former portfolio image is an offer image with an
   unchanged `object_key`.
-- [ ] **Verify.** `npm run media:prune` dry run reports **no** orphans.
-- [ ] **Verify.** Running `migrate:offers` twice changes nothing the second
+- [x] **Verify.** `npm run media:prune` dry run reports **no** orphans.
+- [x] **Verify.** Running `migrate:offers` twice changes nothing the second
   time.
 
 ### Step 8.5 — The directory
 
-- [ ] **Verify.** Filtering by sub-domain returns only offers under it.
-- [ ] **Verify.** A creative with three matching offers appears three times.
-- [ ] **Verify.** Nearby-first works, and pagination neither repeats nor skips.
-- [ ] **Verify.** A filter with no offers shows the empty state, and the
+- [x] **Verify.** Filtering by sub-domain returns only offers under it.
+- [x] **Verify.** A creative with three matching offers appears three times.
+- [x] **Verify.** Nearby-first works, and pagination neither repeats nor skips.
+- [x] **Verify.** A filter with no offers shows the empty state, and the
   creative listing is still reachable.
 
 ### Step 8.6 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] A creative can publish up to six offers, each under one registered
+- [x] A creative can publish up to six offers, each under one registered
       sub-domain, with an optional price and up to four images
-- [ ] The directory lists offers and filters them by domain, sub-domain and
+- [x] The directory lists offers and filters them by domain, sub-domain and
       municipality
-- [ ] Offers from unpublished profiles never appear publicly
-- [ ] Removing a sub-domain that still has offers is refused, naming them
-- [ ] Portfolio images survive as offer images with unchanged keys
-- [ ] `portfolio_items` is dropped and the prune script reports no orphans
-- [ ] Creatives without offers are still discoverable
-- [ ] Descriptions containing contact details are flagged, not blocked
-- [ ] `api.md`, `data-model.md` and `commands.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] Offers from unpublished profiles never appear publicly
+- [x] Removing a sub-domain that still has offers is refused, naming them
+- [x] Portfolio images survive as offer images with unchanged keys
+- [x] `portfolio_items` is dropped and the prune script reports no orphans
+- [x] Creatives without offers are still discoverable
+- [x] Descriptions containing contact details are flagged, not blocked
+- [x] `api.md`, `data-model.md` and `commands.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 

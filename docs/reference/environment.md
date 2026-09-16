@@ -26,7 +26,7 @@ confusing runtime error inside a request handler.
 | `SESSION_TTL_DAYS` | no | `30` | Session cookie and store TTL in days |
 | `SUPABASE_URL` | **yes** | — | Project URL, e.g. `https://abc.supabase.co`. Used only by the backend storage client |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | — | Service role secret from Settings → API. **Never** put this in `frontend/` or a `VITE_` variable |
-| `SUPABASE_STORAGE_BUCKET` | no | `media` | Public bucket for avatars and portfolio images |
+| `SUPABASE_STORAGE_BUCKET` | no | `media` | Public bucket for avatars and offer images |
 
 Local default:
 

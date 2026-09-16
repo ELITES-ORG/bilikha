@@ -21,6 +21,7 @@
     "admin:reset-password": "tsx src/scripts/reset-password.ts",
     "admin:grant": "tsx src/scripts/grant-admin.ts",
     "migrate:inquiries": "tsx src/scripts/migrate-inquiries.ts",
+    "migrate:offers": "tsx src/scripts/migrate-portfolio-to-offers.ts",
     "media:prune": "tsx src/scripts/prune-orphan-media.ts"
   },
   "dependencies": {

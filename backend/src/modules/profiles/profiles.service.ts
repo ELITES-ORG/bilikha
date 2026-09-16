@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   creativeDomains,
@@ -6,14 +6,12 @@ import {
   creativeProfileSubdomains,
   creativeSubdomains,
   municipalities,
+  offerImages,
+  offers,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
-import {
-  portfolioForProfile,
-  portfolioThumbsForProfiles,
-} from '../media/media.service.js';
 
 // Public shape. Note what is absent: email, phone, birthDate, barangay.
 export interface PublicProfile {
@@ -26,7 +24,17 @@ export interface PublicProfile {
   /** Present when the viewer has a municipality; true if it matches this row. */
   isNearby?: boolean;
   subdomains: { slug: string; name: string; domain: string; isPrimary: boolean }[];
-  portfolio: { id: string; url: string; thumbUrl: string; caption: string | null }[];
+  /** Present on the detail endpoint only — not on directory cards. */
+  offers?: {
+    id: string;
+    title: string;
+    description: string | null;
+    priceMinCentavos: number | null;
+    priceMaxCentavos: number | null;
+    subdomainSlug: string;
+    subdomainName: string;
+    images: { id: string; url: string; thumbUrl: string; sortOrder: number }[];
+  }[];
   memberSince: string;
 }
 
@@ -82,6 +90,65 @@ async function subdomainsForProfiles(profileIds: string[]) {
     map.set(row.profileId, list);
   }
   return map;
+}
+
+async function offersForProfile(profileId: string): Promise<NonNullable<PublicProfile['offers']>> {
+  const rows = await db
+    .select({
+      id: offers.id,
+      title: offers.title,
+      description: offers.description,
+      priceMinCentavos: offers.priceMinCentavos,
+      priceMaxCentavos: offers.priceMaxCentavos,
+      subdomainSlug: creativeSubdomains.slug,
+      subdomainName: creativeSubdomains.name,
+    })
+    .from(offers)
+    .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
+    .where(eq(offers.profileId, profileId))
+    .orderBy(asc(offers.sortOrder), asc(offers.createdAt));
+
+  if (rows.length === 0) return [];
+
+  const imageRows = isStorageConfigured()
+    ? await db
+      .select({
+        id: offerImages.id,
+        offerId: offerImages.offerId,
+        objectKey: offerImages.objectKey,
+        thumbKey: offerImages.thumbKey,
+        sortOrder: offerImages.sortOrder,
+      })
+      .from(offerImages)
+      .where(inArray(offerImages.offerId, rows.map((row) => row.id)))
+      .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt))
+    : [];
+
+  const imagesByOffer = new Map<
+    string,
+    { id: string; url: string; thumbUrl: string; sortOrder: number }[]
+  >();
+  for (const row of imageRows) {
+    const list = imagesByOffer.get(row.offerId) ?? [];
+    list.push({
+      id: row.id,
+      url: publicUrl(row.objectKey),
+      thumbUrl: publicUrl(row.thumbKey),
+      sortOrder: row.sortOrder,
+    });
+    imagesByOffer.set(row.offerId, list);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    priceMinCentavos: row.priceMinCentavos,
+    priceMaxCentavos: row.priceMaxCentavos,
+    subdomainSlug: row.subdomainSlug,
+    subdomainName: row.subdomainName,
+    images: imagesByOffer.get(row.id) ?? [],
+  }));
 }
 
 export async function listPublished(options: ListPublishedOptions) {
@@ -153,8 +220,6 @@ export async function listPublished(options: ListPublishedOptions) {
     .where(where);
 
   const subdomainMap = await subdomainsForProfiles(rows.map((row) => row.id));
-  const portfolioMap = await portfolioThumbsForProfiles(rows.map((row) => row.id));
-
   const data: PublicProfile[] = rows.map((row) => {
     const profile: PublicProfile = {
       slug: row.slug,
@@ -164,7 +229,6 @@ export async function listPublished(options: ListPublishedOptions) {
       avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
       municipality: row.municipality,
       subdomains: subdomainMap.get(row.id) ?? [],
-      portfolio: portfolioMap.get(row.id) ?? [],
       memberSince: row.createdAt.toISOString(),
     };
     if (options.viewerMunicipalityId) {
@@ -200,8 +264,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
   if (!row) throw AppError.notFound('No such creative.');
 
   const subdomainMap = await subdomainsForProfiles([row.id]);
-  const portfolio = await portfolioForProfile(row.id);
-
+  const profileOffers = await offersForProfile(row.id);
   return {
     slug: row.slug,
     displayName: row.displayName,
@@ -210,7 +273,7 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
     avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
     municipality: row.municipality,
     subdomains: subdomainMap.get(row.id) ?? [],
-    portfolio,
+    offers: profileOffers,
     memberSince: row.createdAt.toISOString(),
   };
 }

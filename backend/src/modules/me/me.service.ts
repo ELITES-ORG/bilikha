@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, count, eq, inArray } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   barangays,
@@ -7,6 +7,7 @@ import {
   creativeSubdomains,
   moderationActions,
   municipalities,
+  offers,
   userBlocks,
   users,
 } from '../../db/schema/index.js';
@@ -273,6 +274,34 @@ export async function updateOwnProfile(
     .limit(1);
 
   if (!profileRow) throw AppError.notFound('No profile to update.');
+
+  const removedSlugs = current.subdomainSlugs.filter(
+    (slug) => !input.subdomainSlugs.includes(slug),
+  );
+  if (removedSlugs.length > 0) {
+    const [inUse] = await db
+      .select({
+        name: creativeSubdomains.name,
+        total: count(),
+      })
+      .from(offers)
+      .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
+      .where(
+        and(
+          eq(offers.profileId, profileRow.id),
+          inArray(creativeSubdomains.slug, removedSlugs),
+        ),
+      )
+      .groupBy(creativeSubdomains.id, creativeSubdomains.name)
+      .limit(1);
+
+    if (inUse && inUse.total > 0) {
+      throw AppError.badRequest(
+        `Remove your ${inUse.total} ${inUse.total === 1 ? 'offer' : 'offers'} under ${inUse.name} first.`,
+        { field: 'subdomainSlugs' },
+      );
+    }
+  }
 
   await db.transaction(async (tx) => {
     await tx

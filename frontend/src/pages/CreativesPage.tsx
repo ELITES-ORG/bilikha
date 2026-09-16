@@ -14,11 +14,10 @@ import {
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { usePublishedOffers } from '@/features/offers/api';
+import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
-import { formatPriceRange } from '@/lib/money';
 
-export function DirectoryPage() {
+export function CreativesPage() {
   const [params, setParams] = useSearchParams();
   const domain = params.get('domain') ?? undefined;
   const subdomain = params.get('subdomain') ?? undefined;
@@ -28,7 +27,7 @@ export function DirectoryPage() {
   const { data: user } = useCurrentUser();
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
-  const list = usePublishedOffers({ domain, subdomain, municipality, page, limit: 20 });
+  const list = usePublishedProfiles({ domain, subdomain, municipality, page, limit: 20 });
 
   const selectedDomain = useMemo(
     () => domains.data?.find((d) => d.slug === domain),
@@ -36,7 +35,6 @@ export function DirectoryPage() {
   );
 
   const nearbyMunicipalityName = user?.municipalityName ?? null;
-  const creativesSearch = params.toString() ? `?${params}` : '';
 
   function setFilter(next: Record<string, string | undefined>) {
     const merged = new URLSearchParams(params);
@@ -58,14 +56,18 @@ export function DirectoryPage() {
       <main>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
-            eyebrow="Find a service"
-            title="Directory"
-            description="Browse published offers by domain, sub-domain, or municipality. Nothing here requires an account."
+            eyebrow="Find a creative"
+            title="Creatives"
+            description="Browse published creatives by domain, sub-domain, or municipality. Nothing here requires an account."
           />
 
           <p className="mt-4 text-sm text-ink-muted">
-            <Link to={`/creatives${creativesSearch}`} className="link-underline text-lawa-700">
-              Browse creatives
+            Looking for services?{' '}
+            <Link
+              to={{ pathname: '/directory', search: params.toString() ? `?${params}` : '' }}
+              className="link-underline text-lawa-700"
+            >
+              Browse offers in the directory
             </Link>
           </p>
 
@@ -128,14 +130,14 @@ export function DirectoryPage() {
           <div className="mt-10">
             {nearbyMunicipalityName && !municipality && (
               <p className="mb-6 text-sm text-ink-muted">
-                Showing offers from creatives in {nearbyMunicipalityName} first
+                Showing creatives in {nearbyMunicipalityName} first
               </p>
             )}
 
             {list.isPending && (
               <div className="space-y-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-28 w-full" />
+                  <Skeleton key={i} className="h-24 w-full" />
                 ))}
               </div>
             )}
@@ -143,7 +145,7 @@ export function DirectoryPage() {
             {list.isError && (
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load the directory"
+                title="Could not load creatives"
                 description={list.error.message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
@@ -155,23 +157,35 @@ export function DirectoryPage() {
 
             {list.data && list.data.data.length === 0 && (
               <EmptyState
-                title="No offers here yet — browse creatives in this sub-domain instead."
+                title="Nobody listed here yet"
+                description={
+                  subdomain
+                    ? 'This sub-domain has no published creatives. Try the parent domain, or clear the filters and browse everyone.'
+                    : domain
+                      ? 'This domain has no published creatives yet. Clear the filter to see everyone.'
+                      : municipality
+                        ? 'No published creatives in that municipality yet. Clear the filter to browse the province.'
+                        : 'Published creatives will appear here as the registry grows.'
+                }
                 action={
                   <div className="flex flex-wrap justify-center gap-2">
-                    <ButtonLink to={`/creatives${creativesSearch}`} size="sm">
-                      Browse creatives
-                    </ButtonLink>
+                    {subdomain && domain && (
+                      <Button size="sm" variant="secondary" onClick={() => setFilter({ subdomain: undefined })}>
+                        Browse {selectedDomain?.name ?? 'domain'}
+                      </Button>
+                    )}
                     {(domain || subdomain || municipality) && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() =>
-                          setFilter({ domain: undefined, subdomain: undefined, municipality: undefined })
-                        }
+                        onClick={() => setFilter({ domain: undefined, subdomain: undefined, municipality: undefined })}
                       >
                         Clear filters
                       </Button>
                     )}
+                    <ButtonLink to="/directory" size="sm" variant="ghost">
+                      Browse offers
+                    </ButtonLink>
                   </div>
                 }
               />
@@ -179,54 +193,47 @@ export function DirectoryPage() {
 
             {list.data && list.data.data.length > 0 && (
               <ul className="divide-y divide-hairline border-t border-hairline">
-                {list.data.data.map((offer) => {
-                  const creativeName = offer.creative.displayName ?? offer.creative.slug;
+                {list.data.data.map((profile) => {
+                  const primary = profile.subdomains.find((s) => s.isPrimary);
+                  const others = profile.subdomains.filter((s) => !s.isPrimary);
                   return (
-                    <li key={offer.id}>
+                    <li key={profile.slug}>
                       <Link
-                        to={`/offers/${offer.id}`}
-                        className="group flex flex-col gap-4 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:gap-6"
+                        to={`/creatives/${profile.slug}`}
+                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                       >
-                        {offer.image ? (
-                          <img
-                            src={offer.image.thumbUrl}
-                            alt=""
-                            width={120}
-                            height={120}
-                            loading="lazy"
-                            decoding="async"
-                            className="size-[120px] shrink-0 object-cover"
+                        <div className="flex gap-4">
+                          <Avatar
+                            src={profile.avatarUrl}
+                            name={profile.displayName ?? profile.fullName}
+                            size="md"
+                            className="mt-0.5"
                           />
-                        ) : (
-                          <div className="size-[120px] shrink-0 bg-clay-100" aria-hidden />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
-                              {offer.title}
-                            </h2>
-                            <Badge tone="brand">{offer.subdomain.name}</Badge>
-                          </div>
-                          <p className="mt-1 text-sm font-medium text-ink">
-                            {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
-                          </p>
-                          <div className="mt-3 flex items-center gap-3">
-                            <Avatar
-                              src={offer.creative.avatarUrl}
-                              name={creativeName}
-                              size="sm"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-sm text-ink">{creativeName}</p>
-                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-                                <MapPin className="size-3" aria-hidden />
-                                {offer.creative.municipality}
-                                {offer.creative.isNearby && (
-                                  <Badge tone="accent">Nearby</Badge>
-                                )}
-                              </p>
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
+                                {profile.displayName ?? profile.fullName}
+                              </h2>
+                              {profile.isNearby && <Badge tone="accent">Nearby</Badge>}
                             </div>
+                            <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-muted">
+                              <MapPin className="size-3.5" aria-hidden />
+                              {profile.municipality}
+                            </p>
+                            {profile.bio && (
+                              <p className="mt-2 line-clamp-2 max-w-prose text-sm text-ink-muted text-pretty">
+                                {profile.bio}
+                              </p>
+                            )}
                           </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {primary && <Badge tone="brand">{primary.name}</Badge>}
+                          {others.map((s) => (
+                            <Badge key={s.slug} tone="neutral">
+                              {s.name}
+                            </Badge>
+                          ))}
                         </div>
                       </Link>
                     </li>

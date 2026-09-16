@@ -6,9 +6,11 @@ import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
+import { CreativesPage } from '@/pages/CreativesPage';
 import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HomePage } from '@/pages/HomePage';
+import { OfferDetailPage } from '@/pages/OfferDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -27,7 +29,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/directory" element={<DirectoryPage />} />
+          <Route path="/creatives" element={<CreativesPage />} />
           <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
+          <Route path="/offers/:id" element={<OfferDetailPage />} />
           <Route
             path="/messages"
             element={

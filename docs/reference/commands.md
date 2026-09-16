@@ -49,6 +49,7 @@ will re-run migrate and seed afterwards.
 | `db:seed` | Idempotent reference-data load, matched on slug |
 | `admin:reset-password` | Sets a new password for a username. Sprint 1 recovery path — verify identity out of band first |
 | `admin:grant` | Promotes an existing account to `admin`. **The only way to create the first administrator** |
+| `migrate:offers` | Manual fallback and verifier for the portfolio → offers move. **The move itself is in migration 0013**, because `db:migrate` applies every pending migration in one pass and leaves no window for a script between creating `offers` and dropping `portfolio_items`. Idempotent; exits 0 if the table is already gone |
 | `media:prune` | Dry-run list of orphaned storage objects older than 24 hours. Pass `--delete` to remove them |
 
 ---

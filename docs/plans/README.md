@@ -69,7 +69,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Complete |
 | [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | Complete |
 | [0009](./0009-bio-avatars-and-portfolio-images.md) | Bio on cards, avatars, and portfolio images | Complete |
-| [0010](./0010-offers-and-an-offer-directory.md) | Offers, and a directory that indexes them | Ready |
+| [0010](./0010-offers-and-an-offer-directory.md) | Offers, and a directory that indexes them | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006.

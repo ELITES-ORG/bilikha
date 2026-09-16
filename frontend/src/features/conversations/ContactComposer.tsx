@@ -13,23 +13,30 @@ import { toApiError } from '@/lib/api-client';
 interface ContactComposerProps {
   profileSlug: string;
   creativeName: string;
+  /** Prefill when no saved draft exists (e.g. contact about an offer). */
+  initialMessage?: string;
   onCancel?: () => void;
 }
 
 type Phase = 'compose' | 'sending' | 'done';
 
-function initialDraft(profileSlug: string): MessageDraft {
-  return loadMessageDraft(profileSlug) ?? { subject: '', message: '' };
+function initialDraft(profileSlug: string, initialMessage?: string): MessageDraft {
+  return loadMessageDraft(profileSlug) ?? { subject: '', message: initialMessage ?? '' };
 }
 
 /** Compose-and-send only. Starts or continues a conversation. */
-export function ContactComposer({ profileSlug, creativeName, onCancel }: ContactComposerProps) {
+export function ContactComposer({
+  profileSlug,
+  creativeName,
+  initialMessage,
+  onCancel,
+}: ContactComposerProps) {
   const navigate = useNavigate();
   const start = useStartConversation();
 
   const [phase, setPhase] = useState<Phase>('compose');
-  const [subject, setSubject] = useState(() => initialDraft(profileSlug).subject);
-  const [message, setMessage] = useState(() => initialDraft(profileSlug).message);
+  const [subject, setSubject] = useState(() => initialDraft(profileSlug, initialMessage).subject);
+  const [message, setMessage] = useState(() => initialDraft(profileSlug, initialMessage).message);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [conversationId, setConversationId] = useState<string | null>(null);

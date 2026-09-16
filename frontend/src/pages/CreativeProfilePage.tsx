@@ -6,38 +6,51 @@ import { Avatar, Badge, Button, ButtonLink, Container, Skeleton } from '@/compon
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ContactComposer } from '@/features/conversations/ContactComposer';
+import type { OfferImage } from '@/features/offers/api';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
+import { formatPriceRange } from '@/lib/money';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+
+type LightboxTarget = { url: string; alt: string };
 
 export function CreativeProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const profile = usePublishedProfile(slug);
   const { data: user } = useCurrentUser();
   const [composerOpen, setComposerOpen] = useState(false);
-  const [lightboxId, setLightboxId] = useState<string | null>(null);
+  const [contactOfferTitle, setContactOfferTitle] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<LightboxTarget | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  const lightboxItem = profile.data?.portfolio?.find((item) => item.id === lightboxId) ?? null;
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (lightboxItem) {
+    if (lightbox) {
       if (!dialog.open) dialog.showModal();
     } else if (dialog.open) {
       dialog.close();
     }
-  }, [lightboxItem]);
+  }, [lightbox]);
 
-  function openLightbox(id: string, button: HTMLButtonElement) {
+  function openLightbox(image: OfferImage, alt: string, button: HTMLButtonElement) {
     triggerRef.current = button;
-    setLightboxId(id);
+    setLightbox({ url: image.url, alt });
   }
 
   function closeLightbox() {
-    setLightboxId(null);
+    setLightbox(null);
     queueMicrotask(() => triggerRef.current?.focus());
+  }
+
+  function openContact(offerTitle?: string) {
+    setContactOfferTitle(offerTitle ?? null);
+    setComposerOpen(true);
+  }
+
+  function closeComposer() {
+    setComposerOpen(false);
+    setContactOfferTitle(null);
   }
 
   if (profile.isError && profile.error instanceof ProfileNotFoundError) {
@@ -45,6 +58,10 @@ export function CreativeProfilePage() {
   }
 
   const nextPath = slug ? `/creatives/${slug}` : '/';
+  const offers = profile.data?.offers ?? [];
+  const initialMessage = contactOfferTitle
+    ? `I'm interested in "${contactOfferTitle}".`
+    : undefined;
 
   return (
     <>
@@ -96,29 +113,72 @@ export function CreativeProfilePage() {
                 </p>
               )}
 
-              {(profile.data.portfolio?.length ?? 0) > 0 && (
-                <section className="mt-10" aria-labelledby="portfolio-heading">
-                  <h2 id="portfolio-heading" className="u-display text-2xl text-ink">
-                    Portfolio
+              {offers.length > 0 && (
+                <section className="mt-10" aria-labelledby="offers-heading">
+                  <h2 id="offers-heading" className="u-display text-2xl text-ink">
+                    Offers
                   </h2>
-                  <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {profile.data.portfolio?.map((item) => (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          className="block w-full overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lawa-700"
-                          onClick={(event) => openLightbox(item.id, event.currentTarget)}
-                        >
-                          <img
-                            src={item.thumbUrl}
-                            alt={item.caption ?? 'Portfolio image'}
-                            width={400}
-                            height={400}
-                            loading="lazy"
-                            decoding="async"
-                            className="aspect-square w-full object-cover"
-                          />
-                        </button>
+                  <ul className="mt-6 space-y-10">
+                    {offers.map((offer) => (
+                      <li key={offer.id} id={`offer-${offer.id}`} className="space-y-4">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <h3 className="u-display text-xl text-ink">{offer.title}</h3>
+                          <Badge tone="brand">{offer.subdomain.name}</Badge>
+                        </div>
+                        <p className="text-sm font-medium text-ink">
+                          {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                        </p>
+                        {offer.description && (
+                          <p className="text-base text-ink text-pretty whitespace-pre-wrap">
+                            {offer.description}
+                          </p>
+                        )}
+                        {offer.images.length > 0 && (
+                          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            {offer.images.map((image) => (
+                              <li key={image.id}>
+                                <button
+                                  type="button"
+                                  className="block w-full overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lawa-700"
+                                  onClick={(event) =>
+                                    openLightbox(image, offer.title, event.currentTarget)
+                                  }
+                                >
+                                  <img
+                                    src={image.thumbUrl}
+                                    alt={offer.title}
+                                    width={400}
+                                    height={400}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="aspect-square w-full object-cover"
+                                  />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {!composerOpen && (
+                          <div>
+                            {user ? (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => openContact(offer.title)}
+                              >
+                                Contact about this offer
+                              </Button>
+                            ) : (
+                              <ButtonLink
+                                to={`/login?next=${encodeURIComponent(`${nextPath}#offer-${offer.id}`)}`}
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Sign in to contact
+                              </ButtonLink>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -138,7 +198,7 @@ export function CreativeProfilePage() {
               {!composerOpen && (
                 <div>
                   {user ? (
-                    <Button size="lg" onClick={() => setComposerOpen(true)}>
+                    <Button size="lg" onClick={() => openContact()}>
                       Contact
                     </Button>
                   ) : (
@@ -154,9 +214,11 @@ export function CreativeProfilePage() {
 
               {user && composerOpen && (
                 <ContactComposer
+                  key={contactOfferTitle ?? 'profile'}
                   profileSlug={profile.data.slug}
                   creativeName={profile.data.displayName ?? profile.data.fullName}
-                  onCancel={() => setComposerOpen(false)}
+                  initialMessage={initialMessage}
+                  onCancel={closeComposer}
                 />
               )}
             </>
@@ -172,10 +234,10 @@ export function CreativeProfilePage() {
           if (event.target === dialogRef.current) closeLightbox();
         }}
       >
-        {lightboxItem && (
+        {lightbox && (
           <img
-            src={lightboxItem.url}
-            alt={lightboxItem.caption ?? 'Portfolio image'}
+            src={lightbox.url}
+            alt={lightbox.alt}
             className="max-h-[85vh] w-auto max-w-full"
           />
         )}

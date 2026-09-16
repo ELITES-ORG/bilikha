@@ -10,16 +10,16 @@ export type AvatarUploadTicket = {
   objectKey: string;
 };
 
-export type PortfolioUploadTicket = {
-  kind: 'portfolio';
+export type OfferUploadTicket = {
+  kind: 'offer';
   full: { uploadUrl: string; objectKey: string };
   thumb: { uploadUrl: string; objectKey: string };
 };
 
-export type UploadTicket = AvatarUploadTicket | PortfolioUploadTicket;
+export type UploadTicket = AvatarUploadTicket | OfferUploadTicket;
 
 /** Ask the API for a signed upload URL. Image bytes never go through our server. */
-export async function requestUploadUrl(kind: 'avatar' | 'portfolio'): Promise<UploadTicket> {
+export async function requestUploadUrl(kind: 'avatar' | 'offer'): Promise<UploadTicket> {
   try {
     const { data } = await apiClient.post<ApiResponse<UploadTicket>>('/media/upload-url', { kind });
     return data.data;
@@ -58,69 +58,6 @@ export async function confirmAvatar(objectKey: string): Promise<void> {
 export async function removeAvatar(): Promise<void> {
   try {
     await apiClient.delete('/media/avatar');
-  } catch (error) {
-    throw toApiError(error);
-  }
-}
-
-export type PortfolioItem = {
-  id: string;
-  url: string;
-  thumbUrl: string;
-  caption: string | null;
-  sortOrder?: number;
-};
-
-export async function listOwnPortfolio(): Promise<PortfolioItem[]> {
-  try {
-    const { data } = await apiClient.get<ApiResponse<PortfolioItem[]>>('/media/portfolio');
-    return data.data;
-  } catch (error) {
-    throw toApiError(error);
-  }
-}
-
-export async function createPortfolioItem(input: {
-  objectKey: string;
-  thumbKey: string;
-  caption?: string;
-}): Promise<PortfolioItem> {
-  try {
-    const { data } = await apiClient.post<ApiResponse<PortfolioItem>>('/media/portfolio', input);
-    return data.data;
-  } catch (error) {
-    throw toApiError(error);
-  }
-}
-
-export async function updatePortfolioCaption(
-  id: string,
-  caption: string | null,
-): Promise<PortfolioItem> {
-  try {
-    const { data } = await apiClient.patch<ApiResponse<PortfolioItem>>(`/media/portfolio/${id}`, {
-      caption,
-    });
-    return data.data;
-  } catch (error) {
-    throw toApiError(error);
-  }
-}
-
-export async function deletePortfolioItem(id: string): Promise<void> {
-  try {
-    await apiClient.delete(`/media/portfolio/${id}`);
-  } catch (error) {
-    throw toApiError(error);
-  }
-}
-
-export async function reorderPortfolio(ids: string[]): Promise<PortfolioItem[]> {
-  try {
-    const { data } = await apiClient.put<ApiResponse<PortfolioItem[]>>('/media/portfolio/order', {
-      ids,
-    });
-    return data.data;
   } catch (error) {
     throw toApiError(error);
   }

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   creativeProfiles,
@@ -6,7 +6,8 @@ import {
   creativeSubdomains,
   moderationActions,
   municipalities,
-  portfolioItems,
+  offerImages,
+  offers,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
@@ -221,147 +222,249 @@ export async function moderate(input: {
   });
 }
 
-export async function listUnreviewedMedia(options: { page: number; limit: number }) {
-  if (!isStorageConfigured()) return { data: [], total: 0 };
+type MediaQueueRow = {
+  id: string;
+  kind: 'avatar' | 'offer';
+  createdAt: string;
+  url: string | null;
+  thumbUrl: string | null;
+  caption: string | null;
+  ownerName: string;
+  profileSlug: string | null;
+  profileId: string | null;
+  title?: string;
+  description?: string | null;
+  priceMinCentavos?: number | null;
+  priceMaxCentavos?: number | null;
+  flaggedAt?: string | null;
+  images?: { id: string; url: string; thumbUrl: string; sortOrder: number }[];
+  /** Sort helper — flagged offers rank above everything else. */
+  _flagged: boolean;
+};
 
+async function imagesForOfferQueue(offerIds: string[]) {
+  const result = new Map<
+    string,
+    { id: string; url: string; thumbUrl: string; sortOrder: number }[]
+  >();
+  if (offerIds.length === 0 || !isStorageConfigured()) return result;
+
+  const rows = await db
+    .select({
+      id: offerImages.id,
+      offerId: offerImages.offerId,
+      objectKey: offerImages.objectKey,
+      thumbKey: offerImages.thumbKey,
+      sortOrder: offerImages.sortOrder,
+    })
+    .from(offerImages)
+    .where(inArray(offerImages.offerId, offerIds))
+    .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
+
+  for (const row of rows) {
+    const list = result.get(row.offerId) ?? [];
+    list.push({
+      id: row.id,
+      sortOrder: row.sortOrder,
+      url: publicUrl(row.objectKey),
+      thumbUrl: publicUrl(row.thumbKey),
+    });
+    result.set(row.offerId, list);
+  }
+  return result;
+}
+
+export async function listUnreviewedMedia(options: { page: number; limit: number }) {
   const offset = (options.page - 1) * options.limit;
 
-  const portfolioRows = await db
+  const offerRows = await db
     .select({
-      id: portfolioItems.id,
-      kind: sql<'portfolio'>`'portfolio'`,
-      createdAt: portfolioItems.createdAt,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
-      caption: portfolioItems.caption,
+      id: offers.id,
+      title: offers.title,
+      description: offers.description,
+      priceMinCentavos: offers.priceMinCentavos,
+      priceMaxCentavos: offers.priceMaxCentavos,
+      flaggedAt: offers.flaggedAt,
+      createdAt: offers.createdAt,
       ownerName: sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`,
       profileSlug: creativeProfiles.slug,
       profileId: creativeProfiles.id,
     })
-    .from(portfolioItems)
-    .innerJoin(creativeProfiles, eq(portfolioItems.profileId, creativeProfiles.id))
+    .from(offers)
+    .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
-    .where(sql`${portfolioItems.reviewedAt} is null`)
-    .orderBy(desc(portfolioItems.createdAt));
+    .where(isNull(offers.reviewedAt));
 
-  const avatarRows = await db
-    .select({
-      id: users.id,
-      kind: sql<'avatar'>`'avatar'`,
-      createdAt: users.updatedAt,
-      objectKey: users.avatarKey,
-      thumbKey: sql<string | null>`null`,
-      caption: sql<string | null>`null`,
-      ownerName: sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`,
-      profileSlug: creativeProfiles.slug,
-      profileId: creativeProfiles.id,
-    })
-    .from(users)
-    .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
-    .where(and(isNotNull(users.avatarKey), sql`${users.avatarReviewedAt} is null`))
-    .orderBy(desc(users.updatedAt));
+  const imageMap = await imagesForOfferQueue(offerRows.map((row) => row.id));
 
-  const merged = [...portfolioRows, ...avatarRows]
-    .map((row) => ({
+  const offerItems: MediaQueueRow[] = offerRows.map((row) => {
+    const images = imageMap.get(row.id) ?? [];
+    const first = images[0];
+    return {
       id: row.id,
-      kind: row.kind,
+      kind: 'offer' as const,
       createdAt: row.createdAt.toISOString(),
-      url: row.objectKey ? publicUrl(row.objectKey) : null,
-      thumbUrl: row.thumbKey ? publicUrl(row.thumbKey) : row.objectKey ? publicUrl(row.objectKey) : null,
-      caption: row.caption,
+      url: first?.url ?? null,
+      thumbUrl: first?.thumbUrl ?? null,
+      caption: null,
       ownerName: row.ownerName,
       profileSlug: row.profileSlug,
       profileId: row.profileId,
-    }))
-    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      title: row.title,
+      description: row.description,
+      priceMinCentavos: row.priceMinCentavos,
+      priceMaxCentavos: row.priceMaxCentavos,
+      flaggedAt: row.flaggedAt?.toISOString() ?? null,
+      images,
+      _flagged: row.flaggedAt != null,
+    };
+  });
 
-  const total = merged.length;
-  const data = merged.slice(offset, offset + options.limit);
-  return { data, total };
-}
-
-export async function reviewMedia(input: {
-  kind: 'avatar' | 'portfolio';
-  id: string;
-  adminId: string;
-  action: 'approve' | 'remove';
-}) {
-  if (input.kind === 'avatar') {
-    const [user] = await db
+  const avatarItems: MediaQueueRow[] = [];
+  if (isStorageConfigured()) {
+    const avatarRows = await db
       .select({
         id: users.id,
-        avatarKey: users.avatarKey,
+        createdAt: users.updatedAt,
+        objectKey: users.avatarKey,
+        ownerName: sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`,
+        profileSlug: creativeProfiles.slug,
         profileId: creativeProfiles.id,
       })
       .from(users)
       .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
-      .where(eq(users.id, input.id))
-      .limit(1);
+      .where(and(isNotNull(users.avatarKey), sql`${users.avatarReviewedAt} is null`));
 
-    if (!user?.avatarKey) throw AppError.notFound('No such avatar.');
-
-    if (input.action === 'approve') {
-      await db
-        .update(users)
-        .set({ avatarReviewedAt: new Date(), updatedAt: new Date() })
-        .where(eq(users.id, user.id));
-      return { ok: true as const };
-    }
-
-    const key = user.avatarKey;
-    await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({ avatarKey: null, avatarReviewedAt: null, updatedAt: new Date() })
-        .where(eq(users.id, user.id));
-
-      // profileId stays null for a client with no creative profile; the
-      // takedown is still recorded against subjectUserId.
-      await tx.insert(moderationActions).values({
-        profileId: user.profileId,
-        subjectUserId: user.id,
-        adminId: input.adminId,
-        action: 'media_removed',
-        reason: 'Avatar removed by admin',
+    for (const row of avatarRows) {
+      avatarItems.push({
+        id: row.id,
+        kind: 'avatar',
+        createdAt: row.createdAt.toISOString(),
+        url: row.objectKey ? publicUrl(row.objectKey) : null,
+        thumbUrl: row.objectKey ? publicUrl(row.objectKey) : null,
+        caption: null,
+        ownerName: row.ownerName,
+        profileSlug: row.profileSlug,
+        profileId: row.profileId,
+        _flagged: false,
       });
-    });
-    await deleteObject(key);
-    return { ok: true as const };
+    }
   }
 
-  const [item] = await db
+  // Flagged offers first, then remaining unreviewed (avatars + unflagged offers)
+  // by createdAt desc.
+  const merged = [...offerItems, ...avatarItems].sort((a, b) => {
+    if (a._flagged !== b._flagged) return a._flagged ? -1 : 1;
+    return a.createdAt < b.createdAt ? 1 : -1;
+  });
+
+  const total = merged.length;
+  const data = merged.slice(offset, offset + options.limit).map(({ _flagged: _, ...row }) => row);
+  return { data, total };
+}
+
+export async function reviewMedia(input: {
+  kind: 'avatar' | 'offer';
+  id: string;
+  adminId: string;
+  action: 'approve' | 'remove';
+}) {
+  if (input.kind === 'offer') {
+    return reviewOfferMedia(input);
+  }
+
+  const [user] = await db
     .select({
-      id: portfolioItems.id,
-      profileId: portfolioItems.profileId,
-      ownerUserId: creativeProfiles.userId,
-      objectKey: portfolioItems.objectKey,
-      thumbKey: portfolioItems.thumbKey,
+      id: users.id,
+      avatarKey: users.avatarKey,
+      profileId: creativeProfiles.id,
     })
-    .from(portfolioItems)
-    .innerJoin(creativeProfiles, eq(portfolioItems.profileId, creativeProfiles.id))
-    .where(eq(portfolioItems.id, input.id))
+    .from(users)
+    .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
+    .where(eq(users.id, input.id))
     .limit(1);
 
-  if (!item) throw AppError.notFound('No such portfolio item.');
+  if (!user?.avatarKey) throw AppError.notFound('No such avatar.');
 
   if (input.action === 'approve') {
     await db
-      .update(portfolioItems)
-      .set({ reviewedAt: new Date() })
-      .where(eq(portfolioItems.id, item.id));
+      .update(users)
+      .set({ avatarReviewedAt: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, user.id));
     return { ok: true as const };
   }
 
+  const key = user.avatarKey;
   await db.transaction(async (tx) => {
-    await tx.delete(portfolioItems).where(eq(portfolioItems.id, item.id));
+    await tx
+      .update(users)
+      .set({ avatarKey: null, avatarReviewedAt: null, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    // profileId stays null for a client with no creative profile; the
+    // takedown is still recorded against subjectUserId.
     await tx.insert(moderationActions).values({
-      profileId: item.profileId,
-      subjectUserId: item.ownerUserId,
+      profileId: user.profileId,
+      subjectUserId: user.id,
       adminId: input.adminId,
       action: 'media_removed',
-      reason: 'Portfolio image removed by admin',
+      reason: 'Avatar removed by admin',
     });
   });
-  await Promise.all([deleteObject(item.objectKey), deleteObject(item.thumbKey)]);
+  await deleteObject(key);
+  return { ok: true as const };
+}
+
+async function reviewOfferMedia(input: {
+  id: string;
+  adminId: string;
+  action: 'approve' | 'remove';
+}) {
+  const [offer] = await db
+    .select({
+      id: offers.id,
+      profileId: offers.profileId,
+      ownerUserId: creativeProfiles.userId,
+    })
+    .from(offers)
+    .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
+    .where(eq(offers.id, input.id))
+    .limit(1);
+
+  if (!offer) throw AppError.notFound('No such offer.');
+
+  if (input.action === 'approve') {
+    await db
+      .update(offers)
+      .set({ reviewedAt: new Date(), updatedAt: new Date() })
+      .where(eq(offers.id, offer.id));
+    return { ok: true as const };
+  }
+
+  const images = await db
+    .select({ objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
+    .from(offerImages)
+    .where(eq(offerImages.offerId, offer.id));
+
+  await Promise.all(
+    images.flatMap((row) => [deleteObject(row.objectKey), deleteObject(row.thumbKey)]),
+  );
+
+  await db.transaction(async (tx) => {
+    const [deleted] = await tx
+      .delete(offers)
+      .where(eq(offers.id, offer.id))
+      .returning({ id: offers.id });
+    if (!deleted) throw AppError.notFound('No such offer.');
+
+    await tx.insert(moderationActions).values({
+      profileId: offer.profileId,
+      subjectUserId: offer.ownerUserId,
+      adminId: input.adminId,
+      action: 'media_removed',
+      reason: 'Offer removed by admin',
+    });
+  });
+
   return { ok: true as const };
 }

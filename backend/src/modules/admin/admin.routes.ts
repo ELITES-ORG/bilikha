@@ -39,7 +39,7 @@ adminRouter.get('/media', async (req, res) => {
 });
 
 adminRouter.post('/media/:kind/:id/review', async (req, res) => {
-  const kind = z.enum(['avatar', 'portfolio']).parse(req.params.kind);
+  const kind = z.enum(['avatar', 'offer']).parse(req.params.kind);
   const id = z.string().uuid('Invalid id').parse(req.params.id);
   const body = z.object({ action: z.enum(['approve', 'remove']) }).parse(req.body);
   const data = await reviewMedia({
