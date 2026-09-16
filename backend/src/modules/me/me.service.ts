@@ -145,34 +145,6 @@ export async function createOwnProfile(
 
   if (!user) throw AppError.unauthorized('Session is no longer valid.');
 
-  const [municipality] = await db
-    .select()
-    .from(municipalities)
-    .where(eq(municipalities.slug, input.municipalitySlug))
-    .limit(1);
-
-  if (!municipality) {
-    throw AppError.badRequest('Unknown municipality.', { field: 'municipalitySlug' });
-  }
-
-  let barangayId: string | null = null;
-  if (input.barangaySlug) {
-    const [barangay] = await db
-      .select()
-      .from(barangays)
-      .where(
-        and(eq(barangays.slug, input.barangaySlug), eq(barangays.municipalityId, municipality.id)),
-      )
-      .limit(1);
-
-    if (!barangay) {
-      throw AppError.badRequest('Unknown barangay for that municipality.', {
-        field: 'barangaySlug',
-      });
-    }
-    barangayId = barangay.id;
-  }
-
   const subdomainRows = await db
     .select()
     .from(creativeSubdomains)
@@ -191,18 +163,7 @@ export async function createOwnProfile(
     });
   }
 
-  const now = new Date();
-
   await db.transaction(async (tx) => {
-    await tx
-      .update(users)
-      .set({
-        municipalityId: municipality.id,
-        barangayId,
-        updatedAt: now,
-      })
-      .where(eq(users.id, userId));
-
     const [profile] = await tx
       .insert(creativeProfiles)
       .values({

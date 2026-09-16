@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { nameField, optionalNameField, passwordField } from '../auth/auth.schema.js';
 
-const profileCraftFields = {
+const craftOnlyFields = {
   displayName: z.string().trim().max(80).optional().or(z.literal('').transform(() => undefined)),
   bio: z.string().trim().max(1000).optional().or(z.literal('').transform(() => undefined)),
-  municipalitySlug: z.string().trim().min(1, 'Select a municipality'),
-  barangaySlug: z.string().trim().optional().or(z.literal('').transform(() => undefined)),
   subdomainSlugs: z.array(z.string().trim().min(1)).min(1).max(5),
   primarySubdomainSlug: z.string().trim().min(1),
   contactPreference: z.enum(['phone', 'email']),
+};
+
+const locationFields = {
+  municipalitySlug: z.string().trim().min(1, 'Select a municipality'),
+  barangaySlug: z.string().trim().optional().or(z.literal('').transform(() => undefined)),
 };
 
 const primaryAmongSelected = {
@@ -16,19 +19,21 @@ const primaryAmongSelected = {
   message: 'The primary must be one of your selected sub-domains',
 };
 
-/** Creative-only fields for attaching a profile to an existing account. */
+/** Creative-only fields for attaching a profile. Location already lives on the
+ *  user from registration (ADR 0020). */
 export const createProfileSchema = z
-  .object(profileCraftFields)
+  .object(craftOnlyFields)
   .refine((d) => d.subdomainSlugs.includes(d.primarySubdomainSlug), primaryAmongSelected);
 
-/** Update includes name fields that live on the user row. */
+/** Update includes name fields and location — changing where you live later is fine. */
 export const updateProfileSchema = z
   .object({
     firstName: nameField,
     middleName: optionalNameField,
     lastName: nameField,
     suffix: z.string().trim().max(12).optional().or(z.literal('').transform(() => undefined)),
-    ...profileCraftFields,
+    ...craftOnlyFields,
+    ...locationFields,
   })
   .refine((d) => d.subdomainSlugs.includes(d.primarySubdomainSlug), primaryAmongSelected);
 

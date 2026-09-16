@@ -53,7 +53,7 @@ apply unchanged. Three specific to this plan:
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Backend — registration | 3 / 3 | Done |
-| 2. Backend — profile setup | 0 / 2 | Not started |
+| 2. Backend — profile setup | 2 / 2 | Done |
 | 3. Backend — nearby-first | 0 / 3 | Not started |
 | 4. Frontend — registration form | 0 / 3 | Not started |
 | 5. Frontend — setup and directory | 0 / 3 | Not started |
@@ -104,21 +104,21 @@ exists in Cabucgayan, Caibiran and Culaba.
 
 ### Step 2.1 — Stop asking twice
 
-- [ ] **Action.** Remove `municipalitySlug` and `barangaySlug` from
+- [x] **Action.** Remove `municipalitySlug` and `barangaySlug` from
   `createProfileSchema` in `me.schema.ts`, and stop writing them in
   `createOwnProfile`. The user already has both from registration.
 
 **Leave `updateProfileSchema` alone.** Changing where you live is a legitimate
 later edit; supplying it twice at signup is not.
 
-- [ ] **Verify.** `POST /me/profile` with no location fields → 201, and the
+- [x] **Verify.** `POST /me/profile` with no location fields → 201, and the
   user's existing municipality is unchanged.
 
 ### Step 2.2 — Guard the ordering input
 
-- [ ] **Action.** `createOwnProfile` must not null out a user's municipality.
+- [x] **Action.** `createOwnProfile` must not null out a user's municipality.
   Confirm nothing in the create path writes to those columns at all.
-- [ ] **Verify.** Register, note the municipality, create a profile, confirm it
+- [x] **Verify.** Register, note the municipality, create a profile, confirm it
   is identical.
 
 ---
