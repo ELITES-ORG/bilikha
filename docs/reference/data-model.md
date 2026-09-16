@@ -148,8 +148,9 @@ Indexes: unique on `username_normalized`, `email_normalized`, `phone`; index on
 
 ## `creative_profiles`
 
-Optional 1:1 public profile on a user. Sprint 1 creates rows at
-`pending_review` — nothing auto-publishes without phone verification.
+Optional 1:1 public profile on a user. Created later via `POST /me/profile`
+(not at registration) at `pending_review` — nothing auto-publishes without
+phone verification.
 
 | Column | Type | Notes |
 |---|---|---|

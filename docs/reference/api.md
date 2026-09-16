@@ -251,16 +251,27 @@ session user id; no profile or user id is accepted from the request.
 
 ### `GET /api/v1/me/profile`
 
-Returns the signed-in creative's editable profile, including their own contact
-details, `contactPreference`, moderation status, rejection reason, edit-review
-flag, selected sub-domain slugs, and primary sub-domain slug. Clients receive
-`{ "data": null }`.
+Returns the signed-in user's creative profile when one exists, including their
+own contact details, `contactPreference`, moderation status, rejection reason,
+edit-review flag, selected sub-domain slugs, and primary sub-domain slug.
+Accounts without a profile receive `{ "data": null }`.
+
+### `POST /api/v1/me/profile`
+
+Creates a creative profile for the signed-in account. Name fields already live
+on the user; this body is municipality, barangay, sub-domains (1–5, one
+primary), display name, bio, and contact preference. The profile enters
+`pending_review` and appears in the admin queue. No `moderation_actions` row is
+written at create — nothing has been moderated yet.
+
+A second call for the same account returns `409`. Unknown taxonomy slugs return
+`400`.
 
 ### `PUT /api/v1/me/profile`
 
 Replaces the signed-in creative's editable name, profile text, location,
 sub-domains, primary sub-domain, and contact preference. Unknown taxonomy slugs
-return `400`; clients receive `404`.
+return `400`; accounts without a profile receive `404`.
 
 Public edits follow ADR 0016: a published profile stays published and sets
 `editedSinceReviewAt`; a suspended profile returns to `pending_review` and

@@ -74,7 +74,7 @@ apply unchanged. Three specific to this plan:
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Backend — simplify registration | 3 / 3 | Done |
-| 2. Backend — create a profile later | 0 / 3 | Not started |
+| 2. Backend — create a profile later | 3 / 3 | Done |
 | 3. Frontend — registration | 0 / 3 | Not started |
 | 4. Frontend — intent and continuation | 0 / 3 | Not started |
 | 5. Frontend — add the role later | 0 / 2 | Not started |
@@ -129,18 +129,18 @@ Returns `0`. The admin queue shows no new entry under any status.
 
 ### Step 2.1 — Validation
 
-- [ ] **Action.** In `backend/src/modules/me/me.schema.ts`, add
+- [x] **Action.** In `backend/src/modules/me/me.schema.ts`, add
   `createProfileSchema` — the creative-only fields: municipality, barangay,
   sub-domains (1–5), primary, display name, bio, contact preference.
 
 This is `updateProfileSchema` minus the name fields, which already live on the
 user. Derive one from the other rather than writing the sub-domain rules twice.
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.2 — Service
 
-- [ ] **Action.** Add `createOwnProfile(userId, input)` to `me.service.ts`, in
+- [x] **Action.** Add `createOwnProfile(userId, input)` to `me.service.ts`, in
   one transaction:
 
 1. **409 if the user already has a profile.** This is a create, not an upsert
@@ -153,12 +153,12 @@ user. Derive one from the other rather than writing the sub-domain rules twice.
 6. Write a `moderation_actions` row? **No.** Nothing has been moderated yet;
    the profile simply enters the queue as a new registration does
 
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.3 — Route
 
-- [ ] **Action.** Add `POST /profile` to `me.routes.ts`, behind `requireAuth`.
-- [ ] **Verify.** As an account with no profile → 201, profile is
+- [x] **Action.** Add `POST /profile` to `me.routes.ts`, behind `requireAuth`.
+- [x] **Verify.** As an account with no profile → 201, profile is
   `pending_review` and appears in the admin Pending tab. Calling it twice → 409.
 
 ---

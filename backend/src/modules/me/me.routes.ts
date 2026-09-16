@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/require-auth.js';
 import { passwordChangeLimiter } from '../../middleware/rate-limit.js';
-import { changePasswordSchema, updateProfileSchema } from './me.schema.js';
-import { changePassword, getOwnProfile, updateOwnProfile } from './me.service.js';
+import {
+  changePasswordSchema,
+  createProfileSchema,
+  updateProfileSchema,
+} from './me.schema.js';
+import {
+  changePassword,
+  createOwnProfile,
+  getOwnProfile,
+  updateOwnProfile,
+} from './me.service.js';
 
 export const meRouter: Router = Router();
 
@@ -11,6 +20,12 @@ meRouter.use(requireAuth);
 meRouter.get('/profile', async (req, res) => {
   const profile = await getOwnProfile(req.session.userId!);
   res.json({ data: profile });
+});
+
+meRouter.post('/profile', async (req, res) => {
+  const input = createProfileSchema.parse(req.body);
+  const profile = await createOwnProfile(req.session.userId!, input);
+  res.status(201).json({ data: profile });
 });
 
 meRouter.put('/profile', async (req, res) => {

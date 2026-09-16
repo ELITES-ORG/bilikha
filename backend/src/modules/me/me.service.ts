@@ -11,7 +11,11 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
-import type { ChangePasswordInput, UpdateProfileInput } from './me.schema.js';
+import type {
+  ChangePasswordInput,
+  CreateProfileInput,
+  UpdateProfileInput,
+} from './me.schema.js';
 
 export interface OwnProfile {
   firstName: string;
@@ -118,6 +122,112 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile | null> 
     subdomainSlugs: subdomainRows.map((s) => s.slug),
     primarySubdomainSlug: primary?.slug ?? null,
   };
+}
+
+export async function createOwnProfile(
+  userId: string,
+  input: CreateProfileInput,
+): Promise<OwnProfile> {
+  const existing = await getOwnProfile(userId);
+  if (existing) {
+    throw AppError.conflict('This account already has a creative profile.');
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      usernameNormalized: users.usernameNormalized,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) throw AppError.unauthorized('Session is no longer valid.');
+
+  const [municipality] = await db
+    .select()
+    .from(municipalities)
+    .where(eq(municipalities.slug, input.municipalitySlug))
+    .limit(1);
+
+  if (!municipality) {
+    throw AppError.badRequest('Unknown municipality.', { field: 'municipalitySlug' });
+  }
+
+  let barangayId: string | null = null;
+  if (input.barangaySlug) {
+    const [barangay] = await db
+      .select()
+      .from(barangays)
+      .where(
+        and(eq(barangays.slug, input.barangaySlug), eq(barangays.municipalityId, municipality.id)),
+      )
+      .limit(1);
+
+    if (!barangay) {
+      throw AppError.badRequest('Unknown barangay for that municipality.', {
+        field: 'barangaySlug',
+      });
+    }
+    barangayId = barangay.id;
+  }
+
+  const subdomainRows = await db
+    .select()
+    .from(creativeSubdomains)
+    .where(inArray(creativeSubdomains.slug, input.subdomainSlugs));
+
+  if (subdomainRows.length !== input.subdomainSlugs.length) {
+    throw AppError.badRequest('One or more sub-domains are unknown.', {
+      field: 'subdomainSlugs',
+    });
+  }
+
+  const primary = subdomainRows.find((row) => row.slug === input.primarySubdomainSlug);
+  if (!primary) {
+    throw AppError.badRequest('Primary sub-domain is not among the selected.', {
+      field: 'primarySubdomainSlug',
+    });
+  }
+
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({
+        municipalityId: municipality.id,
+        barangayId,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId));
+
+    const [profile] = await tx
+      .insert(creativeProfiles)
+      .values({
+        userId,
+        slug: user.usernameNormalized,
+        displayName: input.displayName ?? null,
+        bio: input.bio ?? null,
+        contactPreference: input.contactPreference,
+        status: 'pending_review',
+      })
+      .returning();
+
+    if (!profile) throw new Error('Profile insert returned no row');
+
+    await tx.insert(creativeProfileSubdomains).values(
+      subdomainRows.map((row) => ({
+        profileId: profile.id,
+        subdomainId: row.id,
+        isPrimary: row.id === primary.id,
+      })),
+    );
+  });
+
+  const created = await getOwnProfile(userId);
+  if (!created) throw new Error('Profile missing after create');
+  return created;
 }
 
 export async function updateOwnProfile(
