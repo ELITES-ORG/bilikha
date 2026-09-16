@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { useSendInquiry } from '@/features/inquiries/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { useStartConversation } from '@/features/conversations/api';
 import {
   clearInquiryDraft,
   loadInquiryDraft,
@@ -22,26 +22,29 @@ function initialDraft(profileSlug: string): InquiryDraft {
   return loadInquiryDraft(profileSlug) ?? { subject: '', message: '' };
 }
 
-/** Compose-and-send only. The profile page gates this behind a session. */
+/** Compose-and-send only. Starts or continues a conversation. */
 export function InquiryComposer({ profileSlug, creativeName, onCancel }: InquiryComposerProps) {
-  const send = useSendInquiry();
+  const navigate = useNavigate();
+  const start = useStartConversation();
 
   const [phase, setPhase] = useState<Phase>('compose');
   const [subject, setSubject] = useState(() => initialDraft(profileSlug).subject);
   const [message, setMessage] = useState(() => initialDraft(profileSlug).message);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  async function submitInquiry(draft: InquiryDraft) {
+  async function submitConversation(draft: InquiryDraft) {
     setPhase('sending');
     setError(null);
     try {
-      await send.mutateAsync({
+      const result = await start.mutateAsync({
         profileSlug,
         subject: draft.subject,
-        message: draft.message,
+        body: draft.message,
       });
       clearInquiryDraft(profileSlug);
+      setConversationId(result.id);
       setPhase('done');
     } catch (err) {
       setPhase('compose');
@@ -65,20 +68,25 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
     }
 
     saveInquiryDraft(profileSlug, draft);
-    await submitInquiry(draft);
+    await submitConversation(draft);
   }
 
-  if (phase === 'done') {
+  if (phase === 'done' && conversationId) {
     return (
       <div className="rounded-sm border border-hairline bg-surface p-6">
-        <h2 className="u-display text-2xl text-ink">Inquiry sent</h2>
+        <h2 className="u-display text-2xl text-ink">Message sent</h2>
         <p className="mt-3 text-base text-ink-muted text-pretty">
           {creativeName} will see this next time they sign in to Bilikha. There is
-          no email or phone notification.
+          no email or SMS notification.
         </p>
-        <Link to="/inquiries" className="link-underline mt-6 inline-block text-base text-lawa-700">
-          View sent inquiries
-        </Link>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Button type="button" onClick={() => void navigate(`/messages/${conversationId}`)}>
+            Open conversation
+          </Button>
+          <Link to="/messages" className="link-underline inline-flex items-center text-base text-lawa-700">
+            All messages
+          </Link>
+        </div>
       </div>
     );
   }
@@ -139,8 +147,8 @@ export function InquiryComposer({ profileSlug, creativeName, onCancel }: Inquiry
             <span className="tabular-nums">{message.length}/2000</span>
           </div>
         </div>
-        <Button type="submit" size="lg" loading={phase === 'sending' || send.isPending}>
-          Send inquiry
+        <Button type="submit" size="lg" loading={phase === 'sending' || start.isPending}>
+          Send message
         </Button>
       </div>
     </form>

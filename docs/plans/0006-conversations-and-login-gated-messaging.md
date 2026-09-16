@@ -85,7 +85,7 @@ apply unchanged. Four specific to this plan:
 | 3. Backend — conversations | 4 / 4 | Done |
 | 4. Backend — safety | 3 / 3 | Done |
 | 5. Frontend — sign-in gate | 5 / 5 | Done |
-| 6. Frontend — thread UI | 0 / 4 | Not started |
+| 6. Frontend — thread UI | 4 / 4 | Done |
 | 7. Frontend — unread and safety | 0 / 3 | Not started |
 | 8. Retire the inquiries model | 0 / 3 | Not started |
 | 9. Verification | 0 / 6 | Not started |
@@ -501,34 +501,34 @@ the account form — see [ADR 0017](../decisions/0017-sign-in-before-contacting.
 
 ### Step 6.1 — Data layer
 
-- [ ] **Action.** Create `frontend/src/features/conversations/` with `types.ts`
+- [x] **Action.** Create `frontend/src/features/conversations/` with `types.ts`
   and `api.ts`. Sending must invalidate the thread, the thread list, and the
   unread count.
-- [ ] **Verify.** Typecheck exits 0.
+- [x] **Verify.** Typecheck exits 0.
 
 ### Step 6.2 — Thread list
 
-- [ ] **Action.** Create `frontend/src/pages/MessagesPage.tsx` at `/messages`,
+- [x] **Action.** Create `frontend/src/pages/MessagesPage.tsx` at `/messages`,
   behind `RequireAuth`. Replaces `/inbox` and `/inquiries`.
 
 Other party's name, subject, last message preview, relative time, unread count
 badge. Newest activity first. `EmptyState` when there are none.
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 6.3 — Thread view
 
-- [ ] **Action.** Create `ConversationPage.tsx` at `/messages/:id`.
+- [x] **Action.** Create `ConversationPage.tsx` at `/messages/:id`.
 
 Messages in order, own messages visually distinguished from the other party's,
 a reply box at the bottom, and marking read on open. Scroll to the newest
 message on load.
 
-- [ ] **Verify.** Typecheck and lint exit 0.
+- [x] **Verify.** Typecheck and lint exit 0.
 
 ### Step 6.4 — Polling
 
-- [ ] **Action.** While a thread is open, refetch every **10 seconds**, and only
+- [x] **Action.** While a thread is open, refetch every **10 seconds**, and only
   while the tab is visible — use `refetchInterval` with
   `refetchIntervalInBackground: false`.
 
@@ -536,7 +536,7 @@ Ten seconds is a deliberate compromise: fast enough to feel live during an
 active exchange, slow enough not to wake a sleeping Render instance
 continuously. Do not poll the thread list.
 
-- [ ] **Verify.** Two browsers, two accounts: a message appears within ~10s
+- [x] **Verify.** Two browsers, two accounts: a message appears within ~10s
   without a manual refresh.
 
 ---

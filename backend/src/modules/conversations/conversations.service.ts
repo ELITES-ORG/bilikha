@@ -296,11 +296,22 @@ export async function getThread(
     .limit(options.limit);
 
   const isClient = conversation.clientUserId === userId;
+  const otherUserId = isClient ? conversation.creativeUserId : conversation.clientUserId;
+  const [other] = await db
+    .select({
+      firstName: users.firstName,
+      lastName: users.lastName,
+    })
+    .from(users)
+    .where(eq(users.id, otherUserId))
+    .limit(1);
 
   return {
     id: conversation.id,
     subject: conversation.subject,
     role: isClient ? ('client' as const) : ('creative' as const),
+    otherPartyUserId: otherUserId,
+    otherPartyName: other ? `${other.firstName} ${other.lastName}`.trim() : 'Unknown',
     messages: rows.map((row) => ({
       id: row.id,
       body: row.body,

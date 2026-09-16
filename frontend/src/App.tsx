@@ -5,10 +5,12 @@ import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
+import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HomePage } from '@/pages/HomePage';
 import { InboxPage } from '@/pages/InboxPage';
 import { LoginPage } from '@/pages/LoginPage';
+import { MessagesPage } from '@/pages/MessagesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { IntentPage } from '@/pages/onboarding/IntentPage';
 import { ProfileSetupPage } from '@/pages/onboarding/ProfileSetupPage';
@@ -27,6 +29,22 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/directory" element={<DirectoryPage />} />
           <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
+          <Route
+            path="/messages"
+            element={
+              <RequireAuth>
+                <MessagesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/messages/:id"
+            element={
+              <RequireAuth>
+                <ConversationPage />
+              </RequireAuth>
+            }
+          />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/inquiries" element={<SentInquiriesPage />} />
           <Route
