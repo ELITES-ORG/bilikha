@@ -67,7 +67,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0005](./0005-profile-editing-and-account.md) | Profile editing and the account area | Complete |
 | [0007](./0007-one-account-and-creative-role.md) | One account, creative as an added role | Complete |
 | [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Complete |
-| [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | **Ready** |
+| [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006.

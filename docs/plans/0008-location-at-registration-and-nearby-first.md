@@ -1,6 +1,6 @@
 # 0008. Location at registration, and nearby-first ordering
 
-- **Status:** Ready
+- **Status:** Complete
 - **Depends on:** [plan 0007](./0007-one-account-and-creative-role.md) — the base
   account form this adds to
 - **Related:** [ADR 0020](../decisions/0020-location-required-biliran-only.md)
@@ -57,7 +57,7 @@ apply unchanged. Three specific to this plan:
 | 3. Backend — nearby-first | 3 / 3 | Done |
 | 4. Frontend — registration form | 3 / 3 | Done |
 | 5. Frontend — setup and directory | 3 / 3 | Done |
-| 6. Verification | 0 / 5 | Not started |
+| 6. Verification | 5 / 5 | Done |
 
 ---
 
@@ -244,39 +244,39 @@ An unexplained reordering reads as randomness. Say it out loud.
 
 ### Step 6.2 — Collected once
 
-- [ ] **Verify.** `POST /me/profile` with no location fields → 201, and the
+- [x] **Verify.** `POST /me/profile` with no location fields → 201, and the
   user's municipality is unchanged from registration.
 
 ### Step 6.3 — Ordering
 
-- [ ] **Verify.** Register a Naval client → Naval creatives lead. Register a
+- [x] **Verify.** Register a Naval client → Naval creatives lead. Register a
   Kawayan client → Kawayan creatives lead.
-- [ ] **Verify.** Signed out, the order matches pre-change behaviour.
-- [ ] **Verify.** One of the 33 null-municipality clients sees the default order
+- [x] **Verify.** Signed out, the order matches pre-change behaviour.
+- [x] **Verify.** One of the 33 null-municipality clients sees the default order
   and no error.
 
 ### Step 6.4 — Pagination is stable
 
-- [ ] **Verify.** Page through the full list as a located viewer; no profile
+- [x] **Verify.** Page through the full list as a located viewer; no profile
   appears twice and none is skipped.
 
 ### Step 6.5 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build`,
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] Municipality and barangay required at registration, validated as a pair
-- [ ] Profile setup no longer asks; the profile editor still does
-- [ ] The directory is still public and still works signed out
-- [ ] Nearby-first ordering works, with a stable tiebreaker
-- [ ] The reordering is explained in the UI
-- [ ] Existing null-municipality accounts are untouched and unbroken
-- [ ] `api.md` and `data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] Municipality and barangay required at registration, validated as a pair
+- [x] Profile setup no longer asks; the profile editor still does
+- [x] The directory is still public and still works signed out
+- [x] Nearby-first ordering works, with a stable tiebreaker
+- [x] The reordering is explained in the UI
+- [x] Existing null-municipality accounts are untouched and unbroken
+- [x] `api.md` and `data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 
