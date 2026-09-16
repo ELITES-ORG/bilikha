@@ -189,7 +189,7 @@ export function DirectoryPage() {
                     <li key={profile.slug}>
                       <Link
                         to={`/creatives/${profile.slug}`}
-                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                       >
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -202,6 +202,11 @@ export function DirectoryPage() {
                             <MapPin className="size-3.5" aria-hidden />
                             {profile.municipality}
                           </p>
+                          {profile.bio && (
+                            <p className="mt-2 line-clamp-2 max-w-prose text-sm text-ink-muted text-pretty">
+                              {profile.bio}
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {primary && <Badge tone="brand">{primary.name}</Badge>}
