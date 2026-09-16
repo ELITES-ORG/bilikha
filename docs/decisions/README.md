@@ -58,3 +58,4 @@ Number sequentially. Never renumber.
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
 | [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted |
 | [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted |
+| [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted |

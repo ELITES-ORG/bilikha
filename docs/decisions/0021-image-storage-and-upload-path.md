@@ -5,6 +5,11 @@
 - **Related:** [0008](./0008-publish-immediately-with-tiers.md) ·
   [operating constraints §3](../explanation/constraints.md)
 
+> **Partly superseded by [0022](./0022-offers-replace-portfolio.md).** The
+> upload path, the browser-side sizing and the free-tier facts below are
+> unchanged. What images attach to is not: portfolio items became offer images,
+> and the storage ceiling is recalculated there.
+
 ## Context
 
 The directory shows a name, a municipality and some tags. For a photographer,
