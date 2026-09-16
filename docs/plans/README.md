@@ -65,4 +65,5 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0003](./0003-admin-moderation.md) | Admin panel — registration moderation | Ready — run after 0001 |
 | [0004](./0004-client-accounts-and-inquiries.md) | Client accounts and inquiries | Complete |
 | [0005](./0005-profile-editing-and-account.md) | Profile editing and the account area | Complete |
-| [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Ready — run after 0005 |
+| [0007](./0007-one-account-and-creative-role.md) | One account, creative as an added role | Ready — **run before 0006** |
+| [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Ready — run after 0007 |

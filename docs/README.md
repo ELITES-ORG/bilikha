@@ -82,4 +82,5 @@ Different categories rot at different speeds. Treat them accordingly.
 - [0003 — Admin panel: registration moderation](./plans/0003-admin-moderation.md)
 - [0004 — Client accounts and inquiries](./plans/0004-client-accounts-and-inquiries.md)
 - [0005 — Profile editing and the account area](./plans/0005-profile-editing-and-account.md)
+- [0007 — One account, creative as an added role](./plans/0007-one-account-and-creative-role.md) — run first
 - [0006 — Conversations and login-gated messaging](./plans/0006-conversations-and-login-gated-messaging.md)

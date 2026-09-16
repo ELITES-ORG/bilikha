@@ -2,7 +2,9 @@
 
 - **Status:** Ready
 - **Depends on:** [plan 0004](./0004-client-accounts-and-inquiries.md) — the
-  `inquiries` rows this plan migrates
+  `inquiries` rows this plan migrates — and
+  [plan 0007](./0007-one-account-and-creative-role.md), which owns registration
+  and **must run first**
 - **Related:** [ADR 0017](../decisions/0017-sign-in-before-contacting.md) ·
   [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md) ·
   [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md)
@@ -456,31 +458,22 @@ the click, not after.
   single `/` — an open redirect is a phishing vector.
 - [ ] **Verify.** `?next=https://evil.example.com` is ignored and lands on `/`.
 
-### Step 5.3 — Give clients somewhere to register
+### Step 5.3 — Wire the return path through registration
 
-**Without this the plan breaks client signup entirely.** Step 5.4 removes the
-inline registration from the composer, and `/register` is the *creative* form —
-municipality, barangay, sub-domains, primary craft. A new client sent there is
-asked for a craft they do not have.
+[Plan 0007](./0007-one-account-and-creative-role.md) replaces registration with
+a single short form and owns the client/creative split, so this plan no longer
+needs a chooser. **Run 0007 first.**
 
-- [ ] **Action.** Turn `/register` into a chooser: two cards, **Offer creative
-  work** and **Hire creatives**, linking to `/register/creative` and
-  `/register/client`. Propagate `?next=` through both.
-- [ ] **Action.** Move the existing creative form to `/register/creative`
-  unchanged.
-- [ ] **Action.** Create `/register/client` with the short form — first name,
-  last name, username, email, phone, birth date, password, confirm, both consent
-  checkboxes — posting `kind: 'client'`. Lift it out of `InquiryComposer` rather
-  than rewriting it; the fields and validation are already correct.
+- [ ] **Action.** Confirm `/register` is the short base-account form from
+  [plan 0007](./0007-one-account-and-creative-role.md), and that `?next=`
+  survives registration, the intent step, and sign-in.
 
-Registration is a destination again, which restores the two-front-doors framing
-in [ADR 0004](../decisions/0004-unified-account-model.md) that
-[ADR 0015](../decisions/0015-clients-register-through-the-inquiry-flow.md) had
-walked back. The chooser is that fork made explicit.
+A signed-out visitor pressing Contact registers, answers the intent question,
+and returns to the profile they came from — the `next` parameter must not be
+lost at the intent step.
 
-- [ ] **Verify.** `/register` shows the choice; `/register/client` registers an
-  account with no creative profile; `/register/creative` still works; `?next=`
-  survives both.
+- [ ] **Verify.** From a profile, signed out: Contact → register → intent →
+  back on that profile with the draft intact.
 
 ### Step 5.4 — Strip inline registration
 
@@ -666,7 +659,6 @@ runs the originals are gone.
 
 | Item | Why deferred |
 |---|---|
-| **Letting a client add a creative profile later** | [ADR 0004](../decisions/0004-unified-account-model.md) argued for exactly this — roles are fluid in a small market — and the schema supports it, since `creative_profiles` is an optional 1:1. Only the code path is missing. Today a client who starts creating needs a second account |
 | **Email notifications** | The main risk in [ADR 0018](../decisions/0018-conversations-replace-one-shot-inquiries.md). Without them a creative who checks weekly replies weekly |
 | Admin review screen for reports | Reports are stored and queryable; the UI is a follow-up |
 | Message retention, export, deletion | RA 10173. Conversations make this obligation larger |

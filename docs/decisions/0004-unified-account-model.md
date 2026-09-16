@@ -3,6 +3,10 @@
 - **Status:** Proposed
 - **Date:** 2026-09-15
 
+> **Implemented by
+> [0019](./0019-one-account-creative-as-attachable-role.md).** The attachable-role
+> model below is now what the interface does, not only what the schema allows.
+>
 > **Partly refined by
 > [0015](./0015-clients-register-through-the-inquiry-flow.md).** The unified
 > account model below is unchanged and correct. The "two front doors" framing is

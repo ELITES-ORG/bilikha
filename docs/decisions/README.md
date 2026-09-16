@@ -55,3 +55,4 @@ Number sequentially. Never renumber.
 | [0016](./0016-edits-never-unpublish.md) | Edits never un-publish; public edits flag for re-review | Accepted |
 | [0017](./0017-sign-in-before-contacting.md) | Sign in before contacting a creative | Accepted |
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted |
+| [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted |
