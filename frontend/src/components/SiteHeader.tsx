@@ -80,7 +80,13 @@ export function SiteHeader() {
             </div>
           )}
 
-          <Link to="/directory" className={navClass(hiring)}>
+          <Link
+            to="/directory"
+            className={cn(
+              'link-underline px-2 py-1 text-base transition-colors',
+              hiring ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
+            )}
+          >
             Directory
           </Link>
           {user && (
@@ -135,7 +141,7 @@ export function SiteHeader() {
               <Button
                 size="sm"
                 variant="secondary"
-                className="ml-1"
+                className="ml-1 hidden sm:inline-flex"
                 loading={logout.isPending}
                 onClick={() => void logout.mutateAsync()}
               >

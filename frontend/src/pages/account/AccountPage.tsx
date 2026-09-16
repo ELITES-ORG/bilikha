@@ -1,7 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
-import { useCurrentUser } from '@/features/auth/api';
+import { Button, ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
+import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { ProfileEditor } from '@/features/me/ProfileEditor';
@@ -12,6 +12,7 @@ import { useOwnProfile } from '@/features/me/api';
 export function AccountPage() {
   const profile = useOwnProfile();
   const { data: user } = useCurrentUser();
+  const logout = useLogout();
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -121,8 +122,26 @@ export function AccountPage() {
                 Password settings for this account.
               </p>
               <Card elevation="flat" className="mt-5">
-                <CardBody>
+                <CardBody className="space-y-6">
                   <PasswordForm />
+
+                  {/* Sign out lives here as well as the header, because the
+                      header drops it on narrow screens where space is scarce. */}
+                  <div className="border-t border-hairline pt-6">
+                    <p className="text-sm font-medium text-ink">Sign out</p>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      Ends this session on this device only.
+                    </p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3"
+                      loading={logout.isPending}
+                      onClick={() => void logout.mutateAsync()}
+                    >
+                      Sign out
+                    </Button>
+                  </div>
                 </CardBody>
               </Card>
             </section>
