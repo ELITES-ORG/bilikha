@@ -81,7 +81,7 @@ apply unchanged. Four specific to this plan:
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Schema | 4 / 4 | Done |
-| 2. Migration and backfill | 0 / 3 | Not started |
+| 2. Migration and backfill | 3 / 3 | Done |
 | 3. Backend — conversations | 0 / 4 | Not started |
 | 4. Backend — safety | 0 / 3 | Not started |
 | 5. Frontend — sign-in gate | 0 / 5 | Not started |
@@ -259,14 +259,14 @@ new model is proven.
 
 ### Step 2.1 — Generate
 
-- [ ] **Action.** `npm --prefix backend run db:generate`, then read the file.
-- [ ] **Verify.** Four `CREATE TABLE`, one `CREATE TYPE`, the indexes above, and
+- [x] **Action.** `npm --prefix backend run db:generate`, then read the file.
+- [x] **Verify.** Four `CREATE TABLE`, one `CREATE TYPE`, the indexes above, and
   **no `DROP TABLE`**. If a drop of `inquiries` appears, delete that statement —
   it belongs in Phase 8.
 
 ### Step 2.2 — Backfill script
 
-- [ ] **Action.** Create `backend/src/scripts/migrate-inquiries.ts`.
+- [x] **Action.** Create `backend/src/scripts/migrate-inquiries.ts`.
 
 For each `inquiries` row, inside one transaction:
 
@@ -281,15 +281,15 @@ For each `inquiries` row, inside one transaction:
 
 Idempotent — safe to re-run. Log counts in and out.
 
-- [ ] **Action.** Add `"migrate:inquiries": "tsx src/scripts/migrate-inquiries.ts"`
+- [x] **Action.** Add `"migrate:inquiries": "tsx src/scripts/migrate-inquiries.ts"`
   to `backend/package.json`.
-- [ ] **Verify.** `npm run typecheck` exits 0.
+- [x] **Verify.** `npm run typecheck` exits 0.
 
 ### Step 2.3 — Apply and verify counts
 
-- [ ] **Action.** `npm run db:migrate`, then
+- [x] **Action.** `npm run db:migrate`, then
   `npm --prefix backend run migrate:inquiries`
-- [ ] **Verify.** Counts reconcile:
+- [x] **Verify.** Counts reconcile:
 
 ```bash
 docker exec bilikha-postgres psql -U bilikha -d bilikha -c "
