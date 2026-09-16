@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { authKeys } from '@/features/auth/api';
 import { apiClient, toApiError } from '@/lib/api-client';
-import type { ChangePasswordPayload, OwnProfile, UpdateProfilePayload } from './types';
+import type { ChangePasswordPayload, CreateProfilePayload, OwnProfile, UpdateProfilePayload } from './types';
 
 interface ApiResponse<T> {
   data: T;
@@ -23,6 +23,29 @@ export function useOwnProfile() {
       } catch (error) {
         throw toApiError(error);
       }
+    },
+  });
+}
+
+export function useCreateOwnProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: CreateProfilePayload): Promise<OwnProfile> => {
+      try {
+        const { data } = await apiClient.post<ApiResponse<OwnProfile>>('/me/profile', payload);
+        return data.data;
+      } catch (error) {
+        if (error instanceof AxiosError) throw error;
+        throw toApiError(error);
+      }
+    },
+    onSuccess: async (profile) => {
+      queryClient.setQueryData(meKeys.profile(), profile);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: meKeys.profile() }),
+        queryClient.invalidateQueries({ queryKey: authKeys.me }),
+      ]);
     },
   });
 }

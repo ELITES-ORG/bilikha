@@ -114,7 +114,7 @@ export function RegisterPage() {
         termsAccepted: true,
       });
       clearDraft();
-      void navigate('/register/success');
+      void navigate('/welcome');
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {

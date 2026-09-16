@@ -10,6 +10,9 @@ import { HomePage } from '@/pages/HomePage';
 import { InboxPage } from '@/pages/InboxPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { IntentPage } from '@/pages/onboarding/IntentPage';
+import { ProfileSetupPage } from '@/pages/onboarding/ProfileSetupPage';
+import { ProfileSubmittedPage } from '@/pages/onboarding/ProfileSubmittedPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage';
 import { SentInquiriesPage } from '@/pages/SentInquiriesPage';
@@ -36,6 +39,30 @@ export default function App() {
           />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/success" element={<RegisterSuccessPage />} />
+          <Route
+            path="/welcome"
+            element={
+              <RequireAuth>
+                <IntentPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/welcome/profile"
+            element={
+              <RequireAuth>
+                <ProfileSetupPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/welcome/submitted"
+            element={
+              <RequireAuth>
+                <ProfileSubmittedPage />
+              </RequireAuth>
+            }
+          />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin" element={<AdminQueuePage />} />
           <Route path="/admin/profiles/:id" element={<AdminProfilePage />} />

@@ -34,6 +34,16 @@ export interface UpdateProfilePayload {
   contactPreference: ContactPreference;
 }
 
+export interface CreateProfilePayload {
+  displayName?: string;
+  bio?: string;
+  municipalitySlug: string;
+  barangaySlug?: string;
+  subdomainSlugs: string[];
+  primarySubdomainSlug: string;
+  contactPreference: ContactPreference;
+}
+
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;

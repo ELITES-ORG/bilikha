@@ -76,7 +76,7 @@ apply unchanged. Three specific to this plan:
 | 1. Backend — simplify registration | 3 / 3 | Done |
 | 2. Backend — create a profile later | 3 / 3 | Done |
 | 3. Frontend — registration | 3 / 3 | Done |
-| 4. Frontend — intent and continuation | 0 / 3 | Not started |
+| 4. Frontend — intent and continuation | 3 / 3 | Done |
 | 5. Frontend — add the role later | 0 / 2 | Not started |
 | 6. Frontend — mode switch | 0 / 2 | Not started |
 | 7. Verification | 0 / 5 | Not started |
@@ -198,7 +198,7 @@ all of it still applies.
 
 ### Step 4.1 — The intent step
 
-- [ ] **Action.** Create `frontend/src/pages/onboarding/IntentPage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/onboarding/IntentPage.tsx` at
   `/welcome`, behind `RequireAuth`. Registration redirects here on success.
 
 Two large choices:
@@ -209,11 +209,11 @@ Two large choices:
 One question, no other UI. No stats, no dashboard, no navigation that invites
 wandering off.
 
-- [ ] **Verify.** Registering lands here, not on `/` and not on `/account`.
+- [x] **Verify.** Registering lands here, not on `/` and not on `/account`.
 
 ### Step 4.2 — Profile setup as a continuation
 
-- [ ] **Action.** Create `frontend/src/pages/onboarding/ProfileSetupPage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/onboarding/ProfileSetupPage.tsx` at
   `/welcome/profile`, reusing the profile editor's field components from
   [plan 0005](./0005-profile-editing-and-account.md). Posts to
   `POST /me/profile`.
@@ -221,15 +221,15 @@ wandering off.
 It must read as **step 2 of signing up**, not as a settings screen: a heading
 that continues the flow, a progress indication, and a single primary action.
 
-- [ ] **Verify.** A creative goes register → intent → profile setup → submitted
+- [x] **Verify.** A creative goes register → intent → profile setup → submitted
   without ever seeing a dashboard or a link they must find.
 
 ### Step 4.3 — Confirmation
 
-- [ ] **Action.** On submit, land on a confirmation stating the profile is being
+- [x] **Action.** On submit, land on a confirmation stating the profile is being
   reviewed and will appear in the directory once approved. The status banner
   from [plan 0005](./0005-profile-editing-and-account.md) takes over from there.
-- [ ] **Verify.** The banner shows `pending_review` on every page afterwards.
+- [x] **Verify.** The banner shows `pending_review` on every page afterwards.
 
 ---
 
