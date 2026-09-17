@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!--
+      The app is light-only, and this has to be declared before the stylesheet
+      parses. Native form-control surfaces the page cannot style - most visibly
+      a <select>'s option list, which Android draws itself - otherwise follow
+      the device theme, so a phone in dark mode gets a dark picker over a light
+      page. The :root rule in base.css says the same thing, but too late.
+    -->
+    <meta name="color-scheme" content="light" />
+
     <title>Bilikha — Biliran Creative Industries Registry</title>
     <meta
       name="description"
