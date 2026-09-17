@@ -82,7 +82,7 @@ apply unchanged. Nine specific to this plan:
 | 4. Rating it | 3 / 3 | Done |
 | 5. Showing it | 2 / 2 | Done |
 | 6. Appeals | 2 / 2 | Done |
-| 7. Verification | 5 / 6 | 7.6 awaits CI |
+| 7. Verification | 6 / 6 | Complete |
 
 ---
 
@@ -300,12 +300,11 @@ Against a database that is up.
 
 ### Step 7.6 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit. Grep the diff for a stored average and for any
   rating join in the directory.
-- [x] **Note.** Local five checks exit 0 after phases 4–6. Greps are clean: no
-  stored average, and no rating join in the directory, the offer index or the
-  postings feed. CI tick waits on the push (rule 9).
+- [x] **Note.** Local five checks and CI (`35283320844`) both green. Greps clean:
+  no stored average; no rating join in directory, offer index or postings feed.
 
 ---
 
