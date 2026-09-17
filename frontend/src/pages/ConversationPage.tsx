@@ -18,7 +18,7 @@ import {
 import { relativeTime } from '@/features/conversations/relative-time';
 import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
 import { toApiError } from '@/lib/api-client';
-import { pbBottomNav, stickyComposerAboveNav } from '@/lib/bottom-nav';
+import { pbBottomNav, pbConversationComposer, fixedComposerAboveNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
@@ -35,6 +35,7 @@ export function ConversationPage() {
   const report = useReportConversation(id ?? '');
   const block = useBlockUser();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
@@ -81,6 +82,7 @@ export function ConversationPage() {
         ...(offerIdToSend ? { offerId: offerIdToSend } : {}),
       });
       setBody('');
+      if (replyRef.current) replyRef.current.style.height = '';
       if (attachedOfferId) clearAttachedOffer();
     } catch (err) {
       const apiError = toApiError(err);
@@ -125,7 +127,7 @@ export function ConversationPage() {
     <>
       <SiteHeader />
       <RegistrationStatusBanner />
-      <main className={pbBottomNav}>
+      <main className={thread.data && !blocked ? pbConversationComposer : pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <p className="text-sm">
             <Link to="/messages" className="link-underline text-ink-muted">
@@ -306,14 +308,11 @@ export function ConversationPage() {
               ) : (
                 <form
                   onSubmit={(e) => void onReply(e)}
-                  className={cn(
-                    'mt-8 border-t border-hairline bg-paper pt-6',
-                    stickyComposerAboveNav,
-                  )}
+                  className={fixedComposerAboveNav}
                 >
                   {attachedOfferId && (
-                    <div className="mb-3">
-                      {attachedOffer.isPending && <Skeleton className="h-16 w-full" />}
+                    <div className="mb-2 max-sm:max-h-28 max-sm:overflow-y-auto">
+                      {attachedOffer.isPending && <Skeleton className="h-14 w-full" />}
                       {attachmentUnavailable && (
                         <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
                           <OfferUnavailableNotice />
@@ -358,21 +357,31 @@ export function ConversationPage() {
                       )}
                     </div>
                   )}
-                  {error && <p className="mb-3 text-sm text-danger-700">{error}</p>}
-                  <label htmlFor="reply-body" className="sr-only">
-                    Reply
-                  </label>
-                  <textarea
-                    id="reply-body"
-                    rows={3}
-                    maxLength={2000}
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    placeholder="Write a reply"
-                    className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
-                  />
-                  <div className="mt-3 flex justify-end">
-                    <Button type="submit" loading={send.isPending}>
+                  {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
+                  <div className="flex items-end gap-2">
+                    <label htmlFor="reply-body" className="sr-only">
+                      Reply
+                    </label>
+                    <textarea
+                      id="reply-body"
+                      ref={replyRef}
+                      rows={1}
+                      maxLength={2000}
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      placeholder="Write a reply"
+                      className={cn(
+                        'min-h-10 max-h-28 flex-1 resize-none rounded-sm border border-hairline-strong bg-surface',
+                        'px-3 py-2 text-base leading-5 text-ink',
+                        'focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
+                      )}
+                      onInput={(e) => {
+                        const el = e.currentTarget;
+                        el.style.height = 'auto';
+                        el.style.height = `${Math.min(el.scrollHeight, 112)}px`;
+                      }}
+                    />
+                    <Button type="submit" size="sm" className="shrink-0" loading={send.isPending}>
                       Send
                     </Button>
                   </div>
