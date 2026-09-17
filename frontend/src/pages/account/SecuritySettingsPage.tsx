@@ -4,7 +4,7 @@ import { useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { PasswordForm } from '@/features/me/PasswordForm';
 import { pbBottomNav } from '@/lib/bottom-nav';
-import { AccountBackLink } from './AccountBackLink';
+import { AccountPageHeading } from './AccountPageHeading';
 
 export function SecuritySettingsPage() {
   const logout = useLogout();
@@ -16,8 +16,7 @@ export function SecuritySettingsPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <AccountBackLink />
-          <h1 className="u-display mt-8 text-3xl text-ink md:text-4xl">Security</h1>
+          <AccountPageHeading title="Security" />
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             Password settings for this account.
           </p>

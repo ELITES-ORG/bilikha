@@ -6,7 +6,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useOwnProfile } from '@/features/me/api';
 import { OfferEditor } from '@/features/offers/OfferEditor';
 import { pbBottomNav } from '@/lib/bottom-nav';
-import { AccountBackLink } from './AccountBackLink';
+import { AccountPageHeading } from './AccountPageHeading';
 
 export function OffersSettingsPage() {
   const profile = useOwnProfile();
@@ -18,7 +18,7 @@ export function OffersSettingsPage() {
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
-            <AccountBackLink />
+            <AccountPageHeading title="Offers" />
             <div className="mt-10 space-y-4">
               <Skeleton className="h-8 w-40" />
               <Skeleton className="h-56 w-full" />
@@ -36,7 +36,7 @@ export function OffersSettingsPage() {
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
-            <AccountBackLink />
+            <AccountPageHeading title="Offers" />
             <div className="mt-10">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
@@ -61,8 +61,7 @@ export function OffersSettingsPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <AccountBackLink />
-          <h1 className="u-display mt-8 text-3xl text-ink md:text-4xl">Offers</h1>
+          <AccountPageHeading title="Offers" />
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             What you are available to be hired for. These are what clients browse.
           </p>

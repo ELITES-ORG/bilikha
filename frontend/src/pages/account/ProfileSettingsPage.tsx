@@ -7,7 +7,7 @@ import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { ProfileEditor } from '@/features/me/ProfileEditor';
 import { useOwnProfile } from '@/features/me/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
-import { AccountBackLink } from './AccountBackLink';
+import { AccountPageHeading } from './AccountPageHeading';
 
 export function ProfileSettingsPage() {
   const profile = useOwnProfile();
@@ -20,8 +20,7 @@ export function ProfileSettingsPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <AccountBackLink />
-          <h1 className="u-display mt-8 text-3xl text-ink md:text-4xl">Profile</h1>
+          <AccountPageHeading title="Profile" />
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             These details shape how people find and understand your work.
           </p>
