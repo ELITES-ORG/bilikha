@@ -1,6 +1,6 @@
 # 0015. The account hub
 
-- **Status:** Ready
+- **Status:** Complete
 - **Related:** [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md)
 
@@ -54,10 +54,10 @@ apply unchanged. Four specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The pages | 0 / 4 | Not started |
-| 2. The hub | 0 / 3 | Not started |
-| 3. Loading and guards | 0 / 3 | Not started |
-| 4. Verification | 0 / 4 | Not started |
+| 1. The pages | 4 / 4 | Complete |
+| 2. The hub | 3 / 3 | Complete |
+| 3. Loading and guards | 3 / 3 | Complete |
+| 4. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -65,36 +65,36 @@ apply unchanged. Four specific to this plan:
 
 ### Step 1.1 — Profile
 
-- [ ] **Action.** Create `frontend/src/pages/account/ProfileSettingsPage.tsx` at
+- [x] **Action.** Create `frontend/src/pages/account/ProfileSettingsPage.tsx` at
   `/account/profile`. It renders `ProfileEditor` exactly as the account page
   does today, with its own `SiteHeader`, heading and `pbBottomNav`.
-- [ ] **Action.** For an account with **no** creative profile, this page shows
+- [x] **Action.** For an account with **no** creative profile, this page shows
   what the account page currently shows in that case — the standalone
   `AvatarUploader` and the "Offer your creative work" call to action.
-- [ ] **Verify.** Both states render, and saving works exactly as before.
+- [x] **Verify.** Both states render, and saving works exactly as before.
 
 ### Step 1.2 — Offers
 
-- [ ] **Action.** `frontend/src/pages/account/OffersSettingsPage.tsx` at
+- [x] **Action.** `frontend/src/pages/account/OffersSettingsPage.tsx` at
   `/account/offers`, rendering `OfferEditor`.
-- [ ] **Action.** An account with no creative profile does not get this page.
+- [x] **Action.** An account with no creative profile does not get this page.
   Send them to `/account` rather than showing an empty editor.
-- [ ] **Verify.** A client with no profile visiting the URL directly lands on
+- [x] **Verify.** A client with no profile visiting the URL directly lands on
   the hub.
 
 ### Step 1.3 — Security
 
-- [ ] **Action.** `frontend/src/pages/account/SecuritySettingsPage.tsx` at
+- [x] **Action.** `frontend/src/pages/account/SecuritySettingsPage.tsx` at
   `/account/security`, rendering `PasswordForm` and the Sign out block currently
   at the bottom of the account page.
-- [ ] **Verify.** Changing a password and signing out both behave as before —
+- [x] **Verify.** Changing a password and signing out both behave as before —
   sign out still lands on the landing page.
 
 ### Step 1.4 — Routes
 
-- [ ] **Action.** Register all three in `App.tsx` inside `RequireAuth`, beside
+- [x] **Action.** Register all three in `App.tsx` inside `RequireAuth`, beside
   the existing `/account`.
-- [ ] **Verify.** Signed out, each redirects to login.
+- [x] **Verify.** Signed out, each redirects to login.
 
 ---
 
@@ -102,14 +102,14 @@ apply unchanged. Four specific to this plan:
 
 ### Step 2.1 — Strip it
 
-- [ ] **Action.** `AccountPage` renders no editors. It keeps its heading and
+- [x] **Action.** `AccountPage` renders no editors. It keeps its heading and
   becomes a list of entries.
-- [ ] **Verify.** `grep -n "ProfileEditor\|OfferEditor\|PasswordForm\|AvatarUploader" AccountPage.tsx`
+- [x] **Verify.** `grep -n "ProfileEditor\|OfferEditor\|PasswordForm\|AvatarUploader" AccountPage.tsx`
   returns nothing.
 
 ### Step 2.2 — The entries
 
-- [ ] **Action.** One row per entry: label, a one-line summary of current state,
+- [x] **Action.** One row per entry: label, a one-line summary of current state,
   and a chevron. Rows are at least 44px tall and the whole row is the link.
 
 | Entry | Summary line |
@@ -123,17 +123,17 @@ An account with no creative profile sees Profile, Your postings and Security,
 plus a call to action to add a creative profile — not an Offers row leading
 nowhere.
 
-- [ ] **Action.** The summaries are the point of the hub
+- [x] **Action.** The summaries are the point of the hub
   ([ADR 0027](../decisions/0027-account-is-a-hub.md)). A list of bare labels
   answers nothing and makes people open pages to find out.
-- [ ] **Verify.** Each summary matches what the page behind it shows.
+- [x] **Verify.** Each summary matches what the page behind it shows.
 
 ### Step 2.3 — Keep Offers findable
 
-- [ ] **Action.** Offers is a creative's most important surface after their
+- [x] **Action.** Offers is a creative's most important surface after their
   profile, and it used to sit in the open. Put it directly under Profile, and
   show the count so an empty portfolio is visible without opening it.
-- [ ] **Verify.** With no offers, the hub says so on the row.
+- [x] **Verify.** With no offers, the hub says so on the row.
 
 ---
 
@@ -141,28 +141,28 @@ nowhere.
 
 ### Step 3.1 — Load only what is needed
 
-- [ ] **Action.** The hub needs the current user and enough for the summaries.
+- [x] **Action.** The hub needs the current user and enough for the summaries.
   It must **not** mount the editors or fetch the taxonomy.
 
 This is half the reason for the change: opening the Profile tab to sign out
 currently fetches offers and the full taxonomy.
 
-- [ ] **Verify.** On the hub, the network panel shows no taxonomy request and no
+- [x] **Verify.** On the hub, the network panel shows no taxonomy request and no
   offers list beyond what a summary needs.
 
 ### Step 3.2 — Clearance
 
-- [ ] **Action.** Every new page uses `pbBottomNav`, as
+- [x] **Action.** Every new page uses `pbBottomNav`, as
   [plan 0011](./0011-bottom-navigation-and-history.md) requires.
-- [ ] **Verify.** On a phone viewport the last control on each page is fully
+- [x] **Verify.** On a phone viewport the last control on each page is fully
   visible and tappable, including the Save button.
 
 ### Step 3.3 — Back
 
-- [ ] **Action.** Each page offers a way back to the hub that does not rely on
+- [x] **Action.** Each page offers a way back to the hub that does not rely on
   the browser's back button, since the bottom bar's Profile tab goes to
   `/account` and people will use it.
-- [ ] **Verify.** From `/account/offers`, both the in-page back and the Profile
+- [x] **Verify.** From `/account/offers`, both the in-page back and the Profile
   tab reach the hub.
 
 ---
@@ -171,7 +171,7 @@ currently fetches offers and the full taxonomy.
 
 ### Step 4.1 — Nothing lost
 
-- [ ] **Verify.** Every control that was on the old account page is reachable:
+- [x] **Verify.** Every control that was on the old account page is reachable:
   avatar, name, display name, bio, sub-domains, location, contact preference,
   offers with images and ordering, password, sign out, your postings.
 
@@ -186,29 +186,29 @@ The old page is being dismantled. A missing control will not fail a build.
 | `/account/offers` with no creative profile | redirect to `/account` |
 | `/account/security` signed out | redirect to login |
 
-- [ ] **Verify.** Every row behaves as stated.
+- [x] **Verify.** Every row behaves as stated.
 
 ### Step 4.3 — Both account shapes
 
-- [ ] **Verify.** A client with no creative profile, and a published creative,
+- [x] **Verify.** A client with no creative profile, and a published creative,
   both see a coherent hub with no dead entries.
 
 ### Step 4.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] `/account` edits nothing and mounts no editor
-- [ ] Profile, Offers and Security each have their own guarded page
-- [ ] Each hub entry carries a summary of its current state
-- [ ] The hub does not fetch the taxonomy or the offers list
-- [ ] Every control from the old page is still reachable
-- [ ] Every new page clears the bottom bar and can get back to the hub
-- [ ] This plan's status set to **Complete**
+- [x] `/account` edits nothing and mounts no editor
+- [x] Profile, Offers and Security each have their own guarded page
+- [x] Each hub entry carries a summary of its current state
+- [x] The hub does not fetch the taxonomy or the offers list
+- [x] Every control from the old page is still reachable
+- [x] Every new page clears the bottom bar and can get back to the hub
+- [x] This plan's status set to **Complete**
 
 ---
 

@@ -122,6 +122,15 @@ export async function listMine(): Promise<OwnOffer[]> {
   }
 }
 
+/** Hub summary only — count, not the editor. */
+export function useOwnOffers(enabled = true) {
+  return useQuery({
+    queryKey: offerKeys.mine(),
+    queryFn: listMine,
+    enabled,
+  });
+}
+
 export async function createOffer(input: OfferWriteInput): Promise<OwnOffer> {
   try {
     const { data } = await apiClient.post<ApiResponse<OwnOffer>>('/offers', input);

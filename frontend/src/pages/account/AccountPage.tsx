@@ -1,19 +1,82 @@
-import { TriangleAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Button, ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
-import { useCurrentUser, useLogout } from '@/features/auth/api';
+import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { AvatarUploader } from '@/features/media/AvatarUploader';
-import { ProfileEditor } from '@/features/me/ProfileEditor';
-import { OfferEditor } from '@/features/offers/OfferEditor';
-import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
+import type { ProfileStatus } from '@/features/me/types';
+import { useOwnOffers } from '@/features/offers/api';
+import { OFFER_LIMIT } from '@/features/offers/limits';
+import { useMyPostings } from '@/features/postings/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
+import { cn } from '@/lib/cn';
+
+function profileStatusLabel(status: ProfileStatus): string {
+  switch (status) {
+    case 'published':
+      return 'Published';
+    case 'pending_review':
+      return 'Pending review';
+    case 'draft':
+      return 'Draft';
+    case 'suspended':
+      return 'Suspended';
+  }
+}
+
+function profileSummary(subdomainCount: number, status: ProfileStatus): string {
+  const domains =
+    subdomainCount === 1 ? '1 sub-domain' : `${subdomainCount} sub-domains`;
+  return `${domains} · ${profileStatusLabel(status)}`;
+}
+
+function offersSummary(count: number | undefined): string {
+  if (count == null) return '…';
+  if (count === 0) return 'None yet';
+  return `${count} of ${OFFER_LIMIT} used`;
+}
+
+function postingsSummary(openCount: number | undefined): string {
+  if (openCount == null) return '…';
+  if (openCount === 0) return 'None yet';
+  return openCount === 1 ? '1 open' : `${openCount} open`;
+}
+
+function HubRow({
+  to,
+  label,
+  summary,
+}: {
+  to: string;
+  label: string;
+  summary: string;
+}) {
+  return (
+    <li>
+      <Link
+        to={to}
+        className={cn(
+          'flex min-h-11 items-center justify-between gap-3 border-b border-hairline px-1 py-3',
+          'text-left transition-colors hover:bg-clay-50',
+        )}
+      >
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-ink">{label}</span>
+          <span className="mt-0.5 block text-sm text-ink-muted">{summary}</span>
+        </span>
+        <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+      </Link>
+    </li>
+  );
+}
 
 export function AccountPage() {
   const profile = useOwnProfile();
-  const { data: user } = useCurrentUser();
-  const logout = useLogout();
+  const hasCreative = Boolean(profile.data);
+  const offers = useOwnOffers(profile.isSuccess && hasCreative);
+  const postings = useMyPostings();
+
+  const openPostings = postings.data?.filter((p) => p.status === 'open').length;
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -29,9 +92,10 @@ export function AccountPage() {
           </p>
 
           {profile.isPending && (
-            <div className="mt-10 space-y-4">
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-56 w-full" />
+            <div className="mt-10 space-y-3">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
           )}
 
@@ -39,126 +103,58 @@ export function AccountPage() {
             <div className="mt-10">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load your profile"
+                title="Could not load your account"
                 description={profile.error.message}
               />
             </div>
           )}
 
-          {/* Anyone with an account can post work, creative profile or not, so
-              this is not gated on having one. Post work itself lives on that
-              page rather than being repeated here. */}
-          {user && (
-            <section className="mt-10" aria-labelledby="postings-section-heading">
-              <h2 id="postings-section-heading" className="u-display text-2xl text-ink">
-                Your postings
-              </h2>
-              <p className="mt-2 max-w-xl text-sm text-ink-muted">
-                Work you have posted for creatives to reply to — open, closed and
-                expired.
-              </p>
-              <ButtonLink to="/postings/mine" variant="secondary" className="mt-5">
-                Your postings
-              </ButtonLink>
-            </section>
-          )}
-
-          {profile.isSuccess && !profile.data && user && (
-            <section className="mt-10" aria-labelledby="photo-section-heading">
-              <h2 id="photo-section-heading" className="u-display text-2xl text-ink">
-                Photo
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">
-                Shown on your account and in conversations.
-              </p>
-              <Card elevation="flat" className="mt-5">
-                <CardBody>
-                  <AvatarUploader
-                    name={`${user.firstName} ${user.lastName}`}
-                    avatarUrl={user.avatarUrl}
-                  />
-                </CardBody>
-              </Card>
-            </section>
-          )}
-
-          {profile.isSuccess && !profile.data && (
-            <section className="mt-10" aria-labelledby="offer-work-heading">
-              <h2 id="offer-work-heading" className="u-display text-2xl text-ink">
-                Offer your creative work
-              </h2>
-              <p className="mt-2 max-w-xl text-sm text-ink-muted">
-                Add a creative profile to appear in the directory. It is reviewed
-                before it goes public — the same path as signing up to offer work.
-              </p>
-              <ButtonLink to="/welcome/profile?from=account" className="mt-5">
-                Set up your profile
-              </ButtonLink>
-            </section>
-          )}
-
-          {profile.isSuccess && profile.data && (
-            <section className="mt-10" aria-labelledby="profile-section-heading">
-              <h2 id="profile-section-heading" className="u-display text-2xl text-ink">
-                Profile
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">
-                These details shape how people find and understand your work.
-              </p>
-              <Card elevation="flat" className="mt-5">
-                <CardBody>
-                  <ProfileEditor profile={profile.data} />
-                </CardBody>
-              </Card>
-            </section>
-          )}
-
-          {profile.isSuccess && profile.data && (
-            <section className="mt-12" aria-labelledby="offers-section-heading">
-              <h2 id="offers-section-heading" className="u-display text-2xl text-ink">
-                Offers
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">
-                What you are available to be hired for. These are what clients browse.
-              </p>
-              <Card elevation="flat" className="mt-5">
-                <CardBody>
-                  <OfferEditor />
-                </CardBody>
-              </Card>
-            </section>
-          )}
-
           {profile.isSuccess && (
-            <section className="mt-12" aria-labelledby="security-section-heading">
-              <h2 id="security-section-heading" className="u-display text-2xl text-ink">
-                Security
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">
-                Password settings for this account.
-              </p>
-              <Card elevation="flat" className="mt-5">
-                <CardBody className="space-y-6">
-                  <PasswordForm />
+            <>
+              <ul className="mt-10 border-t border-hairline">
+                <HubRow
+                  to="/account/profile"
+                  label="Profile"
+                  summary={
+                    profile.data
+                      ? profileSummary(profile.data.subdomainSlugs.length, profile.data.status)
+                      : 'Photo and creative profile setup'
+                  }
+                />
+                {profile.data && (
+                  <HubRow
+                    to="/account/offers"
+                    label="Offers"
+                    summary={offersSummary(offers.data?.length)}
+                  />
+                )}
+                <HubRow
+                  to="/postings/mine"
+                  label="Your postings"
+                  summary={postingsSummary(openPostings)}
+                />
+                <HubRow
+                  to="/account/security"
+                  label="Security"
+                  summary="Password and sign out"
+                />
+              </ul>
 
-                  <div className="border-t border-hairline pt-6">
-                    <p className="text-sm font-medium text-ink">Sign out</p>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      Ends this session on this device only.
-                    </p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-3"
-                      loading={logout.isPending}
-                      onClick={() => void logout.mutateAsync()}
-                    >
-                      Sign out
-                    </Button>
-                  </div>
-                </CardBody>
-              </Card>
-            </section>
+              {!profile.data && (
+                <section className="mt-10" aria-labelledby="offer-work-heading">
+                  <h2 id="offer-work-heading" className="u-display text-2xl text-ink">
+                    Offer your creative work
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm text-ink-muted">
+                    Add a creative profile to appear in the directory. It is reviewed
+                    before it goes public — the same path as signing up to offer work.
+                  </p>
+                  <ButtonLink to="/welcome/profile?from=account" className="mt-5">
+                    Set up your profile
+                  </ButtonLink>
+                </section>
+              )}
+            </>
           )}
         </Container>
       </main>

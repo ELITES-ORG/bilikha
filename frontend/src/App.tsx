@@ -7,6 +7,9 @@ import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AccountPage } from '@/pages/account/AccountPage';
+import { OffersSettingsPage } from '@/pages/account/OffersSettingsPage';
+import { ProfileSettingsPage } from '@/pages/account/ProfileSettingsPage';
+import { SecuritySettingsPage } from '@/pages/account/SecuritySettingsPage';
 import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
 import { CreativesPage } from '@/pages/CreativesPage';
 import { ConversationPage } from '@/pages/ConversationPage';
@@ -102,6 +105,30 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AccountPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account/profile"
+              element={
+                <RequireAuth>
+                  <ProfileSettingsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account/offers"
+              element={
+                <RequireAuth>
+                  <OffersSettingsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account/security"
+              element={
+                <RequireAuth>
+                  <SecuritySettingsPage />
                 </RequireAuth>
               }
             />
