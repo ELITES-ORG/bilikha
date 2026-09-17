@@ -46,7 +46,10 @@ export function SiteHeader() {
             to="/directory"
             className={cn(
               'link-underline px-2 py-1 text-base transition-colors',
-              user && 'hidden sm:inline-block',
+              // Phones get a deliberately bare header: the tab bar owns this
+              // when signed in, and the landing page's domain and municipality
+              // links do when signed out.
+              'hidden sm:inline-block',
               hiring ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
             )}
           >
@@ -112,10 +115,20 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <ButtonLink to="/login" variant="ghost" size="sm" className="ml-1">
+              {/* Phone: logo and Sign in, nothing else. Register is still one
+                  tap further on, from the sign-in page. */}
+              <ButtonLink
+                to="/login"
+                variant="ghost"
+                size="sm"
+                className="ml-1 hidden sm:inline-flex"
+              >
                 Sign in
               </ButtonLink>
-              <ButtonLink to="/register" size="sm">
+              <ButtonLink to="/login" size="sm" className="sm:hidden">
+                Sign in
+              </ButtonLink>
+              <ButtonLink to="/register" size="sm" className="hidden sm:inline-flex">
                 Register
               </ButtonLink>
             </>

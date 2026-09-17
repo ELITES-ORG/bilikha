@@ -68,7 +68,7 @@ export function HomePage() {
                     style={{ '--i': index } as CSSProperties}
                   >
                     <Link
-                      to={`/domains/${domain.slug}`}
+                      to={`/directory?domain=${domain.slug}`}
                       className="group grid grid-cols-[2.5rem_1fr] items-baseline gap-x-4 py-6 md:grid-cols-[3.5rem_minmax(0,18rem)_1fr_auto] md:gap-x-8"
                     >
                       {/* Oldstyle numerals in the display face read as an index,
@@ -127,7 +127,7 @@ export function HomePage() {
               {municipalities.data?.map((municipality, index) => (
                 <Link
                   key={municipality.id}
-                  to={`/municipalities/${municipality.slug}`}
+                  to={`/directory?municipality=${municipality.slug}`}
                   className="anim-scale-in interactive-press inline-flex items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3.5 py-1.5 text-sm text-ink-muted shadow-xs transition-colors hover:border-lawa-300 hover:bg-lawa-50 hover:text-lawa-800"
                   style={{ '--i': index } as CSSProperties}
                 >
