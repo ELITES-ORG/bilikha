@@ -1,6 +1,6 @@
 # 0021. Ratings, earned by a completed agreement
 
-- **Status:** Ready
+- **Status:** Complete
 - **Related:** [ADR 0033](../decisions/0033-ratings-earned-by-a-completed-agreement.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
   [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) ·
@@ -76,13 +76,13 @@ apply unchanged. Nine specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 2 / 2 | Not started |
-| 2. Service | 4 / 4 | Not started |
-| 3. API | 1 / 1 | Not started |
-| 4. Rating it | 3 / 3 | Not started |
-| 5. Showing it | 2 / 2 | Not started |
-| 6. Appeals | 2 / 2 | Not started |
-| 7. Verification | 6 / 6 | Not started |
+| 1. Schema | 2 / 2 | Done |
+| 2. Service | 4 / 4 | Done |
+| 3. API | 1 / 1 | Done |
+| 4. Rating it | 3 / 3 | Done |
+| 5. Showing it | 2 / 2 | Done |
+| 6. Appeals | 2 / 2 | Done |
+| 7. Verification | 5 / 6 | 7.6 awaits CI |
 
 ---
 
@@ -90,7 +90,7 @@ apply unchanged. Nine specific to this plan:
 
 ### Step 1.1 — Tables
 
-- [ ] **Action.** `backend/src/db/schema/ratings.ts`:
+- [x] **Action.** `backend/src/db/schema/ratings.ts`:
 
   `ratings`:
   - `id` uuid pk
@@ -110,16 +110,16 @@ apply unchanged. Nine specific to this plan:
 
   Indexes: `ratings(rater_user_id)`, `rating_reports(status, created_at)`.
 
-- [ ] **Note.** No `profile_id` on `ratings`. The creative is reachable through
+- [x] **Note.** No `profile_id` on `ratings`. The creative is reachable through
   `agreement → conversation → profile`, and a copied foreign key is a second
   source of truth ([ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md)).
-- [ ] **Note.** No `average` anywhere. Rule 3.
+- [x] **Note.** No `average` anywhere. Rule 3.
 
 ### Step 1.2 — Moderation and migration
 
-- [ ] **Action.** Add `rating_removed` to `moderationActionEnum`, with
+- [x] **Action.** Add `rating_removed` to `moderationActionEnum`, with
   `ALTER TYPE ... ADD VALUE`.
-- [ ] **Action.** Migrate, commit the Drizzle snapshot alongside, then
+- [x] **Action.** Migrate, commit the Drizzle snapshot alongside, then
   `db:generate` again and confirm it emits nothing.
 
 ---
@@ -130,39 +130,39 @@ New module: `backend/src/modules/ratings/`.
 
 ### Step 2.1 — Leaving one
 
-- [ ] **Action.** `rateAgreement({ userId, agreementId, stars, comment })`.
+- [x] **Action.** `rateAgreement({ userId, agreementId, stars, comment })`.
   Refuses unless: the caller is the **client** on that agreement, the agreement
   is `accepted`, and its derived state is `Completed`. Reuse `deriveState` from
   the agreements service rather than reading a status column — there is not one.
-- [ ] **Action.** Rely on the unique index for the second attempt, and translate
+- [x] **Action.** Rely on the unique index for the second attempt, and translate
   the constraint violation into a clear refusal. Rule 2.
-- [ ] **Verify.** A creative rating their own agreement is refused. A stranger is
+- [x] **Verify.** A creative rating their own agreement is refused. A stranger is
   refused with 404, not 403.
 
 ### Step 2.2 — Changing one
 
-- [ ] **Action.** `updateRating` and `deleteRating`, author only, refused once
+- [x] **Action.** `updateRating` and `deleteRating`, author only, refused once
   `createdAt` is more than fourteen days old.
-- [ ] **Action.** Put the window in one exported constant with a comment naming
+- [x] **Action.** Put the window in one exported constant with a comment naming
   [ADR 0033](../decisions/0033-ratings-earned-by-a-completed-agreement.md), and
   rule 7's reason for it living here rather than in a trigger.
 
 ### Step 2.3 — Reading them
 
-- [ ] **Action.** `listForProfile(profileSlug, { page, limit })` returning the
+- [x] **Action.** `listForProfile(profileSlug, { page, limit })` returning the
   rows, and `summaryForProfile(profileSlug)` returning `{ average, count }`
   derived in the same query shape.
-- [ ] **Action.** Both join through `agreements → conversations` to the profile
+- [x] **Action.** Both join through `agreements → conversations` to the profile
   **and** join `users` on the rater with `status = 'active'`. Rule 6.
-- [ ] **Verify.** Suspend a rater and confirm the count drops by one and the
+- [x] **Verify.** Suspend a rater and confirm the count drops by one and the
   average moves. A count that disagrees with the list is the bug shape this
   codebase has shipped twice.
 
 ### Step 2.4 — Telling the creative
 
-- [ ] **Action.** Add `rating_received` to `notificationTypeEnum`, its title, and
+- [x] **Action.** Add `rating_received` to `notificationTypeEnum`, its title, and
   its branch in `resolveTargets` linking to the creative's own profile.
-- [ ] **Action.** Emit through `notify()` after the rating commits. It never
+- [x] **Action.** Emit through `notify()` after the rating commits. It never
   throws and never fails the rating.
 
 ---
@@ -171,13 +171,13 @@ New module: `backend/src/modules/ratings/`.
 
 ### Step 3.1 — Routes
 
-- [ ] **Action.** Behind `requireAuth` except the two public reads:
+- [x] **Action.** Behind `requireAuth` except the two public reads:
   - `POST /agreements/:id/rating` — leave one
   - `PATCH /ratings/:id`, `DELETE /ratings/:id` — author, inside the window
   - `POST /ratings/:id/report` — the creative's appeal
   - `GET /creatives/:slug/ratings` — public list
   - `GET /creatives/:slug/ratings/summary` — public `{ average, count }`
-- [ ] **Action.** Rate-limit `POST /agreements/:id/rating` per user. A completed
+- [x] **Action.** Rate-limit `POST /agreements/:id/rating` per user. A completed
   agreement is required, so abuse is bounded, but the endpoint writes public text
   about a named person.
 
@@ -187,23 +187,35 @@ New module: `backend/src/modules/ratings/`.
 
 ### Step 4.1 — The modal
 
-- [ ] **Action.** On a successful **Confirm completion**, open a modal: five
+- [x] **Action.** On a successful **Confirm completion**, open a modal: five
   stars, a short note, **Submit** and **Not now**.
-- [ ] **Action.** "Not now" dismisses and never asks again automatically. ADR
+- [x] **Action.** "Not now" dismisses and never asks again automatically. ADR
   0033 — a rating nobody was nagged into is worth more.
-- [ ] **Action.** The stars are a real radio group, keyboard reachable, each with
+- [x] **Action.** The stars are a real radio group, keyboard reachable, each with
   an accessible label. Not a row of click handlers on icons.
+- [x] **Note.** The prompt is owned by `AgreementPage`, not by
+  `AgreementLifecycleActions`, which stops rendering the moment the state
+  becomes Completed — a modal owned there would unmount as it opened.
 
 ### Step 4.2 — Later
 
-- [ ] **Action.** A completed, unrated agreement shows "Rate this creative" on
+- [x] **Action.** A completed, unrated agreement shows "Rate this creative" on
   its record page, for the client only. That is where "later" leads.
-- [ ] **Action.** Once rated, the same place shows the rating with an Edit
+- [x] **Action.** Once rated, the same place shows the rating with an Edit
   control while inside the window, and nothing after it.
+- [x] **Note.** Delete sits beside Edit, behind a confirm, and only inside the
+  window: `DELETE /ratings/:id` is in scope and tested, and leaving it with no
+  way to reach it would mean a client could change their words but not take them
+  back. The count follows it down, because every write invalidates the summary
+  the profile prints beside the list.
+- [x] **Note.** Deciding between the two needs the agreement's own rating, which
+  no existing response carried: `GET /agreements/:id/rating` was added for it
+  rather than joining the rating into the agreement record, which would have
+  changed a shape phase 3 had already tested.
 
 ### Step 4.3 — Feedback
 
-- [ ] **Action.** Everything through `toast.run`, as every action here does.
+- [x] **Action.** Everything through `toast.run`, as every action here does.
 
 ---
 
@@ -211,17 +223,23 @@ New module: `backend/src/modules/ratings/`.
 
 ### Step 5.1 — On the profile
 
-- [ ] **Action.** The creative profile shows the average to one decimal, the
+- [x] **Action.** The creative profile shows the average to one decimal, the
   star row, and the count — "4.6 from 12 reviews". Rule 4: never the score alone.
-- [ ] **Action.** Below it, the reviews: stars, note, relative time, and the
+- [x] **Action.** Below it, the reviews: stars, note, relative time, and the
   rater's display name.
-- [ ] **Action.** With no ratings, say so plainly rather than rendering an empty
+- [x] **Action.** With no ratings, say so plainly rather than rendering an empty
   star row, which reads as zero.
+- [x] **Note.** One component prints the average (`RatingScore`), and it takes
+  the summary whole. There is no way to render a score through it without the
+  count, which is rule 4 enforced in a single place rather than per call site.
 
 ### Step 5.2 — Nowhere else
 
-- [ ] **Verify.** Grep the directory, the offer index and the postings feed for
+- [x] **Verify.** Grep the directory, the offer index and the postings feed for
   any rating join. There should be none. Rule 5.
+- [x] **Note.** Nothing in `profiles.service.ts`, `offers` or `postings` mentions
+  a rating on either tier. The profile page fetches the summary and the list as
+  their own public calls, so a feed cannot pick one up by editing a shared shape.
 
 ---
 
@@ -229,17 +247,21 @@ New module: `backend/src/modules/ratings/`.
 
 ### Step 6.1 — Reporting
 
-- [ ] **Action.** On their own profile, a creative can report a rating with a
+- [x] **Action.** On their own profile, a creative can report a rating with a
   required reason. This is their only recourse — ADR 0033 — so it is reachable in
   two taps, not buried.
 
 ### Step 6.2 — The admin queue
 
-- [ ] **Action.** `/admin/ratings` lists open reports with the rating, the
+- [x] **Action.** `/admin/ratings` lists open reports with the rating, the
   reason, and both parties. An administrator can dismiss the report or remove the
   rating, writing `rating_removed` into `moderation_actions` with the reason.
-- [ ] **Action.** Removal deletes the rating. There is no rewriting: ADR 0033
+- [x] **Action.** Removal deletes the rating. There is no rewriting: ADR 0033
   says an admin removes and nobody edits someone else's words.
+- [x] **Note.** The service functions existed from phase 2 but nothing reached
+  them: `GET /admin/ratings`, `POST /admin/ratings/reports/:id/dismiss` and
+  `POST /admin/ratings/:id/remove` were added to `admin.routes.ts`, behind the
+  `requireAdmin` guard the whole router already carries.
 
 ---
 
@@ -249,30 +271,30 @@ Against a database that is up.
 
 ### Step 7.1 — Only a completed agreement earns one
 
-- [ ] **Test.** Rating is refused on an agreement that is sent, accepted but not
+- [x] **Test.** Rating is refused on an agreement that is sent, accepted but not
   started, in progress, awaiting confirmation, and cancelled. Accepted only when
   Completed.
-- [ ] **Test.** The creative cannot rate. A third account gets 404.
+- [x] **Test.** The creative cannot rate. A third account gets 404.
 
 ### Step 7.2 — One each
 
-- [ ] **Test.** A second rating on the same agreement is refused by the index.
-- [ ] **Test.** The same client completing a *second* agreement with the same
+- [x] **Test.** A second rating on the same agreement is refused by the index.
+- [x] **Test.** The same client completing a *second* agreement with the same
   creative can rate again.
 
 ### Step 7.3 — The window
 
-- [ ] **Test.** Edit and delete succeed inside fourteen days. With `createdAt`
+- [x] **Test.** Edit and delete succeed inside fourteen days. With `createdAt`
   backdated past the window, both are refused and the row is unchanged.
 
 ### Step 7.4 — Suspension
 
-- [ ] **Test.** Suspend a rater: the review leaves the list, the count drops, and
+- [x] **Test.** Suspend a rater: the review leaves the list, the count drops, and
   the average recomputes. Count and list agree. Reinstate and all three return.
 
 ### Step 7.5 — Appeals
 
-- [ ] **Test.** A creative can report a rating on their own profile and not one
+- [x] **Test.** A creative can report a rating on their own profile and not one
   on someone else's. An admin removing it writes `rating_removed` and the rating
   leaves the profile.
 
@@ -281,6 +303,9 @@ Against a database that is up.
 - [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit. Grep the diff for a stored average and for any
   rating join in the directory.
+- [x] **Note.** Local five checks exit 0 after phases 4–6. Greps are clean: no
+  stored average, and no rating join in the directory, the offer index or the
+  postings feed. CI tick waits on the push (rule 9).
 
 ---
 
