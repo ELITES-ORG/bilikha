@@ -17,8 +17,7 @@ export function SecuritySettingsPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <AccountBackLink />
-          <p className="u-eyebrow mt-6">Account</p>
-          <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Security</h1>
+          <h1 className="u-display mt-8 text-3xl text-ink md:text-4xl">Security</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             Password settings for this account.
           </p>

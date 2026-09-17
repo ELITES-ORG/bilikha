@@ -21,8 +21,7 @@ export function ProfileSettingsPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <AccountBackLink />
-          <p className="u-eyebrow mt-6">Account</p>
-          <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Profile</h1>
+          <h1 className="u-display mt-8 text-3xl text-ink md:text-4xl">Profile</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             These details shape how people find and understand your work.
           </p>
