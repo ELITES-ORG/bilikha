@@ -30,7 +30,9 @@ export function RegistrationStatusBanner() {
         label="Not approved"
         message={`Your registration was not approved. ${user.rejectionReason}`}
         action={
-          <Link to="/account" className="link-underline font-medium">
+          // Straight to the editor, not the hub: the label promises editing,
+          // and /account stopped carrying a form when it became a hub.
+          <Link to="/account/profile" className="link-underline font-medium">
             Edit and resubmit
           </Link>
         }
@@ -57,7 +59,9 @@ export function RegistrationStatusBanner() {
         label="Suspended"
         message="Your registration was not approved."
         action={
-          <Link to="/account" className="link-underline font-medium">
+          // Straight to the editor, not the hub: the label promises editing,
+          // and /account stopped carrying a form when it became a hub.
+          <Link to="/account/profile" className="link-underline font-medium">
             Edit and resubmit
           </Link>
         }
