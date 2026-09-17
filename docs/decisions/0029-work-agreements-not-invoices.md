@@ -5,7 +5,8 @@
 - **Related:** [0024](./0024-offers-attach-to-messages.md) ·
   [0022](./0022-offers-replace-portfolio.md) ·
   [0028](./0028-suspension-is-enforced-per-request.md) ·
-  [operating constraints](../explanation/constraints.md)
+  [operating constraints](../explanation/constraints.md) ·
+  [0030](./0030-notifications.md)
 
 ## Context
 
@@ -233,6 +234,7 @@ clients requesting revisions indefinitely to stall. Neither is prevented here.
 If it happens, a cap on open versions per conversation is the first lever.
 
 **Watch for.** Engagements that reach *Awaiting confirmation* and stop, because
-the client has what they wanted and no reason to tap again. If that becomes
-common, the creative needs some way to move it along — but a nudge from Bilikha
-is a notification, and Bilikha has none.
+the client has what they wanted and no reason to tap again. This is what
+[0030](./0030-notifications.md) exists to answer: the notification centre runs
+before this feature, so the client is at least told. Whether being told is
+enough to make them tap is the open question.

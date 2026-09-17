@@ -3,7 +3,8 @@
 - **Status:** Ready
 - **Related:** [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
   [ADR 0024](../decisions/0024-offers-attach-to-messages.md) ·
-  [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md)
+  [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) ·
+  [plan 0017](./0017-notification-centre.md), which runs first
 
 ---
 
@@ -82,7 +83,9 @@ apply unchanged. Ten specific to this plan:
 - Admin visibility beyond the existing report flow
 - Clients drafting or editing agreements
 - Declining outright — requesting changes covers it
-- Notifications or email. Bilikha has none ([constraints](../explanation/constraints.md))
+- Email or SMS of any kind. [ADR 0030](../decisions/0030-notifications.md)
+- The notification plumbing itself — [plan 0017](./0017-notification-centre.md)
+  runs first and owns it. This plan only emits through its `notify()`
 
 ---
 
@@ -280,6 +283,9 @@ New module: `backend/src/modules/agreements/`.
   - Completed and Cancelled are terminal: nothing may follow them.
 - [ ] **Action.** Insert the event and post a message into the thread in one
   transaction, so the conversation shows the move.
+- [ ] **Action.** Emit a notification to the *other* party through `notify()`
+  from [plan 0017](./0017-notification-centre.md), adding the agreement types to
+  its enum. It never throws and never fails the transition.
 - [ ] **Action.** Take `pg_advisory_xact_lock(hashtext(agreementId))` before
   reading the newest event and inserting. Without it two taps race, both read the
   same newest event, and both insert — the same count-then-insert problem offers
