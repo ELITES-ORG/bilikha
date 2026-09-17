@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useUnreadCount } from '@/features/conversations/api';
+import { useNotificationCount } from '@/features/notifications/api';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -17,6 +18,8 @@ export function SiteHeader() {
   const logout = useLogout();
   const unreadQuery = useUnreadCount(Boolean(user));
   const unread = unreadQuery.data ?? 0;
+  const notificationQuery = useNotificationCount(Boolean(user));
+  const notifications = notificationQuery.data ?? 0;
 
   /**
    * Active state follows the route, not the mode.
@@ -41,9 +44,30 @@ export function SiteHeader() {
 
         <nav className="flex items-center gap-1 sm:gap-2">
           {user && (
-            <span aria-hidden="true" className="inline-flex text-ink-muted sm:hidden">
+            <Link
+              to="/notifications"
+              aria-label={
+                notifications > 0
+                  ? `Notifications, ${notifications} unread`
+                  : 'Notifications'
+              }
+              className={cn(
+                'relative inline-flex items-center rounded-md p-1.5 transition-colors',
+                isCurrent('/notifications')
+                  ? 'text-ink'
+                  : 'text-ink-muted hover:text-ink',
+              )}
+            >
               <Bell className="size-5" />
-            </span>
+              {notifications > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-0.5 -right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-lawa-600 px-1 text-2xs leading-none text-white tabular-nums"
+                >
+                  {notifications > 9 ? '9+' : notifications}
+                </span>
+              )}
+            </Link>
           )}
 
           <Link

@@ -15,6 +15,7 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { notifyOnce } from '../notifications/notifications.service.js';
 import type {
   EnsureConversationInput,
   ListHistoryInput,
@@ -995,6 +996,21 @@ export async function sendMessage(
       : { creativeLastReadAt: now, lastMessageAt: now };
 
   await db.update(conversations).set(readPatch).where(eq(conversations.id, conversation.id));
+
+  // A reply carrying a posting is a creative answering a client's brief, and
+  // that has nowhere else to surface — the Messages badge counts unread threads
+  // but says nothing about which of your postings got an answer.
+  //
+  // notifyOnce, not notify: two replies to the same brief are one thing to look
+  // at, and the first is still unread until they open it.
+  if (resolvedPostingId) {
+    await notifyOnce({
+      userId: otherId,
+      actorUserId: userId,
+      type: 'posting_replied',
+      targetId: conversation.id,
+    });
+  }
 
   const offerCards = await loadOfferCards(resolvedOfferId ? [resolvedOfferId] : []);
   const postingCards = await loadPostingCards(resolvedPostingId ? [resolvedPostingId] : []);

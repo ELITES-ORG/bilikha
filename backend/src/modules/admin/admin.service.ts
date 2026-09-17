@@ -12,6 +12,8 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { notify } from '../notifications/notifications.service.js';
+import type { NotificationType } from '../notifications/notifications.service.js';
 
 type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
 type ProfileQueueStatus = ProfileStatus | 'edited';
@@ -169,12 +171,16 @@ export async function moderate(input: {
   }
 
   if (input.action === 'acknowledged_edit') {
-    return db.transaction(async (tx) => {
+    const updated = await db.transaction(async (tx) => {
       const [updated] = await tx
         .update(creativeProfiles)
         .set({ editedSinceReviewAt: null, updatedAt: new Date() })
         .where(eq(creativeProfiles.id, input.profileId))
-        .returning({ id: creativeProfiles.id, status: creativeProfiles.status });
+        .returning({
+          id: creativeProfiles.id,
+          status: creativeProfiles.status,
+          userId: creativeProfiles.userId,
+        });
 
       if (!updated) throw AppError.notFound('No such profile.');
 
@@ -187,6 +193,9 @@ export async function moderate(input: {
 
       return updated;
     });
+
+    await notifyOwner(updated.userId, input.adminId, input.action, updated.id);
+    return updated;
   }
 
   const nextStatus: ProfileStatus =
@@ -196,7 +205,7 @@ export async function moderate(input: {
         ? 'suspended'
         : 'pending_review';
 
-  return db.transaction(async (tx) => {
+  const updated = await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(creativeProfiles)
       .set({
@@ -207,7 +216,11 @@ export async function moderate(input: {
         updatedAt: new Date(),
       })
       .where(eq(creativeProfiles.id, input.profileId))
-      .returning({ id: creativeProfiles.id, status: creativeProfiles.status });
+      .returning({
+        id: creativeProfiles.id,
+        status: creativeProfiles.status,
+        userId: creativeProfiles.userId,
+      });
 
     if (!updated) throw AppError.notFound('No such profile.');
 
@@ -220,6 +233,40 @@ export async function moderate(input: {
 
     return updated;
   });
+
+  await notifyOwner(updated.userId, input.adminId, input.action, updated.id);
+  return updated;
+}
+
+/**
+ * Tells a registrant what happened to their profile.
+ *
+ * Called after the transaction commits, not inside it: the decision is the
+ * thing that must stick, and `notify` swallows its own failures so this cannot
+ * affect it either way.
+ *
+ * `returned_to_pending` is deliberately silent. It puts a profile back in the
+ * queue without any outcome for its owner to act on, so there is nothing worth
+ * telling them yet.
+ */
+async function notifyOwner(
+  ownerId: string,
+  adminId: string,
+  action: 'approved' | 'rejected' | 'returned_to_pending' | 'acknowledged_edit',
+  profileId: string,
+) {
+  const type: NotificationType | null =
+    action === 'approved'
+      ? 'profile_approved'
+      : action === 'rejected'
+        ? 'profile_rejected'
+        : action === 'acknowledged_edit'
+          ? 'profile_edit_acknowledged'
+          : null;
+
+  if (!type) return;
+
+  await notify({ userId: ownerId, actorUserId: adminId, type, targetId: profileId });
 }
 
 type MediaQueueRow = {

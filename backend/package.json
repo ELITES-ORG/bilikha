@@ -22,7 +22,8 @@
     "admin:grant": "tsx src/scripts/grant-admin.ts",
     "migrate:inquiries": "tsx src/scripts/migrate-inquiries.ts",
     "migrate:offers": "tsx src/scripts/migrate-portfolio-to-offers.ts",
-    "media:prune": "tsx src/scripts/prune-orphan-media.ts"
+    "media:prune": "tsx src/scripts/prune-orphan-media.ts",
+    "notifications:prune": "tsx src/scripts/prune-notifications.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.2.1",

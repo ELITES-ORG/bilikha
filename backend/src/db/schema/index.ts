@@ -6,3 +6,4 @@ export * from './postings.js';
 export * from './sessions.js';
 export * from './conversations.js';
 export * from './safety.js';
+export * from './notifications.js';

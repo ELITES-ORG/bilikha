@@ -35,7 +35,7 @@ export function MessagesPage() {
           <SectionHeading
             eyebrow="Messages"
             title="Conversations"
-            description="Threads with creatives and clients. There are no email or SMS alerts — check here."
+            description="Threads with creatives and clients. Nothing is sent by email or SMS, so new messages land here and the tab carries the count."
           />
 
           <div className="mt-6">

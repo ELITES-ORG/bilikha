@@ -76,8 +76,8 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0014](./0014-dark-mode.md) | Dark mode | Ready |
 | [0015](./0015-account-hub.md) | The account hub | Complete |
 | [0016](./0016-work-agreements.md) | Work agreements in the thread | Ready |
-| [0017](./0017-notification-centre.md) | The notification centre | Ready |
-| [0018](./0018-web-push.md) | Web push | Ready |
+| [0017](./0017-notification-centre.md) | The notification centre | Complete |
+| [0018](./0018-web-push.md) | Web push | Deferred |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

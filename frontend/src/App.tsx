@@ -16,6 +16,7 @@ import { CreativesPage } from '@/pages/CreativesPage';
 import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HistoryPage } from '@/pages/HistoryPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
 import { HomeRoute } from '@/pages/HomeRoute';
 import { OfferDetailPage } from '@/pages/OfferDetailPage';
 import { MyPostingsPage } from '@/pages/MyPostingsPage';
@@ -96,6 +97,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <HistoryPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <RequireAuth>
+                  <NotificationsPage />
                 </RequireAuth>
               }
             />

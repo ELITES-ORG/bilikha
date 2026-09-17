@@ -1,6 +1,6 @@
 # 0018. Web push
 
-- **Status:** Ready
+- **Status:** Deferred — the centre is enough for now (2026-09-18)
 - **Related:** [ADR 0030](../decisions/0030-notifications.md) ·
   [plan 0017](./0017-notification-centre.md) ·
   [operating constraints §3](../explanation/constraints.md)
