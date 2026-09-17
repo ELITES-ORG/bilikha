@@ -6,12 +6,26 @@ import type { Agreement, AgreementEventType } from './types';
 
 const NON_TERMINAL = ['Agreed', 'In progress', 'Awaiting confirmation'];
 
+interface AgreementLifecycleActionsProps {
+  agreement: Agreement;
+  /**
+   * Called once the client's confirmation lands, so the page can ask for a
+   * rating. It lives on the page rather than here because this component stops
+   * rendering the moment the state becomes Completed — a modal owned here would
+   * unmount as it opened.
+   */
+  onCompletionConfirmed?: () => void;
+}
+
 /**
  * Only the move the current state and the viewer's side allow — the rest are
  * refused server-side anyway, and offering them would be a lie about whose turn
  * it is. No password on any of these: only acceptance takes one.
  */
-export function AgreementLifecycleActions({ agreement }: { agreement: Agreement }) {
+export function AgreementLifecycleActions({
+  agreement,
+  onCompletionConfirmed,
+}: AgreementLifecycleActionsProps) {
   const toast = useToast();
   const record = useRecordAgreementEvent(agreement.id);
   const [cancelling, setCancelling] = useState(false);
@@ -25,12 +39,18 @@ export function AgreementLifecycleActions({ agreement }: { agreement: Agreement 
   // Completed or Cancelled.
   if (agreement.status !== 'accepted' || !NON_TERMINAL.includes(state)) return null;
 
-  async function move(type: AgreementEventType, pending: string, success: string) {
+  async function move(
+    type: AgreementEventType,
+    pending: string,
+    success: string,
+    onDone?: () => void,
+  ) {
     try {
       await toast.run(pending, () => record.mutateAsync({ type }), {
         success,
         error: (err) => toApiError(err).message,
       });
+      onDone?.();
     } catch {
       // Already reported in the toast.
     }
@@ -91,7 +111,12 @@ export function AgreementLifecycleActions({ agreement }: { agreement: Agreement 
             size="sm"
             loading={record.isPending}
             onClick={() =>
-              void move('completion_confirmed', 'Confirming completion…', 'Completion confirmed')
+              void move(
+                'completion_confirmed',
+                'Confirming completion…',
+                'Completion confirmed',
+                onCompletionConfirmed,
+              )
             }
           >
             Confirm completion

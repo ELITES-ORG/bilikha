@@ -8,6 +8,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { ContactComposer } from '@/features/conversations/ContactComposer';
 import type { OfferImage } from '@/features/offers/api';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
+import { ProfileRatings } from '@/features/ratings/components/ProfileRatings';
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -113,6 +114,13 @@ export function CreativeProfilePage() {
                   {profile.data.bio}
                 </p>
               )}
+
+              {/* Above the offers: what other clients found is part of reading
+                  the person, not a footnote to their price list. */}
+              <ProfileRatings
+                slug={profile.data.slug}
+                isOwner={user?.profileSlug === profile.data.slug}
+              />
 
               {offers.length > 0 && (
                 <section className="mt-10" aria-labelledby="offers-heading">

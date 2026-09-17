@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -15,6 +16,7 @@ import {
   stateLine,
 } from '@/features/agreements/format';
 import type { Agreement } from '@/features/agreements/types';
+import { AgreementRatingPanel } from '@/features/ratings/components/AgreementRatingPanel';
 import { formatPesos } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -89,6 +91,11 @@ function buildTimeline(agreement: Agreement): TimelineEntry[] {
 export function AgreementPage() {
   const { id } = useParams<{ id: string }>();
   const agreement = useAgreement(id);
+
+  // Opened by confirming completion and by nothing else. Dismissing it clears
+  // this and no code path sets it again, which is the whole of "Not now" —
+  // ADR 0033 would rather have fewer ratings than nagged ones.
+  const [ratingPromptOpen, setRatingPromptOpen] = useState(false);
 
   // A non-party gets the 404 the API returns, not a 403 — a 403 would confirm
   // that someone else's agreement exists.
@@ -226,9 +233,19 @@ export function AgreementPage() {
                 </section>
               )}
 
+              {/* Outside every form on this page: the rating modal carries its
+                  own, and a nested form submits nothing. */}
               <div className="mt-6 space-y-4">
                 <AgreementReviewActions agreement={data} />
-                <AgreementLifecycleActions agreement={data} />
+                <AgreementLifecycleActions
+                  agreement={data}
+                  onCompletionConfirmed={() => setRatingPromptOpen(true)}
+                />
+                <AgreementRatingPanel
+                  agreement={data}
+                  promptOpen={ratingPromptOpen}
+                  onPromptClose={() => setRatingPromptOpen(false)}
+                />
               </div>
 
               <section className="mt-10 border-t border-hairline pt-8">

@@ -90,6 +90,9 @@ function AdminMediaInner() {
             <ButtonLink to="/admin" variant="ghost" size="sm">
               Profiles
             </ButtonLink>
+            <ButtonLink to="/admin/ratings" variant="ghost" size="sm">
+              Reported ratings
+            </ButtonLink>
             <ButtonLink to="/" variant="ghost" size="sm">
               Back to site
             </ButtonLink>

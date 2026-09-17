@@ -7,6 +7,7 @@ import { AdminAccountsPage } from '@/pages/admin/AdminAccountsPage';
 import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
+import { AdminRatingsPage } from '@/pages/admin/AdminRatingsPage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { AgreementPage } from '@/pages/AgreementPage';
 import { OffersSettingsPage } from '@/pages/account/OffersSettingsPage';
@@ -181,6 +182,7 @@ export default function App() {
             <Route path="/admin" element={<AdminQueuePage />} />
             <Route path="/admin/media" element={<AdminMediaPage />} />
             <Route path="/admin/accounts" element={<AdminAccountsPage />} />
+            <Route path="/admin/ratings" element={<AdminRatingsPage />} />
             <Route path="/admin/profiles/:id" element={<AdminProfilePage />} />
             {/* Internal design-system reference. Not linked from the product. */}
             <Route path="/styleguide" element={<StyleGuidePage />} />

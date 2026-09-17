@@ -9,7 +9,8 @@ export type NotificationType =
   | 'agreement_event'
   | 'agreement_delivered'
   | 'agreement_completed'
-  | 'agreement_cancelled';
+  | 'agreement_cancelled'
+  | 'rating_received';
 
 export interface AppNotification {
   id: string;

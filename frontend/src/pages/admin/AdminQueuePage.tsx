@@ -75,6 +75,9 @@ function AdminQueueInner() {
             <ButtonLink to="/admin/accounts" variant="secondary" size="sm">
               Accounts
             </ButtonLink>
+            <ButtonLink to="/admin/ratings" variant="secondary" size="sm">
+              Reported ratings
+            </ButtonLink>
           </div>
 
           <div className="mt-8 flex flex-wrap gap-2 border-b border-hairline pb-px">
