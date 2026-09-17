@@ -1,6 +1,5 @@
 import { TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ModeSwitch } from '@/components/ModeSwitch';
 import { Button, ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -15,7 +14,6 @@ export function AccountPage() {
   const profile = useOwnProfile();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
-  const hasProfile = Boolean(user?.profileSlug);
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -29,20 +27,6 @@ export function AccountPage() {
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             Keep your public details and sign-in security up to date.
           </p>
-
-          {hasProfile && (
-            <section className="mt-8" aria-labelledby="view-mode-heading">
-              <h2 id="view-mode-heading" className="u-display text-2xl text-ink">
-                How you use Bilikha
-              </h2>
-              <p className="mt-2 text-sm text-ink-muted">
-                Choose whether Home, Messages and History show people you can hire, or work you can take on.
-              </p>
-              <div className="mt-4">
-                <ModeSwitch size="md" />
-              </div>
-            </section>
-          )}
 
           {profile.isPending && (
             <div className="mt-10 space-y-4">
