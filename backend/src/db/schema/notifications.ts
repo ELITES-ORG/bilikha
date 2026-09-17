@@ -19,6 +19,9 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'agreement_revision_requested',
   'agreement_accepted',
   'agreement_event',
+  'agreement_delivered',
+  'agreement_completed',
+  'agreement_cancelled',
 ]);
 
 /**

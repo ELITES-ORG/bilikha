@@ -155,6 +155,20 @@
       "when": 1789670389330,
       "tag": "0021_agreement_freeze_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789675717903,
+      "tag": "0022_large_magdalene",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789675756988,
+      "tag": "0023_accepted_agreement_deletion_guard",
+      "breakpoints": true
     }
   ]
 }

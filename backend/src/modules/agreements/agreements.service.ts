@@ -811,12 +811,31 @@ export async function recordEvent(
       ? conversation.creativeUserId
       : conversation.clientUserId;
 
-  await notify({
-    userId: otherUserId,
-    actorUserId: input.userId,
-    type: 'agreement_event',
-    targetId: agreement.id,
-  });
+  // Precise types per ADR 0030. `started` is deliberately absent — a client
+  // whose work has begun is required to do nothing, so the bell stays quiet
+  // (plan 0020). `agreement_event` is no longer emitted; its title remains for
+  // rows written before this plan.
+  const EVENT_NOTIFICATION = {
+    delivery_marked: 'agreement_delivered',
+    completion_confirmed: 'agreement_completed',
+    cancelled: 'agreement_cancelled',
+  } as const satisfies Partial<
+    Record<AgreementEvent['type'], 'agreement_delivered' | 'agreement_completed' | 'agreement_cancelled'>
+  >;
+
+  const notificationType =
+    input.type in EVENT_NOTIFICATION
+      ? EVENT_NOTIFICATION[input.type as keyof typeof EVENT_NOTIFICATION]
+      : undefined;
+
+  if (notificationType) {
+    await notify({
+      userId: otherUserId,
+      actorUserId: input.userId,
+      type: notificationType,
+      targetId: agreement.id,
+    });
+  }
 
   return {
     id: created.event.id,

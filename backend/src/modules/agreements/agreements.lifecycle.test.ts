@@ -141,15 +141,39 @@ describe('the lifecycle, in order (7.6)', () => {
     expect(posted.messages.every((message) => message.agreement?.id === agreement.id)).toBe(true);
   });
 
-  it('tells the other party, and never the person who moved it', async () => {
+  it('does not notify anyone when work is marked started', async () => {
     const { creative, client, agreement } = await engagement();
 
     await recordEvent({ userId: creative.id, agreementId: agreement.id, type: 'started' });
 
-    const forClient = await listNotifications(client.id, { page: 1, limit: 10 });
-    expect(forClient.data[0]?.type).toBe('agreement_event');
-    expect(forClient.data[0]?.link).toBe(`/agreements/${agreement.id}`);
+    expect((await listNotifications(client.id, { page: 1, limit: 10 })).data).toHaveLength(0);
     expect((await listNotifications(creative.id, { page: 1, limit: 10 })).data).toHaveLength(0);
+  });
+
+  it('notifies the client on delivery, the creative on completion, and the other party on cancel', async () => {
+    const { creative, client, agreement } = await engagement();
+
+    await recordEvent({ userId: creative.id, agreementId: agreement.id, type: 'started' });
+    await recordEvent({ userId: creative.id, agreementId: agreement.id, type: 'delivery_marked' });
+
+    const afterDelivery = await listNotifications(client.id, { page: 1, limit: 10 });
+    expect(afterDelivery.data).toHaveLength(1);
+    expect(afterDelivery.data[0]?.type).toBe('agreement_delivered');
+    expect(afterDelivery.data[0]?.title).toMatch(/confirm to close/i);
+    expect(afterDelivery.data[0]?.link).toBe(`/agreements/${agreement.id}`);
+    expect((await listNotifications(creative.id, { page: 1, limit: 10 })).data).toHaveLength(0);
+
+    await recordEvent({
+      userId: client.id,
+      agreementId: agreement.id,
+      type: 'completion_confirmed',
+    });
+
+    const afterComplete = await listNotifications(creative.id, { page: 1, limit: 10 });
+    expect(afterComplete.data).toHaveLength(1);
+    expect(afterComplete.data[0]?.type).toBe('agreement_completed');
+    expect(afterComplete.data[0]?.title).toMatch(/confirmed complete/i);
+    expect((await listNotifications(client.id, { page: 1, limit: 10 })).data).toHaveLength(1);
   });
 
   it('cancels from any non-terminal state, with the reason on the record', async () => {
@@ -175,6 +199,11 @@ describe('the lifecycle, in order (7.6)', () => {
     expect(posted.messages.at(-1)?.body).toBe(
       'Cancelled the engagement: The venue fell through.',
     );
+
+    const forCreative = await listNotifications(creative.id, { page: 1, limit: 10 });
+    expect(forCreative.data[0]?.type).toBe('agreement_cancelled');
+    expect(forCreative.data[0]?.link).toBe(`/agreements/${agreement.id}`);
+    expect((await listNotifications(client.id, { page: 1, limit: 10 })).data).toHaveLength(0);
   });
 });
 

@@ -102,7 +102,11 @@ const TITLES: Record<NotificationType, string> = {
   agreement_issued: 'You received a work agreement',
   agreement_revision_requested: 'Changes were requested on a work agreement',
   agreement_accepted: 'Your work agreement was accepted',
+  // Kept for rows written before plan 0020; no longer emitted.
   agreement_event: 'A work agreement was updated',
+  agreement_delivered: 'Work was marked delivered — confirm to close it',
+  agreement_completed: 'Your work was confirmed complete',
+  agreement_cancelled: 'A work agreement was cancelled',
 };
 
 /**
@@ -128,6 +132,9 @@ async function resolveTargets(rows: Notification[]) {
     'agreement_revision_requested',
     'agreement_accepted',
     'agreement_event',
+    'agreement_delivered',
+    'agreement_completed',
+    'agreement_cancelled',
   ]);
 
   const [profiles, threads, agreementRows] = await Promise.all([
@@ -232,7 +239,10 @@ export async function listNotifications(
       case 'agreement_issued':
       case 'agreement_revision_requested':
       case 'agreement_accepted':
-      case 'agreement_event': {
+      case 'agreement_event':
+      case 'agreement_delivered':
+      case 'agreement_completed':
+      case 'agreement_cancelled': {
         const agreement = targets.agreements.get(row.targetId);
         if (agreement) {
           link = `/agreements/${agreement.id}`;
