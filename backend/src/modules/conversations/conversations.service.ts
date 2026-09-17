@@ -120,12 +120,16 @@ async function requireContactableProfile(userId: string, profileSlug: string) {
       id: creativeProfiles.id,
       userId: creativeProfiles.userId,
       status: creativeProfiles.status,
+      ownerStatus: users.status,
     })
     .from(creativeProfiles)
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .where(eq(creativeProfiles.slug, profileSlug))
     .limit(1);
 
-  if (!profile || profile.status !== 'published') {
+  // Suspended accounts are gone from the directory, so starting a new thread
+  // with one has to fail the same way a missing profile does.
+  if (!profile || profile.status !== 'published' || profile.ownerStatus !== 'active') {
     throw AppError.notFound('Creative not found.');
   }
 

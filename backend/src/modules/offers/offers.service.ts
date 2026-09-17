@@ -401,7 +401,8 @@ export async function listPublishedOffers(
   options: ListOffersQuery & { viewerMunicipalityId?: string | null },
 ) {
   const offset = (options.page - 1) * options.limit;
-  const filters = [eq(creativeProfiles.status, 'published')];
+  // Offers leave the directory with a suspended account — see profiles.service.
+  const filters = [eq(creativeProfiles.status, 'published'), eq(users.status, 'active')];
   if (options.domain) filters.push(eq(creativeDomains.slug, options.domain));
   if (options.subdomain) filters.push(eq(creativeSubdomains.slug, options.subdomain));
   if (options.municipality) filters.push(eq(municipalities.slug, options.municipality));
@@ -530,7 +531,13 @@ export async function getPublishedOfferById(
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
-    .where(and(eq(offers.id, offerId), eq(creativeProfiles.status, 'published')))
+    .where(
+      and(
+        eq(offers.id, offerId),
+        eq(creativeProfiles.status, 'published'),
+        eq(users.status, 'active'),
+      ),
+    )
     .limit(1);
   if (!row) throw AppError.notFound('No such offer.');
 

@@ -417,6 +417,11 @@ export async function listFeedPostings(
     eq(postings.status, 'open'),
     gt(postings.expiresAt, now),
     ne(postings.userId, userId),
+    // A suspended account's postings leave the feed with them, the same way a
+    // suspended creative leaves the directory. Visibility derives from the
+    // account rather than being copied onto the row, so unsuspending restores
+    // everything with no bookkeeping.
+    eq(users.status, 'active'),
   ];
   if (options.domain) filters.push(eq(creativeDomains.slug, options.domain));
   if (options.subdomain) filters.push(eq(creativeSubdomains.slug, options.subdomain));
@@ -445,6 +450,7 @@ export async function listFeedPostings(
       municipalityName: municipalities.name,
     })
     .from(postings)
+    .innerJoin(users, eq(postings.userId, users.id))
     .innerJoin(creativeSubdomains, eq(postings.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .innerJoin(municipalities, eq(postings.municipalityId, municipalities.id))
@@ -456,6 +462,7 @@ export async function listFeedPostings(
   const [totals] = await db
     .select({ total: count() })
     .from(postings)
+    .innerJoin(users, eq(postings.userId, users.id))
     .innerJoin(creativeSubdomains, eq(postings.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .innerJoin(municipalities, eq(postings.municipalityId, municipalities.id))
@@ -511,6 +518,18 @@ export async function getPostingById(userId: string, postingId: string) {
     await requireCreativeProfile(userId);
     const now = new Date();
     if (row.status !== 'open' || row.expiresAt <= now) {
+      throw AppError.notFound('No such posting.');
+    }
+
+    // Hidden from the feed but still reachable by id would make the filter
+    // decorative. The owner keeps access so a suspension is not also a lockout
+    // from their own record.
+    const [poster] = await db
+      .select({ status: users.status })
+      .from(users)
+      .where(eq(users.id, row.userId))
+      .limit(1);
+    if (poster?.status !== 'active') {
       throw AppError.notFound('No such posting.');
     }
   }

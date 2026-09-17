@@ -504,7 +504,13 @@ export async function saveOffer(userId: string, offerId: string) {
     .select({ id: offers.id })
     .from(offers)
     .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
-    .where(and(eq(offers.id, offerId), eq(creativeProfiles.status, 'published')))
+    .where(
+      and(
+        eq(offers.id, offerId),
+        eq(creativeProfiles.status, 'published'),
+        eq(users.status, 'active'),
+      ),
+    )
     .limit(1);
 
   if (!offer) {

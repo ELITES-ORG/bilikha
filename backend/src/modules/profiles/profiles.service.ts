@@ -153,7 +153,11 @@ async function offersForProfile(profileId: string): Promise<NonNullable<PublicPr
 
 export async function listPublished(options: ListPublishedOptions) {
   const offset = (options.page - 1) * options.limit;
-  const filters = [eq(creativeProfiles.status, 'published')];
+  // A suspended account's work leaves the directory with them. Suspension is a
+  // property of the user, and every public listing derives visibility from it —
+  // so unsuspending restores everything without anyone having to remember what
+  // was published.
+  const filters = [eq(creativeProfiles.status, 'published'), eq(users.status, 'active')];
 
   if (options.municipality) {
     filters.push(eq(municipalities.slug, options.municipality));
@@ -258,7 +262,13 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
-    .where(and(eq(creativeProfiles.slug, slug), eq(creativeProfiles.status, 'published')))
+    .where(
+      and(
+        eq(creativeProfiles.slug, slug),
+        eq(creativeProfiles.status, 'published'),
+        eq(users.status, 'active'),
+      ),
+    )
     .limit(1);
 
   if (!row) throw AppError.notFound('No such creative.');
