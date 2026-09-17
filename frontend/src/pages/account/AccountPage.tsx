@@ -36,7 +36,7 @@ export function AccountPage() {
                 How you use Bilikha
               </h2>
               <p className="mt-2 text-sm text-ink-muted">
-                Switch between browsing to hire and managing your creative work.
+                Choose whether Home, Messages and History show people you can hire, or work you can take on.
               </p>
               <div className="mt-4">
                 <ModeSwitch size="md" />

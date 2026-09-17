@@ -23,8 +23,8 @@ export function MessagesPage() {
 
   const emptyDescription =
     mode === 'hiring'
-      ? 'You are viewing Hiring. No conversations yet — contact a creative from the directory, or switch to My creative work to reply to client postings.'
-      : 'You are viewing your creative work. No conversations yet — browse client postings on Home, or switch to Hiring to reach creatives.';
+      ? 'You are viewing “I’m hiring”. No conversations yet — contact a creative from the directory, or switch to “I’m for hire” to reply to client postings.'
+      : 'You are viewing “I’m for hire”. No conversations yet — browse client postings on Home, or switch to “I’m hiring” to reach creatives.';
 
   return (
     <>

@@ -11,7 +11,11 @@ interface ModeSwitchProps {
 }
 
 /**
- * Hiring ↔ My creative work. Only shown when the account has a creative profile.
+ * "I'm hiring" ↔ "I'm for hire". First person on purpose: the earlier labels
+ * were "Hiring" and "My creative work", and the second actively misled — it
+ * reads as your own offers and portfolio, when the mode shows other people's
+ * job posts. Whose perspective this is has to be unambiguous, because the mode
+ * decides what Home, Messages and History each contain.
  */
 export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
   const { data: user } = useCurrentUser();
@@ -52,7 +56,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
         disabled={setMode.isPending}
         onClick={() => choose('hiring')}
       >
-        Hiring
+        I&apos;m hiring
       </button>
       <button
         type="button"
@@ -67,7 +71,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
         disabled={setMode.isPending}
         onClick={() => choose('creative')}
       >
-        My creative work
+        I&apos;m for hire
       </button>
     </div>
   );

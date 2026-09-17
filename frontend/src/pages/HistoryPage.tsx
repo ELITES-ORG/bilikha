@@ -56,11 +56,11 @@ export function HistoryPage() {
   }
 
   const hiringInquiredEmpty =
-    'You are viewing Hiring. No inquiries yet — browse offers on Home and inquire, or switch to My creative work to see postings you replied to.';
+    'You are viewing “I’m hiring”. No inquiries yet — browse offers on Home and inquire, or switch to “I’m for hire” to see postings you replied to.';
   const hiringSavedEmpty =
-    'You are viewing Hiring. Nothing saved yet — save offers while browsing, or switch to My creative work for posting replies.';
+    'You are viewing “I’m hiring”. Nothing saved yet — save offers while browsing, or switch to “I’m for hire” for posting replies.';
   const creativeHistoryEmpty =
-    'You are viewing your creative work. You have not replied to any postings yet — browse client work on Home, or switch to Hiring for offers you inquired about.';
+    'You are viewing “I’m for hire”. You have not replied to any postings yet — browse client work on Home, or switch to “I’m hiring” for offers you inquired about.';
 
   return (
     <>

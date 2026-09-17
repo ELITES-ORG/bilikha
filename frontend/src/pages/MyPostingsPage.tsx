@@ -46,7 +46,7 @@ export function MyPostingsPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <SectionHeading
-            eyebrow="Hiring"
+            eyebrow="I’m hiring"
             title="Your postings"
             description="Work you want done. Close a posting when it is filled or no longer needed."
           />

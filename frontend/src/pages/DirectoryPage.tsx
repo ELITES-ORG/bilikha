@@ -57,7 +57,8 @@ export function DirectoryPage() {
 
   const { data: user } = useCurrentUser();
   const mode = effectiveViewMode(user);
-  const creativeHome = Boolean(user?.profileSlug) && mode === 'creative';
+  const hasProfile = Boolean(user?.profileSlug);
+  const creativeHome = hasProfile && mode === 'creative';
   const signedInHiring = Boolean(user) && !creativeHome;
 
   const domains = useCreativeDomains();
@@ -196,10 +197,13 @@ export function DirectoryPage() {
             eyebrow={creativeHome ? 'Creative work' : 'Find work or people'}
             title={creativeHome ? 'Client postings' : 'Directory'}
             description={
-              creativeHome
-                ? 'Open work from clients, matched to your sub-domains first.'
+              // Accounts with a profile get the mode line below the switch
+              // instead, so the explanation sits next to the control it
+              // explains rather than above it.
+              hasProfile
+                ? undefined
                 : user
-                  ? 'Browse to hire in this mode, or switch to My creative work for client postings.'
+                  ? 'Offers and creatives you can hire.'
                   : 'Browse published offers and creatives. Nothing here requires an account.'
             }
           />
@@ -217,6 +221,16 @@ export function DirectoryPage() {
               </div>
             )}
           </div>
+
+          {/* The switch decides three surfaces, not just this feed, and nothing
+              else says so. Sits under the control rather than above it. */}
+          {hasProfile && (
+            <p className="mt-3 max-w-prose text-sm text-ink-muted">
+              {creativeHome
+                ? 'Showing work clients have posted, matched to your sub-domains first. Messages and History follow this mode too.'
+                : 'Showing offers and creatives you can hire. Messages and History follow this mode too.'}
+            </p>
+          )}
 
           <div className="relative mt-8">
             <div className="flex items-center justify-between gap-3 border-b border-hairline">
@@ -458,7 +472,7 @@ export function DirectoryPage() {
             {creativeHome && postings.data && postings.data.data.length === 0 && (
               <ModeAwareEmptyState
                 title="No postings yet"
-                description="You are viewing your creative work. No postings match your sub-domains yet — switch to Hiring to browse creatives and post your own work."
+                description="You are viewing “I’m for hire”. No postings match your sub-domains yet — switch to “I’m hiring” to browse creatives and post your own work."
                 extraAction={
                   activeFilterCount > 0 ? (
                     <Button size="sm" variant="secondary" onClick={clearFilters}>
@@ -473,7 +487,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="No offers here yet"
-                  description="You are viewing Hiring. No offers match these filters yet — switch to My creative work to browse client postings, or try another filter."
+                  description="You are viewing “I’m hiring”. No offers match these filters yet — switch to “I’m for hire” to browse client postings, or try another filter."
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('creatives')}>
@@ -511,7 +525,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
-                  description="You are viewing Hiring. No creatives match these filters yet — switch to My creative work for client postings, or browse offers instead."
+                  description="You are viewing “I’m hiring”. No creatives match these filters yet — switch to “I’m for hire” for client postings, or browse offers instead."
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('offers')}>
