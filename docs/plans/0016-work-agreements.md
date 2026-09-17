@@ -113,7 +113,7 @@ apply unchanged. Ten specific to this plan:
 | 4. Compose | 3 / 3 | Complete |
 | 5. Review and accept | 4 / 4 | Complete |
 | 6. The record and the index | 5 / 5 | Complete |
-| 7. Verification | 8 / 11 | 7.8, 7.9 need a browser; 7.10 awaits CI |
+| 7. Verification | 9 / 11 | 7.8 and 7.9 need a browser |
 
 ---
 
@@ -566,7 +566,7 @@ them, leave them unticked and say so.
 
 ### Step 7.10 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0,
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0,
   and CI is green on the pushed commit. Grep the whole diff for `invoice`, for
   any log or response carrying `password`, and for any place a state is decided
   from a date rather than an event.
