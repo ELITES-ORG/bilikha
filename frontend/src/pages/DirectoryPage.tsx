@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MapPin, TriangleAlert } from 'lucide-react';
+import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import {
   Avatar,
@@ -18,18 +18,41 @@ import { usePublishedOffers } from '@/features/offers/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
+import { cn } from '@/lib/cn';
+
+function parseBudget(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) return undefined;
+  return n;
+}
 
 export function DirectoryPage() {
   const [params, setParams] = useSearchParams();
   const domain = params.get('domain') ?? undefined;
   const subdomain = params.get('subdomain') ?? undefined;
   const municipality = params.get('municipality') ?? undefined;
+  const budgetMin = parseBudget(params.get('budgetMin'));
+  const budgetMax = parseBudget(params.get('budgetMax'));
   const page = Number(params.get('page') ?? '1') || 1;
+
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [draftBudgetMin, setDraftBudgetMin] = useState(budgetMin?.toString() ?? '');
+  const [draftBudgetMax, setDraftBudgetMax] = useState(budgetMax?.toString() ?? '');
 
   const { data: user } = useCurrentUser();
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
-  const list = usePublishedOffers({ domain, subdomain, municipality, page, limit: 20 });
+  const list = usePublishedOffers({
+    domain,
+    subdomain,
+    municipality,
+    budgetMin,
+    budgetMax,
+    page,
+    limit: 20,
+  });
 
   const selectedDomain = useMemo(
     () => domains.data?.find((d) => d.slug === domain),
@@ -38,6 +61,40 @@ export function DirectoryPage() {
 
   const nearbyMunicipalityName = user?.municipalityName ?? null;
   const creativesSearch = params.toString() ? `?${params}` : '';
+
+  const activeFilterCount = [
+    domain,
+    subdomain,
+    municipality,
+    budgetMin,
+    budgetMax,
+  ].filter((v) => v != null && v !== '').length;
+
+  function openFilters() {
+    setDraftBudgetMin(budgetMin?.toString() ?? '');
+    setDraftBudgetMax(budgetMax?.toString() ?? '');
+    setFiltersOpen(true);
+  }
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setFiltersOpen(false);
+    }
+    function onPointer(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setFiltersOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [filtersOpen]);
 
   function setFilter(next: Record<string, string | undefined>) {
     const merged = new URLSearchParams(params);
@@ -49,7 +106,35 @@ export function DirectoryPage() {
     setParams(merged, { replace: true });
   }
 
+  function applyBudget() {
+    const min = parseBudget(draftBudgetMin.trim() || null);
+    const max = parseBudget(draftBudgetMax.trim() || null);
+    if (min != null && max != null && min > max) return;
+    setFilter({
+      budgetMin: min != null ? String(min) : undefined,
+      budgetMax: max != null ? String(max) : undefined,
+    });
+  }
+
+  function clearFilters() {
+    setDraftBudgetMin('');
+    setDraftBudgetMax('');
+    setFilter({
+      domain: undefined,
+      subdomain: undefined,
+      municipality: undefined,
+      budgetMin: undefined,
+      budgetMax: undefined,
+    });
+  }
+
   const totalPages = list.data ? Math.max(1, Math.ceil(list.data.meta.total / list.data.meta.limit)) : 1;
+  const budgetInvalid =
+    draftBudgetMin !== ''
+    && draftBudgetMax !== ''
+    && parseBudget(draftBudgetMin) != null
+    && parseBudget(draftBudgetMax) != null
+    && (parseBudget(draftBudgetMin) as number) > (parseBudget(draftBudgetMax) as number);
 
   return (
     <>
@@ -70,60 +155,166 @@ export function DirectoryPage() {
             </Link>
           </p>
 
-          <div className="mt-8 grid gap-4 border-b border-hairline pb-8 md:grid-cols-3">
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-              Domain
-              <select
-                className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                value={domain ?? ''}
-                onChange={(e) =>
-                  setFilter({
-                    domain: e.target.value || undefined,
-                    subdomain: undefined,
-                  })
-                }
+          <div className="relative mt-8 border-b border-hairline pb-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                aria-expanded={filtersOpen}
+                aria-controls="directory-filters"
+                onClick={() => (filtersOpen ? setFiltersOpen(false) : openFilters())}
               >
-                <option value="">All domains</option>
-                {domains.data?.map((d) => (
-                  <option key={d.id} value={d.slug}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <ListFilter className="size-4" aria-hidden />
+                Quick filters
+                {activeFilterCount > 0 && (
+                  <Badge tone="accent" className="tabular-nums">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  className="text-sm text-ink-muted hover:text-ink"
+                  onClick={clearFilters}
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-              Sub-domain
-              <select
-                className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                value={subdomain ?? ''}
-                disabled={!selectedDomain}
-                onChange={(e) => setFilter({ subdomain: e.target.value || undefined })}
+            {filtersOpen && (
+              <div
+                id="directory-filters"
+                ref={panelRef}
+                role="dialog"
+                aria-label="Quick filters"
+                className={cn(
+                  'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md',
+                  'md:left-0 md:right-auto md:w-full md:max-w-lg',
+                )}
               >
-                <option value="">All sub-domains</option>
-                {selectedDomain?.subdomains.map((s) => (
-                  <option key={s.id} value={s.slug}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-ink">Filters</p>
+                  <button
+                    type="button"
+                    className="inline-flex size-8 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+                    aria-label="Close filters"
+                    onClick={() => setFiltersOpen(false)}
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                </div>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-              Municipality
-              <select
-                className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                value={municipality ?? ''}
-                onChange={(e) => setFilter({ municipality: e.target.value || undefined })}
-              >
-                <option value="">All municipalities</option>
-                {municipalities.data?.map((m) => (
-                  <option key={m.id} value={m.slug}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <div className="grid gap-4">
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+                    Domain
+                    <select
+                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
+                      value={domain ?? ''}
+                      onChange={(e) =>
+                        setFilter({
+                          domain: e.target.value || undefined,
+                          subdomain: undefined,
+                        })
+                      }
+                    >
+                      <option value="">All domains</option>
+                      {domains.data?.map((d) => (
+                        <option key={d.id} value={d.slug}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+                    Sub-domain
+                    <select
+                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
+                      value={subdomain ?? ''}
+                      disabled={!selectedDomain}
+                      onChange={(e) => setFilter({ subdomain: e.target.value || undefined })}
+                    >
+                      <option value="">All sub-domains</option>
+                      {selectedDomain?.subdomains.map((s) => (
+                        <option key={s.id} value={s.slug}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+                    Municipality
+                    <select
+                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
+                      value={municipality ?? ''}
+                      onChange={(e) => setFilter({ municipality: e.target.value || undefined })}
+                    >
+                      <option value="">All municipalities</option>
+                      {municipalities.data?.map((m) => (
+                        <option key={m.id} value={m.slug}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <fieldset className="grid gap-3">
+                    <legend className="text-sm font-medium text-ink">Budget (₱)</legend>
+                    <p className="text-xs text-ink-muted">
+                      Optional. Leave blank for any price, including price on request.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="flex flex-col gap-1.5 text-sm text-ink">
+                        Min
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          step={1}
+                          placeholder="Any"
+                          value={draftBudgetMin}
+                          onChange={(e) => setDraftBudgetMin(e.target.value)}
+                          onBlur={applyBudget}
+                          className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1.5 text-sm text-ink">
+                        Max
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          step={1}
+                          placeholder="Any"
+                          value={draftBudgetMax}
+                          onChange={(e) => setDraftBudgetMax(e.target.value)}
+                          onBlur={applyBudget}
+                          className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                        />
+                      </label>
+                    </div>
+                    {budgetInvalid && (
+                      <p className="text-xs text-danger-700">Maximum must be at least the minimum.</p>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={budgetInvalid}
+                      onClick={() => {
+                        applyBudget();
+                        setFiltersOpen(false);
+                      }}
+                    >
+                      Apply budget
+                    </Button>
+                  </fieldset>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-10">
@@ -162,14 +353,8 @@ export function DirectoryPage() {
                     <ButtonLink to={`/creatives${creativesSearch}`} size="sm">
                       Browse creatives
                     </ButtonLink>
-                    {(domain || subdomain || municipality) && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() =>
-                          setFilter({ domain: undefined, subdomain: undefined, municipality: undefined })
-                        }
-                      >
+                    {activeFilterCount > 0 && (
+                      <Button size="sm" variant="secondary" onClick={clearFilters}>
                         Clear filters
                       </Button>
                     )}

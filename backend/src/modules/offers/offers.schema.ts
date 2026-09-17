@@ -69,13 +69,21 @@ export const addOfferImageBodySchema = z.object({
   thumbKey: z.string().min(1).max(512),
 });
 
-export const listOffersQuerySchema = z.object({
-  domain: z.string().trim().min(1).optional(),
-  subdomain: z.string().trim().min(1).optional(),
-  municipality: z.string().trim().min(1).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-});
+export const listOffersQuerySchema = z
+  .object({
+    domain: z.string().trim().min(1).optional(),
+    subdomain: z.string().trim().min(1).optional(),
+    municipality: z.string().trim().min(1).optional(),
+    // Pesos at the query edge; converted to centavos in the service.
+    budgetMin: z.coerce.number().int().positive().max(1_000_000).optional(),
+    budgetMax: z.coerce.number().int().positive().max(1_000_000).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  })
+  .refine(
+    (q) => q.budgetMin == null || q.budgetMax == null || q.budgetMin <= q.budgetMax,
+    { path: ['budgetMax'], message: 'Maximum must be at least the minimum' },
+  );
 
 export const reorderOfferImagesBodySchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(OFFER_IMAGE_LIMIT),

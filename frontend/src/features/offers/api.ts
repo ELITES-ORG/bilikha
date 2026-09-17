@@ -87,6 +87,9 @@ export type ListOffersParams = {
   domain?: string;
   subdomain?: string;
   municipality?: string;
+  /** Pesos (not centavos) — matches the public query string. */
+  budgetMin?: number;
+  budgetMax?: number;
   page?: number;
   limit?: number;
 };

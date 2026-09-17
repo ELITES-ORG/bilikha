@@ -637,9 +637,11 @@ Deletes both objects, then the row. Another creative's image → `404`.
 ### `GET /api/v1/offers`
 
 Public. Session-aware, not session-required. Query: `domain`, `subdomain`,
-`municipality` (slugs, optional), `page` (default 1), `limit` (default 20,
-max 50). Only offers whose profile is `published` appear. When the caller is
-signed in with a municipality, nearby creatives' offers lead the list.
+`municipality` (slugs, optional), `budgetMin` / `budgetMax` (pesos as positive
+integers, optional; max must be ≥ min), `page` (default 1), `limit` (default 20,
+max 50). Only offers whose profile is `published` appear. A budget filter keeps
+offers whose price range overlaps and drops "Price on request" rows. When the
+caller is signed in with a municipality, nearby creatives' offers lead the list.
 
 ### `GET /api/v1/offers/:id`
 

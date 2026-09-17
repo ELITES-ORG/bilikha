@@ -405,6 +405,27 @@ export async function listPublishedOffers(
   if (options.domain) filters.push(eq(creativeDomains.slug, options.domain));
   if (options.subdomain) filters.push(eq(creativeSubdomains.slug, options.subdomain));
   if (options.municipality) filters.push(eq(municipalities.slug, options.municipality));
+
+  // Budget is pesos in the query; compare in centavos. Overlap with the offer's
+  // range; "Price on request" (both null) is excluded when a budget is set.
+  const budgetMinCentavos = options.budgetMin != null ? options.budgetMin * 100 : null;
+  const budgetMaxCentavos = options.budgetMax != null ? options.budgetMax * 100 : null;
+  if (budgetMinCentavos != null || budgetMaxCentavos != null) {
+    filters.push(
+      sql`(${offers.priceMinCentavos} is not null or ${offers.priceMaxCentavos} is not null)`,
+    );
+    if (budgetMinCentavos != null) {
+      filters.push(
+        sql`coalesce(${offers.priceMaxCentavos}, ${offers.priceMinCentavos}) >= ${budgetMinCentavos}`,
+      );
+    }
+    if (budgetMaxCentavos != null) {
+      filters.push(
+        sql`coalesce(${offers.priceMinCentavos}, ${offers.priceMaxCentavos}) <= ${budgetMaxCentavos}`,
+      );
+    }
+  }
+
   const where = and(...filters);
   const order = options.viewerMunicipalityId
     ? [
