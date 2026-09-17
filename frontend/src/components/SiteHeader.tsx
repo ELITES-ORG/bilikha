@@ -1,7 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { ModeSwitch } from '@/components/ModeSwitch';
-import { effectiveViewMode } from '@/lib/view-mode';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useUnreadCount } from '@/features/conversations/api';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
@@ -17,13 +15,21 @@ function navClass(active: boolean) {
 export function SiteHeader() {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
-  const hasProfile = Boolean(user?.profileSlug);
   const unreadQuery = useUnreadCount(Boolean(user));
   const unread = unreadQuery.data ?? 0;
 
-  const viewMode = effectiveViewMode(user);
-  const hiring = !hasProfile || viewMode === 'hiring';
-  const creative = hasProfile && viewMode === 'creative';
+  /**
+   * Active state follows the route, not the mode.
+   *
+   * These links used to bold by view mode, from when the header carried the
+   * mode switch. The switch now lives on the three surfaces it governs, so
+   * bolding by mode meant the header quietly changed which link looked current
+   * with nothing on screen explaining why. Which page you are on is what a nav
+   * is answering.
+   */
+  const { pathname } = useLocation();
+  const isCurrent = (prefix: string) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`);
 
   return (
     <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-sm">
@@ -40,8 +46,6 @@ export function SiteHeader() {
             </span>
           )}
 
-          <ModeSwitch className="mr-1 hidden sm:inline-flex" />
-
           <Link
             to="/directory"
             className={cn(
@@ -50,7 +54,9 @@ export function SiteHeader() {
               // when signed in, and the landing page's domain and municipality
               // links do when signed out.
               'hidden sm:inline-block',
-              hiring ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
+              isCurrent('/directory') || isCurrent('/creatives')
+                ? 'font-medium text-ink'
+                : 'text-ink-muted hover:text-ink',
             )}
           >
             Directory
@@ -61,7 +67,9 @@ export function SiteHeader() {
                 to="/messages"
                 className={cn(
                   'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
-                  'text-ink-muted hover:text-ink',
+                  isCurrent('/messages')
+                    ? 'font-medium text-ink'
+                    : 'text-ink-muted hover:text-ink',
                 )}
               >
                 Messages
@@ -75,7 +83,7 @@ export function SiteHeader() {
                 to="/account"
                 className={cn(
                   'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
-                  creative || !hasProfile
+                  isCurrent('/account')
                     ? 'font-medium text-ink'
                     : 'text-ink-muted hover:text-ink',
                 )}
