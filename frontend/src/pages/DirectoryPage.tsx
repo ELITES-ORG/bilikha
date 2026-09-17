@@ -72,7 +72,7 @@ export function DirectoryPage() {
       page,
       limit: 20,
     },
-    view === 'offers',
+    view === 'offers' && !creativeHome,
   );
   const creatives = usePublishedProfiles(
     {
@@ -553,7 +553,7 @@ export function DirectoryPage() {
               )
             )}
 
-            {view === 'offers' && offers.data && offers.data.data.length > 0 && (
+            {!creativeHome && view === 'offers' && offers.data && offers.data.data.length > 0 && (
               <ul className="divide-y divide-hairline border-t border-hairline">
                 {offers.data.data.map((offer) => {
                   const creativeName = offer.creative.displayName ?? offer.creative.slug;
@@ -656,7 +656,7 @@ export function DirectoryPage() {
               </ul>
             )}
 
-            {view === 'creatives' && creatives.data && creatives.data.data.length > 0 && (
+            {!creativeHome && view === 'creatives' && creatives.data && creatives.data.data.length > 0 && (
               <ul className="divide-y divide-hairline border-t border-hairline">
                 {creatives.data.data.map((profile) => {
                   const primary = profile.subdomains.find((s) => s.isPrimary);
