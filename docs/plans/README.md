@@ -75,7 +75,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0013](./0013-client-postings-and-mode-mirrored-surfaces.md) | Client postings, and mode-mirrored surfaces | Complete |
 | [0014](./0014-dark-mode.md) | Dark mode | Ready |
 | [0015](./0015-account-hub.md) | The account hub | Complete |
-| [0016](./0016-work-agreements.md) | Work agreements in the thread | Ready |
+| [0016](./0016-work-agreements.md) | Work agreements in the thread | Complete |
 | [0017](./0017-notification-centre.md) | The notification centre | Complete |
 | [0018](./0018-web-push.md) | Web push | Deferred |
 | [0019](./0019-automated-tests.md) | Automated tests and CI | Complete |
