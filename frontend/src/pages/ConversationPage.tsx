@@ -41,11 +41,14 @@ function ConversationMenu({
   onToggle,
   onReport,
   onBlock,
+  draft,
 }: {
   open: boolean;
   onToggle: () => void;
   onReport: () => void;
   onBlock: () => void;
+  /** Creative side only, and only while the composer is closed. */
+  draft?: { label: string; onSelect: () => void } | null;
 }) {
   return (
     <div className="relative shrink-0">
@@ -64,6 +67,24 @@ function ConversationMenu({
           role="menu"
           className="absolute right-0 z-10 mt-1 w-52 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
         >
+          {/*
+           * Drafting sits in its own group above a divider. The two items below
+           * it report and block a person, and an action someone reaches for
+           * often should not share an edge with one they can only do once.
+           */}
+          {draft && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-clay-50"
+                onClick={draft.onSelect}
+              >
+                {draft.label}
+              </button>
+              <div className="my-1 border-t border-hairline" role="separator" />
+            </>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -133,6 +154,26 @@ export function ConversationPage() {
   // been rendered before the client accepted or a newer version replaced it.
   // The record also carries the content hash the accept confirmation needs.
   const openRecord = openAgreement.data?.status === 'sent' ? openAgreement.data : null;
+
+  /**
+   * Drafting lives in the conversation menu rather than as a permanent row
+   * above the composer: only the creative can ever use it, and on a 346px
+   * screen it was costing every conversation vertical space for something
+   * reached occasionally.
+   *
+   * Null while the composer is open — the form is already on screen, so
+   * offering to open it again says nothing.
+   */
+  const draftMenuItem =
+    !blocked && isCreative && composer === 'closed'
+      ? {
+          label: openRecord ? `Send version ${openRecord.version + 1}` : 'Draft agreement',
+          onSelect: () => {
+            setMenu('closed');
+            setComposer('open');
+          },
+        }
+      : null;
 
   useEffect(() => {
     if (!id || !thread.data || markedFor.current === id) return;
@@ -260,6 +301,7 @@ export function ConversationPage() {
                 setMenu('report');
               }}
               onBlock={() => setMenu('block')}
+              draft={draftMenuItem}
             />
           </>
         ) : (
@@ -303,6 +345,7 @@ export function ConversationPage() {
                   setMenu('report');
                 }}
                 onBlock={() => setMenu('block')}
+                draft={draftMenuItem}
               />
             )}
           </div>
@@ -433,8 +476,14 @@ export function ConversationPage() {
                * Agreement work is a sibling of the reply form below, never a
                * child of it: a nested <form> silently swallows the inner submit,
                * which is what broke Save in plan 0010.
+               *
+               * Renders only when the composer is open or a revision is
+               * waiting. Drafting starts from the conversation menu now, so an
+               * always-present block would be an empty frame in most threads —
+               * but a client who asked for changes is waiting on an answer, and
+               * that stays in the flow with the action attached to it.
                */}
-              {!blocked && isCreative && (
+              {!blocked && isCreative && (composer === 'open' || openRecord?.revisionRequestedAt) && (
                 <div className="mt-8 border-t border-hairline pt-6">
                   {composer === 'open' ? (
                     <AgreementComposer
