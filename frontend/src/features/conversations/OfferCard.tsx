@@ -27,7 +27,7 @@ export function OfferCard({ offer, tone = 'default', className, footer }: OfferC
     <div
       className={cn(
         'overflow-hidden rounded-sm border',
-        tone === 'onPrimary' && 'border-lawa-500/40 bg-lawa-800/40',
+        tone === 'onPrimary' && 'border-primary/40 bg-primary-active/40',
         tone === 'onSurface' && 'border-hairline bg-clay-50',
         tone === 'default' && 'border-hairline bg-surface',
         className,
@@ -52,7 +52,7 @@ export function OfferCard({ offer, tone = 'default', className, footer }: OfferC
           <p
             className={cn(
               'truncate text-sm font-medium',
-              tone === 'onPrimary' ? 'text-clay-50' : 'text-ink',
+              tone === 'onPrimary' ? 'text-on-primary' : 'text-ink',
             )}
           >
             {offer.title}
@@ -60,7 +60,7 @@ export function OfferCard({ offer, tone = 'default', className, footer }: OfferC
           <p
             className={cn(
               'mt-0.5 text-xs',
-              tone === 'onPrimary' ? 'text-clay-100/80' : 'text-ink-muted',
+              tone === 'onPrimary' ? 'text-on-primary-muted' : 'text-ink-muted',
             )}
           >
             {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
@@ -99,7 +99,7 @@ export function MessageOfferBlock({
     return (
       <div className="mb-2">
         <OfferUnavailableNotice
-          className={fromSelf ? 'text-clay-100/80' : undefined}
+          className={fromSelf ? 'text-on-primary-muted' : undefined}
         />
       </div>
     );

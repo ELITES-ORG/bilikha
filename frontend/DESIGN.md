@@ -104,9 +104,9 @@ reaches past it with arbitrary values is how a design system dies.
 
 Two things are deliberately **not** built yet:
 
-- **Dark mode.** Tokens are structured for it (every colour is a semantic
-  variable), but no dark palette is defined. Adding one is a single block in
-  `theme.css`; doing it half-way is worse than not at all.
-- **Form primitives beyond `Input`.** Select, textarea, checkbox, radio, and
-  combobox will be needed for registration. Build them against these tokens when
-  that flow is designed.
+- ~~**Dark mode.**~~ **Done.** The palette follows `prefers-color-scheme` by
+  re-valuing tokens in `theme.css`. There is no in-app toggle. **Never** add a
+  Tailwind `dark:` variant in a component — if something looks wrong in one
+  theme, fix the token.
+- **Form primitives beyond `Input` and `Select`.** Textarea, checkbox, radio,
+  and combobox will be needed for denser flows. Build them against these tokens.

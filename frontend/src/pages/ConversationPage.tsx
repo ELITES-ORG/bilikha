@@ -209,7 +209,7 @@ export function ConversationPage() {
       <RegistrationStatusBanner />
 
       {/* Phone chat header: back + avatar + name | ⋮ */}
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/85 px-1 backdrop-blur-sm sm:hidden">
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
         <Link
           to="/messages"
           aria-label="Back to messages"
@@ -367,7 +367,7 @@ export function ConversationPage() {
                     className={cn(
                       'max-w-[85%] rounded-sm px-3 py-2 text-base',
                       msg.fromSelf
-                        ? 'ml-auto bg-lawa-700 text-clay-50'
+                        ? 'ml-auto bg-primary text-on-primary'
                         : 'mr-auto border border-hairline bg-surface text-ink',
                     )}
                   >
@@ -385,7 +385,7 @@ export function ConversationPage() {
                     <p
                       className={cn(
                         'mt-1 text-2xs tabular-nums',
-                        msg.fromSelf ? 'text-clay-100/80' : 'text-ink-subtle',
+                        msg.fromSelf ? 'text-on-primary-muted' : 'text-ink-subtle',
                       )}
                     >
                       {relativeTime(msg.createdAt)}

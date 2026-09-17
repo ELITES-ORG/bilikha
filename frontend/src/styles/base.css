@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    color-scheme: light;
+    color-scheme: light dark;
     /* Opsz is Fraunces' optical-size axis. Left at a text value here and
        raised per display size in the .u-display utility. */
     font-variant-ligatures: common-ligatures contextual;

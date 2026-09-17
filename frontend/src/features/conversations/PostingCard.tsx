@@ -26,7 +26,7 @@ export function PostingCard({ posting, tone = 'default', className, footer }: Po
     <div
       className={cn(
         'overflow-hidden rounded-sm border',
-        tone === 'onPrimary' && 'border-lawa-500/40 bg-lawa-800/40',
+        tone === 'onPrimary' && 'border-primary/40 bg-primary-active/40',
         tone === 'onSurface' && 'border-hairline bg-clay-50',
         tone === 'default' && 'border-hairline bg-surface',
         className,
@@ -42,7 +42,7 @@ export function PostingCard({ posting, tone = 'default', className, footer }: Po
         <p
           className={cn(
             'truncate text-sm font-medium',
-            tone === 'onPrimary' ? 'text-clay-50' : 'text-ink',
+            tone === 'onPrimary' ? 'text-on-primary' : 'text-ink',
           )}
         >
           {posting.title}
@@ -50,7 +50,7 @@ export function PostingCard({ posting, tone = 'default', className, footer }: Po
         <p
           className={cn(
             'mt-0.5 text-xs',
-            tone === 'onPrimary' ? 'text-clay-100/80' : 'text-ink-muted',
+            tone === 'onPrimary' ? 'text-on-primary-muted' : 'text-ink-muted',
           )}
         >
           {formatPriceRange(posting.budgetMinCentavos, posting.budgetMaxCentavos)}
@@ -59,7 +59,7 @@ export function PostingCard({ posting, tone = 'default', className, footer }: Po
           <p
             className={cn(
               'mt-1 text-xs',
-              tone === 'onPrimary' ? 'text-clay-100/70' : 'text-ink-subtle',
+              tone === 'onPrimary' ? 'text-on-primary-muted' : 'text-ink-subtle',
             )}
           >
             {posting.status === 'closed' ? 'Closed' : 'Expired'}
@@ -98,7 +98,7 @@ export function MessagePostingBlock({
   if (postingRemoved) {
     return (
       <div className="mb-2">
-        <PostingUnavailableNotice className={fromSelf ? 'text-clay-100/80' : undefined} />
+        <PostingUnavailableNotice className={fromSelf ? 'text-on-primary-muted' : undefined} />
       </div>
     );
   }

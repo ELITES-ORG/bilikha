@@ -35,7 +35,7 @@ export function SiteHeader() {
     pathname === prefix || pathname.startsWith(`${prefix}/`);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-hairline bg-paper/90 backdrop-blur-sm">
       <Container width="wide" className="flex h-16 items-center justify-between gap-6">
         <Link to="/" className="group flex items-baseline gap-2.5">
           <span className="u-display text-xl font-semibold tracking-tight text-ink">Bilikha</span>

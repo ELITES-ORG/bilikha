@@ -7,12 +7,15 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
  * Variants are separated by *role*, not decoration. Exactly one primary action
  * should be visible in any view; everything else steps down to secondary or
  * ghost. Radius stays small — buttons are not cards.
+ *
+ * Solid fills use --color-primary* / accent-solid / danger-solid so the numbered
+ * ramps can invert under prefers-color-scheme without breaking hover darkening.
  */
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: cn(
-    'bg-lawa-700 text-clay-50 shadow-xs',
-    'hover:bg-lawa-800 hover:shadow-sm',
-    'active:bg-lawa-900',
+    'bg-primary text-on-primary shadow-xs',
+    'hover:bg-primary-hover hover:shadow-sm',
+    'active:bg-primary-active',
     'disabled:bg-clay-300 disabled:text-clay-500 disabled:shadow-none',
   ),
   secondary: cn(
@@ -28,15 +31,15 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'disabled:text-clay-400 disabled:bg-transparent',
   ),
   accent: cn(
-    'bg-palayok-600 text-clay-50 shadow-xs',
-    'hover:bg-palayok-700 hover:shadow-sm',
-    'active:bg-palayok-800',
+    'bg-accent-solid text-on-primary shadow-xs',
+    'hover:bg-accent-solid-hover hover:shadow-sm',
+    'active:bg-accent-solid-active',
     'disabled:bg-clay-300 disabled:text-clay-500 disabled:shadow-none',
   ),
   danger: cn(
-    'bg-danger-600 text-clay-50 shadow-xs',
-    'hover:bg-danger-700 hover:shadow-sm',
-    'active:bg-danger-700',
+    'bg-danger-solid text-on-primary shadow-xs',
+    'hover:bg-danger-solid-hover hover:shadow-sm',
+    'active:bg-danger-solid-hover',
     'disabled:bg-clay-300 disabled:text-clay-500 disabled:shadow-none',
   ),
 };

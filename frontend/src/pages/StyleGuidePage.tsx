@@ -41,33 +41,25 @@ export function StyleGuidePage() {
             Tokens, primitives, and motion. If something on a screen is not expressible with what
             is on this page, the system needs extending — not the screen overriding.
           </p>
+          <p className="mt-3 max-w-2xl text-sm text-ink-muted">
+            Theme follows the operating system via <code className="text-ink">prefers-color-scheme</code>
+            — there is no in-app toggle and no stored preference. Components must never use
+            per-theme utility prefixes in markup; change token values in{' '}
+            <code className="text-ink">theme.css</code> instead (ADR 0010 / 0026).
+          </p>
         </header>
 
         <Section
           title="Colour"
-          note="Authored in OKLCH. Steps 600–700 are the accessible text weights on paper."
+          note="Authored in OKLCH. Both themes are forced below so drift is visible without switching the OS."
         >
-          <div className="flex flex-col gap-6">
-            <Ramp
-              name="Clay — neutral"
-              prefix="clay"
-              steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
-            />
-            <Ramp
-              name="Lawa — primary"
-              prefix="lawa"
-              steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
-            />
-            <Ramp
-              name="Palayok — accent (decorative only)"
-              prefix="palayok"
-              steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]}
-            />
-            <div className="grid gap-6 sm:grid-cols-3">
-              <Ramp name="Success" prefix="success" steps={[50, 100, 500, 600, 700]} compact />
-              <Ramp name="Warning" prefix="warning" steps={[50, 100, 500, 600, 700]} compact />
-              <Ramp name="Danger" prefix="danger" steps={[50, 100, 500, 600, 700]} compact />
-            </div>
+          <div className="grid gap-8 lg:grid-cols-2">
+            <ThemeSpecimen scheme="light" label="Light">
+              <ColourRamps />
+            </ThemeSpecimen>
+            <ThemeSpecimen scheme="dark" label="Dark">
+              <ColourRamps />
+            </ThemeSpecimen>
           </div>
         </Section>
 
@@ -442,6 +434,76 @@ const DURATIONS = [
 
 /** Renders one step of the type scale from its tokens, including the tuned
  *  line-height and tracking that Tailwind stores as paired custom properties. */
+function ColourRamps() {
+  return (
+    <div className="flex flex-col gap-6">
+      <Ramp
+        name="Clay — neutral"
+        prefix="clay"
+        steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
+      />
+      <Ramp
+        name="Lawa — primary"
+        prefix="lawa"
+        steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
+      />
+      <Ramp
+        name="Palayok — accent (decorative only)"
+        prefix="palayok"
+        steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]}
+      />
+      <div className="grid gap-6 sm:grid-cols-3">
+        <Ramp name="Success" prefix="success" steps={[50, 100, 500, 600, 700]} compact />
+        <Ramp name="Warning" prefix="warning" steps={[50, 100, 500, 600, 700]} compact />
+        <Ramp name="Danger" prefix="danger" steps={[50, 100, 500, 600, 700]} compact />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {(
+          [
+            ['paper', 'Page'],
+            ['surface', 'Raised'],
+            ['ink', 'Text'],
+            ['ink-muted', 'Muted'],
+            ['ink-subtle', 'Subtle'],
+            ['hairline', 'Hairline'],
+            ['primary', 'Primary fill'],
+            ['on-primary', 'On primary'],
+          ] as const
+        ).map(([token, label]) => (
+          <div key={token} className="overflow-hidden rounded-sm border border-hairline">
+            <div
+              className="h-12"
+              style={{ backgroundColor: `var(--color-${token})` }}
+              title={token}
+            />
+            <p className="bg-surface px-2 py-1 text-[0.625rem] text-ink-subtle">{label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ThemeSpecimen({
+  scheme,
+  label,
+  children,
+}: {
+  scheme: 'light' | 'dark';
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      data-theme-specimen={scheme}
+      className="rounded-md border border-hairline p-4"
+    >
+      <p className="mb-4 text-sm font-medium text-ink">{label}</p>
+      {children}
+    </div>
+  );
+}
+
 function Specimen({
   size,
   use,

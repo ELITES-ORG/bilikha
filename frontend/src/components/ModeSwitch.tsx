@@ -49,7 +49,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
           'rounded-xs font-medium transition-colors',
           pad,
           hiring
-            ? 'bg-lawa-700 text-clay-50'
+            ? 'bg-primary text-on-primary'
             : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
         )}
         aria-pressed={hiring}
@@ -64,7 +64,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
           'rounded-xs font-medium transition-colors',
           pad,
           creative
-            ? 'bg-lawa-700 text-clay-50'
+            ? 'bg-primary text-on-primary'
             : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
         )}
         aria-pressed={creative}

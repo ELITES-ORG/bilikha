@@ -157,6 +157,17 @@
     animation: bk-shimmer 1.6s var(--ease-in-out-soft) infinite;
   }
 
+  @media (prefers-color-scheme: dark) {
+    .skeleton::after {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        oklch(1 0 0 / 0.12),
+        transparent
+      );
+    }
+  }
+
   .anim-spin {
     animation: bk-spin 0.7s linear infinite;
   }

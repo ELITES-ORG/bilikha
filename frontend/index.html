@@ -6,13 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!--
-      The app is light-only, and this has to be declared before the stylesheet
-      parses. Native form-control surfaces the page cannot style - most visibly
-      a <select>'s option list, which Android draws itself - otherwise follow
-      the device theme, so a phone in dark mode gets a dark picker over a light
-      page. The :root rule in base.css says the same thing, but too late.
+      Declared before the stylesheet parses so native surfaces the page cannot
+      style (scrollbars, text selection, form chrome) follow the same light/dark
+      preference as the token palette (ADR 0026).
     -->
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="theme-color"
+      content="#faf8f5"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1c1916"
+      media="(prefers-color-scheme: dark)"
+    />
 
     <title>Bilikha — Biliran Creative Industries Registry</title>
     <meta
