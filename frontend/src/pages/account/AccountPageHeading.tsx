@@ -18,6 +18,7 @@ export function AccountPageHeading({ title }: { title: string }) {
     <div className="flex items-center gap-1">
       <Link
         to="/account"
+        viewTransition
         aria-label="Back to account"
         className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:text-ink"
         style={{ transitionDuration: 'var(--duration-fast)' }}

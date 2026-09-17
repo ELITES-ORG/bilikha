@@ -203,3 +203,59 @@
     }
   }
 }
+
+/* ==========================================================================
+   Navigation transitions
+   --------------------------------------------------------------------------
+   Native View Transitions, driven by React Router's `viewTransition` flag. No
+   animation library: this is the whole feature, and on a browser that does not
+   support it the navigation simply happens with no transition and no error.
+
+   Only `main` is named, so the app shell — header, bell, tab bar — stays put
+   while the content under it changes. That is what makes a tab switch read as
+   a tab switch rather than as the whole app reloading.
+
+   Both rules at the top of this file still apply: compositor-only properties,
+   and short enough not to read as lag. A view transition freezes the page
+   while it runs, so a slow one is worse here than anywhere else.
+   ========================================================================== */
+
+main {
+  view-transition-name: page;
+}
+
+@keyframes bk-vt-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes bk-vt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(page) {
+    animation: bk-vt-leave var(--duration-fast) var(--ease-out-quart) both;
+  }
+
+  ::view-transition-new(page) {
+    animation: bk-vt-enter var(--duration-base) var(--ease-out-quart) both;
+  }
+}
+
+/* The global reduced-motion reset above matches `*`, which does not reach a
+   pseudo-element. Movement goes; the cross-fade stays so the change is still
+   perceptible, which is the rule the rest of this file follows. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  ::view-transition-old(page),
+  ::view-transition-new(page) {
+    animation-duration: var(--duration-instant);
+  }
+}

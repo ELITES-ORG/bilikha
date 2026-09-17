@@ -282,6 +282,7 @@ export function ConversationPage() {
       <header className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
         <Link
           to="/messages"
+          viewTransition
           aria-label="Back to messages"
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-clay-100"
         >
@@ -319,6 +320,7 @@ export function ConversationPage() {
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 to="/messages"
+                viewTransition
                 aria-label="Back to messages"
                 className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
               >

@@ -70,3 +70,4 @@ Number sequentially. Never renumber.
 | [0031](./0031-testing-strategy.md) | Tests run against a real database, at the service layer | Accepted |
 | [0032](./0032-an-accepted-agreement-is-not-deleted.md) | An accepted agreement is not deleted | Accepted |
 | [0033](./0033-ratings-earned-by-a-completed-agreement.md) | A rating is earned by a completed agreement | Accepted |
+| [0034](./0034-navigation-transitions.md) | Navigation transitions use the browser's, not a library | Accepted |

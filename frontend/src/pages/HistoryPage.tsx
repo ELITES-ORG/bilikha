@@ -89,7 +89,7 @@ export function HistoryPage() {
     const merged = new URLSearchParams(params);
     if (next === 'inquired') merged.delete('segment');
     else merged.set('segment', next);
-    setParams(merged, { replace: true });
+    setParams(merged, { replace: true, viewTransition: true });
   }
 
   async function onUnsave(offerId: string) {

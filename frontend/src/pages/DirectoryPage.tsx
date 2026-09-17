@@ -149,7 +149,10 @@ export function DirectoryPage() {
       merged.delete('budgetMin');
       merged.delete('budgetMax');
     }
-    setParams(merged, { replace: true });
+    // Only the tab switch transitions. Filters and pagination go through
+    // setFilter above and stay instant: a view transition freezes the page
+    // while it runs, and one on every filter tap reads as lag, not polish.
+    setParams(merged, { replace: true, viewTransition: true });
   }
 
   function applyBudget() {

@@ -56,6 +56,7 @@ export function BottomNav() {
             <li key={to} className="flex-1">
               <Link
                 to={to}
+                viewTransition
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 py-1.5',

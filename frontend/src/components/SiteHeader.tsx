@@ -46,6 +46,7 @@ export function SiteHeader() {
           {user && (
             <Link
               to="/notifications"
+            viewTransition
               aria-label={
                 notifications > 0
                   ? `Notifications, ${notifications} unread`
@@ -76,6 +77,7 @@ export function SiteHeader() {
 
           <Link
             to="/directory"
+            viewTransition
             className={cn(
               'link-underline px-2 py-1 text-base transition-colors',
               // Phones get a deliberately bare header: the tab bar owns this
@@ -93,6 +95,7 @@ export function SiteHeader() {
             <>
               <Link
                 to="/messages"
+                viewTransition
                 className={cn(
                   'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
                   isCurrent('/messages')
@@ -109,6 +112,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 to="/account"
+                viewTransition
                 className={cn(
                   'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
                   isCurrent('/account')
