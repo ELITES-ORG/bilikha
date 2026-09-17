@@ -101,6 +101,20 @@ In a province of this size, social distance is short.
   criticism of a neighbour, so a symmetric five-star system degrades to all-fives
   and carries no signal. Creative reviews are restrained; client reliability
   stays private to the creatives who received their inquiry.
+
+  **Overruled in part, deliberately.**
+  [ADR 0033](../decisions/0033-ratings-earned-by-a-completed-agreement.md) ships
+  public 1–5 star ratings on creative profiles, each earned by a completed
+  agreement. The registrant was shown this paragraph and the alternatives it
+  implies — private stars with public testimonials, everything private, or
+  publishing only the completion record — and chose the public shape.
+
+  The warning above still stands as a prediction: expect the scores to cluster
+  at five. What is *not* overruled is the rest of it. Client reliability stays
+  private. The directory is not sorted or ranked by rating. Ratings are asymmetric
+  — creatives are rated, clients are not — so nobody is rated back for being
+  honest. **Do not "fix" the ratings feature to match this paragraph; read the
+  ADR first.**
 - **Individuals get no public profile page.** Organisations do. A public page
   for a private individual who hired a photographer once is a privacy liability
   with no upside.
