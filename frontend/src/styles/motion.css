@@ -23,6 +23,11 @@
     to { opacity: 1; transform: translate3d(0, 0, 0); }
   }
 
+  @keyframes bk-drop-in {
+    from { opacity: 0; transform: translate3d(0, -0.75rem, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
   @keyframes bk-scale-in {
     from { opacity: 0; transform: scale3d(0.97, 0.97, 1); }
     to { opacity: 1; transform: scale3d(1, 1, 1); }
@@ -51,6 +56,10 @@
 
   .anim-rise-in {
     animation: bk-rise-in var(--duration-slower) var(--ease-out-expo) both;
+  }
+
+  .anim-drop-in {
+    animation: bk-drop-in var(--duration-base) var(--ease-out-expo) both;
   }
 
   .anim-scale-in {
@@ -167,6 +176,7 @@
 
     .anim-fade-in,
     .anim-rise-in,
+    .anim-drop-in,
     .anim-scale-in,
     .anim-slide-in-right {
       animation: bk-fade-in 0.01ms both;

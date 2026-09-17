@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { Check, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { bottomAboveNav } from '@/lib/bottom-nav';
 import { ToastContext, type ToastApi } from './toast-context';
 
 type ToastTone = 'pending' | 'success' | 'error';
@@ -138,13 +137,21 @@ function Toaster({
   onDismiss: (id: number) => void;
 }) {
   return (
-    // Bottom on phones, where it is within thumb reach and clear of the header.
-    // pointer-events-none on the stack so the empty area never blocks the page.
+    /**
+     * Top centre, on every size. The bottom belongs to the tab bar on phones —
+     * anchoring there meant offsetting around it and stacking toasts into the
+     * one part of a short screen that is already busy. Centre also puts the
+     * message near where the eye already is after pressing a button part-way
+     * down a form, rather than in a corner.
+     *
+     * Offset below the sticky header so it never covers the logo or the nav,
+     * plus the safe-area inset for a notch. pointer-events-none on the stack so
+     * the empty area either side never blocks the page.
+     */
     <div
       className={cn(
-        'pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 p-4',
-        bottomAboveNav,
-        'sm:inset-x-auto sm:right-0 sm:items-end',
+        'pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4',
+        'top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]',
       )}
       aria-live="polite"
     >
@@ -167,7 +174,7 @@ function ToastRow({
       // Errors interrupt; progress and confirmation do not.
       role={toast.tone === 'error' ? 'alert' : 'status'}
       className={cn(
-        'anim-rise-in pointer-events-auto flex w-full max-w-sm items-start gap-3',
+        'anim-drop-in pointer-events-auto flex w-full max-w-sm items-start gap-3',
         'rounded-md border px-4 py-3 text-sm shadow-md',
         TONE_STYLES[toast.tone],
       )}
