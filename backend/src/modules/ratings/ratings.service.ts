@@ -48,6 +48,25 @@ export interface RatingSummary {
   count: number;
 }
 
+/**
+ * How a reviewer is named in public: first name and a surname initial.
+ *
+ * A creative registered for a public profile; the client who hired them did
+ * not. Publishing a private individual's full legal name on a page anyone can
+ * read is the privacy liability [constraints §6](../../../../docs/explanation/constraints.md)
+ * describes, and in a province where social distance is short it also suppresses
+ * the honest criticism ADR 0033 is already braced for — nobody writes three
+ * stars under their own full name for a neighbour to read.
+ *
+ * Still a person rather than "Anonymous", which is what the review needs to
+ * carry any weight. Administrators see the full name in the appeal queue, where
+ * knowing exactly who spoke is the point.
+ */
+function publicRaterName(firstName: string, lastName: string): string {
+  const initial = lastName.trim().charAt(0);
+  return initial ? `${firstName.trim()} ${initial}.` : firstName.trim();
+}
+
 function shape(row: Rating) {
   return {
     id: row.id,
@@ -270,7 +289,7 @@ export async function listForProfile(
       id: row.id,
       stars: row.stars,
       comment: row.comment,
-      raterName: `${row.firstName} ${row.lastName}`.trim(),
+      raterName: publicRaterName(row.firstName, row.lastName),
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     })),

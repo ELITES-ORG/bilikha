@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { count, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import { moderationActions, ratingReports, ratings } from '../../db/schema/index.js';
+import { moderationActions, ratingReports, ratings, users } from '../../db/schema/index.js';
 import type { AppError } from '../../lib/http-error.js';
 import { recordEvent } from '../agreements/agreements.service.js';
 import { listNotifications } from '../notifications/notifications.service.js';
@@ -337,6 +337,32 @@ describe('a suspended rater leaves by derivation (7.4)', () => {
     expect(after.data).toHaveLength(2);
     expect(afterSummary).toEqual({ average: 4, count: 2 });
     expect(after.total).toBe(afterSummary.count);
+  });
+});
+
+describe('a reviewer is named, not exposed', () => {
+  it('publishes a first name and a surname initial, never the full name', async () => {
+    const ctx = await engagement();
+    const { agreement } = await makeCompletedAgreement(ctx.conversation);
+
+    await db
+      .update(users)
+      .set({ firstName: 'Maricel', lastName: 'Bumatay' })
+      .where(eq(users.id, ctx.client.id));
+
+    await rateAgreement({
+      userId: ctx.client.id,
+      agreementId: agreement.id,
+      stars: 5,
+      comment: 'On time and easy to work with.',
+    });
+
+    const { data } = await listForProfile(ctx.profile.slug, { page: 1, limit: 10 });
+
+    expect(data[0]?.raterName).toBe('Maricel B.');
+    // The surname is the part that identifies a private individual to a whole
+    // province. A creative signed up for a public profile; their client did not.
+    expect(data[0]?.raterName).not.toContain('Bumatay');
   });
 });
 

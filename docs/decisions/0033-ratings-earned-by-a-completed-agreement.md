@@ -77,6 +77,24 @@ recourse and it has to exist, because everything else here is public and
 permanent. An administrator can remove a rating, which is recorded in
 `moderation_actions` like every other moderation decision.
 
+**A reviewer is named in public as a first name and a surname initial.** Found
+auditing the implementation, which published the client's full legal name by
+default — reasonably, since clients have no display name and nothing here had
+decided the question.
+
+A creative registered for a public profile. The client who hired them did not,
+and [constraints §6](../explanation/constraints.md) is explicit that a private
+individual who hired a photographer once should not acquire a public presence.
+Publishing their full name beside their opinion, on a page any visitor and
+Facebook's scraper can read, is that liability in a smaller package.
+
+It also works against the feature. This ADR already expects scores to cluster at
+five; attaching a full legal name to a review, readable by the reviewer's entire
+province, removes the last reason anyone would write three. "Maricel B." is
+still a person rather than "Anonymous", which is what a review needs to carry
+weight. Administrators see the full name in the appeal queue, where knowing
+exactly who spoke is the point.
+
 **The prompt appears when the client confirms completion, and "later" is a real
 option.** A rating nobody was nagged into is worth more than one extracted at
 the moment of maximum friction. "Later" leaves the invitation on the agreement
