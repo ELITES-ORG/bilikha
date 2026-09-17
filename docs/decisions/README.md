@@ -65,3 +65,4 @@ Number sequentially. Never renumber.
 | [0026](./0026-dark-mode-follows-the-device.md) | Dark mode, following the device | Accepted |
 | [0027](./0027-account-is-a-hub.md) | The account page is a hub, not a page | Accepted |
 | [0028](./0028-suspension-is-enforced-per-request.md) | Suspension is enforced per request; content hidden by derivation | Accepted |
+| [0029](./0029-work-agreements-not-invoices.md) | Work agreements, accepted by re-authentication | Accepted |
