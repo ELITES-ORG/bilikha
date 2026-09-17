@@ -81,6 +81,25 @@ The acceptance screen says so. Bilikha holds no money, releases none, and
 guarantees no outcome. Implying otherwise to people choosing who to trust with
 work is the worst thing this feature could do.
 
+**It is a record with its own address, not only a message.** The thread is where
+an agreement is proposed and accepted, and the card belongs there — that is the
+context the terms were negotiated in. But a message is a position in a stream,
+and a record needs to be reachable without re-reading the stream that produced
+it. So an agreement also has a permalink, and both parties get an index of
+theirs.
+
+The index is a third segment in History, beside *Inquired* and *Saved*, mirrored
+by mode like everything else there — a creative sees agreements they issued, a
+client sees agreements they hold. It is not a fifth item in the bottom bar: four
+is already tight at 346px, and History is precisely the "what has happened"
+surface this belongs to.
+
+**Schedule labels are derived from dates; work status is not invented.** The
+index can honestly say a job starts on the 3rd or ended on the 14th, because
+those are stored. It must not show *Completed* or *In progress* — nobody
+maintains that, and a stale "In progress" is read as a fact about the work. Same
+objection as payment status, for the same reason.
+
 **Participants only.** The agreement is visible to the two people in the thread.
 Administrators reach it only through an existing report, exactly as conversation
 contents already work. Suspension needs no special handling — the per-request

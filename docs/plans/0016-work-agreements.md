@@ -19,7 +19,7 @@ carries a record of who accepted it and when.
 ## Rules for whoever executes this
 
 The rules in [plan 0001](./0001-registration-and-auth.md#rules-for-whoever-executes-this)
-apply unchanged. Seven specific to this plan:
+apply unchanged. Eight specific to this plan:
 
 1. **Never write the word "invoice" in code, copy, a route, a column or a type.**
    [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) explains why —
@@ -40,6 +40,10 @@ apply unchanged. Seven specific to this plan:
    from a client's accepted terms changing under them.
 7. **No payment tracking.** No deposit, no balance, no paid flag, no reminders.
    Out of scope and it stays out.
+8. **Do not invent a work status.** Schedule labels come from the stored dates —
+   "Starts 3 Oct", "Ended 14 Nov" — and nothing else. No *In progress*, no
+   *Completed*, no *Overdue*. Nobody maintains those, and a stale one is read as
+   a fact about the work.
 
 ---
 
@@ -52,11 +56,14 @@ apply unchanged. Seven specific to this plan:
 - Versioning: a revision supersedes its predecessor
 - Content hash, computed on read and checked on accept
 - An agreement card in the thread, in three states: pending, accepted, superseded
-- A full agreement view for both parties
+- A permalink at `/agreements/:id` — the record, with its full timeline
+- An index as a third History segment, mirrored by mode
 
 **Out of scope** — do not build these
 - Anything called an invoice, receipt, or official receipt. Rule 1
 - Payments, deposits, escrow, payment status. Rule 7
+- A work-status field — no *In progress*, no *Completed*. Rule 8
+- A fifth bottom-nav item. The index is a History segment
 - PDF export or a shareable public link
 - Admin visibility beyond the existing report flow
 - Clients drafting or editing agreements
@@ -74,7 +81,8 @@ apply unchanged. Seven specific to this plan:
 | 3. API | 2 / 2 | Not started |
 | 4. Compose | 3 / 3 | Not started |
 | 5. Review and accept | 4 / 4 | Not started |
-| 6. Verification | 6 / 6 | Not started |
+| 6. The record and the index | 4 / 4 | Not started |
+| 7. Verification | 8 / 8 | Not started |
 
 ---
 
@@ -273,11 +281,12 @@ New module: `backend/src/modules/agreements/`.
   posting cards: package title, total, dates, and a status chip — Awaiting
   response / Accepted / Superseded. Tapping it opens the full agreement.
 
-### Step 5.2 — The full view
+### Step 5.2 — Opening the record
 
-- [ ] **Action.** Line items with prices, the total, start and end dates,
-  duration, notes, version, and — when accepted — who accepted it and when.
-- [ ] **Action.** Show the version history: "Version 2, replaces version 1."
+- [ ] **Action.** The card links to `/agreements/:id`, built in Phase 6. There is
+  no second full-agreement view inside the thread — one record, one address.
+- [ ] **Why.** Two renderings of the same document drift, and the one people
+  screenshot is whichever they happened to open.
 
 ### Step 5.3 — Accept
 
@@ -298,43 +307,114 @@ New module: `backend/src/modules/agreements/`.
 
 ---
 
-# Phase 6 — Verification
+# Phase 6 — The record and the index
+
+### Step 6.1 — The record page
+
+- [ ] **Action.** `/agreements/:id`, guarded, participants only — a non-party
+  gets the 404 that `getAgreement` already returns, not a 403.
+- [ ] **Action.** It renders the document: package title, line items with
+  prices, the computed total, start date, computed end date, duration, notes,
+  and which version it is.
+- [ ] **Action.** A link back to the conversation it belongs to.
+
+### Step 6.2 — The timeline
+
+- [ ] **Action.** Below the document, every event in order, each with its
+  timestamp:
+  - Issued by <creative>, version N
+  - Changes requested by <client> — with the note
+  - Superseded by version N+1 — linking to it
+  - Accepted by <client>
+- [ ] **Action.** On an accepted agreement, show the acceptance: who, the exact
+  timestamp, and the first 12 characters of the content hash, labelled as a
+  fingerprint of the accepted terms.
+- [ ] **Why.** This is the whole point of the feature. "Who agreed to what, and
+  when" has to be answerable on one screen without reading the thread.
+- [ ] **Action.** Every earlier version stays reachable through the chain. A
+  superseded version renders with a banner saying so and a link forward.
+
+### Step 6.3 — The index
+
+- [ ] **Action.** Add `agreements` as a third segment in `HistoryPage`, beside
+  `inquired` and `saved`, following the existing `HistorySegment` type, the
+  `?segment=` param and the `role="tablist"` markup already there.
+- [ ] **Action.** Mirror by mode, as that page already does: in *I'm for hire* it
+  lists agreements the creative issued; in *I'm hiring* it lists agreements the
+  client received. Write the empty states in the same voice as the ones there,
+  including the "you are viewing…" hint that points at the other mode.
+- [ ] **Action.** Each row: the other party, package title, total, status chip,
+  and a schedule line derived from the dates only — "Starts 3 Oct", "Ended
+  14 Nov". Rule 8.
+- [ ] **Action.** Sort awaiting-response first, then by start date.
+
+### Step 6.4 — The backend for it
+
+- [ ] **Action.** `listAgreements(userId, mode)` in the agreements service,
+  returning rows for whichever side the mode names. It filters on the caller
+  being a participant, not on a slug or a profile.
+- [ ] **Action.** `GET /api/v1/agreements?mode=` behind `requireAuth`.
+- [ ] **Verify.** The list query joins `users` and filters `status = 'active'`
+  where it reads the *other* party, per
+  [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) — a
+  suspended counterparty's name must not surface here. The agreement itself
+  stays; it is a record of something that happened.
+
+---
+
+# Phase 7 — Verification
 
 Run every check against a database that is actually up. Plan 0013 was marked
 verified with Docker stopped, and shipped a broken feed.
 
-### Step 6.1 — The happy path
+### Step 7.1 — The happy path
 
 - [ ] Creative issues an agreement with three line items; client opens it, sees
   the total as the sum and the end date as start plus duration; accepts with the
   correct password; card shows Accepted with their name and timestamp.
 
-### Step 6.2 — The wrong password
+### Step 7.2 — The wrong password
 
 - [ ] Accept with a wrong password: refused, agreement still `sent`, no
   acceptance row, and the response says nothing about the agreement.
 
-### Step 6.3 — The changed document
+### Step 7.3 — The changed document
 
 - [ ] Open the accept screen, issue a superseding version from another session,
   then accept: refused on the hash check, and the client is told to review again.
 
-### Step 6.4 — Immutability
+### Step 7.4 — Immutability
 
 - [ ] After acceptance, attempt to update the agreement and its line items
   directly in SQL. The database must refuse both. Then confirm the service
   refuses a second acceptance and a revision request.
 
-### Step 6.5 — Wrong party, wrong thread
+### Step 7.5 — Wrong party, wrong thread
 
 - [ ] A creative cannot accept their own agreement. A client cannot issue one. A
   third account gets 404 on every route for that agreement, not 403.
 
-### Step 6.6 — Full pass
+### Step 7.6 — The record page
+
+- [ ] Open `/agreements/:id` as each party: the document, the timeline and the
+  acceptance fingerprint all render. Open it as a third account: 404. Follow the
+  chain from a superseded version to its replacement and back.
+
+### Step 7.7 — The index, both modes
+
+- [ ] With one account holding agreements on both sides, switch modes: *I'm for
+  hire* lists what it issued, *I'm hiring* lists what it received, and neither
+  shows the other's rows. Check both empty states.
+- [ ] Suspend a counterparty and confirm their name no longer surfaces in the
+  other party's index, while the agreement itself remains. Reinstate and confirm
+  it comes back. ADR 0028.
+
+### Step 7.8 — Full pass
 
 - [ ] `npm run typecheck`, `lint`, `build`, `docs:check` all exit 0. Grep the
-  whole diff for `invoice` and for any log or response carrying `password`.
-  Delete every test row created during this phase.
+  whole diff for `invoice`, for any log or response carrying `password`, and for
+  any status string the dates do not support — `progress`, `complete`,
+  `overdue`. Delete every test row created during this phase.
 
 ---
 
@@ -345,7 +425,11 @@ verified with Docker stopped, and shipped a broken feed.
 - A client can accept with their password; the acceptance records who, when, and
   a hash of exactly what they saw.
 - An accepted agreement cannot be changed, by the service or by SQL.
+- Either party can open `/agreements/:id` and answer "who agreed to what, and
+  when" from one screen, without reading the thread.
+- Both parties have an index of their agreements in History, mirrored by mode.
 - No column stores a total or an end date. No password material is stored.
+- No status is shown that the stored dates do not support.
 - The word "invoice" appears nowhere in the diff.
 
 ---
