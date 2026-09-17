@@ -20,7 +20,7 @@ export const profileKeys = {
   detail: (slug: string) => [...profileKeys.all, 'detail', slug] as const,
 };
 
-export function usePublishedProfiles(params: ListPublishedParams) {
+export function usePublishedProfiles(params: ListPublishedParams, enabled = true) {
   return useQuery({
     queryKey: profileKeys.list(params),
     queryFn: async (): Promise<ListPublishedResult> => {
@@ -31,6 +31,7 @@ export function usePublishedProfiles(params: ListPublishedParams) {
         throw toApiError(error);
       }
     },
+    enabled,
   });
 }
 

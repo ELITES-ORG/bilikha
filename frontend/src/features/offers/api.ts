@@ -201,10 +201,11 @@ export async function getPublished(id: string): Promise<PublishedOfferDetail> {
   }
 }
 
-export function usePublishedOffers(params: ListOffersParams) {
+export function usePublishedOffers(params: ListOffersParams, enabled = true) {
   return useQuery({
     queryKey: offerKeys.list(params),
     queryFn: () => listPublished(params),
+    enabled,
   });
 }
 

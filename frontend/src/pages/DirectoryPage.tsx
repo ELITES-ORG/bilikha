@@ -6,7 +6,6 @@ import {
   Avatar,
   Badge,
   Button,
-  ButtonLink,
   Container,
   EmptyState,
   SectionHeading,
@@ -15,10 +14,13 @@ import {
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedOffers } from '@/features/offers/api';
+import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
+
+type DirectoryView = 'offers' | 'creatives';
 
 function parseBudget(raw: string | null): number | undefined {
   if (!raw) return undefined;
@@ -27,8 +29,13 @@ function parseBudget(raw: string | null): number | undefined {
   return n;
 }
 
+function parseView(raw: string | null): DirectoryView {
+  return raw === 'creatives' ? 'creatives' : 'offers';
+}
+
 export function DirectoryPage() {
   const [params, setParams] = useSearchParams();
+  const view = parseView(params.get('view'));
   const domain = params.get('domain') ?? undefined;
   const subdomain = params.get('subdomain') ?? undefined;
   const municipality = params.get('municipality') ?? undefined;
@@ -44,15 +51,30 @@ export function DirectoryPage() {
   const { data: user } = useCurrentUser();
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
-  const list = usePublishedOffers({
-    domain,
-    subdomain,
-    municipality,
-    budgetMin,
-    budgetMax,
-    page,
-    limit: 20,
-  });
+  const offers = usePublishedOffers(
+    {
+      domain,
+      subdomain,
+      municipality,
+      budgetMin,
+      budgetMax,
+      page,
+      limit: 20,
+    },
+    view === 'offers',
+  );
+  const creatives = usePublishedProfiles(
+    {
+      domain,
+      subdomain,
+      municipality,
+      page,
+      limit: 20,
+    },
+    view === 'creatives',
+  );
+
+  const list = view === 'offers' ? offers : creatives;
 
   const selectedDomain = useMemo(
     () => domains.data?.find((d) => d.slug === domain),
@@ -60,15 +82,12 @@ export function DirectoryPage() {
   );
 
   const nearbyMunicipalityName = user?.municipalityName ?? null;
-  const creativesSearch = params.toString() ? `?${params}` : '';
 
-  const activeFilterCount = [
-    domain,
-    subdomain,
-    municipality,
-    budgetMin,
-    budgetMax,
-  ].filter((v) => v != null && v !== '').length;
+  const activeFilterCount = (
+    view === 'offers'
+      ? [domain, subdomain, municipality, budgetMin, budgetMax]
+      : [domain, subdomain, municipality]
+  ).filter((v) => v != null && v !== '').length;
 
   function openFilters() {
     setDraftBudgetMin(budgetMin?.toString() ?? '');
@@ -106,6 +125,19 @@ export function DirectoryPage() {
     setParams(merged, { replace: true });
   }
 
+  function setView(next: DirectoryView) {
+    const merged = new URLSearchParams(params);
+    if (next === 'offers') merged.delete('view');
+    else merged.set('view', next);
+    merged.delete('page');
+    // Budget only applies to offers.
+    if (next === 'creatives') {
+      merged.delete('budgetMin');
+      merged.delete('budgetMax');
+    }
+    setParams(merged, { replace: true });
+  }
+
   function applyBudget() {
     const min = parseBudget(draftBudgetMin.trim() || null);
     const max = parseBudget(draftBudgetMax.trim() || null);
@@ -128,7 +160,9 @@ export function DirectoryPage() {
     });
   }
 
-  const totalPages = list.data ? Math.max(1, Math.ceil(list.data.meta.total / list.data.meta.limit)) : 1;
+  const totalPages = list.data
+    ? Math.max(1, Math.ceil(list.data.meta.total / list.data.meta.limit))
+    : 1;
   const budgetInvalid =
     draftBudgetMin !== ''
     && draftBudgetMax !== ''
@@ -144,18 +178,47 @@ export function DirectoryPage() {
       <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
-            eyebrow="Find a service"
+            eyebrow="Find work or people"
             title="Directory"
-            description="Browse published offers by domain, sub-domain, or municipality. Nothing here requires an account."
+            description="Browse published offers and creatives. Nothing here requires an account."
           />
 
-          <p className="mt-4 text-sm text-ink-muted">
-            <Link to={`/creatives${creativesSearch}`} className="link-underline text-lawa-700">
-              Browse creatives
-            </Link>
-          </p>
+          <div
+            role="tablist"
+            aria-label="Directory sections"
+            className="mt-8 flex gap-6 border-b border-hairline"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'offers'}
+              className={cn(
+                'border-b-2 pb-2 text-sm font-medium transition-colors',
+                view === 'offers'
+                  ? 'border-lawa-700 text-ink'
+                  : 'border-transparent text-ink-muted hover:text-ink',
+              )}
+              onClick={() => setView('offers')}
+            >
+              Offers
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === 'creatives'}
+              className={cn(
+                'border-b-2 pb-2 text-sm font-medium transition-colors',
+                view === 'creatives'
+                  ? 'border-lawa-700 text-ink'
+                  : 'border-transparent text-ink-muted hover:text-ink',
+              )}
+              onClick={() => setView('creatives')}
+            >
+              Creatives
+            </button>
+          </div>
 
-          <div className="relative mt-8 border-b border-hairline pb-6">
+          <div className="relative mt-6 border-b border-hairline pb-6">
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
@@ -262,56 +325,60 @@ export function DirectoryPage() {
                     </select>
                   </label>
 
-                  <fieldset className="grid gap-3">
-                    <legend className="text-sm font-medium text-ink">Budget (₱)</legend>
-                    <p className="text-xs text-ink-muted">
-                      Optional. Leave blank for any price, including price on request.
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className="flex flex-col gap-1.5 text-sm text-ink">
-                        Min
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          step={1}
-                          placeholder="Any"
-                          value={draftBudgetMin}
-                          onChange={(e) => setDraftBudgetMin(e.target.value)}
-                          onBlur={applyBudget}
-                          className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1.5 text-sm text-ink">
-                        Max
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min={1}
-                          step={1}
-                          placeholder="Any"
-                          value={draftBudgetMax}
-                          onChange={(e) => setDraftBudgetMax(e.target.value)}
-                          onBlur={applyBudget}
-                          className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
-                        />
-                      </label>
-                    </div>
-                    {budgetInvalid && (
-                      <p className="text-xs text-danger-700">Maximum must be at least the minimum.</p>
-                    )}
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={budgetInvalid}
-                      onClick={() => {
-                        applyBudget();
-                        setFiltersOpen(false);
-                      }}
-                    >
-                      Apply budget
-                    </Button>
-                  </fieldset>
+                  {view === 'offers' && (
+                    <fieldset className="grid gap-3">
+                      <legend className="text-sm font-medium text-ink">Budget (₱)</legend>
+                      <p className="text-xs text-ink-muted">
+                        Optional. Leave blank for any price, including price on request.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex flex-col gap-1.5 text-sm text-ink">
+                          Min
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            placeholder="Any"
+                            value={draftBudgetMin}
+                            onChange={(e) => setDraftBudgetMin(e.target.value)}
+                            onBlur={applyBudget}
+                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1.5 text-sm text-ink">
+                          Max
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            placeholder="Any"
+                            value={draftBudgetMax}
+                            onChange={(e) => setDraftBudgetMax(e.target.value)}
+                            onBlur={applyBudget}
+                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                          />
+                        </label>
+                      </div>
+                      {budgetInvalid && (
+                        <p className="text-xs text-danger-700">
+                          Maximum must be at least the minimum.
+                        </p>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={budgetInvalid}
+                        onClick={() => {
+                          applyBudget();
+                          setFiltersOpen(false);
+                        }}
+                      >
+                        Apply budget
+                      </Button>
+                    </fieldset>
+                  )}
                 </div>
               </div>
             )}
@@ -320,7 +387,9 @@ export function DirectoryPage() {
           <div className="mt-10">
             {nearbyMunicipalityName && !municipality && (
               <p className="mb-6 text-sm text-ink-muted">
-                Showing offers from creatives in {nearbyMunicipalityName} first
+                {view === 'offers'
+                  ? `Showing offers from creatives in ${nearbyMunicipalityName} first`
+                  : `Showing creatives in ${nearbyMunicipalityName} first`}
               </p>
             )}
 
@@ -335,7 +404,7 @@ export function DirectoryPage() {
             {list.isError && (
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load the directory"
+                title={view === 'offers' ? 'Could not load offers' : 'Could not load creatives'}
                 description={list.error.message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
@@ -345,14 +414,15 @@ export function DirectoryPage() {
               />
             )}
 
-            {list.data && list.data.data.length === 0 && (
+            {view === 'offers' && offers.data && offers.data.data.length === 0 && (
               <EmptyState
-                title="No offers here yet — browse creatives in this sub-domain instead."
+                title="No offers here yet"
+                description="Try another filter, or browse creatives instead."
                 action={
                   <div className="flex flex-wrap justify-center gap-2">
-                    <ButtonLink to={`/creatives${creativesSearch}`} size="sm">
+                    <Button size="sm" onClick={() => setView('creatives')}>
                       Browse creatives
-                    </ButtonLink>
+                    </Button>
                     {activeFilterCount > 0 && (
                       <Button size="sm" variant="secondary" onClick={clearFilters}>
                         Clear filters
@@ -363,9 +433,36 @@ export function DirectoryPage() {
               />
             )}
 
-            {list.data && list.data.data.length > 0 && (
+            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && (
+              <EmptyState
+                title="Nobody listed here yet"
+                description={
+                  subdomain
+                    ? 'This sub-domain has no published creatives yet.'
+                    : domain
+                      ? 'This domain has no published creatives yet.'
+                      : municipality
+                        ? 'No published creatives in that municipality yet.'
+                        : 'Published creatives will appear here as the registry grows.'
+                }
+                action={
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button size="sm" onClick={() => setView('offers')}>
+                      Browse offers
+                    </Button>
+                    {activeFilterCount > 0 && (
+                      <Button size="sm" variant="secondary" onClick={clearFilters}>
+                        Clear filters
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            )}
+
+            {view === 'offers' && offers.data && offers.data.data.length > 0 && (
               <ul className="divide-y divide-hairline border-t border-hairline">
-                {list.data.data.map((offer) => {
+                {offers.data.data.map((offer) => {
                   const creativeName = offer.creative.displayName ?? offer.creative.slug;
                   return (
                     <li key={offer.id}>
@@ -413,6 +510,57 @@ export function DirectoryPage() {
                               </p>
                             </div>
                           </div>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {view === 'creatives' && creatives.data && creatives.data.data.length > 0 && (
+              <ul className="divide-y divide-hairline border-t border-hairline">
+                {creatives.data.data.map((profile) => {
+                  const primary = profile.subdomains.find((s) => s.isPrimary);
+                  const others = profile.subdomains.filter((s) => !s.isPrimary);
+                  return (
+                    <li key={profile.slug}>
+                      <Link
+                        to={`/creatives/${profile.slug}`}
+                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
+                      >
+                        <div className="flex gap-4">
+                          <Avatar
+                            src={profile.avatarUrl}
+                            name={profile.displayName ?? profile.fullName}
+                            size="md"
+                            className="mt-0.5"
+                          />
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
+                                {profile.displayName ?? profile.fullName}
+                              </h2>
+                              {profile.isNearby && <Badge tone="accent">Nearby</Badge>}
+                            </div>
+                            <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-muted">
+                              <MapPin className="size-3.5" aria-hidden />
+                              {profile.municipality}
+                            </p>
+                            {profile.bio && (
+                              <p className="mt-2 line-clamp-2 max-w-prose text-sm text-ink-muted text-pretty">
+                                {profile.bio}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {primary && <Badge tone="brand">{primary.name}</Badge>}
+                          {others.map((s) => (
+                            <Badge key={s.slug} tone="neutral">
+                              {s.name}
+                            </Badge>
+                          ))}
                         </div>
                       </Link>
                     </li>
