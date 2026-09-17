@@ -1,3 +1,4 @@
+import type { MessageAgreement } from '@/features/agreements/types';
 import type { PostingStatus } from '@/features/postings/types';
 
 /** Offer card embedded on a message (GET /conversations/:id). */
@@ -34,6 +35,9 @@ export interface ConversationMessage {
   offerRemoved?: boolean;
   posting?: MessagePosting | null;
   postingRemoved?: boolean;
+  /** Attached work agreement card. Three attachment kinds, no more (ADR 0029). */
+  agreement?: MessageAgreement | null;
+  agreementRemoved?: boolean;
 }
 
 export interface ConversationThread {

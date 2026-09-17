@@ -32,7 +32,7 @@ export function centavosToPesoInput(centavos: number | null | undefined): string
 
 /** Format integer centavos for display. Never send pesos to the API. */
 
-function formatPesos(centavos: number): string {
+export function formatPesos(centavos: number): string {
   const pesos = Math.round(centavos) / 100;
   return `₱${pesos.toLocaleString('en-PH', {
     maximumFractionDigits: 0,

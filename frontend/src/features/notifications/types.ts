@@ -2,7 +2,11 @@ export type NotificationType =
   | 'profile_approved'
   | 'profile_rejected'
   | 'profile_edit_acknowledged'
-  | 'posting_replied';
+  | 'posting_replied'
+  | 'agreement_issued'
+  | 'agreement_revision_requested'
+  | 'agreement_accepted'
+  | 'agreement_event';
 
 export interface AppNotification {
   id: string;

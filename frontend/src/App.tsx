@@ -8,6 +8,7 @@ import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AccountPage } from '@/pages/account/AccountPage';
+import { AgreementPage } from '@/pages/AgreementPage';
 import { OffersSettingsPage } from '@/pages/account/OffersSettingsPage';
 import { ProfileSettingsPage } from '@/pages/account/ProfileSettingsPage';
 import { SecuritySettingsPage } from '@/pages/account/SecuritySettingsPage';
@@ -89,6 +90,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <ConversationPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/agreements/:id"
+              element={
+                <RequireAuth>
+                  <AgreementPage />
                 </RequireAuth>
               }
             />

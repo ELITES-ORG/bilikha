@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, EllipsisVertical } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Button, Container, Input, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
+import { useAgreement } from '@/features/agreements/api';
+import { AgreementComposer } from '@/features/agreements/AgreementComposer';
+import { MessageAgreementBlock } from '@/features/agreements/AgreementCard';
+import { AgreementReviewActions } from '@/features/agreements/AgreementReviewActions';
 import {
   useBlockUser,
   useConversationThread,
@@ -29,6 +33,8 @@ import { pbBottomNav, pbConversationComposer, fixedComposerAboveNav } from '@/li
 import { cn } from '@/lib/cn';
 
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
+
+type ComposerMode = 'closed' | 'open';
 
 function ConversationMenu({
   open,
@@ -103,7 +109,30 @@ export function ConversationPage() {
   const [reportReason, setReportReason] = useState('');
   const [reportDone, setReportDone] = useState(false);
   const [safetyError, setSafetyError] = useState<string | null>(null);
+  const [composer, setComposer] = useState<ComposerMode>('closed');
   const markedFor = useRef<string | null>(null);
+
+  const isCreative = thread.data?.role === 'creative';
+
+  /**
+   * The newest agreement in the thread still awaiting the client's response.
+   * A creative answering a request for changes replaces that version rather
+   * than issuing a second live one.
+   */
+  const openAgreementId = useMemo(() => {
+    const messages = thread.data?.messages ?? [];
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const attached = messages[index]?.agreement;
+      if (attached?.status === 'sent') return attached.id;
+    }
+    return null;
+  }, [thread.data?.messages]);
+
+  const openAgreement = useAgreement(openAgreementId ?? undefined);
+  // Read from the record, not the card: the card on an older message may have
+  // been rendered before the client accepted or a newer version replaced it.
+  // The record also carries the content hash the accept confirmation needs.
+  const openRecord = openAgreement.data?.status === 'sent' ? openAgreement.data : null;
 
   useEffect(() => {
     if (!id || !thread.data || markedFor.current === id) return;
@@ -381,6 +410,11 @@ export function ConversationPage() {
                       postingRemoved={msg.postingRemoved}
                       fromSelf={msg.fromSelf}
                     />
+                    <MessageAgreementBlock
+                      agreement={msg.agreement ?? null}
+                      agreementRemoved={msg.agreementRemoved}
+                      fromSelf={msg.fromSelf}
+                    />
                     <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>
                     <p
                       className={cn(
@@ -394,6 +428,67 @@ export function ConversationPage() {
                 ))}
                 <div ref={bottomRef} />
               </div>
+
+              {/*
+               * Agreement work is a sibling of the reply form below, never a
+               * child of it: a nested <form> silently swallows the inner submit,
+               * which is what broke Save in plan 0010.
+               */}
+              {!blocked && isCreative && (
+                <div className="mt-8 border-t border-hairline pt-6">
+                  {composer === 'open' ? (
+                    <AgreementComposer
+                      key={openRecord?.id ?? 'new'}
+                      conversationId={id!}
+                      supersedes={openRecord}
+                      onIssued={() => setComposer('closed')}
+                      onCancel={() => setComposer('closed')}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {openRecord?.revisionRequestedAt && (
+                        <div className="rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                          <p className="text-sm font-medium text-ink">
+                            {thread.data.otherPartyName} asked for changes to version{' '}
+                            {openRecord.version}
+                          </p>
+                          {openRecord.revisionNote && (
+                            <p className="mt-1 text-sm text-ink-muted text-pretty">
+                              “{openRecord.revisionNote}”
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setComposer('open')}
+                      >
+                        {openRecord ? `Send version ${openRecord.version + 1}` : 'Draft agreement'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!blocked && !isCreative && openRecord && (
+                <div className="mt-8 border-t border-hairline pt-6">
+                  <p className="text-sm font-medium text-ink">
+                    A work agreement is waiting for your response
+                  </p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {openRecord.packageTitle} · version {openRecord.version}.{' '}
+                    <Link to={`/agreements/${openRecord.id}`} className="underline">
+                      Read it in full
+                    </Link>
+                    .
+                  </p>
+                  <div className="mt-3">
+                    <AgreementReviewActions agreement={openRecord} />
+                  </div>
+                </div>
+              )}
 
               {blocked ? (
                 <div className="mt-8 border-t border-hairline pt-6">
