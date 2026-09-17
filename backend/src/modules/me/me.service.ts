@@ -155,6 +155,7 @@ export async function createOwnProfile(
   const [user] = await db
     .select({
       id: users.id,
+      username: users.username,
       usernameNormalized: users.usernameNormalized,
     })
     .from(users)
@@ -187,7 +188,12 @@ export async function createOwnProfile(
       .values({
         userId,
         slug: user.usernameNormalized,
-        displayName: input.displayName ?? null,
+        // Seeded from the username so the two match by default and nobody
+        // types the same name twice. It stays editable, and it is only a seed:
+        // the username is a credential and is never changed by editing this.
+        // A creative who later clears it falls back to their full name, which
+        // is why the field says so.
+        displayName: input.displayName ?? user.username,
         bio: input.bio ?? null,
         contactPreference: input.contactPreference,
         status: 'pending_review',

@@ -50,6 +50,7 @@ export function ProfileCraftFields({
         <h3 className="text-lg font-medium text-ink">Public profile</h3>
         <Input
           label="Display name"
+          hint="How you appear in the directory. Starts as your username; clear it to show your full name instead."
           maxLength={80}
           value={form.displayName}
           onChange={(event) => onUpdate('displayName', event.target.value)}

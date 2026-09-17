@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
@@ -34,6 +34,21 @@ export function ProfileSetupPage() {
   const [form, setForm] = useState<ProfileCraftFormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  /**
+   * Show the display name already matching the username, rather than an empty
+   * box that invites typing the same thing again. The server seeds it too, so
+   * this is only what the person sees; it seeds once and never overwrites
+   * anything they have typed.
+   */
+  const seededDisplayName = useRef(false);
+  useEffect(() => {
+    if (seededDisplayName.current || !user?.username) return;
+    seededDisplayName.current = true;
+    setForm((current) =>
+      current.displayName ? current : { ...current, displayName: user.username },
+    );
+  }, [user?.username]);
 
   function update<K extends keyof ProfileCraftFormState>(key: K, value: ProfileCraftFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
