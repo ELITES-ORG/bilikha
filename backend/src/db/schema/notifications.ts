@@ -15,6 +15,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'profile_rejected',
   'profile_edit_acknowledged',
   'posting_replied',
+  'agreement_issued',
+  'agreement_revision_requested',
+  'agreement_accepted',
+  'agreement_event',
 ]);
 
 /**

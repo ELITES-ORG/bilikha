@@ -297,10 +297,79 @@ listing is deleted.
 | `body` | `text` | |
 | `offer_id` | `uuid` FK → `offers.id` null | Optional; `ON DELETE SET NULL` so deleting a listing keeps the message |
 | `posting_id` | `uuid` FK → `postings.id` null | Optional; mirror of `offer_id` for creatives replying to client work ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)); `ON DELETE SET NULL` |
+| `agreement_id` | `uuid` FK → `agreements.id` null | Optional; third attachment column for a work agreement ([ADR 0029](../decisions/0029-work-agreements-not-invoices.md)); `ON DELETE SET NULL`. Do not add a fourth without revisiting that decision |
 | `created_at` | `timestamptz` | |
 
 Indexes: `(conversation_id, created_at)`; `messages_offer_idx` on `(offer_id)`;
-`messages_posting_idx` on `(posting_id)`.
+`messages_posting_idx` on `(posting_id)`; `messages_agreement_idx` on `(agreement_id)`.
+
+## `agreements`
+
+A priced package proposed in a conversation. The document status (`sent` /
+`accepted` / `superseded` / `withdrawn`) is stored; the engagement lifecycle
+state, the money total, and the end date are **not** — they are derived on read
+([ADR 0029](../decisions/0029-work-agreements-not-invoices.md)). An accepted row
+is frozen by a database trigger as well as the service.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `conversation_id` | `uuid` FK → `conversations.id` | `ON DELETE CASCADE` |
+| `issued_by_user_id` | `uuid` FK → `users.id` | Always the creative; `ON DELETE RESTRICT` |
+| `version` | `integer` | From 1; check `> 0` |
+| `supersedes_id` | `uuid` FK → `agreements.id` null | Predecessor; `ON DELETE SET NULL` |
+| `package_title` | `text` | |
+| `notes` | `text` null | |
+| `start_date` | `date` | |
+| `duration_days` | `integer` | Check `> 0`. End date = start + duration |
+| `status` | enum | `sent` \| `accepted` \| `superseded` \| `withdrawn` |
+| `revision_note` | `text` null | Client's words when asking for changes |
+| `revision_requested_at` | `timestamptz` null | |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(conversation_id, created_at)`.
+
+## `agreement_line_items`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `agreement_id` | `uuid` FK → `agreements.id` | `ON DELETE CASCADE` |
+| `description` | `text` | |
+| `price_centavos` | `integer` | Non-negative check; money is integer centavos |
+| `sort_order` | `integer` | Default 0 |
+
+Indexes: `(agreement_id, sort_order)`.
+
+## `agreement_acceptances`
+
+Who accepted what, and a SHA-256 of the exact terms they saw. One row per
+agreement — unique on `agreement_id`. Never stores password material.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `agreement_id` | `uuid` FK → `agreements.id` | Unique; `ON DELETE CASCADE` |
+| `accepted_by_user_id` | `uuid` FK → `users.id` | `ON DELETE RESTRICT` |
+| `content_hash` | `text` | SHA-256 hex of canonical content |
+| `accepted_at` | `timestamptz` | |
+
+## `agreement_events`
+
+Append-only engagement moves after acceptance. The accepted agreement row never
+changes again; everything afterwards is a new event
+([ADR 0029](../decisions/0029-work-agreements-not-invoices.md)).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `agreement_id` | `uuid` FK → `agreements.id` | `ON DELETE CASCADE` |
+| `actor_user_id` | `uuid` FK → `users.id` | Who did it; `ON DELETE RESTRICT` |
+| `type` | enum | `started` \| `delivery_marked` \| `completion_confirmed` \| `cancelled` |
+| `note` | `text` null | Required by the service for `cancelled` |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(agreement_id, created_at)`.
 
 ## `postings`
 

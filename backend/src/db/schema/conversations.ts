@@ -3,6 +3,7 @@ import { relations } from 'drizzle-orm';
 import { users } from './users.js';
 import { creativeProfiles, offers } from './profiles.js';
 import { postings } from './postings.js';
+import { agreements } from './agreements.js';
 
 /**
  * Exactly two parties: the client who started it and the creative whose profile
@@ -60,6 +61,9 @@ export const messages = pgTable(
     offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
     // Mirror of offer_id for creatives replying to a client's posting (ADR 0025).
     postingId: uuid('posting_id').references(() => postings.id, { onDelete: 'set null' }),
+    // Third attachment column — a work agreement (ADR 0029). Do not add a fourth
+    // without revisiting that decision.
+    agreementId: uuid('agreement_id').references(() => agreements.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -67,6 +71,7 @@ export const messages = pgTable(
     index('messages_conversation_created_idx').on(table.conversationId, table.createdAt),
     index('messages_offer_idx').on(table.offerId),
     index('messages_posting_idx').on(table.postingId),
+    index('messages_agreement_idx').on(table.agreementId),
   ],
 );
 
@@ -108,6 +113,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   sender: one(users, { fields: [messages.senderUserId], references: [users.id] }),
   offer: one(offers, { fields: [messages.offerId], references: [offers.id] }),
   posting: one(postings, { fields: [messages.postingId], references: [postings.id] }),
+  agreement: one(agreements, { fields: [messages.agreementId], references: [agreements.id] }),
 }));
 
 export const savedOffersRelations = relations(savedOffers, ({ one }) => ({
