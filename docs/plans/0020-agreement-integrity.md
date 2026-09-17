@@ -68,7 +68,7 @@ apply unchanged. Six specific to this plan:
 |---|---|---|
 | 1. Precise notifications | 4 / 4 | Complete |
 | 2. The deletion guard | 2 / 2 | Complete |
-| 3. Verification | 3 / 4 | 3.3 needs a browser; 3.4 awaits CI |
+| 3. Verification | 3 / 4 | 3.3 needs a browser |
 
 ---
 
@@ -178,7 +178,7 @@ apply unchanged. Six specific to this plan:
 
 ### Step 3.4 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit.
 
 ---
