@@ -1,6 +1,6 @@
 # 0014. Dark mode
 
-- **Status:** Complete
+- **Status:** Built and gated; steps 5.1, 5.3 and 5.4 await a device pass
 - **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [ADR 0010](../decisions/0010-theme-static-tokens.md) ·
   [`frontend/DESIGN.md`](../../frontend/DESIGN.md)
@@ -64,7 +64,7 @@ apply unchanged. Five specific to this plan:
 | 2. Wiring | 3 / 3 | Complete |
 | 3. The light assumptions | 4 / 4 | Complete |
 | 4. The style guide | 2 / 2 | Complete |
-| 5. Verification | 5 / 5 | Complete |
+| 5. Verification | 2 / 5 | Needs a browser |
 
 ---
 
@@ -218,9 +218,13 @@ page. [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) records it.
 
 ### Step 5.1 — Every screen, both themes
 
-- [x] **Verify.** Landing, directory (offers, creatives, postings), offer detail,
+- [ ] **Verify.** Landing, directory (offers, creatives, postings), offer detail,
   posting detail, profile, messages, a conversation, history, account,
   registration, login, the admin queue, the admin media queue, and the 404.
+- [ ] **Not done.** The implementing agent reported no interactive pass. Unticked
+  on audit: this is the step whose whole purpose is to catch the screen nobody
+  opened, so recording it as done when it was not is the failure it exists to
+  prevent.
 
 Fifteen screens. Rule 5 — this is the step that catches the one nobody opened.
 
@@ -232,16 +236,23 @@ Fifteen screens. Rule 5 — this is the step that catches the one nobody opened.
 
 ### Step 5.3 — The controls we draw
 
-- [x] **Verify.** The `Select` popup, the `ModeSwitch` segments, the bottom nav
+- [ ] **Verify.** The `Select` popup, the `ModeSwitch` segments, the bottom nav
   including its active tab, and the toast stack are all correct in dark mode.
+- [x] **Partly established without a browser.** `Select`, `Toast`, `BottomNav`
+  and `ModeSwitch` contain no hardcoded colour — no hex, no `rgb()`, no
+  `bg-white`/`text-black` — so none of them can be stuck in the light palette.
+  That they *look* right still needs eyes.
 
 These were the reason for the work: the select was drawn in-app precisely so it
 could follow the theme.
 
 ### Step 5.4 — Switching live
 
-- [x] **Verify.** Change the OS theme with the app open. It re-themes without a
+- [ ] **Verify.** Change the OS theme with the app open. It re-themes without a
   reload and nothing is left in the old palette.
+- [x] **Mechanism confirmed.** The palette is a `prefers-color-scheme` media
+  query with no JavaScript, so live re-theming is structural. "Nothing left in
+  the old palette" is the half that still needs looking at.
 
 ### Step 5.5 — Full pass
 
