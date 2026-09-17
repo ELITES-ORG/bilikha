@@ -17,7 +17,7 @@ export function RegistrationStatusBanner() {
         tone="warning"
         icon={<Clock3 className="size-4" aria-hidden="true" />}
         label="Under review"
-        message="Your registration is being reviewed. Your profile is not visible in the directory yet."
+        message="Your creative profile is being reviewed, so it is not in the directory yet. Everything else works — you can browse, post work and message people."
       />
     );
   }
@@ -28,7 +28,7 @@ export function RegistrationStatusBanner() {
         tone="danger"
         icon={<CircleAlert className="size-4" aria-hidden="true" />}
         label="Not approved"
-        message={`Your registration was not approved. ${user.rejectionReason}`}
+        message={`Your creative profile was not approved. ${user.rejectionReason}`}
         action={
           // Straight to the editor, not the hub: the label promises editing,
           // and /account stopped carrying a form when it became a hub.
@@ -46,7 +46,7 @@ export function RegistrationStatusBanner() {
         tone="neutral"
         icon={<FilePenLine className="size-4" aria-hidden="true" />}
         label="Incomplete"
-        message="Your registration is incomplete."
+        message="Your creative profile is not finished, so it is not in the directory yet."
       />
     );
   }
@@ -57,7 +57,7 @@ export function RegistrationStatusBanner() {
         tone="danger"
         icon={<CircleAlert className="size-4" aria-hidden="true" />}
         label="Suspended"
-        message="Your registration was not approved."
+        message="Your creative profile was not approved, so it is not in the directory."
         action={
           // Straight to the editor, not the hub: the label promises editing,
           // and /account stopped carrying a form when it became a hub.
