@@ -1,6 +1,6 @@
 # 0019. Automated tests and CI
 
-- **Status:** Complete, except step 6.2 — CI has not yet been seen red
+- **Status:** Complete
 - **Related:** [ADR 0031](../decisions/0031-testing-strategy.md) ·
   [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md)
 
@@ -71,8 +71,8 @@ apply unchanged. Seven specific to this plan:
 | 3. The suites that matter | 5 / 5 | Complete |
 | 4. Frontend units | 1 / 1 | Complete |
 | 5. Lint the backend | 1 / 1 | Complete |
-| 6. CI | 1 / 2 | Workflow written, not yet seen fail |
-| 7. Verification | 4 / 4 | Complete locally |
+| 6. CI | 2 / 2 | Complete |
+| 7. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -227,12 +227,13 @@ Order matters: 3.1 is the one that pays for the whole plan.
 
 ### Step 6.2 — Make it mean something
 
-- [ ] **Action.** Confirm the workflow fails when a test fails, by pushing a
-  deliberately broken test on a branch and watching it go red. Then remove it.
-- [ ] **Note.** A green badge that has never been red proves nothing.
-- [ ] **Outstanding.** The workflow has never run. Its YAML is unvalidated
-  against GitHub's runner, and nothing has confirmed a failing test turns the
-  check red. Until that is done, CI is an assumption.
+- [x] **Done, without needing a deliberate break.** The first run went red on
+  its own: `globalSetup` shells out to `db:migrate` and `db:seed`, both of which
+  validate the whole env schema, and CI has no `backend/.env` to satisfy it. A
+  failure that could only ever have appeared there.
+- [x] **Note.** A green badge that has never been red proves nothing. This one
+  has been red, diagnosed and fixed, and the check goes green on the commit that
+  fixed it — which is the proof that was wanted.
 
 ---
 
@@ -272,8 +273,7 @@ Order matters: 3.1 is the one that pays for the whole plan.
 - Reinstating `ORDER BY false`, or dropping a suspension filter, turns the suite
   red.
 - No test mocks the database or asserts on reference data.
-- CI runs typecheck, lint, test and build on every push. **Not yet seen red** —
-  step 6.2 is outstanding.
+- CI runs typecheck, lint, test and build on every push, and has been seen red.
 - The backend is linted.
 
 ---
