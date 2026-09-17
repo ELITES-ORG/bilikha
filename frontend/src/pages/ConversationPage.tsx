@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, EllipsisVertical } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Button, Container, Input, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -22,6 +23,56 @@ import { pbBottomNav, pbConversationComposer, fixedComposerAboveNav } from '@/li
 import { cn } from '@/lib/cn';
 
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
+
+function ConversationMenu({
+  open,
+  onToggle,
+  onReport,
+  onBlock,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onReport: () => void;
+  onBlock: () => void;
+}) {
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        className="inline-flex size-10 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+        aria-label="Conversation options"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={onToggle}
+      >
+        <EllipsisVertical className="size-5" aria-hidden />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-10 mt-1 w-52 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-clay-50"
+            onClick={onReport}
+          >
+            Report conversation
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
+            onClick={onBlock}
+          >
+            Block this person
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ConversationPage() {
   const { id } = useParams<{ id: string }>();
@@ -123,90 +174,107 @@ export function ConversationPage() {
     attachedOffer.isError &&
     attachedOffer.error instanceof OfferNotFoundError;
 
+  const partyName = thread.data?.otherPartyName;
+  const partyAvatar = thread.data?.otherPartyAvatarUrl;
+
   return (
     <>
-      <SiteHeader />
+      {/* Desktop keeps the site header; phones use the conversation chrome below. */}
+      <div className="hidden sm:block">
+        <SiteHeader />
+      </div>
       <RegistrationStatusBanner />
+
+      {/* Phone chat header: back + avatar + name | ⋮ */}
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/85 px-1 backdrop-blur-sm sm:hidden">
+        <Link
+          to="/messages"
+          aria-label="Back to messages"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-clay-100"
+        >
+          <ArrowLeft className="size-5" aria-hidden />
+        </Link>
+        {thread.data ? (
+          <>
+            <Avatar src={partyAvatar} name={partyName!} size="sm" />
+            <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-ink">
+              {partyName}
+            </h1>
+            <ConversationMenu
+              open={menu === 'menu'}
+              onToggle={() => setMenu((m) => (m === 'closed' ? 'menu' : 'closed'))}
+              onReport={() => {
+                setReportDone(false);
+                setMenu('report');
+              }}
+              onBlock={() => setMenu('block')}
+            />
+          </>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-2 px-1">
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+        )}
+      </header>
+
       <main className={thread.data && !blocked ? pbConversationComposer : pbBottomNav}>
-        <Container width="narrow" className="py-(--section-gap)">
-          <p className="text-sm">
-            <Link to="/messages" className="link-underline text-ink-muted">
-              ← Messages
-            </Link>
-          </p>
+        <Container width="narrow" className="max-sm:py-4 py-(--section-gap)">
+          {/* Desktop back + party row */}
+          <div className="mb-4 hidden items-center justify-between gap-4 sm:flex">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                to="/messages"
+                aria-label="Back to messages"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+              >
+                <ArrowLeft className="size-5" aria-hidden />
+              </Link>
+              {thread.data ? (
+                <>
+                  <Avatar src={partyAvatar} name={partyName!} size="md" />
+                  <h1 className="u-display truncate text-3xl text-ink">{partyName}</h1>
+                </>
+              ) : (
+                <>
+                  <Skeleton className="size-10 shrink-0 rounded-full" />
+                  <Skeleton className="h-8 w-40" />
+                </>
+              )}
+            </div>
+            {thread.data && (
+              <ConversationMenu
+                open={menu === 'menu'}
+                onToggle={() => setMenu((m) => (m === 'closed' ? 'menu' : 'closed'))}
+                onReport={() => {
+                  setReportDone(false);
+                  setMenu('report');
+                }}
+                onBlock={() => setMenu('block')}
+              />
+            )}
+          </div>
 
           {thread.isPending && (
-            <div className="mt-8 space-y-3">
-              <Skeleton className="h-8 w-2/3" />
+            <div className="space-y-3">
               <Skeleton className="h-40 w-full" />
             </div>
           )}
 
           {thread.isError && (
-            <p className="mt-8 text-danger-700">{thread.error.message}</p>
+            <p className="text-danger-700">{thread.error.message}</p>
           )}
 
           {thread.data && (
             <>
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar
-                    src={thread.data.otherPartyAvatarUrl}
-                    name={thread.data.otherPartyName}
-                    size="md"
-                  />
-                  <h1 className="u-display truncate text-3xl text-ink">
-                    {thread.data.otherPartyName}
-                  </h1>
-                </div>
-                <div className="relative shrink-0">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    aria-expanded={menu !== 'closed'}
-                    aria-haspopup="menu"
-                    onClick={() => setMenu((m) => (m === 'closed' ? 'menu' : 'closed'))}
-                  >
-                    More
-                  </Button>
-                  {menu === 'menu' && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 z-10 mt-1 w-52 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-clay-50"
-                        onClick={() => {
-                          setReportDone(false);
-                          setMenu('report');
-                        }}
-                      >
-                        Report conversation
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
-                        onClick={() => setMenu('block')}
-                      >
-                        Block this person
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {reportDone && (
-                <p className="mt-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
+                <p className="mb-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
                   Report received. An administrator will review it.
                 </p>
               )}
 
               {blockConfirmed && !blocked && (
-                <p className="mt-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
+                <p className="mb-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
                   {thread.data.otherPartyName} can no longer message you. You can still write to
                   them.
                 </p>
@@ -215,7 +283,7 @@ export function ConversationPage() {
               {menu === 'report' && (
                 <form
                   onSubmit={(e) => void onReport(e)}
-                  className="mt-4 rounded-sm border border-hairline bg-surface p-4"
+                  className="mb-4 rounded-sm border border-hairline bg-surface p-4"
                 >
                   <p className="text-sm font-medium text-ink">Report this conversation</p>
                   <p className="mt-1 text-sm text-ink-muted">
@@ -243,7 +311,7 @@ export function ConversationPage() {
               )}
 
               {menu === 'block' && (
-                <div className="mt-4 rounded-sm border border-hairline bg-surface p-4">
+                <div className="mb-4 rounded-sm border border-hairline bg-surface p-4">
                   <p className="text-sm font-medium text-ink">
                     Block {thread.data.otherPartyName}?
                   </p>
@@ -269,7 +337,7 @@ export function ConversationPage() {
                 </div>
               )}
 
-              <div className="mt-8 space-y-3">
+              <div className="space-y-3">
                 {thread.data.messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -358,7 +426,7 @@ export function ConversationPage() {
                     </div>
                   )}
                   {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
-                  <div className="flex items-end gap-2">
+                  <div className="flex flex-row items-end gap-2">
                     <label htmlFor="reply-body" className="sr-only">
                       Reply
                     </label>
@@ -371,7 +439,7 @@ export function ConversationPage() {
                       onChange={(e) => setBody(e.target.value)}
                       placeholder="Write a reply"
                       className={cn(
-                        'min-h-10 max-h-28 flex-1 resize-none rounded-sm border border-hairline-strong bg-surface',
+                        'min-h-10 max-h-28 min-w-0 flex-1 resize-none rounded-sm border border-hairline-strong bg-surface',
                         'px-3 py-2 text-base leading-5 text-ink',
                         'focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
                       )}
@@ -381,7 +449,12 @@ export function ConversationPage() {
                         el.style.height = `${Math.min(el.scrollHeight, 112)}px`;
                       }}
                     />
-                    <Button type="submit" size="sm" className="shrink-0" loading={send.isPending}>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="h-10 shrink-0 self-end"
+                      loading={send.isPending}
+                    >
                       Send
                     </Button>
                   </div>
