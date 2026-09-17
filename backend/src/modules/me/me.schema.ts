@@ -56,7 +56,12 @@ export const saveOfferSchema = z.object({
   offerId: z.string().uuid('Invalid offer id'),
 });
 
+export const viewModeSchema = z.object({
+  viewMode: z.enum(['hiring', 'creative']),
+});
+
 export type CreateProfileInput = z.infer<typeof createProfileSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type SaveOfferInput = z.infer<typeof saveOfferSchema>;
+export type ViewModeInput = z.infer<typeof viewModeSchema>;

@@ -2,22 +2,28 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ModeSwitch } from '@/components/ModeSwitch';
+import { effectiveViewMode } from '@/lib/view-mode';
+import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import {
   Avatar,
   Badge,
   Button,
+  ButtonLink,
   Container,
   EmptyState,
   SectionHeading,
   Skeleton,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
+import { usePostingsFeed } from '@/features/postings/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedOffers } from '@/features/offers/api';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
+import { formatTimeLeft } from '@/lib/posting-time';
 import { cn } from '@/lib/cn';
 
 type DirectoryView = 'offers' | 'creatives';
@@ -49,6 +55,10 @@ export function DirectoryPage() {
   const [draftBudgetMax, setDraftBudgetMax] = useState(budgetMax?.toString() ?? '');
 
   const { data: user } = useCurrentUser();
+  const mode = effectiveViewMode(user);
+  const creativeHome = Boolean(user?.profileSlug) && mode === 'creative';
+  const signedInHiring = Boolean(user) && !creativeHome;
+
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
   const offers = usePublishedOffers(
@@ -71,10 +81,14 @@ export function DirectoryPage() {
       page,
       limit: 20,
     },
-    view === 'creatives',
+    view === 'creatives' && !creativeHome,
+  );
+  const postings = usePostingsFeed(
+    { domain, subdomain, municipality, page, limit: 20 },
+    creativeHome,
   );
 
-  const list = view === 'offers' ? offers : creatives;
+  const list = creativeHome ? postings : view === 'offers' ? offers : creatives;
 
   const selectedDomain = useMemo(
     () => domains.data?.find((d) => d.slug === domain),
@@ -178,43 +192,70 @@ export function DirectoryPage() {
       <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
-            eyebrow="Find work or people"
-            title="Directory"
-            description="Browse published offers and creatives. Nothing here requires an account."
+            eyebrow={creativeHome ? 'Creative work' : 'Find work or people'}
+            title={creativeHome ? 'Client postings' : 'Directory'}
+            description={
+              creativeHome
+                ? 'Open work from clients, matched to your sub-domains first.'
+                : user
+                  ? 'Browse to hire in this mode, or switch to My creative work for client postings.'
+                  : 'Browse published offers and creatives. Nothing here requires an account.'
+            }
           />
+
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <ModeSwitch size="md" />
+            {signedInHiring && (
+              <div className="flex flex-wrap gap-2">
+                <ButtonLink to="/postings/new" size="sm">
+                  Post work
+                </ButtonLink>
+                <ButtonLink to="/postings/mine" size="sm" variant="secondary">
+                  Your postings
+                </ButtonLink>
+              </div>
+            )}
+          </div>
 
           <div className="relative mt-8">
             <div className="flex items-center justify-between gap-3 border-b border-hairline">
-              <div role="tablist" aria-label="Directory sections" className="flex gap-6">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={view === 'offers'}
-                  className={cn(
-                    '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
-                    view === 'offers'
-                      ? 'border-lawa-700 text-ink'
-                      : 'border-transparent text-ink-muted hover:text-ink',
-                  )}
-                  onClick={() => setView('offers')}
-                >
-                  Offers
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={view === 'creatives'}
-                  className={cn(
-                    '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
-                    view === 'creatives'
-                      ? 'border-lawa-700 text-ink'
-                      : 'border-transparent text-ink-muted hover:text-ink',
-                  )}
-                  onClick={() => setView('creatives')}
-                >
-                  Creatives
-                </button>
-              </div>
+              {!creativeHome && (
+                <div role="tablist" aria-label="Directory sections" className="flex gap-6">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={view === 'offers'}
+                    className={cn(
+                      '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
+                      view === 'offers'
+                        ? 'border-lawa-700 text-ink'
+                        : 'border-transparent text-ink-muted hover:text-ink',
+                    )}
+                    onClick={() => setView('offers')}
+                  >
+                    Offers
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={view === 'creatives'}
+                    className={cn(
+                      '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
+                      view === 'creatives'
+                        ? 'border-lawa-700 text-ink'
+                        : 'border-transparent text-ink-muted hover:text-ink',
+                    )}
+                    onClick={() => setView('creatives')}
+                  >
+                    Creatives
+                  </button>
+                </div>
+              )}
+              {creativeHome && (
+                <p className="-mb-px border-b-2 border-lawa-700 pb-2 text-sm font-medium text-ink">
+                  Postings
+                </p>
+              )}
 
               <button
                 type="button"
@@ -325,7 +366,7 @@ export function DirectoryPage() {
                     </select>
                   </label>
 
-                  {view === 'offers' && (
+                  {!creativeHome && view === 'offers' && (
                     <fieldset className="grid gap-3">
                       <legend className="text-sm font-medium text-ink">Budget (₱)</legend>
                       <p className="text-xs text-ink-muted">
@@ -385,11 +426,16 @@ export function DirectoryPage() {
           </div>
 
           <div className="mt-10">
-            {nearbyMunicipalityName && !municipality && (
+            {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
                   ? `Showing offers from creatives in ${nearbyMunicipalityName} first`
                   : `Showing creatives in ${nearbyMunicipalityName} first`}
+              </p>
+            )}
+            {creativeHome && nearbyMunicipalityName && !municipality && (
+              <p className="mb-6 text-sm text-ink-muted">
+                {`Showing postings in ${nearbyMunicipalityName} higher in the list`}
               </p>
             )}
 
@@ -404,7 +450,13 @@ export function DirectoryPage() {
             {list.isError && (
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title={view === 'offers' ? 'Could not load offers' : 'Could not load creatives'}
+                title={
+                  creativeHome
+                    ? 'Could not load postings'
+                    : view === 'offers'
+                      ? 'Could not load offers'
+                      : 'Could not load creatives'
+                }
                 description={list.error.message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
@@ -414,50 +466,102 @@ export function DirectoryPage() {
               />
             )}
 
-            {view === 'offers' && offers.data && offers.data.data.length === 0 && (
-              <EmptyState
-                title="No offers here yet"
-                description="Try another filter, or browse creatives instead."
-                action={
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button size="sm" onClick={() => setView('creatives')}>
-                      Browse creatives
+            {creativeHome && postings.data && postings.data.data.length === 0 && (
+              <ModeAwareEmptyState
+                title="No postings yet"
+                description="You are viewing your creative work. No postings match your sub-domains yet — switch to Hiring to browse creatives and post your own work."
+                extraAction={
+                  activeFilterCount > 0 ? (
+                    <Button size="sm" variant="secondary" onClick={clearFilters}>
+                      Clear filters
                     </Button>
-                    {activeFilterCount > 0 && (
-                      <Button size="sm" variant="secondary" onClick={clearFilters}>
-                        Clear filters
-                      </Button>
-                    )}
-                  </div>
+                  ) : undefined
                 }
               />
             )}
 
-            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && (
-              <EmptyState
-                title="Nobody listed here yet"
-                description={
-                  subdomain
-                    ? 'This sub-domain has no published creatives yet.'
-                    : domain
-                      ? 'This domain has no published creatives yet.'
-                      : municipality
-                        ? 'No published creatives in that municipality yet.'
-                        : 'Published creatives will appear here as the registry grows.'
-                }
-                action={
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button size="sm" onClick={() => setView('offers')}>
-                      Browse offers
-                    </Button>
-                    {activeFilterCount > 0 && (
-                      <Button size="sm" variant="secondary" onClick={clearFilters}>
-                        Clear filters
+            {view === 'offers' && offers.data && offers.data.data.length === 0 && !creativeHome && (
+              user?.profileSlug ? (
+                <ModeAwareEmptyState
+                  title="No offers here yet"
+                  description="You are viewing Hiring. No offers match these filters yet — switch to My creative work to browse client postings, or try another filter."
+                  extraAction={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button size="sm" onClick={() => setView('creatives')}>
+                        Browse creatives
                       </Button>
-                    )}
-                  </div>
-                }
-              />
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="secondary" onClick={clearFilters}>
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="No offers here yet"
+                  description="Try another filter, or browse creatives instead."
+                  action={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button size="sm" onClick={() => setView('creatives')}>
+                        Browse creatives
+                      </Button>
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="secondary" onClick={clearFilters}>
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                  }
+                />
+              )
+            )}
+
+            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && (
+              user?.profileSlug ? (
+                <ModeAwareEmptyState
+                  title="Nobody listed here yet"
+                  description="You are viewing Hiring. No creatives match these filters yet — switch to My creative work for client postings, or browse offers instead."
+                  extraAction={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button size="sm" onClick={() => setView('offers')}>
+                        Browse offers
+                      </Button>
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="secondary" onClick={clearFilters}>
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Nobody listed here yet"
+                  description={
+                    subdomain
+                      ? 'This sub-domain has no published creatives yet.'
+                      : domain
+                        ? 'This domain has no published creatives yet.'
+                        : municipality
+                          ? 'No published creatives in that municipality yet.'
+                          : 'Published creatives will appear here as the registry grows.'
+                  }
+                  action={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <Button size="sm" onClick={() => setView('offers')}>
+                        Browse offers
+                      </Button>
+                      {activeFilterCount > 0 && (
+                        <Button size="sm" variant="secondary" onClick={clearFilters}>
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                  }
+                />
+              )
             )}
 
             {view === 'offers' && offers.data && offers.data.data.length > 0 && (
@@ -509,6 +613,51 @@ export function DirectoryPage() {
                                 )}
                               </p>
                             </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {creativeHome && postings.data && postings.data.data.length > 0 && (
+              <ul className="divide-y divide-hairline border-t border-hairline">
+                {postings.data.data.map((posting) => {
+                  const clientName = posting.client?.name ?? 'Client';
+                  return (
+                    <li key={posting.id}>
+                      <Link
+                        to={`/postings/${posting.id}`}
+                        className="group flex flex-col gap-4 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:gap-6"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
+                              {posting.title}
+                            </h2>
+                            <Badge tone="brand">{posting.subdomain.name}</Badge>
+                            {posting.hasReplied && <Badge tone="accent">Replied</Badge>}
+                          </div>
+                          <p className="mt-1 text-sm font-medium text-ink">
+                            {formatPriceRange(
+                              posting.budgetMinCentavos,
+                              posting.budgetMaxCentavos,
+                            )}
+                          </p>
+                          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                            <MapPin className="size-3.5" aria-hidden />
+                            {posting.municipality.name}
+                            <Badge tone="neutral">{formatTimeLeft(posting.expiresAt)}</Badge>
+                          </p>
+                          <div className="mt-3 flex items-center gap-3">
+                            <Avatar
+                              src={posting.client?.avatarUrl}
+                              name={clientName}
+                              size="sm"
+                            />
+                            <p className="text-sm text-ink">{clientName}</p>
                           </div>
                         </div>
                       </Link>

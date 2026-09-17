@@ -19,6 +19,7 @@ export interface PublicUser {
   lastName: string;
   email: string;
   role: string;
+  viewMode: 'hiring' | 'creative';
   municipalitySlug: string | null;
   municipalityName: string | null;
   profileSlug: string | null;
@@ -164,6 +165,7 @@ async function toPublicUser(
     lastName: user.lastName,
     email: user.email,
     role: user.role,
+    viewMode: user.viewMode,
     municipalitySlug: municipality?.slug ?? null,
     municipalityName: municipality?.name ?? null,
     profileSlug: profile?.slug ?? null,

@@ -4,10 +4,12 @@ import {
   conversations,
   conversationReports,
   creativeProfiles,
+  creativeSubdomains,
   messages,
   municipalities,
   offerImages,
   offers,
+  postings,
   userBlocks,
   users,
 } from '../../db/schema/index.js';
@@ -15,6 +17,7 @@ import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type {
   EnsureConversationInput,
+  ListHistoryInput,
   ListMessagesInput,
   ListThreadsInput,
   ReportInput,
@@ -43,6 +46,34 @@ type OfferCard = {
   image: { url: string; thumbUrl: string } | null;
   available: boolean;
 };
+
+type PostingCard = {
+  id: string;
+  title: string;
+  budgetMinCentavos: number | null;
+  budgetMaxCentavos: number | null;
+  status: 'open' | 'closed' | 'expired';
+  expiresAt: string | null;
+  available: boolean;
+  municipalityName?: string;
+  subdomainName?: string;
+};
+
+function messageAttachmentFields(
+  offerId: string | null,
+  postingId: string | null,
+  offerCards: Map<string, OfferCard>,
+  postingCards: Map<string, PostingCard>,
+) {
+  const offer = offerId ? (offerCards.get(offerId) ?? null) : null;
+  const posting = postingId ? (postingCards.get(postingId) ?? null) : null;
+  return {
+    offer,
+    offerRemoved: Boolean(offerId && !offer),
+    posting,
+    postingRemoved: Boolean(postingId && !posting),
+  };
+}
 
 /**
  * Resolves a conversation the caller actually participates in. Returns 404 for
@@ -175,6 +206,103 @@ async function loadOfferCards(offerIds: string[]): Promise<Map<string, OfferCard
   return result;
 }
 
+/** Batch-load posting cards for messages — closed/expired rows stay readable. */
+async function loadPostingCards(postingIds: string[]): Promise<Map<string, PostingCard>> {
+  const unique = [...new Set(postingIds.filter((id): id is string => Boolean(id)))];
+  const result = new Map<string, PostingCard>();
+  if (unique.length === 0) return result;
+
+  const now = new Date();
+  const rows = await db
+    .select({
+      id: postings.id,
+      title: postings.title,
+      budgetMinCentavos: postings.budgetMinCentavos,
+      budgetMaxCentavos: postings.budgetMaxCentavos,
+      status: postings.status,
+      expiresAt: postings.expiresAt,
+      municipalityName: municipalities.name,
+      subdomainName: creativeSubdomains.name,
+    })
+    .from(postings)
+    .innerJoin(municipalities, eq(postings.municipalityId, municipalities.id))
+    .innerJoin(creativeSubdomains, eq(postings.subdomainId, creativeSubdomains.id))
+    .where(inArray(postings.id, unique));
+
+  for (const row of rows) {
+    const available = row.status === 'open' && row.expiresAt > now;
+    result.set(row.id, {
+      id: row.id,
+      title: row.title,
+      budgetMinCentavos: row.budgetMinCentavos,
+      budgetMaxCentavos: row.budgetMaxCentavos,
+      status: row.status,
+      expiresAt: row.expiresAt.toISOString(),
+      available,
+      municipalityName: row.municipalityName,
+      subdomainName: row.subdomainName,
+    });
+  }
+  return result;
+}
+
+async function requireCallerCreativeProfile(userId: string) {
+  const [profile] = await db
+    .select({ id: creativeProfiles.id })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.userId, userId))
+    .limit(1);
+
+  if (!profile) {
+    throw AppError.forbidden('A creative profile is required.');
+  }
+  return profile;
+}
+
+async function resolvePostingForReply(
+  postingId: string,
+  callerUserId: string,
+  conversation: typeof conversations.$inferSelect,
+): Promise<string> {
+  const [posting] = await db
+    .select({
+      id: postings.id,
+      userId: postings.userId,
+      status: postings.status,
+      expiresAt: postings.expiresAt,
+    })
+    .from(postings)
+    .where(eq(postings.id, postingId))
+    .limit(1);
+
+  if (!posting) {
+    throw AppError.badRequest('That posting is not available.', { field: 'postingId' });
+  }
+
+  const now = new Date();
+  if (posting.status !== 'open' || posting.expiresAt <= now) {
+    throw AppError.badRequest('That posting is not available.', { field: 'postingId' });
+  }
+
+  if (posting.userId === callerUserId) {
+    throw AppError.badRequest('You cannot reply to your own posting.');
+  }
+
+  if (conversation.creativeUserId !== callerUserId) {
+    throw AppError.badRequest('That posting does not belong in this conversation.', {
+      field: 'postingId',
+    });
+  }
+
+  if (posting.userId !== conversation.clientUserId) {
+    throw AppError.badRequest('That posting does not belong in this conversation.', {
+      field: 'postingId',
+    });
+  }
+
+  return posting.id;
+}
+
 function unreadCondition(conversation: typeof conversations.$inferSelect, userId: string) {
   const isClient = conversation.clientUserId === userId;
   const otherUserId = isClient ? conversation.creativeUserId : conversation.clientUserId;
@@ -254,7 +382,12 @@ export async function startOrContinue(userId: string, input: StartConversationIn
         id: message!.id,
         body: message!.body,
         createdAt: message!.createdAt.toISOString(),
-        offer: resolvedOfferId ? (offerCards.get(resolvedOfferId) ?? null) : null,
+        ...messageAttachmentFields(
+          resolvedOfferId,
+          null,
+          offerCards,
+          new Map<string, PostingCard>(),
+        ),
       },
     };
   });
@@ -265,7 +398,70 @@ export async function startOrContinue(userId: string, input: StartConversationIn
  * Inquire so the composer can attach an offer before the client types.
  */
 export async function ensureConversation(userId: string, input: EnsureConversationInput) {
-  const profile = await requireContactableProfile(userId, input.profileSlug);
+  if (input.postingId) {
+    const postingId = input.postingId;
+    const posting = await (async () => {
+      const [row] = await db
+        .select({
+          id: postings.id,
+          userId: postings.userId,
+          status: postings.status,
+          expiresAt: postings.expiresAt,
+        })
+        .from(postings)
+        .where(eq(postings.id, postingId))
+        .limit(1);
+
+      if (!row) throw AppError.notFound('No such posting.');
+
+      const now = new Date();
+      if (row.status !== 'open' || row.expiresAt <= now) {
+        throw AppError.badRequest('That posting is not available.', { field: 'postingId' });
+      }
+
+      if (row.userId === userId) {
+        throw AppError.badRequest('You cannot reply to your own posting.');
+      }
+
+      return row;
+    })();
+
+    const profile = await requireCallerCreativeProfile(userId);
+    await assertCanMessage(userId, posting.userId);
+    const now = new Date();
+
+    return db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: conversations.id })
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.profileId, profile.id),
+            eq(conversations.clientUserId, posting.userId),
+          ),
+        )
+        .limit(1);
+
+      if (existing) {
+        return { id: existing.id };
+      }
+
+      const [created] = await tx
+        .insert(conversations)
+        .values({
+          profileId: profile.id,
+          creativeUserId: userId,
+          clientUserId: posting.userId,
+          lastMessageAt: now,
+          creativeLastReadAt: now,
+        })
+        .returning({ id: conversations.id });
+
+      return { id: created!.id };
+    });
+  }
+
+  const profile = await requireContactableProfile(userId, input.profileSlug!);
   const now = new Date();
 
   return db.transaction(async (tx) => {
@@ -300,7 +496,7 @@ export async function ensureConversation(userId: string, input: EnsureConversati
  * Client inquiry history: own sent messages that carry an offer, grouped by
  * offer (asking thrice → one row), newest lastAskedAt first.
  */
-export async function listHistory(userId: string) {
+async function listHistoryHiring(userId: string) {
   const rows = await db
     .select({
       offerId: messages.offerId,
@@ -433,6 +629,136 @@ export async function listHistory(userId: string) {
   };
 }
 
+/**
+ * Creative reply history: own sent messages that carry a posting, grouped by
+ * posting (replying twice → one row), newest lastRepliedAt first.
+ */
+async function listHistoryCreative(userId: string) {
+  const rows = await db
+    .select({
+      postingId: messages.postingId,
+      conversationId: messages.conversationId,
+      createdAt: messages.createdAt,
+      clientUserId: conversations.clientUserId,
+    })
+    .from(messages)
+    .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+    .where(
+      and(
+        eq(messages.senderUserId, userId),
+        eq(conversations.creativeUserId, userId),
+        isNotNull(messages.postingId),
+      ),
+    )
+    .orderBy(desc(messages.createdAt));
+
+  if (rows.length === 0) {
+    return { data: [] };
+  }
+
+  type Group = {
+    postingId: string;
+    conversationId: string;
+    clientUserId: string;
+    lastRepliedAt: Date;
+  };
+  const byPosting = new Map<string, Group>();
+  for (const row of rows) {
+    if (!row.postingId) continue;
+    const existing = byPosting.get(row.postingId);
+    if (!existing) {
+      byPosting.set(row.postingId, {
+        postingId: row.postingId,
+        conversationId: row.conversationId,
+        clientUserId: row.clientUserId,
+        lastRepliedAt: row.createdAt,
+      });
+    }
+  }
+
+  const groups = [...byPosting.values()].sort(
+    (a, b) => b.lastRepliedAt.getTime() - a.lastRepliedAt.getTime(),
+  );
+
+  const postingIds = groups.map((g) => g.postingId);
+  const conversationIds = [...new Set(groups.map((g) => g.conversationId))];
+  const clientUserIds = [...new Set(groups.map((g) => g.clientUserId))];
+
+  const postingCards = await loadPostingCards(postingIds);
+
+  const clientRows =
+    clientUserIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: users.id,
+            firstName: users.firstName,
+            middleName: users.middleName,
+            lastName: users.lastName,
+            suffix: users.suffix,
+            avatarKey: users.avatarKey,
+          })
+          .from(users)
+          .where(inArray(users.id, clientUserIds));
+  const clientById = new Map(clientRows.map((c) => [c.id, c]));
+
+  const replyRows =
+    conversationIds.length === 0
+      ? []
+      : await db
+          .select({
+            conversationId: messages.conversationId,
+            createdAt: messages.createdAt,
+          })
+          .from(messages)
+          .innerJoin(conversations, eq(messages.conversationId, conversations.id))
+          .where(
+            and(
+              inArray(messages.conversationId, conversationIds),
+              eq(messages.senderUserId, conversations.clientUserId),
+            ),
+          );
+
+  const repliesByConversation = new Map<string, Date[]>();
+  for (const row of replyRows) {
+    const list = repliesByConversation.get(row.conversationId) ?? [];
+    list.push(row.createdAt);
+    repliesByConversation.set(row.conversationId, list);
+  }
+
+  return {
+    data: groups
+      .map((group) => {
+        const posting = postingCards.get(group.postingId);
+        if (!posting) return null;
+
+        const client = clientById.get(group.clientUserId);
+        const replies = repliesByConversation.get(group.conversationId) ?? [];
+        const replied = replies.some((at) => at.getTime() > group.lastRepliedAt.getTime());
+
+        return {
+          conversationId: group.conversationId,
+          lastRepliedAt: group.lastRepliedAt.toISOString(),
+          replied,
+          posting,
+          client: {
+            name: client ? formatName(client) : 'Unknown',
+            avatarUrl:
+              client?.avatarKey && isStorageConfigured() ? publicUrl(client.avatarKey) : null,
+          },
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row != null),
+  };
+}
+
+export async function listHistory(userId: string, options: ListHistoryInput) {
+  if (options.mode === 'creative') {
+    return listHistoryCreative(userId);
+  }
+  return listHistoryHiring(userId);
+}
+
 export async function listThreads(userId: string, options: ListThreadsInput) {
   const offset = (options.page - 1) * options.limit;
 
@@ -450,7 +776,9 @@ export async function listThreads(userId: string, options: ListThreadsInput) {
   )`;
 
   const mine = and(
-    or(eq(conversations.clientUserId, userId), eq(conversations.creativeUserId, userId)),
+    options.mode === 'creative'
+      ? eq(conversations.creativeUserId, userId)
+      : eq(conversations.clientUserId, userId),
     hasMessages,
   );
 
@@ -571,6 +899,7 @@ export async function getThread(
       id: messages.id,
       body: messages.body,
       offerId: messages.offerId,
+      postingId: messages.postingId,
       senderUserId: messages.senderUserId,
       createdAt: messages.createdAt,
       firstName: users.firstName,
@@ -584,6 +913,9 @@ export async function getThread(
 
   const offerCards = await loadOfferCards(
     rows.map((r) => r.offerId).filter((id): id is string => Boolean(id)),
+  );
+  const postingCards = await loadPostingCards(
+    rows.map((r) => r.postingId).filter((id): id is string => Boolean(id)),
   );
 
   const isClient = conversation.clientUserId === userId;
@@ -609,7 +941,7 @@ export async function getThread(
       fromSelf: row.senderUserId === userId,
       senderName: `${row.firstName} ${row.lastName}`.trim(),
       createdAt: row.createdAt.toISOString(),
-      offer: row.offerId ? (offerCards.get(row.offerId) ?? null) : null,
+      ...messageAttachmentFields(row.offerId, row.postingId, offerCards, postingCards),
     })),
   };
 }
@@ -632,6 +964,11 @@ export async function sendMessage(
     resolvedOfferId = await resolveOfferForProfile(input.offerId, conversation.profileId);
   }
 
+  let resolvedPostingId: string | null = null;
+  if (input.postingId) {
+    resolvedPostingId = await resolvePostingForReply(input.postingId, userId, conversation);
+  }
+
   const now = new Date();
   const [message] = await db
     .insert(messages)
@@ -640,6 +977,7 @@ export async function sendMessage(
       senderUserId: userId,
       body: input.body,
       offerId: resolvedOfferId,
+      postingId: resolvedPostingId,
       createdAt: now,
     })
     .returning();
@@ -652,13 +990,14 @@ export async function sendMessage(
   await db.update(conversations).set(readPatch).where(eq(conversations.id, conversation.id));
 
   const offerCards = await loadOfferCards(resolvedOfferId ? [resolvedOfferId] : []);
+  const postingCards = await loadPostingCards(resolvedPostingId ? [resolvedPostingId] : []);
 
   return {
     id: message!.id,
     body: message!.body,
     fromSelf: true,
     createdAt: message!.createdAt.toISOString(),
-    offer: resolvedOfferId ? (offerCards.get(resolvedOfferId) ?? null) : null,
+    ...messageAttachmentFields(resolvedOfferId, resolvedPostingId, offerCards, postingCards),
   };
 }
 

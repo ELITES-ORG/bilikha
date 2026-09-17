@@ -120,6 +120,13 @@
       "when": 1789598900000,
       "tag": "0016_move_offer_to_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789645066400,
+      "tag": "0017_safe_inhumans",
+      "breakpoints": true
     }
   ]
 }

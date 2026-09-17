@@ -7,6 +7,7 @@ import {
   createProfileSchema,
   saveOfferSchema,
   updateProfileSchema,
+  viewModeSchema,
 } from './me.schema.js';
 import {
   blockUser,
@@ -16,6 +17,7 @@ import {
   listBlocks,
   listSavedOffers,
   saveOffer,
+  setViewMode,
   unblockUser,
   unsaveOffer,
   updateOwnProfile,
@@ -24,6 +26,12 @@ import {
 export const meRouter: Router = Router();
 
 meRouter.use(requireAuth);
+
+meRouter.patch('/view-mode', async (req, res) => {
+  const input = viewModeSchema.parse(req.body);
+  const data = await setViewMode(req.session.userId!, input);
+  res.json({ data });
+});
 
 meRouter.get('/profile', async (req, res) => {
   const profile = await getOwnProfile(req.session.userId!);

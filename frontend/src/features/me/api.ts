@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { authKeys } from '@/features/auth/api';
+import type { AuthUser, ViewMode } from '@/features/auth/types';
 import { apiClient, toApiError } from '@/lib/api-client';
 import type { ChangePasswordPayload, CreateProfilePayload, OwnProfile, UpdateProfilePayload } from './types';
 
@@ -69,6 +70,34 @@ export function useUpdateOwnProfile() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: meKeys.profile() }),
         queryClient.invalidateQueries({ queryKey: authKeys.me }),
+      ]);
+    },
+  });
+}
+
+export function useSetViewMode() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (viewMode: ViewMode): Promise<{ viewMode: ViewMode }> => {
+      try {
+        const { data } = await apiClient.patch<ApiResponse<{ viewMode: ViewMode }>>(
+          '/me/view-mode',
+          { viewMode },
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    onSuccess: async (result) => {
+      queryClient.setQueryData(authKeys.me, (prev: AuthUser | null | undefined) =>
+        prev ? { ...prev, viewMode: result.viewMode } : prev,
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: authKeys.me }),
+        queryClient.invalidateQueries({ queryKey: ['conversations'] }),
+        queryClient.invalidateQueries({ queryKey: ['postings'] }),
       ]);
     },
   });

@@ -20,6 +20,7 @@ import type {
   ChangePasswordInput,
   CreateProfileInput,
   UpdateProfileInput,
+  ViewModeInput,
 } from './me.schema.js';
 
 function formatCreativeName(parts: {
@@ -202,6 +203,12 @@ export async function createOwnProfile(
         isPrimary: row.id === primary.id,
       })),
     );
+
+    // Finishing profile setup lands you on the creative side (plan 0013).
+    await tx
+      .update(users)
+      .set({ viewMode: 'creative', updatedAt: new Date() })
+      .where(eq(users.id, userId));
   });
 
   const created = await getOwnProfile(userId);
@@ -603,4 +610,32 @@ export async function listSavedOffers(userId: string) {
       },
     })),
   };
+}
+
+/**
+ * Mode decides Home / Messages / History. Only accounts with a creative profile
+ * may select creative — otherwise hiring is the only side that has content.
+ */
+export async function setViewMode(userId: string, input: ViewModeInput) {
+  if (input.viewMode === 'creative') {
+    const [profile] = await db
+      .select({ id: creativeProfiles.id })
+      .from(creativeProfiles)
+      .where(eq(creativeProfiles.userId, userId))
+      .limit(1);
+    if (!profile) {
+      throw AppError.badRequest('A creative profile is required for creative mode.', {
+        field: 'viewMode',
+      });
+    }
+  }
+
+  const [updated] = await db
+    .update(users)
+    .set({ viewMode: input.viewMode, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning({ viewMode: users.viewMode });
+
+  if (!updated) throw AppError.unauthorized('Session is no longer valid.');
+  return { viewMode: updated.viewMode };
 }

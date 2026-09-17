@@ -4,6 +4,7 @@ import { messageLimiter } from '../../middleware/rate-limit.js';
 import {
   conversationIdSchema,
   ensureConversationSchema,
+  listHistorySchema,
   listMessagesSchema,
   listThreadsSchema,
   reportSchema,
@@ -51,7 +52,8 @@ conversationsRouter.get('/unread-count', async (req, res) => {
 
 // Before /:id so "history" is not parsed as a conversation uuid.
 conversationsRouter.get('/history', async (req, res) => {
-  const result = await listHistory(req.session.userId!);
+  const options = listHistorySchema.parse(req.query);
+  const result = await listHistory(req.session.userId!, options);
   res.json(result);
 });
 

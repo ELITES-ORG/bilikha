@@ -1,3 +1,5 @@
+export type ViewMode = 'hiring' | 'creative';
+
 export interface AuthUser {
   id: string;
   username: string;
@@ -11,6 +13,7 @@ export interface AuthUser {
   profileStatus: string | null;
   rejectionReason: string | null;
   avatarUrl: string | null;
+  viewMode: ViewMode;
 }
 
 export interface RegisterPayload {

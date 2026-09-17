@@ -8,6 +8,7 @@ import { conversationsRouter } from '../modules/conversations/conversations.rout
 import { meRouter } from '../modules/me/me.routes.js';
 import { mediaRouter } from '../modules/media/media.routes.js';
 import { offersRouter } from '../modules/offers/offers.routes.js';
+import { postingsRouter } from '../modules/postings/postings.routes.js';
 
 /**
  * All application routes hang off /api/v1. Versioning the prefix from day one
@@ -24,4 +25,5 @@ apiRouter.use('/conversations', conversationsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use('/media', mediaRouter);
 apiRouter.use('/offers', offersRouter);
+apiRouter.use('/postings', postingsRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

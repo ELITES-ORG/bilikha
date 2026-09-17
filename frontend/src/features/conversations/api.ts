@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { apiClient, toApiError } from '@/lib/api-client';
+import type { ViewMode } from '@/features/auth/types';
 import type {
   ConversationListItem,
   ConversationThread,
+  CreativeHistoryItem,
+  EnsureConversationPayload,
   EnsureConversationResult,
   HistoryItem,
   SendMessagePayload,
@@ -23,11 +26,11 @@ interface ListMeta {
 
 export const conversationKeys = {
   all: ['conversations'] as const,
-  list: (page = 1) => ['conversations', 'list', page] as const,
+  list: (mode: ViewMode, page = 1) => ['conversations', 'list', mode, page] as const,
   thread: (id: string, after?: string) =>
     ['conversations', 'thread', id, after ?? ''] as const,
   unread: ['conversations', 'unread'] as const,
-  history: ['conversations', 'history'] as const,
+  history: (mode: ViewMode) => ['conversations', 'history', mode] as const,
 };
 
 function rethrowForForms(error: unknown): never {
@@ -35,14 +38,14 @@ function rethrowForForms(error: unknown): never {
   throw toApiError(error);
 }
 
-export function useConversationThreads(page = 1) {
+export function useConversationThreads(mode: ViewMode, page = 1) {
   return useQuery({
-    queryKey: conversationKeys.list(page),
+    queryKey: conversationKeys.list(mode, page),
     queryFn: async (): Promise<{ data: ConversationListItem[]; meta: ListMeta }> => {
       try {
         const { data } = await apiClient.get<{ data: ConversationListItem[]; meta: ListMeta }>(
           '/conversations',
-          { params: { page, limit: 20 } },
+          { params: { mode, page, limit: 20 } },
         );
         return data;
       } catch (error) {
@@ -91,14 +94,14 @@ export function useUnreadCount(enabled = true) {
   });
 }
 
-export function useHistory() {
+export function useHistory(mode: ViewMode) {
   return useQuery({
-    queryKey: conversationKeys.history,
-    queryFn: async (): Promise<HistoryItem[]> => {
+    queryKey: conversationKeys.history(mode),
+    queryFn: async (): Promise<HistoryItem[] | CreativeHistoryItem[]> => {
       try {
-        const { data } = await apiClient.get<ApiResponse<HistoryItem[]>>(
-          '/conversations/history',
-        );
+        const { data } = await apiClient.get<
+          ApiResponse<HistoryItem[] | CreativeHistoryItem[]>
+        >('/conversations/history', { params: { mode } });
         return data.data;
       } catch (error) {
         throw toApiError(error);
@@ -111,11 +114,11 @@ export function useEnsureConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (profileSlug: string): Promise<EnsureConversationResult> => {
+    mutationFn: async (payload: EnsureConversationPayload): Promise<EnsureConversationResult> => {
       try {
         const { data } = await apiClient.post<ApiResponse<EnsureConversationResult>>(
           '/conversations/ensure',
-          { profileSlug },
+          payload,
         );
         return data.data;
       } catch (error) {
@@ -145,7 +148,7 @@ export function useStartConversation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.all });
-      void queryClient.invalidateQueries({ queryKey: conversationKeys.history });
+      void queryClient.invalidateQueries({ queryKey: ['conversations', 'history'] });
     },
   });
 }
@@ -167,9 +170,9 @@ export function useSendMessage(conversationId: string) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.thread(conversationId) });
-      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: ['conversations', 'list'] });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.unread });
-      void queryClient.invalidateQueries({ queryKey: conversationKeys.history });
+      void queryClient.invalidateQueries({ queryKey: ['conversations', 'history'] });
     },
   });
 }
@@ -190,7 +193,7 @@ export function useMarkConversationRead() {
     },
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: conversationKeys.thread(id) });
-      void queryClient.invalidateQueries({ queryKey: conversationKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: ['conversations', 'list'] });
       void queryClient.invalidateQueries({ queryKey: conversationKeys.unread });
     },
   });

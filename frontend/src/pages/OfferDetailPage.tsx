@@ -75,7 +75,7 @@ export function OfferDetailPage() {
     }
     setInquiring(true);
     try {
-      const thread = await ensure.mutateAsync(offer.data.creative.slug);
+      const thread = await ensure.mutateAsync({ profileSlug: offer.data.creative.slug });
       void navigate(`/messages/${thread.id}?offerId=${encodeURIComponent(offer.data.id)}`);
     } catch (err) {
       toast.error(toApiError(err).message);

@@ -14,6 +14,9 @@ import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { HomeRoute } from '@/pages/HomeRoute';
 import { OfferDetailPage } from '@/pages/OfferDetailPage';
+import { MyPostingsPage } from '@/pages/MyPostingsPage';
+import { PostingComposePage } from '@/pages/PostingComposePage';
+import { PostingDetailPage } from '@/pages/PostingDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -36,6 +39,38 @@ export default function App() {
             <Route path="/creatives" element={<CreativesPage />} />
             <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
             <Route path="/offers/:id" element={<OfferDetailPage />} />
+            <Route
+              path="/postings/new"
+              element={
+                <RequireAuth>
+                  <PostingComposePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/postings/mine"
+              element={
+                <RequireAuth>
+                  <MyPostingsPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/postings/:id/edit"
+              element={
+                <RequireAuth>
+                  <PostingComposePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/postings/:id"
+              element={
+                <RequireAuth>
+                  <PostingDetailPage />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/messages"
               element={

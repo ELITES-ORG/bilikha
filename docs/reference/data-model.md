@@ -141,6 +141,7 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `last_login_at` | `timestamptz` null | |
 | `avatar_key` | `text` null | Storage object key; one avatar per account |
 | `avatar_reviewed_at` | `timestamptz` null | Cleared on upload; set by admin media review |
+| `view_mode` | enum | `hiring` \| `creative`; default `hiring`. Flips to `creative` when a profile is created ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)) |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `username_normalized`, `email_normalized`, `phone`; index on
@@ -285,7 +286,8 @@ Indexes: unique `(profile_id, client_user_id)`;
 ## `messages`
 
 Append-only bodies in a conversation. Never edited or deleted in this model.
-Optional `offer_id` is set at insert and only nulled when the offer is deleted.
+Optional `offer_id` / `posting_id` are set at insert and only nulled when the
+listing is deleted.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -294,9 +296,37 @@ Optional `offer_id` is set at insert and only nulled when the offer is deleted.
 | `sender_user_id` | `uuid` FK → `users.id` | |
 | `body` | `text` | |
 | `offer_id` | `uuid` FK → `offers.id` null | Optional; `ON DELETE SET NULL` so deleting a listing keeps the message |
+| `posting_id` | `uuid` FK → `postings.id` null | Optional; mirror of `offer_id` for creatives replying to client work ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)); `ON DELETE SET NULL` |
 | `created_at` | `timestamptz` | |
 
-Indexes: `(conversation_id, created_at)`; `messages_offer_idx` on `(offer_id)`.
+Indexes: `(conversation_id, created_at)`; `messages_offer_idx` on `(offer_id)`;
+`messages_posting_idx` on `(posting_id)`.
+
+## `postings`
+
+Work a client wants done. Live on publish, reviewed after; expire by
+`expires_at` without a background job
+([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)).
+
+Unlike an offer, the sub-domain is **not** constrained to anything the poster
+registered — a client is not a creative.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` FK → `users.id` | The client; `ON DELETE CASCADE` |
+| `subdomain_id` | `uuid` FK → `creative_subdomains.id` | Any of the 81; `ON DELETE RESTRICT` |
+| `municipality_id` | `uuid` FK → `municipalities.id` | Where the work is; `ON DELETE RESTRICT` |
+| `title` | `text` | |
+| `description` | `text` null | Contact-detail patterns set `flagged_at` (advisory) |
+| `budget_min_centavos` / `budget_max_centavos` | `integer` null | Integer centavos; both null = budget on request |
+| `status` | enum | `open` \| `closed` \| `expired`; default `open` |
+| `expires_at` | `timestamptz` | Feed excludes rows with `expires_at <= now()` |
+| `reviewed_at` / `flagged_at` | `timestamptz` null | |
+| `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes: `(user_id, created_at)`; `(subdomain_id, status, expires_at)` for the
+creative feed; `(reviewed_at)`.
 
 ## `saved_offers`
 

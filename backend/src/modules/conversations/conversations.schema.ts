@@ -6,14 +6,24 @@ export const startConversationSchema = z.object({
   offerId: z.string().uuid('Invalid offer id').optional(),
 });
 
-export const ensureConversationSchema = z.object({
-  profileSlug: z.string().trim().min(1),
-});
+export const ensureConversationSchema = z
+  .object({
+    profileSlug: z.string().trim().min(1).optional(),
+    postingId: z.string().uuid('Invalid posting id').optional(),
+  })
+  .refine((data) => Boolean(data.profileSlug) !== Boolean(data.postingId), {
+    message: 'Provide either profileSlug or postingId',
+  });
 
-export const sendMessageSchema = z.object({
-  body: z.string().trim().min(1, 'Write a message').max(2000),
-  offerId: z.string().uuid('Invalid offer id').optional(),
-});
+export const sendMessageSchema = z
+  .object({
+    body: z.string().trim().min(1, 'Write a message').max(2000),
+    offerId: z.string().uuid('Invalid offer id').optional(),
+    postingId: z.string().uuid('Invalid posting id').optional(),
+  })
+  .refine((data) => !(data.offerId && data.postingId), {
+    message: 'Attach either an offer or a posting, not both',
+  });
 
 export const listMessagesSchema = z.object({
   // Polling passes the newest message it already has.
@@ -22,8 +32,13 @@ export const listMessagesSchema = z.object({
 });
 
 export const listThreadsSchema = z.object({
+  mode: z.enum(['hiring', 'creative']).default('hiring'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export const listHistorySchema = z.object({
+  mode: z.enum(['hiring', 'creative']).default('hiring'),
 });
 
 export const reportSchema = z.object({
@@ -37,4 +52,5 @@ export type EnsureConversationInput = z.infer<typeof ensureConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type ListMessagesInput = z.infer<typeof listMessagesSchema>;
 export type ListThreadsInput = z.infer<typeof listThreadsSchema>;
+export type ListHistoryInput = z.infer<typeof listHistorySchema>;
 export type ReportInput = z.infer<typeof reportSchema>;

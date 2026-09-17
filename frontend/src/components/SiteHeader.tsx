@@ -1,14 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import { Bell } from 'lucide-react';
+import { ModeSwitch } from '@/components/ModeSwitch';
+import { effectiveViewMode } from '@/lib/view-mode';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { useUnreadCount } from '@/features/conversations/api';
-import {
-  defaultViewMode,
-  readStoredViewMode,
-  writeStoredViewMode,
-  type AccountViewMode,
-} from '@/features/me/view-mode';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -26,14 +21,7 @@ export function SiteHeader() {
   const unreadQuery = useUnreadCount(Boolean(user));
   const unread = unreadQuery.data ?? 0;
 
-  const [storedMode, setStoredMode] = useState<AccountViewMode | null>(() => readStoredViewMode());
-  const viewMode = hasProfile ? (storedMode ?? defaultViewMode()) : 'hiring';
-
-  function chooseMode(mode: AccountViewMode) {
-    setStoredMode(mode);
-    writeStoredViewMode(mode);
-  }
-
+  const viewMode = effectiveViewMode(user);
   const hiring = !hasProfile || viewMode === 'hiring';
   const creative = hasProfile && viewMode === 'creative';
 
@@ -46,49 +34,14 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
-          {/* Decorative bell — phones only, signed-in. Not a control (ADR 0023). */}
           {user && (
             <span aria-hidden="true" className="inline-flex text-ink-muted sm:hidden">
               <Bell className="size-5" />
             </span>
           )}
 
-          {hasProfile && (
-            <div
-              className="mr-1 hidden items-center rounded-sm border border-hairline p-0.5 sm:inline-flex"
-              role="group"
-              aria-label="Account view"
-            >
-              <button
-                type="button"
-                className={cn(
-                  'rounded-xs px-2 py-1 text-xs font-medium transition-colors',
-                  hiring
-                    ? 'bg-lawa-700 text-clay-50'
-                    : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
-                )}
-                aria-pressed={hiring}
-                onClick={() => chooseMode('hiring')}
-              >
-                Hiring
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  'rounded-xs px-2 py-1 text-xs font-medium transition-colors',
-                  creative
-                    ? 'bg-lawa-700 text-clay-50'
-                    : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
-                )}
-                aria-pressed={creative}
-                onClick={() => chooseMode('creative')}
-              >
-                My creative work
-              </button>
-            </div>
-          )}
+          <ModeSwitch className="mr-1 hidden sm:inline-flex" />
 
-          {/* Below sm + signed in: tabs own these destinations. Signed out keeps Directory. */}
           <Link
             to="/directory"
             className={cn(

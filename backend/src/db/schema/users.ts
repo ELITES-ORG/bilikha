@@ -17,6 +17,8 @@ export const userStatusEnum = pgEnum('user_status', ['active', 'suspended']);
 /** Deliberately coarse. A finer permission model can come later; two roles is
  *  what sprint 1 needs and anything more is speculative. */
 export const userRoleEnum = pgEnum('user_role', ['member', 'admin']);
+/** Which side of the market Home / Messages / History show (ADR 0025). */
+export const viewModeEnum = pgEnum('view_mode', ['hiring', 'creative']);
 
 export const users = pgTable(
   'users',
@@ -50,6 +52,8 @@ export const users = pgTable(
     accountType: accountTypeEnum('account_type').notNull().default('individual'),
     status: userStatusEnum('status').notNull().default('active'),
     role: userRoleEnum('role').notNull().default('member'),
+    // Default hiring: every account starts without a profile (ADR 0019).
+    viewMode: viewModeEnum('view_mode').notNull().default('hiring'),
 
     // Nullable: clients need not be in Biliran (ADR 0015 / plan 0004).
     municipalityId: uuid('municipality_id').references(() => municipalities.id, {

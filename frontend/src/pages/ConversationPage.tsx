@@ -16,8 +16,14 @@ import {
   OfferUnavailableNotice,
   MessageOfferBlock,
 } from '@/features/conversations/OfferCard';
+import {
+  PostingCard,
+  PostingUnavailableNotice,
+  MessagePostingBlock,
+} from '@/features/conversations/PostingCard';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
+import { PostingNotFoundError, usePosting } from '@/features/postings/api';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav, pbConversationComposer, fixedComposerAboveNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
@@ -78,7 +84,9 @@ export function ConversationPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const attachedOfferId = searchParams.get('offerId');
+  const attachedPostingId = searchParams.get('postingId');
   const attachedOffer = usePublishedOffer(attachedOfferId ?? undefined);
+  const attachedPosting = usePosting(attachedPostingId ?? undefined);
 
   const thread = useConversationThread(id, true);
   const markRead = useMarkConversationRead();
@@ -115,6 +123,12 @@ export function ConversationPage() {
     setSearchParams(next, { replace: true });
   }
 
+  function clearAttachedPosting() {
+    const next = new URLSearchParams(searchParams);
+    next.delete('postingId');
+    setSearchParams(next, { replace: true });
+  }
+
   async function onReply(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -127,14 +141,18 @@ export function ConversationPage() {
     // in the UI but must not be posted.
     const offerIdToSend =
       attachedOfferId && attachedOffer.data ? attachedOfferId : undefined;
+    const postingIdToSend =
+      attachedPostingId && attachedPosting.data ? attachedPostingId : undefined;
     try {
       await send.mutateAsync({
         body: text,
         ...(offerIdToSend ? { offerId: offerIdToSend } : {}),
+        ...(postingIdToSend ? { postingId: postingIdToSend } : {}),
       });
       setBody('');
       if (replyRef.current) replyRef.current.style.height = '';
       if (attachedOfferId) clearAttachedOffer();
+      if (attachedPostingId) clearAttachedPosting();
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message);
@@ -173,6 +191,11 @@ export function ConversationPage() {
     Boolean(attachedOfferId) &&
     attachedOffer.isError &&
     attachedOffer.error instanceof OfferNotFoundError;
+
+  const postingAttachmentUnavailable =
+    Boolean(attachedPostingId) &&
+    attachedPosting.isError &&
+    attachedPosting.error instanceof PostingNotFoundError;
 
   const partyName = thread.data?.otherPartyName;
   const partyAvatar = thread.data?.otherPartyAvatarUrl;
@@ -353,6 +376,11 @@ export function ConversationPage() {
                       offerRemoved={msg.offerRemoved}
                       fromSelf={msg.fromSelf}
                     />
+                    <MessagePostingBlock
+                      posting={msg.posting ?? null}
+                      postingRemoved={msg.postingRemoved}
+                      fromSelf={msg.fromSelf}
+                    />
                     <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>
                     <p
                       className={cn(
@@ -378,9 +406,14 @@ export function ConversationPage() {
                   onSubmit={(e) => void onReply(e)}
                   className={fixedComposerAboveNav}
                 >
-                  {attachedOfferId && (
+                  {(attachedOfferId || attachedPostingId) && (
                     <div className="mb-2 max-sm:max-h-28 max-sm:overflow-y-auto">
-                      {attachedOffer.isPending && <Skeleton className="h-14 w-full" />}
+                      {attachedOfferId && attachedOffer.isPending && (
+                        <Skeleton className="h-14 w-full" />
+                      )}
+                      {attachedPostingId && attachedPosting.isPending && (
+                        <Skeleton className="h-14 w-full" />
+                      )}
                       {attachmentUnavailable && (
                         <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
                           <OfferUnavailableNotice />
@@ -388,6 +421,18 @@ export function ConversationPage() {
                             type="button"
                             className="shrink-0 text-sm text-ink-muted hover:text-ink"
                             onClick={clearAttachedOffer}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                      {postingAttachmentUnavailable && (
+                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                          <PostingUnavailableNotice />
+                          <button
+                            type="button"
+                            className="shrink-0 text-sm text-ink-muted hover:text-ink"
+                            onClick={clearAttachedPosting}
                           >
                             Remove
                           </button>
@@ -420,8 +465,33 @@ export function ConversationPage() {
                           }
                         />
                       )}
+                      {attachedPosting.data && (
+                        <PostingCard
+                          posting={{
+                            id: attachedPosting.data.id,
+                            title: attachedPosting.data.title,
+                            budgetMinCentavos: attachedPosting.data.budgetMinCentavos,
+                            budgetMaxCentavos: attachedPosting.data.budgetMaxCentavos,
+                            status: attachedPosting.data.status,
+                          }}
+                          footer={
+                            <div className="border-t border-hairline px-2 py-1.5">
+                              <button
+                                type="button"
+                                className="text-xs text-ink-muted hover:text-ink"
+                                onClick={clearAttachedPosting}
+                              >
+                                Remove posting
+                              </button>
+                            </div>
+                          }
+                        />
+                      )}
                       {attachedOffer.isError && !attachmentUnavailable && (
                         <p className="text-sm text-danger-700">{attachedOffer.error.message}</p>
+                      )}
+                      {attachedPosting.isError && !postingAttachmentUnavailable && (
+                        <p className="text-sm text-danger-700">{attachedPosting.error.message}</p>
                       )}
                     </div>
                   )}

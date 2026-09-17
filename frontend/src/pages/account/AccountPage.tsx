@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ModeSwitch } from '@/components/ModeSwitch';
 import { Button, ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -9,30 +9,13 @@ import { ProfileEditor } from '@/features/me/ProfileEditor';
 import { OfferEditor } from '@/features/offers/OfferEditor';
 import { PasswordForm } from '@/features/me/PasswordForm';
 import { useOwnProfile } from '@/features/me/api';
-import {
-  defaultViewMode,
-  readStoredViewMode,
-  writeStoredViewMode,
-  type AccountViewMode,
-} from '@/features/me/view-mode';
 import { pbBottomNav } from '@/lib/bottom-nav';
-import { cn } from '@/lib/cn';
 
 export function AccountPage() {
   const profile = useOwnProfile();
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const hasProfile = Boolean(user?.profileSlug);
-
-  const [storedMode, setStoredMode] = useState<AccountViewMode | null>(() => readStoredViewMode());
-  const viewMode = hasProfile ? (storedMode ?? defaultViewMode()) : 'hiring';
-  const hiring = !hasProfile || viewMode === 'hiring';
-  const creative = hasProfile && viewMode === 'creative';
-
-  function chooseMode(mode: AccountViewMode) {
-    setStoredMode(mode);
-    writeStoredViewMode(mode);
-  }
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -47,7 +30,6 @@ export function AccountPage() {
             Keep your public details and sign-in security up to date.
           </p>
 
-          {/* Relocated from the phone header — reachable via the Profile tab. */}
           {hasProfile && (
             <section className="mt-8" aria-labelledby="view-mode-heading">
               <h2 id="view-mode-heading" className="u-display text-2xl text-ink">
@@ -56,37 +38,8 @@ export function AccountPage() {
               <p className="mt-2 text-sm text-ink-muted">
                 Switch between browsing to hire and managing your creative work.
               </p>
-              <div
-                className="mt-4 inline-flex items-center rounded-sm border border-hairline p-0.5"
-                role="group"
-                aria-label="Account view"
-              >
-                <button
-                  type="button"
-                  className={cn(
-                    'rounded-xs px-3 py-1.5 text-sm font-medium transition-colors',
-                    hiring
-                      ? 'bg-lawa-700 text-clay-50'
-                      : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
-                  )}
-                  aria-pressed={hiring}
-                  onClick={() => chooseMode('hiring')}
-                >
-                  Hiring
-                </button>
-                <button
-                  type="button"
-                  className={cn(
-                    'rounded-xs px-3 py-1.5 text-sm font-medium transition-colors',
-                    creative
-                      ? 'bg-lawa-700 text-clay-50'
-                      : 'text-ink-muted hover:bg-clay-100 hover:text-ink',
-                  )}
-                  aria-pressed={creative}
-                  onClick={() => chooseMode('creative')}
-                >
-                  My creative work
-                </button>
+              <div className="mt-4">
+                <ModeSwitch size="md" />
               </div>
             </section>
           )}
@@ -158,9 +111,6 @@ export function AccountPage() {
             </section>
           )}
 
-          {/* A sibling of the profile form, never inside it: OfferEditor has its
-              own form, and nesting one form in another meant saving an offer
-              also submitted the profile, which refetched and reset the editor. */}
           {profile.isSuccess && profile.data && (
             <section className="mt-12" aria-labelledby="offers-section-heading">
               <h2 id="offers-section-heading" className="u-display text-2xl text-ink">
@@ -189,8 +139,6 @@ export function AccountPage() {
                 <CardBody className="space-y-6">
                   <PasswordForm />
 
-                  {/* Sign out lives here as well as the header, because the
-                      header drops it on narrow screens where space is scarce. */}
                   <div className="border-t border-hairline pt-6">
                     <p className="text-sm font-medium text-ink">Sign out</p>
                     <p className="mt-1 text-sm text-ink-muted">

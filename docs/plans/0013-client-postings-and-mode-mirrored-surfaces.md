@@ -1,7 +1,7 @@
 # 0013. Client postings, and mode-mirrored surfaces
 
-- **Status:** Ready
-- **Depends on:** [plan 0012](./0012-inquire-from-an-offer-and-saved-offers.md) â€”
+- **Status:** Complete
+- **Depends on:** [plan 0012](./0012-inquire-from-an-offer-and-saved-offers.md) â??
   replying to a posting reuses the attach-to-message pattern it built
 - **Related:** [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) Â·
   [ADR 0024](../decisions/0024-offers-attach-to-messages.md) Â·
@@ -11,7 +11,7 @@
 
 ## Goal
 
-A client publishes a posting â€” work they want done. A creative's Home is a feed
+A client publishes a posting â?? work they want done. A creative's Home is a feed
 of those postings, their own sub-domains first. Home, Messages and History all
 mirror: each mode shows the other side of the market.
 
@@ -32,7 +32,7 @@ apply unchanged. Five specific to this plan:
    [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) calls this
    the difference between the feature working and the app looking broken. An
    empty list with no explanation is not acceptable here.
-3. **The mode control goes on every mirrored surface** â€” Home, Messages,
+3. **The mode control goes on every mirrored surface** â?? Home, Messages,
    History. Not only Home. A list that can be emptied by mode must carry its own
    escape.
 4. **Money is integer centavos**, as in plan 0010. Reuse `lib/money.ts` and
@@ -57,7 +57,7 @@ apply unchanged. Five specific to this plan:
 - Home, Messages and History mirrored by mode, each carrying the mode control
 - Contact-details flagging on posting descriptions, as plan 0012 does for offers
 
-**Out of scope** â€” do not build these
+**Out of scope** â?? do not build these
 - Making postings the primary direction, or demoting offers. They sit beside each
   other ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md))
 - Notifying a creative that a matching posting appeared. Needs the notifications
@@ -73,23 +73,23 @@ apply unchanged. Five specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Schema | 0 / 3 | Not started |
-| 2. Backend â€” postings | 0 / 4 | Not started |
-| 3. Backend â€” the creative feed | 0 / 3 | Not started |
-| 4. Backend â€” replying, and mirrored lists | 0 / 3 | Not started |
-| 5. Frontend â€” mode | 0 / 3 | Not started |
-| 6. Frontend â€” the creative side | 0 / 3 | Not started |
-| 7. Frontend â€” the client side | 0 / 2 | Not started |
-| 8. Frontend â€” mirrored Messages and History | 0 / 2 | Not started |
-| 9. Verification | 0 / 6 | Not started |
+| 1. Schema | 3 / 3 | Complete |
+| 2. Backend ? postings | 4 / 4 | Complete |
+| 3. Backend ? the creative feed | 3 / 3 | Complete |
+| 4. Backend ? replying, and mirrored lists | 3 / 3 | Complete |
+| 5. Frontend ? mode | 3 / 3 | Complete |
+| 6. Frontend ? the creative side | 3 / 3 | Complete |
+| 7. Frontend ? the client side | 2 / 2 | Complete |
+| 8. Frontend ? mirrored Messages and History | 2 / 2 | Complete |
+| 9. Verification | 6 / 6 | Complete |
 
 ---
 
-# Phase 1 â€” Schema
+# Phase 1 â?? Schema
 
-### Step 1.1 â€” `postings`
+### Step 1.1 â?? `postings`
 
-- [ ] **Action.** Add to `backend/src/db/schema/`:
+- [x] **Action.** Add to `backend/src/db/schema/`:
 
 ```ts
 export const postingStatusEnum = pgEnum('posting_status', ['open', 'closed', 'expired']);
@@ -129,48 +129,48 @@ export const postings = pgTable(
 ```
 
 Unlike an offer, a posting's sub-domain is **not** constrained to anything the
-poster registered â€” a client is not a creative and has no sub-domains. Any of
+poster registered â?? a client is not a creative and has no sub-domains. Any of
 the 81 is valid.
 
-- [ ] **Action.** Add `postingId` to `messages`, nullable,
-  `onDelete: 'set null'`, with an index â€” mirroring `offerId`.
-- [ ] **Verify.** `db:generate` produces additions only.
+- [x] **Action.** Add `postingId` to `messages`, nullable,
+  `onDelete: 'set null'`, with an index â?? mirroring `offerId`.
+- [x] **Verify.** `db:generate` produces additions only.
 
-### Step 1.2 â€” Mode on the account
+### Step 1.2 â?? Mode on the account
 
-- [ ] **Action.** Add `viewMode` to `users`: `'hiring' | 'creative'`, defaulting
+- [x] **Action.** Add `viewMode` to `users`: `'hiring' | 'creative'`, defaulting
   to `'hiring'`.
 
 Default `hiring`, not `creative`: every account starts without a profile
 ([ADR 0019](../decisions/0019-one-account-creative-as-attachable-role.md)), and
 a creative Home for someone who is not a creative is an empty page.
 
-- [ ] **Action.** Set it to `creative` when a creative profile is created, so
+- [x] **Action.** Set it to `creative` when a creative profile is created, so
   finishing profile setup lands you where your new work is.
-- [ ] **Verify.** A fresh client account is `hiring`. Completing profile setup
+- [x] **Verify.** A fresh client account is `hiring`. Completing profile setup
   flips it once.
 
-### Step 1.3 â€” Reference
+### Step 1.3 â?? Reference
 
-- [ ] **Action.** Update [`data-model.md`](../reference/data-model.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Action.** Update [`data-model.md`](../reference/data-model.md).
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
-# Phase 2 â€” Backend: postings
+# Phase 2 â?? Backend: postings
 
-### Step 2.1 â€” Validation
+### Step 2.1 â?? Validation
 
-- [ ] **Action.** Create `backend/src/modules/postings/`. Body: `title` 3â€“80,
+- [x] **Action.** Create `backend/src/modules/postings/`. Body: `title` 3â??80,
   `description` up to 2000, `subdomainSlug`, `municipalitySlug`, optional
   `budgetMinCentavos` / `budgetMaxCentavos` with the same max-at-least-min refine
-  and â‚±1,000,000 ceiling as `offers.schema.ts`, and `expiresInDays` 1â€“60
+  and â?±1,000,000 ceiling as `offers.schema.ts`, and `expiresInDays` 1â??60
   defaulting to 30.
-- [ ] **Verify.** A max below the min is a 400 naming `budgetMaxCentavos`.
+- [x] **Verify.** A max below the min is a 400 naming `budgetMaxCentavos`.
 
-### Step 2.2 â€” CRUD
+### Step 2.2 â?? CRUD
 
-- [ ] **Action.** Behind `requireAuth`, all resolving the caller:
+- [x] **Action.** Behind `requireAuth`, all resolving the caller:
 
 | Method | Path | Notes |
 |---|---|---|
@@ -180,46 +180,46 @@ a creative Home for someone who is not a creative is an empty page.
 | `POST` | `/postings/:id/close` | Sets `closed`. Does not delete |
 | `DELETE` | `/postings/:id` | Only while nobody has replied |
 
-Each one validates `:id` as a uuid and **404s on another account's posting** â€”
+Each one validates `:id` as a uuid and **404s on another account's posting** â??
 never 403.
 
-- [ ] **Action.** Cap open postings at **5 per account**, counted under
+- [x] **Action.** Cap open postings at **5 per account**, counted under
   `pg_advisory_xact_lock(hashtext(userId))` inside the insert transaction. A
-  count in a transaction is not atomic on its own â€” the same trap as the offer
+  count in a transaction is not atomic on its own â?? the same trap as the offer
   cap in plan 0010.
-- [ ] **Action.** `DELETE` refuses once a message carries the posting: the
+- [x] **Action.** `DELETE` refuses once a message carries the posting: the
   conversation would be left referring to something that never existed. Close it
   instead.
-- [ ] **Verify.** The sixth open posting is a 400. Deleting a replied-to posting
+- [x] **Verify.** The sixth open posting is a 400. Deleting a replied-to posting
   is a 400 naming why. Closing always works.
 
-### Step 2.3 â€” Flag contact details
+### Step 2.3 â?? Flag contact details
 
-- [ ] **Action.** Reuse `detectContactDetails` from the offers service on the
-  description. Advisory only â€” never block, never hide.
-- [ ] **Verify.** A description with a phone number saves, appears, and is
+- [x] **Action.** Reuse `detectContactDetails` from the offers service on the
+  description. Advisory only â?? never block, never hide.
+- [x] **Verify.** A description with a phone number saves, appears, and is
   flagged.
 
-### Step 2.4 â€” Reference
+### Step 2.4 â?? Reference
 
-- [ ] **Action.** Document the endpoints in [`api.md`](../reference/api.md).
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Action.** Document the endpoints in [`api.md`](../reference/api.md).
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ---
 
-# Phase 3 â€” Backend: the creative feed
+# Phase 3 â?? Backend: the creative feed
 
-### Step 3.1 â€” `GET /postings`
+### Step 3.1 â?? `GET /postings`
 
-- [ ] **Action.** Behind `requireAuth` **and a creative profile** â€” this is the
+- [x] **Action.** Behind `requireAuth` **and a creative profile** â?? this is the
   creative side. Returns open, unexpired postings, excluding the caller's own.
-- [ ] **Action.** Filters: `subdomain`, `domain`, `municipality`, page, limit.
-- [ ] **Verify.** A caller with no creative profile gets 403. Your own postings
+- [x] **Action.** Filters: `subdomain`, `domain`, `municipality`, page, limit.
+- [x] **Verify.** A caller with no creative profile gets 403. Your own postings
   never appear in your feed.
 
-### Step 3.2 â€” Ordering
+### Step 3.2 â?? Ordering
 
-- [ ] **Action.** Matching the caller's registered sub-domains first, then
+- [x] **Action.** Matching the caller's registered sub-domains first, then
   municipality, then newest, then id:
 
 ```ts
@@ -231,154 +231,154 @@ const order = [
 ];
 ```
 
-The id is the stable tiebreaker, as in plan 0010 â€” without it pagination can
+The id is the stable tiebreaker, as in plan 0010 â?? without it pagination can
 repeat or skip.
 
-- [ ] **Action.** Expired postings are excluded by `expiresAt > now()`, not by a
+- [x] **Action.** Expired postings are excluded by `expiresAt > now()`, not by a
   background job. Nothing has to run for the board to stay honest.
-- [ ] **Verify.** A mobile app developer sees mobile app postings above others. A
+- [x] **Verify.** A mobile app developer sees mobile app postings above others. A
   posting one second past expiry is gone.
 
-### Step 3.3 â€” Payload
+### Step 3.3 â?? Payload
 
-- [ ] **Action.** Each row: the posting, its sub-domain and municipality, the
+- [x] **Action.** Each row: the posting, its sub-domain and municipality, the
   client's name and avatar, whether **you** have already replied.
 
 "Already replied" is what stops a creative answering the same posting twice
 without realising.
 
-- [ ] **Action.** Resolve clients and reply-state for the page in one query each.
-- [ ] **Verify.** A 20-row page issues a fixed number of queries.
+- [x] **Action.** Resolve clients and reply-state for the page in one query each.
+- [x] **Verify.** A 20-row page issues a fixed number of queries.
 
 ---
 
-# Phase 4 â€” Backend: replying, and mirrored lists
+# Phase 4 â?? Backend: replying, and mirrored lists
 
-### Step 4.1 â€” Reply to a posting
+### Step 4.1 â?? Reply to a posting
 
-- [ ] **Action.** Extend the existing message endpoints with an optional
+- [x] **Action.** Extend the existing message endpoints with an optional
   `postingId`, exactly as `offerId` works. A conversation between a creative and
-  a posting's author is **the same one-per-pair conversation** â€” do not add a
+  a posting's author is **the same one-per-pair conversation** â?? do not add a
   second kind.
-- [ ] **Action.** Validate that the posting is open and unexpired, and that the
+- [x] **Action.** Validate that the posting is open and unexpired, and that the
   caller is not its author.
-- [ ] **Verify.** Replying twice adds two messages to one thread. Replying to
+- [x] **Verify.** Replying twice adds two messages to one thread. Replying to
   your own posting is a 400.
 
-### Step 4.2 â€” Mirrored Messages
+### Step 4.2 â?? Mirrored Messages
 
-- [ ] **Action.** `GET /conversations` takes `mode`. In `creative` it returns
+- [x] **Action.** `GET /conversations` takes `mode`. In `creative` it returns
   threads where you are the creative; in `hiring`, where you are the client. The
   `role` field already computed per thread is the discriminator.
-- [ ] **Verify.** A user who is both sees different lists in each mode, and every
+- [x] **Verify.** A user who is both sees different lists in each mode, and every
   thread appears in exactly one.
 
-### Step 4.3 â€” Mirrored History
+### Step 4.3 â?? Mirrored History
 
-- [ ] **Action.** `hiring` keeps the existing Inquired and Saved. `creative`
-  returns postings you replied to, grouped by posting, newest first â€” the mirror
+- [x] **Action.** `hiring` keeps the existing Inquired and Saved. `creative`
+  returns postings you replied to, grouped by posting, newest first â?? the mirror
   of plan 0012's grouping.
-- [ ] **Verify.** Replying to one posting twice is one row.
+- [x] **Verify.** Replying to one posting twice is one row.
 
 ---
 
-# Phase 5 â€” Frontend: mode
+# Phase 5 â?? Frontend: mode
 
-### Step 5.1 â€” Mode from the account
+### Step 5.1 â?? Mode from the account
 
-- [ ] **Action.** Read mode from the current-user payload and change it through
+- [x] **Action.** Read mode from the current-user payload and change it through
   the API. **Delete `features/me/view-mode.ts`** and its `localStorage` use.
-- [ ] **Verify.** Switching on one device and reloading on another shows the same
+- [x] **Verify.** Switching on one device and reloading on another shows the same
   mode.
 
-### Step 5.2 â€” The control
+### Step 5.2 â?? The control
 
-- [ ] **Action.** A `ModeSwitch` segment control â€” Hiring / My creative work â€”
+- [x] **Action.** A `ModeSwitch` segment control â?? Hiring / My creative work â??
   rendered at the top of **Home, Messages and History**. Only for accounts with a
   creative profile; everyone else has one side and needs no control.
-- [ ] **Verify.** A client with no profile never sees it. Switching on Messages
+- [x] **Verify.** A client with no profile never sees it. Switching on Messages
   changes Messages in place.
 
-### Step 5.3 â€” Empty states name the mode
+### Step 5.3 â?? Empty states name the mode
 
-- [ ] **Action.** Every mirrored surface's empty state says which mode it is and
+- [x] **Action.** Every mirrored surface's empty state says which mode it is and
   how to leave: *"You are viewing your creative work. No postings match your
-  sub-domains yet â€” switch to Hiring to browse creatives."*
+  sub-domains yet â?? switch to Hiring to browse creatives."*
 
 Rule 2. This is the difference between a young registry and a broken app, and
 with today's data **empty is the common case on both sides**.
 
-- [ ] **Verify.** All six empty states â€” three surfaces Ã— two modes â€” name the
+- [x] **Verify.** All six empty states â?? three surfaces Ã? two modes â?? name the
   mode and offer the switch.
 
 ---
 
-# Phase 6 â€” Frontend: the creative side
+# Phase 6 â?? Frontend: the creative side
 
-### Step 6.1 â€” Home
+### Step 6.1 â?? Home
 
-- [ ] **Action.** In creative mode, Home is the postings feed: title, budget,
+- [x] **Action.** In creative mode, Home is the postings feed: title, budget,
   sub-domain, municipality, how long it has left, the client, and whether you
   replied.
-- [ ] **Verify.** Offers and creative profiles appear nowhere in creative mode.
+- [x] **Verify.** Offers and creative profiles appear nowhere in creative mode.
 
-### Step 6.2 â€” Posting detail
+### Step 6.2 â?? Posting detail
 
-- [ ] **Action.** A posting page with the full description and a **Reply**
+- [x] **Action.** A posting page with the full description and a **Reply**
   button, mirroring the offer page's Inquire. It attaches the posting to the
   composer; the creative types once and sends once.
-- [ ] **Verify.** Replying lands in one thread with the posting card attached.
+- [x] **Verify.** Replying lands in one thread with the posting card attached.
 
-### Step 6.3 â€” The card in a thread
+### Step 6.3 â?? The card in a thread
 
-- [ ] **Action.** Render a message's posting as a card, reusing `OfferCard`'s
+- [x] **Action.** Render a message's posting as a card, reusing `OfferCard`'s
   shape. A closed, expired or deleted posting still renders, saying so.
-- [ ] **Verify.** Closing a posting leaves its messages readable.
+- [x] **Verify.** Closing a posting leaves its messages readable.
 
 ---
 
-# Phase 7 â€” Frontend: the client side
+# Phase 7 â?? Frontend: the client side
 
-### Step 7.1 â€” Compose
+### Step 7.1 â?? Compose
 
-- [ ] **Action.** In hiring mode, a Post work action opening a form: title,
+- [x] **Action.** In hiring mode, a Post work action opening a form: title,
   sub-domain (grouped by domain, all 81 available), municipality, description,
   optional budget using `PesoInput`, and how long to run.
-- [ ] **Verify.** A posting appears in your own list immediately and in a
+- [x] **Verify.** A posting appears in your own list immediately and in a
   matching creative's feed.
 
-### Step 7.2 â€” Manage
+### Step 7.2 â?? Manage
 
-- [ ] **Action.** Your postings with status, replies received, time left, and
+- [x] **Action.** Your postings with status, replies received, time left, and
   Close. Edit while open.
-- [ ] **Verify.** Closing removes it from every feed and keeps the threads.
+- [x] **Verify.** Closing removes it from every feed and keeps the threads.
 
 ---
 
-# Phase 8 â€” Frontend: mirrored Messages and History
+# Phase 8 â?? Frontend: mirrored Messages and History
 
-### Step 8.1 â€” Messages
+### Step 8.1 â?? Messages
 
-- [ ] **Action.** Pass the mode; render the mode control above the list.
-- [ ] **Verify.** A dual-role user sees each thread in exactly one mode.
+- [x] **Action.** Pass the mode; render the mode control above the list.
+- [x] **Verify.** A dual-role user sees each thread in exactly one mode.
 
-### Step 8.2 â€” History
+### Step 8.2 â?? History
 
-- [ ] **Action.** Hiring keeps Inquired and Saved. Creative shows postings you
+- [x] **Action.** Hiring keeps Inquired and Saved. Creative shows postings you
   replied to.
-- [ ] **Verify.** Both render, with their own empty states.
+- [x] **Verify.** Both render, with their own empty states.
 
 ---
 
-# Phase 9 â€” Verification
+# Phase 9 â?? Verification
 
-### Step 9.1 â€” Nobody browses their own side
+### Step 9.1 â?? Nobody browses their own side
 
-- [ ] **Verify.** Creative mode shows no offers and no creative profiles.
-- [ ] **Verify.** Hiring mode shows no postings feed.
-- [ ] **Verify.** Your own postings never appear in your own creative feed.
+- [x] **Verify.** Creative mode shows no offers and no creative profiles.
+- [x] **Verify.** Hiring mode shows no postings feed.
+- [x] **Verify.** Your own postings never appear in your own creative feed.
 
-### Step 9.2 â€” Ownership and limits
+### Step 9.2 â?? Ownership and limits
 
 | Attempt | Expected |
 |---|---|
@@ -389,44 +389,44 @@ with today's data **empty is the common case on both sides**.
 | Delete a posting that has replies | 400 |
 | `GET /postings` with no creative profile | 403 |
 
-- [ ] **Verify.** Every row behaves as stated.
+- [x] **Verify.** Every row behaves as stated.
 
-### Step 9.3 â€” Expiry
+### Step 9.3 â?? Expiry
 
-- [ ] **Verify.** A posting one second past `expiresAt` is absent from the feed
+- [x] **Verify.** A posting one second past `expiresAt` is absent from the feed
   with nothing scheduled having run.
-- [ ] **Verify.** Its existing threads still render it.
+- [x] **Verify.** Its existing threads still render it.
 
-### Step 9.4 â€” Mode is not a trap
+### Step 9.4 â?? Mode is not a trap
 
-- [ ] **Verify.** Every mirrored surface carries the control in both modes.
-- [ ] **Verify.** All six empty states name the mode and offer the switch.
-- [ ] **Verify.** Mode survives a reload and matches on a second device.
+- [x] **Verify.** Every mirrored surface carries the control in both modes.
+- [x] **Verify.** All six empty states name the mode and offer the switch.
+- [x] **Verify.** Mode survives a reload and matches on a second device.
 
-### Step 9.5 â€” Money
+### Step 9.5 â?? Money
 
-- [ ] **Verify.** Budgets round-trip as integer centavos, and no float holds
+- [x] **Verify.** Budgets round-trip as integer centavos, and no float holds
   money anywhere.
 
-### Step 9.6 â€” Full pass
+### Step 9.6 â?? Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
   `npm run docs:check` all exit 0.
 
 ---
 
 ## Acceptance
 
-- [ ] A client can post work, edit it, close it, and see replies
-- [ ] A creative's Home is postings, their sub-domains first
-- [ ] Neither side ever sees its own side of the market
-- [ ] Replying attaches the posting to a message in the existing thread
-- [ ] Home, Messages and History all mirror, and each carries the mode control
-- [ ] Every empty state names the mode and offers the way out
-- [ ] Mode lives on the account and follows the person between devices
-- [ ] Postings expire without anything being scheduled
-- [ ] `api.md` and `data-model.md` updated
-- [ ] This plan's status set to **Complete**
+- [x] A client can post work, edit it, close it, and see replies
+- [x] A creative's Home is postings, their sub-domains first
+- [x] Neither side ever sees its own side of the market
+- [x] Replying attaches the posting to a message in the existing thread
+- [x] Home, Messages and History all mirror, and each carries the mode control
+- [x] Every empty state names the mode and offers the way out
+- [x] Mode lives on the account and follows the person between devices
+- [x] Postings expire without anything being scheduled
+- [x] `api.md` and `data-model.md` updated
+- [x] This plan's status set to **Complete**
 
 ---
 

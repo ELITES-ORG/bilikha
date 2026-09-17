@@ -1,3 +1,5 @@
+import type { PostingStatus } from '@/features/postings/types';
+
 /** Offer card embedded on a message (GET /conversations/:id). */
 export type MessageOffer = {
   id: string;
@@ -5,6 +7,15 @@ export type MessageOffer = {
   priceMinCentavos: number | null;
   priceMaxCentavos: number | null;
   image: { url: string; thumbUrl: string } | null;
+};
+
+/** Posting card embedded on a message (GET /conversations/:id). */
+export type MessagePosting = {
+  id: string;
+  title: string;
+  budgetMinCentavos: number | null;
+  budgetMaxCentavos: number | null;
+  status?: PostingStatus;
 };
 
 export interface ConversationMessage {
@@ -21,6 +32,8 @@ export interface ConversationMessage {
    * resolve it (deleted). Optional so older payloads remain valid.
    */
   offerRemoved?: boolean;
+  posting?: MessagePosting | null;
+  postingRemoved?: boolean;
 }
 
 export interface ConversationThread {
@@ -59,8 +72,12 @@ export interface StartConversationPayload {
  * `id` is typically the offer id (or a synthetic key). Prefer `conversationId`
  * when linking to the thread.
  */
+export type EnsureConversationPayload =
+  | { profileSlug: string }
+  | { postingId: string };
+
 export interface HistoryItem {
-  id: string;
+  id?: string;
   conversationId?: string;
   lastAskedAt?: string;
   /** @deprecated Prefer lastAskedAt — kept while the backend may still send it. */
@@ -82,6 +99,25 @@ export interface HistoryItem {
   };
 }
 
+/** Creative-mode history: postings you replied to, grouped by posting. */
+export interface CreativeHistoryItem {
+  conversationId: string;
+  lastRepliedAt?: string;
+  replied: boolean;
+  posting: {
+    id: string;
+    title: string;
+    budgetMinCentavos: number | null;
+    budgetMaxCentavos: number | null;
+    status?: PostingStatus;
+  } | null;
+  client: {
+    name: string;
+    municipality?: string;
+    avatarUrl?: string | null;
+  };
+}
+
 export interface StartConversationResult {
   id: string;
   continued: boolean;
@@ -99,4 +135,5 @@ export interface EnsureConversationResult {
 export interface SendMessagePayload {
   body: string;
   offerId?: string;
+  postingId?: string;
 }

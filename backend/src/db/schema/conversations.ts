@@ -2,6 +2,7 @@ import { pgTable, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/
 import { relations } from 'drizzle-orm';
 import { users } from './users.js';
 import { creativeProfiles, offers } from './profiles.js';
+import { postings } from './postings.js';
 
 /**
  * Exactly two parties: the client who started it and the creative whose profile
@@ -57,12 +58,15 @@ export const messages = pgTable(
     // Null for every message that predates plan 0012, and for anyone who
     // contacts a creative from their profile rather than from an offer.
     offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
+    // Mirror of offer_id for creatives replying to a client's posting (ADR 0025).
+    postingId: uuid('posting_id').references(() => postings.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     // The thread query, and the polling query filtered by createdAt.
     index('messages_conversation_created_idx').on(table.conversationId, table.createdAt),
     index('messages_offer_idx').on(table.offerId),
+    index('messages_posting_idx').on(table.postingId),
   ],
 );
 
@@ -103,6 +107,7 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
   sender: one(users, { fields: [messages.senderUserId], references: [users.id] }),
   offer: one(offers, { fields: [messages.offerId], references: [offers.id] }),
+  posting: one(postings, { fields: [messages.postingId], references: [postings.id] }),
 }));
 
 export const savedOffersRelations = relations(savedOffers, ({ one }) => ({

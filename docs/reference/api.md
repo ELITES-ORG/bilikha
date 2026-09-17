@@ -245,9 +245,9 @@ Destroys the session and clears the cookie. `204` with an empty body.
 ### `GET /api/v1/auth/me`
 
 Requires a valid session. Returns the same public user shape as login, including
-`role`, `municipalitySlug`, `municipalityName` (null for legacy accounts that
-never set a location), `profileStatus`, and `rejectionReason` (set when a
-registration was rejected).
+`role`, `viewMode` (`hiring` \| `creative`), `municipalitySlug`,
+`municipalityName` (null for legacy accounts that never set a location),
+`profileStatus`, and `rejectionReason` (set when a registration was rejected).
 
 `401` when unsigned-in or the session points at a deleted user.
 
@@ -257,6 +257,17 @@ registration was rejected).
 
 All `/me/*` routes require a signed-in session. They derive ownership from the
 session user id; no profile or user id is accepted from the request.
+
+### `PATCH /api/v1/me/view-mode`
+
+```jsonc
+{ "viewMode": "hiring" } // or "creative"
+```
+
+Persists which side of the market Home, Messages, and History show
+([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)).
+`creative` requires a creative profile — otherwise `400` with
+`field: "viewMode"`. Returns `{ data: { viewMode } }`.
 
 ### `GET /api/v1/me/profile`
 
@@ -271,7 +282,8 @@ Creates a creative profile for the signed-in account. Name and location already
 live on the user from registration; this body is sub-domains (1–5, one
 primary), display name, bio, and contact preference. The profile enters
 `pending_review` and appears in the admin queue. No `moderation_actions` row is
-written at create — nothing has been moderated yet.
+written at create — nothing has been moderated yet. Also sets the account's
+`viewMode` to `creative` so finishing setup lands on the creative side.
 
 A second call for the same account returns `409`. Unknown taxonomy slugs return
 `400`. Location columns on the user are not written here.
@@ -486,18 +498,30 @@ priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` or `null`;
 
 ```jsonc
 { "profileSlug": "juancruz" }
+// or, for a creative replying to a posting:
+{ "postingId": "uuid" }
 ```
 
-Get or create the client↔profile thread **without** sending a message. Same
-published / self / block checks as `POST /`. Returns `{ data: { id } }`. Used by
-Inquire so the composer can attach an offer before the client types.
+Get or create the client↔profile thread **without** sending a message. Provide
+exactly one of `profileSlug` or `postingId`.
+
+- `profileSlug` — caller is the client; same published / self / block checks as
+  `POST /`. Used by Inquire so the composer can attach an offer before the
+  client types.
+- `postingId` — caller is the creative; posting must be open and unexpired;
+  caller must not be the author and must have a creative profile. Creates the
+  one-per-pair thread with the posting's author as client.
+
+Returns `{ data: { id } }`.
 
 ### `GET /api/v1/conversations`
 
-Thread list for the caller (as client or creative). Newest `lastMessageAt`
-first. Query: `page`, `limit`. Each row: `id`, `profileSlug`, `otherPartyName`,
-`avatarUrl`, `role` (`client` \| `creative`), `lastMessage`, `unreadCount`,
-`lastMessageAt`. No subject.
+Thread list for the caller, filtered by `mode` (`hiring` \| `creative`, default
+`hiring`). In `hiring`, threads where you are the client; in `creative`, where
+you are the creative. Newest `lastMessageAt` first. Query: `mode`, `page`,
+`limit`. Each row: `id`, `profileSlug`, `otherPartyName`, `avatarUrl`, `role`
+(`client` \| `creative`), `lastMessage`, `unreadCount`, `lastMessageAt`. No
+subject.
 
 ### `GET /api/v1/conversations/unread-count`
 
@@ -506,22 +530,29 @@ last-read timestamp.
 
 ### `GET /api/v1/conversations/history`
 
-Inquiry history for the caller **as client**: their own sent messages that carry
-an `offer_id`, **grouped by offer** (asking thrice → one row), newest
-`lastAskedAt` first. Each row:
+Query: `mode` (`hiring` \| `creative`, default `hiring`).
+
+**Hiring** — inquiry history for the caller **as client**: their own sent
+messages that carry an `offer_id`, **grouped by offer** (asking thrice → one
+row), newest `lastAskedAt` first. Each row:
 
 - `conversationId`, `lastAskedAt`
 - `replied` — true if the creative sent any message in that thread after the
   client's last ask about this offer
-- `offer` — card shape as above, or `null` if the offer was deleted between
-  grouping and load (deleted offers normally vanish because `offer_id` is
-  `SET NULL`)
+- `offer` — card shape as above, or omitted if the offer was deleted
 - `creative` — `{ slug, displayName, municipality, avatarUrl }`
+
+**Creative** — postings the caller replied to, grouped by posting, newest
+`lastRepliedAt` first. Each row: `conversationId`, `lastRepliedAt`, `replied`
+(client messaged after the last reply), `posting` card, `client`
+`{ name, avatarUrl }`.
 
 ### `GET /api/v1/conversations/:id`
 
 Thread + messages. Includes `otherPartyUserId` and `otherPartyName`. Each
-message may include `offer` (card or `null`). Query: `after` (message uuid, for
+message may include `offer` and/or `posting` (card or `null`), plus
+`offerRemoved` / `postingRemoved` when the FK was set but the row is gone.
+Query: `after` (message uuid, for
 polling), `limit`. Non-participants → `404`. No subject.
 
 ### `POST /api/v1/conversations/:id/messages`
@@ -529,14 +560,19 @@ polling), `limit`. Non-participants → `404`. No subject.
 ```jsonc
 {
   "body": "Happy to discuss rates this week.",
-  "offerId": "optional-uuid-for-a-second-inquiry-in-the-same-thread"
+  "offerId": "optional-uuid-for-a-second-inquiry-in-the-same-thread",
+  // or, when a creative replies to a posting:
+  "postingId": "optional-uuid"
 }
 ```
 
-`201`. Optional `offerId` must belong to the conversation's creative profile
-(`400` with `field: "offerId"` otherwise). Attached only on this message; never
-rewrites earlier messages. If the other party has blocked the caller → neutral
-`403`. Non-participants → `404`.
+`201`. Attach **either** `offerId` or `postingId`, not both. `offerId` must
+belong to the conversation's creative profile (`400` with `field: "offerId"`
+otherwise). `postingId` must be an open, unexpired posting whose author is the
+thread's client, and the caller must be the creative (`400` with
+`field: "postingId"` otherwise, including replying to your own posting).
+Attached only on this message; never rewrites earlier messages. If the other
+party has blocked the caller → neutral `403`. Non-participants → `404`.
 
 ### `POST /api/v1/conversations/:id/read`
 
@@ -571,6 +607,65 @@ include `title`, `description`, `priceMinCentavos`, `priceMaxCentavos`,
 Approve stamps the reviewed timestamp. Remove deletes the avatar object or the
 offer (and its storage objects) and writes a `media_removed` moderation action
 with `subjectUserId` set to the owner.
+
+---
+
+## Postings
+
+Client work requests ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)).
+All routes require a signed-in session. Cap: **5 open** postings per account.
+Money is integer centavos. Contact-detail patterns in the description set
+`flaggedAt` (advisory — never block).
+
+### `GET /api/v1/postings/mine`
+
+Own postings, any status, newest first. Includes `replyCount` (distinct
+conversations that carry the posting on a message).
+
+### `POST /api/v1/postings`
+
+```jsonc
+{
+  "title": "Need a mobile app for barangay records",
+  "subdomainSlug": "mobile-app-developers",
+  "municipalitySlug": "naval",
+  "description": "optional",
+  "budgetMinCentavos": 1000000,
+  "budgetMaxCentavos": 5000000,
+  "expiresInDays": 30
+}
+```
+
+`201`. `expiresInDays` 1–60, default 30. Budget max must be ≥ min (`400` with
+`field: "budgetMaxCentavos"`). Sixth open posting → `400` naming the limit.
+Any of the 81 sub-domains is valid (clients have no registered set).
+
+### `PATCH /api/v1/postings/:id`
+
+Title, description, sub-domain, municipality, budget while you own it. Another
+account's id → `404` (never `403`).
+
+### `POST /api/v1/postings/:id/close`
+
+Sets `status` to `closed`. Does not delete. Threads keep their posting cards.
+
+### `DELETE /api/v1/postings/:id`
+
+Only while no message carries the posting. Once someone has replied → `400`
+telling you to close instead.
+
+### `GET /api/v1/postings`
+
+Creative feed. Requires a creative profile (`403` otherwise). Open, unexpired
+postings excluding the caller's own. Query: `domain`, `subdomain`,
+`municipality`, `page`, `limit`. Ordered by the caller's registered sub-domains
+first, then municipality match, then newest, then id. Each row includes
+sub-domain, municipality, client `{ name, avatarUrl }`, and `hasReplied`.
+
+### `GET /api/v1/postings/:id`
+
+Detail. Owner always; others need a creative profile and an open, unexpired
+posting (`404` otherwise).
 
 ---
 

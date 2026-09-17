@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Avatar, Button, ButtonLink, Badge, Container, EmptyState, SectionHeading, Skeleton } from '@/components/ui';
+import { ModeSwitch } from '@/components/ModeSwitch';
+import { effectiveViewMode } from '@/lib/view-mode';
+import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
+import { Avatar, Button, ButtonLink, Badge, Container, SectionHeading, Skeleton } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
@@ -9,11 +13,18 @@ import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function MessagesPage() {
   const [page, setPage] = useState(1);
-  const list = useConversationThreads(page);
+  const { data: user } = useCurrentUser();
+  const mode = effectiveViewMode(user);
+  const list = useConversationThreads(mode, page);
 
   const totalPages = list.data
     ? Math.max(1, Math.ceil(list.data.meta.total / list.data.meta.limit))
     : 1;
+
+  const emptyDescription =
+    mode === 'hiring'
+      ? 'You are viewing Hiring. No conversations yet — contact a creative from the directory, or switch to My creative work to reply to client postings.'
+      : 'You are viewing your creative work. No conversations yet — browse client postings on Home, or switch to Hiring to reach creatives.';
 
   return (
     <>
@@ -27,6 +38,10 @@ export function MessagesPage() {
             description="Threads with creatives and clients. There are no email or SMS alerts — check here."
           />
 
+          <div className="mt-6">
+            <ModeSwitch size="md" />
+          </div>
+
           <div className="mt-10">
             {list.isPending && <Skeleton className="h-40 w-full" />}
 
@@ -35,10 +50,14 @@ export function MessagesPage() {
             )}
 
             {list.data && list.data.data.length === 0 && (
-              <EmptyState
+              <ModeAwareEmptyState
                 title="No conversations yet"
-                description="Contact a creative from their profile to start a thread."
-                action={<ButtonLink to="/directory" size="sm">Browse the directory</ButtonLink>}
+                description={emptyDescription}
+                extraAction={
+                  <ButtonLink to="/directory" size="sm" variant="secondary">
+                    Go to Home
+                  </ButtonLink>
+                }
               />
             )}
 
