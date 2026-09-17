@@ -1,0 +1,272 @@
+# 0014. Dark mode
+
+- **Status:** Ready
+- **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
+  [ADR 0010](../decisions/0010-theme-static-tokens.md) ·
+  [`frontend/DESIGN.md`](../../frontend/DESIGN.md)
+
+---
+
+## Goal
+
+A phone in dark mode opens Bilikha and gets a dark Bilikha — the same product,
+legible, with the brand intact. No toggle: it follows the operating system.
+
+---
+
+## Rules for whoever executes this
+
+The rules in [plan 0001](./0001-registration-and-auth.md#rules-for-whoever-executes-this)
+apply unchanged. Five specific to this plan:
+
+1. **No `dark:` variants in components.** The dark theme is token *values*, not
+   markup. If a component needs a `dark:` class, it is reaching past a token —
+   fix the token instead. This is what
+   [ADR 0010](../decisions/0010-theme-static-tokens.md) bought and it is easy to
+   spend.
+2. **Design the palette, do not invert it.** Surfaces near-black rather than
+   black, text off-white rather than white, brand hues re-tuned. Inversion
+   produces grey mud and glare.
+3. **Elevation is lightness, not shadow.** A shadow is invisible on a dark
+   surface. Raised surfaces get lighter; hairlines carry the rest.
+4. **Check contrast in both themes.** 4.5:1 body, 3:1 large text and interface
+   borders. A pair that fails does not ship because it looks nice.
+5. **Every screen gets looked at in both themes.** This is the kind of change
+   that is 95% free and then ruins one screen nobody opened.
+
+---
+
+## Scope
+
+**In scope**
+- A dark palette overriding the existing tokens under `prefers-color-scheme`
+- `color-scheme: light dark` in the meta tag and `:root`
+- Elevation and hairlines adapted for dark surfaces
+- The half-dozen places that assume light outside the token system
+- The style guide rendering both themes
+- A contrast check covering both
+
+**Out of scope** — do not build these
+- An in-app theme toggle, or storing a preference.
+  [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md)
+- A third theme, high contrast, or per-user accent colours
+- Treating user-uploaded images so they sit better on dark. Recorded as a known
+  cost; needs its own decision
+- Re-designing any component. This is a palette, not a redesign
+
+---
+
+## Progress
+
+| Phase | Steps | Status |
+|---|---|---|
+| 1. The palette | 0 / 3 | Not started |
+| 2. Wiring | 0 / 3 | Not started |
+| 3. The light assumptions | 0 / 4 | Not started |
+| 4. The style guide | 0 / 2 | Not started |
+| 5. Verification | 0 / 5 | Not started |
+
+---
+
+# Phase 1 — The palette
+
+### Step 1.1 — Read what exists first
+
+- [ ] **Action.** Read `frontend/src/styles/theme.css` end to end and list every
+  `--color-*` token. Every one needs a dark value or a documented reason not to.
+
+The scales are `clay` (neutral), `lawa` (brand), plus `success`, `warning`,
+`danger`, and the semantic aliases `paper`, `surface`, `ink`, `ink-muted`,
+`ink-subtle`, `hairline`, `hairline-strong`.
+
+- [ ] **Verify.** The list is complete — `grep -c "^  --color-" theme.css`
+  matches it.
+
+### Step 1.2 — Choose the dark values
+
+- [ ] **Action.** Define the dark palette. Guidance, not arithmetic:
+
+| Token | Light | Dark |
+|---|---|---|
+| `paper` | near-white page | near-black, **not** `#000` — around `oklch(0.18 …)` |
+| `surface` | white card | *lighter* than paper, since elevation is lightness |
+| `ink` | near-black | off-white, around `oklch(0.94 …)`, never pure white |
+| `ink-muted` / `ink-subtle` | greys down | greys **up** toward paper |
+| `hairline` | light grey | lighter than the surface, and more visible than a naive inversion suggests |
+| `lawa-*` | brand | same hue, raised lightness and reduced chroma — a saturated brand colour vibrates on dark |
+| `success` / `warning` / `danger` | as now | backgrounds become dark tints, text becomes the light end of the scale |
+
+The existing tokens are already in `oklch`, which makes this tractable: hold hue,
+move lightness, trim chroma.
+
+- [ ] **Verify.** Each pair meets its ratio — Step 5.2 checks this properly, but
+  do not defer it to then.
+
+### Step 1.3 — Write them
+
+- [ ] **Action.** In `theme.css`, after the `@theme static` block:
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-paper: …;
+    --color-surface: …;
+    /* every token that changes */
+  }
+}
+```
+
+**The tokens stay declared in `@theme static`.** This block only re-values them.
+Declaring a token *only* here means Tailwind never emits a utility for it —
+which is exactly the tree-shaking
+[ADR 0010](../decisions/0010-theme-static-tokens.md) was written about.
+
+- [ ] **Verify.** `npm run build`, then confirm the built CSS contains both the
+  light values and the media query.
+
+---
+
+# Phase 2 — Wiring
+
+### Step 2.1 — Tell the browser
+
+- [ ] **Action.** `color-scheme: light dark` in `:root` in `base.css`, and
+  `<meta name="color-scheme" content="light dark">` in `index.html`, replacing
+  the `light` added when the picker was dark.
+- [ ] **Verify.** With the OS in dark mode, scrollbars and text selection are
+  dark without any further CSS.
+
+### Step 2.2 — The theme-colour meta
+
+- [ ] **Action.** Two `theme-color` meta tags, one per scheme, so the browser
+  chrome matches the page:
+
+```html
+<meta name="theme-color" content="…light paper…" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="…dark paper…" media="(prefers-color-scheme: dark)" />
+```
+
+- [ ] **Verify.** On Android, the address bar matches the page in both.
+
+### Step 2.3 — No `dark:` crept in
+
+- [ ] **Action.** `grep -rn "dark:" frontend/src` must return nothing. Rule 1.
+- [ ] **Verify.** It returns nothing.
+
+---
+
+# Phase 3 — The light assumptions
+
+These are the places that reach past the token system, and they are where a dark
+theme looks broken first.
+
+### Step 3.1 — The header
+
+- [ ] **Action.** `SiteHeader` uses `bg-paper/85` with `backdrop-blur-sm`. Check
+  the translucency over dark content — a light-tuned alpha usually reads as fog.
+- [ ] **Verify.** Scroll a long directory page under the header in both themes.
+
+### Step 3.2 — Shadows and elevation
+
+- [ ] **Action.** The `--shadow-*` tokens are black at low alpha, which is
+  invisible on a dark surface. Under the media query, either raise the alpha
+  substantially or drop to a hairline and let surface lightness carry it —
+  rule 3.
+- [ ] **Verify.** A raised `Card` and the `Select` popup are both distinguishable
+  from the page behind them in dark mode.
+
+### Step 3.3 — Images and placeholders
+
+- [ ] **Action.** Check `Avatar`'s initials fallback, `Skeleton`'s shimmer, and
+  the offer image placeholders. All were picked against white.
+- [ ] **Verify.** A profile with no avatar, and a directory mid-load, both look
+  deliberate in dark mode.
+
+**User-uploaded photographs are out of scope** and will sit brighter than the
+page. [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) records it.
+
+### Step 3.4 — Toasts, badges, statuses
+
+- [ ] **Action.** `Toast`'s tone styles and `Badge`'s tones use the 50/100/700
+  steps of the semantic scales. On dark, a `-50` background is a light block.
+  These follow the tokens once Step 1.3 re-values the scales — confirm they do
+  rather than assuming.
+- [ ] **Verify.** Success, error and pending toasts, and every badge tone, are
+  legible in both themes.
+
+---
+
+# Phase 4 — The style guide
+
+### Step 4.1 — Both themes side by side
+
+- [ ] **Action.** The style guide is the living reference
+  ([`DESIGN.md`](../../frontend/DESIGN.md)). Show the palette swatches with their
+  dark values alongside the light ones, so drift is visible in one place.
+- [ ] **Verify.** Every token appears in both.
+
+### Step 4.2 — Say how it works
+
+- [ ] **Action.** A short note: the theme follows the OS, there is no toggle, and
+  components must never use `dark:`. Someone will otherwise add one within a
+  month.
+- [ ] **Verify.** `npm run docs:check` exits 0.
+
+---
+
+# Phase 5 — Verification
+
+### Step 5.1 — Every screen, both themes
+
+- [ ] **Verify.** Landing, directory (offers, creatives, postings), offer detail,
+  posting detail, profile, messages, a conversation, history, account,
+  registration, login, the admin queue, the admin media queue, and the 404.
+
+Fifteen screens. Rule 5 — this is the step that catches the one nobody opened.
+
+### Step 5.2 — Contrast
+
+- [ ] **Verify.** Body text, muted text, subtle text, link text, button labels,
+  badge text and input borders all meet AA in **both** themes. Record the ratios
+  rather than eyeballing them.
+
+### Step 5.3 — The controls we draw
+
+- [ ] **Verify.** The `Select` popup, the `ModeSwitch` segments, the bottom nav
+  including its active tab, and the toast stack are all correct in dark mode.
+
+These were the reason for the work: the select was drawn in-app precisely so it
+could follow the theme.
+
+### Step 5.4 — Switching live
+
+- [ ] **Verify.** Change the OS theme with the app open. It re-themes without a
+  reload and nothing is left in the old palette.
+
+### Step 5.5 — Full pass
+
+- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
+  `npm run docs:check` all exit 0.
+
+---
+
+## Acceptance
+
+- [ ] The app follows the OS theme, with no toggle and no stored preference
+- [ ] Dark values override existing tokens; no `dark:` anywhere in components
+- [ ] `color-scheme` and `theme-color` both declare the two schemes
+- [ ] Elevation reads correctly on dark surfaces
+- [ ] All fifteen screens checked in both themes
+- [ ] Contrast meets AA in both, with ratios recorded
+- [ ] The style guide shows both palettes and states the rules
+- [ ] This plan's status set to **Complete**
+
+---
+
+## Follow-ups
+
+| Item | Why deferred |
+|---|---|
+| An in-app toggle | The OS setting already expresses the preference. Revisit if people ask to override it ([ADR 0026](../decisions/0026-dark-mode-follows-the-device.md)) |
+| Treating user images for dark backgrounds | A photo on white sits as a bright rectangle on a dark page. Needs its own decision, and possibly work at upload |
+| A contrast check in CI | Step 5.2 is done by hand, so it will rot. Worth automating once the palette settles |

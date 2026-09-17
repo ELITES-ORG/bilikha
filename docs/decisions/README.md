@@ -62,3 +62,4 @@ Number sequentially. Never renumber.
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
 | [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |
 | [0025](./0025-client-postings-and-mirrored-home.md) | Client postings; Home shows the other side of the market | Accepted |
+| [0026](./0026-dark-mode-follows-the-device.md) | Dark mode, following the device | Accepted |
