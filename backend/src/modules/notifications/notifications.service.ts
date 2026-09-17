@@ -1,6 +1,7 @@
 import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
+  agreements,
   creativeProfiles,
   conversations,
   notifications,
@@ -98,6 +99,10 @@ const TITLES: Record<NotificationType, string> = {
   profile_rejected: 'Your creative profile needs changes',
   profile_edit_acknowledged: 'Your profile edit was reviewed',
   posting_replied: 'A creative replied to your posting',
+  agreement_issued: 'You received a work agreement',
+  agreement_revision_requested: 'Changes were requested on a work agreement',
+  agreement_accepted: 'Your work agreement was accepted',
+  agreement_event: 'A work agreement was updated',
 };
 
 /**
@@ -118,8 +123,14 @@ async function resolveTargets(rows: Notification[]) {
     'profile_edit_acknowledged',
   ]);
   const conversationIds = byType(['posting_replied']);
+  const agreementIds = byType([
+    'agreement_issued',
+    'agreement_revision_requested',
+    'agreement_accepted',
+    'agreement_event',
+  ]);
 
-  const [profiles, threads] = await Promise.all([
+  const [profiles, threads, agreementRows] = await Promise.all([
     profileIds.length === 0
       ? Promise.resolve([])
       : db
@@ -132,11 +143,18 @@ async function resolveTargets(rows: Notification[]) {
           .select({ id: conversations.id })
           .from(conversations)
           .where(inArray(conversations.id, conversationIds)),
+    agreementIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ id: agreements.id, packageTitle: agreements.packageTitle })
+          .from(agreements)
+          .where(inArray(agreements.id, agreementIds)),
   ]);
 
   return {
     profiles: new Map(profiles.map((p) => [p.id, p])),
     threads: new Map(threads.map((t) => [t.id, t])),
+    agreements: new Map(agreementRows.map((a) => [a.id, a])),
   };
 }
 
@@ -209,6 +227,17 @@ export async function listNotifications(
       case 'posting_replied': {
         const thread = targets.threads.get(row.targetId);
         if (thread) link = `/messages/${thread.id}`;
+        break;
+      }
+      case 'agreement_issued':
+      case 'agreement_revision_requested':
+      case 'agreement_accepted':
+      case 'agreement_event': {
+        const agreement = targets.agreements.get(row.targetId);
+        if (agreement) {
+          link = `/agreements/${agreement.id}`;
+          detail = agreement.packageTitle;
+        }
         break;
       }
     }

@@ -53,6 +53,25 @@ export const passwordChangeLimiter = rateLimit({
   },
 });
 
+/** Accepting a work agreement takes the client's password, so this endpoint is
+ *  a password oracle without a limiter of its own — loginLimiter never sees it.
+ *  Keyed on the signed-in user; a successful acceptance costs nothing. */
+export const agreementAcceptLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many password attempts. Try again in an hour.',
+    },
+  },
+});
+
 /** Conversation messages — 60 per user per hour. Failures do not consume the
  *  budget so a mistyped empty body does not lock someone out. */
 export const messageLimiter = rateLimit({

@@ -1,6 +1,9 @@
 import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
+  agreementAcceptances,
+  agreementLineItems,
+  agreements,
   conversations,
   creativeProfiles,
   creativeProfileSubdomains,
@@ -12,6 +15,8 @@ import {
 } from '../db/schema/index.js';
 import type { NewUser, User } from '../db/schema/users.js';
 import type { CreativeProfile } from '../db/schema/profiles.js';
+import type { Conversation } from '../db/schema/conversations.js';
+import { contentHash } from '../modules/agreements/agreements.service.js';
 
 /**
  * A precomputed argon2id hash of PASSWORD. Hashing is deliberately slow, and a
@@ -189,6 +194,91 @@ export async function makeConversation(clientUserId: string, profile: CreativePr
     .returning();
 
   return row!;
+}
+
+export interface AgreementLineItemInput {
+  description: string;
+  priceCentavos: number;
+}
+
+const DEFAULT_LINE_ITEMS: AgreementLineItemInput[] = [
+  { description: 'Half-day shoot', priceCentavos: 500_000 },
+  { description: 'Twenty edited photographs', priceCentavos: 250_000 },
+  { description: 'Online gallery for thirty days', priceCentavos: 50_000 },
+];
+
+/**
+ * A `sent` agreement issued by the conversation's creative, with its line items
+ * in the order given. Writes the rows directly — tests that exercise
+ * `issueAgreement` should call the service instead.
+ */
+export async function makeAgreement(
+  conversation: Conversation,
+  overrides: {
+    agreement?: Partial<typeof agreements.$inferInsert>;
+    lineItems?: AgreementLineItemInput[];
+  } = {},
+) {
+  const [agreement] = await db
+    .insert(agreements)
+    .values({
+      conversationId: conversation.id,
+      issuedByUserId: conversation.creativeUserId,
+      packageTitle: 'Test package',
+      startDate: '2026-10-03',
+      durationDays: 14,
+      ...overrides.agreement,
+    })
+    .returning();
+
+  const lineItems = await db
+    .insert(agreementLineItems)
+    .values(
+      (overrides.lineItems ?? DEFAULT_LINE_ITEMS).map((item, index) => ({
+        agreementId: agreement!.id,
+        description: item.description,
+        priceCentavos: item.priceCentavos,
+        sortOrder: index,
+      })),
+    )
+    .returning();
+
+  return { agreement: agreement!, lineItems };
+}
+
+/**
+ * The same, already accepted by the client, with a real acceptance row carrying
+ * the content hash of what was accepted.
+ *
+ * Line items go in before the status changes: the freeze trigger refuses to
+ * touch them once the agreement is accepted, which is the point of it.
+ */
+export async function makeAcceptedAgreement(
+  conversation: Conversation,
+  overrides: {
+    agreement?: Partial<typeof agreements.$inferInsert>;
+    lineItems?: AgreementLineItemInput[];
+  } = {},
+) {
+  const { agreement, lineItems } = await makeAgreement(conversation, overrides);
+  const hash = contentHash(agreement, lineItems);
+
+  const [acceptance] = await db
+    .insert(agreementAcceptances)
+    .values({
+      agreementId: agreement.id,
+      acceptedByUserId: conversation.clientUserId,
+      contentHash: hash,
+    })
+    .returning();
+
+  const [accepted] = await db
+    .update(agreements)
+    .set({ status: 'accepted' })
+    .where(eq(agreements.id, agreement.id))
+    .returning();
+
+  return { agreement: accepted!, lineItems, acceptance: acceptance!, contentHash: hash };
 }
 
 /** Suspends an account the way the admin service does, without the audit row. */

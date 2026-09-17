@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/require-auth.js';
 import { messageLimiter } from '../../middleware/rate-limit.js';
+import { issueAgreementSchema } from '../agreements/agreements.schema.js';
+import { issueAgreement } from '../agreements/agreements.service.js';
 import {
   conversationIdSchema,
   ensureConversationSchema,
@@ -68,6 +70,17 @@ conversationsRouter.post('/:id/messages', messageLimiter, async (req, res) => {
   const id = conversationIdSchema.parse(req.params.id);
   const input = sendMessageSchema.parse(req.body);
   const data = await sendMessage(id, req.session.userId!, input);
+  res.status(201).json({ data });
+});
+
+/**
+ * Issuing lives here because an agreement is issued *into* a thread. Everything
+ * else about an agreement hangs off /agreements/:id.
+ */
+conversationsRouter.post('/:id/agreements', messageLimiter, async (req, res) => {
+  const id = conversationIdSchema.parse(req.params.id);
+  const input = issueAgreementSchema.parse(req.body);
+  const data = await issueAgreement(req.session.userId!, id, input);
   res.status(201).json({ data });
 });
 

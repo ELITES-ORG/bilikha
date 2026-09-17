@@ -16,6 +16,8 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notifyOnce } from '../notifications/notifications.service.js';
+import { loadAgreementCards } from '../agreements/agreements.service.js';
+import type { AgreementCard } from '../agreements/agreements.service.js';
 import type {
   EnsureConversationInput,
   ListHistoryInput,
@@ -60,19 +62,28 @@ type PostingCard = {
   subdomainName?: string;
 };
 
+/**
+ * Three attachment columns, three branches. ADR 0029 fixes the line here: a
+ * fourth means revisiting that decision, not adding another pair of fields.
+ */
 function messageAttachmentFields(
   offerId: string | null,
   postingId: string | null,
+  agreementId: string | null,
   offerCards: Map<string, OfferCard>,
   postingCards: Map<string, PostingCard>,
+  agreementCards: Map<string, AgreementCard>,
 ) {
   const offer = offerId ? (offerCards.get(offerId) ?? null) : null;
   const posting = postingId ? (postingCards.get(postingId) ?? null) : null;
+  const agreement = agreementId ? (agreementCards.get(agreementId) ?? null) : null;
   return {
     offer,
     offerRemoved: Boolean(offerId && !offer),
     posting,
     postingRemoved: Boolean(postingId && !posting),
+    agreement,
+    agreementRemoved: Boolean(agreementId && !agreement),
   };
 }
 
@@ -390,8 +401,10 @@ export async function startOrContinue(userId: string, input: StartConversationIn
         ...messageAttachmentFields(
           resolvedOfferId,
           null,
+          null,
           offerCards,
           new Map<string, PostingCard>(),
+          new Map<string, AgreementCard>(),
         ),
       },
     };
@@ -905,6 +918,7 @@ export async function getThread(
       body: messages.body,
       offerId: messages.offerId,
       postingId: messages.postingId,
+      agreementId: messages.agreementId,
       senderUserId: messages.senderUserId,
       createdAt: messages.createdAt,
       firstName: users.firstName,
@@ -921,6 +935,9 @@ export async function getThread(
   );
   const postingCards = await loadPostingCards(
     rows.map((r) => r.postingId).filter((id): id is string => Boolean(id)),
+  );
+  const agreementCards = await loadAgreementCards(
+    rows.map((r) => r.agreementId).filter((id): id is string => Boolean(id)),
   );
 
   const isClient = conversation.clientUserId === userId;
@@ -949,7 +966,14 @@ export async function getThread(
       fromSelf: row.senderUserId === userId,
       senderName: `${row.firstName} ${row.lastName}`.trim(),
       createdAt: row.createdAt.toISOString(),
-      ...messageAttachmentFields(row.offerId, row.postingId, offerCards, postingCards),
+      ...messageAttachmentFields(
+        row.offerId,
+        row.postingId,
+        row.agreementId,
+        offerCards,
+        postingCards,
+        agreementCards,
+      ),
     })),
   };
 }
@@ -1020,7 +1044,14 @@ export async function sendMessage(
     body: message!.body,
     fromSelf: true,
     createdAt: message!.createdAt.toISOString(),
-    ...messageAttachmentFields(resolvedOfferId, resolvedPostingId, offerCards, postingCards),
+    ...messageAttachmentFields(
+      resolvedOfferId,
+      resolvedPostingId,
+      null,
+      offerCards,
+      postingCards,
+      new Map<string, AgreementCard>(),
+    ),
   };
 }
 
