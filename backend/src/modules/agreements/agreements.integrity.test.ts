@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db, sql } from '../../db/index.js';
 import {
+  agreementAcceptances,
   agreements,
   conversations,
   notifications,
@@ -99,21 +100,23 @@ describe('an accepted agreement is not deleted (3.1, 3.2)', () => {
     expect(draftConversationGone).toBeUndefined();
   });
 
-  it('refuses deleting the client once the acceptance RESTRICT is out of the way', async () => {
+  it('refuses deleting the client, and refuses clearing the way first', async () => {
     const creative = await makeCreative();
     const client = await makeUser();
     const conversation = await makeConversation(client.id, creative.profile);
     const { agreement } = await makeAcceptedAgreement(conversation);
 
-    // Today accepted_by_user_id is ON DELETE RESTRICT, so a bare user delete
-    // never reaches the agreement. The failure mode ADR 0032 designs against is
-    // erasure that detaches those FKs and then walks user → conversations →
-    // agreements. Drop the acceptance row first so the cascade is what hits.
-    await sql`delete from agreement_acceptances where agreement_id = ${agreement.id}`;
-
+    // accepted_by_user_id is ON DELETE RESTRICT, so the bare delete stops here.
     await expect(async () => {
       await sql`delete from users where id = ${client.id}`;
-    }).rejects.toThrow(/accepted agreements cannot be deleted/i);
+    }).rejects.toThrow();
+
+    // The way round it is to drop the acceptance first and then let the cascade
+    // walk user → conversations → agreements. That route is closed too, which
+    // is the point: the record cannot be cleared by removing what references it.
+    await expect(async () => {
+      await sql`delete from agreement_acceptances where agreement_id = ${agreement.id}`;
+    }).rejects.toThrow(/acceptance cannot be changed or removed/i);
 
     const [userRemains] = await db
       .select({ id: users.id })
@@ -126,5 +129,59 @@ describe('an accepted agreement is not deleted (3.1, 3.2)', () => {
       .from(agreements)
       .where(eq(agreements.id, agreement.id));
     expect(agreementRemains?.status).toBe('accepted');
+  });
+});
+
+/**
+ * Found auditing plan 0020. The agreement was frozen and undeletable while the
+ * row proving it had been accepted — by whom, when, against what content — was
+ * neither. ADR 0029 puts the evidential weight on exactly that row.
+ */
+describe('an acceptance is written once and never changes', () => {
+  it('refuses changing the content hash', async () => {
+    const creative = await makeCreative();
+    const client = await makeUser();
+    const conversation = await makeConversation(client.id, creative.profile);
+    const { agreement } = await makeAcceptedAgreement(conversation);
+
+    await expect(async () => {
+      await sql`update agreement_acceptances set content_hash = ${'b'.repeat(64)}
+                where agreement_id = ${agreement.id}`;
+    }).rejects.toThrow(/acceptance cannot be changed or removed/i);
+  });
+
+  it('refuses reassigning who accepted it', async () => {
+    const creative = await makeCreative();
+    const client = await makeUser();
+    const conversation = await makeConversation(client.id, creative.profile);
+    const { agreement } = await makeAcceptedAgreement(conversation);
+
+    await expect(async () => {
+      await sql`update agreement_acceptances set accepted_by_user_id = ${creative.user.id}
+                where agreement_id = ${agreement.id}`;
+    }).rejects.toThrow(/acceptance cannot be changed or removed/i);
+
+    const [row] = await db
+      .select({ acceptedBy: agreementAcceptances.acceptedByUserId })
+      .from(agreementAcceptances)
+      .where(eq(agreementAcceptances.agreementId, agreement.id));
+    expect(row?.acceptedBy).toBe(client.id);
+  });
+
+  it('refuses deleting it, so no accepted agreement is left without one', async () => {
+    const creative = await makeCreative();
+    const client = await makeUser();
+    const conversation = await makeConversation(client.id, creative.profile);
+    const { agreement } = await makeAcceptedAgreement(conversation);
+
+    await expect(async () => {
+      await sql`delete from agreement_acceptances where agreement_id = ${agreement.id}`;
+    }).rejects.toThrow(/acceptance cannot be changed or removed/i);
+
+    const [row] = await db
+      .select({ id: agreementAcceptances.id })
+      .from(agreementAcceptances)
+      .where(eq(agreementAcceptances.agreementId, agreement.id));
+    expect(row?.id).toBeTruthy();
   });
 });

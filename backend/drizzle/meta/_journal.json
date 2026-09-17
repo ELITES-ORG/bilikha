@@ -169,6 +169,13 @@
       "when": 1789675756988,
       "tag": "0023_accepted_agreement_deletion_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789675757988,
+      "tag": "0024_agreement_acceptance_immutable",
+      "breakpoints": true
     }
   ]
 }

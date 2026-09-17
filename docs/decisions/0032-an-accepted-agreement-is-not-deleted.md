@@ -60,6 +60,23 @@ tombstone the way a suspended account's already does — rather than removed.
 **A conversation carrying an accepted agreement can no longer be hard-deleted.**
 That follows from the above and is intended.
 
+**The acceptance row is immutable too, and that turned out to be the more
+important half.** Auditing the work that implemented this decision found the
+agreement frozen and undeletable while `agreement_acceptances` — the row naming
+who accepted, when, and against which content hash — stayed freely editable and
+deletable. An accepted agreement could be left standing with no acceptance at
+all, or with one reassigned to somebody who never accepted it.
+
+The document is only half the evidence. [0029](./0029-work-agreements-not-invoices.md)
+puts the weight on the hash and the acceptor, so both are now refused any update
+or delete. Nothing in the application ever needed to change them: the service
+inserts an acceptance and afterwards only reads it.
+
+This also closes the way around the guard above. `accepted_by_user_id` is
+`RESTRICT`, so deleting a party is refused — but dropping the acceptance first
+and then letting the cascade run would have worked, and would have destroyed the
+evidence on the way past.
+
 ## Alternatives considered
 
 **Leave it, and amend 0029 to permit deletion.** Honest about what the code
@@ -101,7 +118,7 @@ discovering it in a dispute.
 **Bad.** Account deletion is now strictly more work than it was. That is the
 trade, and it is worth naming rather than discovering.
 
-**Bad.** Two triggers become three, all enforcing rules that also live in the
+**Bad.** Two triggers become four, all enforcing rules that also live in the
 service. Storage-layer rules are invisible from the TypeScript, and the only
 thing pointing at them is a comment and this record.
 
