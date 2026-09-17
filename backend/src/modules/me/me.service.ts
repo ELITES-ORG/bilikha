@@ -504,6 +504,9 @@ export async function saveOffer(userId: string, offerId: string) {
     .select({ id: offers.id })
     .from(offers)
     .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
+    // The owner, not the profile: suspension is a property of the account, and
+    // without this join the status filter below has no table to resolve against.
+    .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .where(
       and(
         eq(offers.id, offerId),

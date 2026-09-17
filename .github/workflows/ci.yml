@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A second push to the same branch makes the first run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    services:
+      # Matches docker-compose.yml. Tests run against real Postgres by
+      # decision, not by convenience — see ADR 0031.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: bilikha
+          POSTGRES_PASSWORD: bilikha
+          POSTGRES_DB: bilikha_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bilikha -d bilikha_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://bilikha:bilikha@localhost:5432/bilikha_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend
+        run: npm ci --prefix backend
+
+      - name: Install frontend
+        run: npm ci --prefix frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # The test harness migrates and seeds the database itself, in
+      # globalSetup, so there is no separate step here to drift from it.
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Docs
+        run: npm run docs:check
