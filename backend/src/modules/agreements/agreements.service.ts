@@ -180,7 +180,7 @@ function formatName(parts: {
  * agreement" and "not yours", matching `requireParticipant` — a 403 would
  * confirm that someone else's agreement exists.
  */
-async function requireAgreementAccess(userId: string, agreementId: string) {
+export async function requireAgreementAccess(userId: string, agreementId: string) {
   const [row] = await db
     .select({ agreement: agreements, conversation: conversations })
     .from(agreements)

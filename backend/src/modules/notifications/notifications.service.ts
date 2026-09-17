@@ -107,6 +107,7 @@ const TITLES: Record<NotificationType, string> = {
   agreement_delivered: 'Work was marked delivered — confirm to close it',
   agreement_completed: 'Your work was confirmed complete',
   agreement_cancelled: 'A work agreement was cancelled',
+  rating_received: 'A client rated your work',
 };
 
 /**
@@ -125,6 +126,9 @@ async function resolveTargets(rows: Notification[]) {
     'profile_approved',
     'profile_rejected',
     'profile_edit_acknowledged',
+    // Points at the creative's own profile: that is where the rating is, and
+    // where the appeal control sits (ADR 0033).
+    'rating_received',
   ]);
   const conversationIds = byType(['posting_replied']);
   const agreementIds = byType([
@@ -220,14 +224,17 @@ export async function listNotifications(
     switch (row.type) {
       case 'profile_approved':
       case 'profile_rejected':
-      case 'profile_edit_acknowledged': {
+      case 'profile_edit_acknowledged':
+      case 'rating_received': {
         const profile = targets.profiles.get(row.targetId);
         if (profile) {
           link = `/creatives/${profile.slug}`;
           detail =
             row.type === 'profile_rejected'
               ? 'Open your profile to see what needs changing.'
-              : null;
+              : row.type === 'rating_received'
+                ? 'Open your profile to read it.'
+                : null;
         }
         break;
       }

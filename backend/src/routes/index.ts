@@ -10,6 +10,7 @@ import { meRouter } from '../modules/me/me.routes.js';
 import { mediaRouter } from '../modules/media/media.routes.js';
 import { offersRouter } from '../modules/offers/offers.routes.js';
 import { postingsRouter } from '../modules/postings/postings.routes.js';
+import { ratingsRouter } from '../modules/ratings/ratings.routes.js';
 import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
 
 /**
@@ -29,5 +30,6 @@ apiRouter.use('/me', meRouter);
 apiRouter.use('/media', mediaRouter);
 apiRouter.use('/offers', offersRouter);
 apiRouter.use('/postings', postingsRouter);
+apiRouter.use('/ratings', ratingsRouter);
 apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

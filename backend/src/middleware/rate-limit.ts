@@ -90,6 +90,27 @@ export const messageLimiter = rateLimit({
   },
 });
 
+/** Leaving a rating. A completed agreement is required, so abuse is already
+ *  bounded by what it costs to manufacture one — but the endpoint writes public
+ *  text about a named person, so it is limited anyway. Failures do not consume
+ *  the budget: being refused for rating an unfinished engagement must not lock
+ *  someone out of rating a finished one. */
+export const ratingCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many ratings. Try again in an hour.',
+    },
+  },
+});
+
 /** Upload tickets — 40 per user per hour. Covers a full ten-image portfolio
  *  with retries, and caps how fast one account can fill a 1 GB bucket. */
 export const uploadLimiter = rateLimit({

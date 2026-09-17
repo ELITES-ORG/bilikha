@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAdmin } from '../../middleware/require-admin.js';
+import { listRatingsSchema } from '../ratings/ratings.schema.js';
+import {
+  adminDismissReport,
+  adminListOpenReports,
+  adminRemoveRating,
+} from '../ratings/ratings.service.js';
 import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
 import {
   findAccounts,
@@ -94,6 +100,40 @@ adminRouter.post('/accounts/:id/status', async (req, res) => {
     adminId: req.session.userId!,
     userId: id,
     action: input.action,
+    reason: input.reason,
+  });
+
+  res.json({ data });
+});
+
+const ratingReasonSchema = z.object({
+  reason: z.string().trim().min(1, 'Give a reason for removing this rating').max(500),
+});
+
+/**
+ * A creative's appeal is their only recourse (ADR 0033), so this is a queue:
+ * oldest first, and the two answers are dismiss or remove. There is no third
+ * option that rewrites the rating — plan 0021, out of scope.
+ */
+adminRouter.get('/ratings', async (req, res) => {
+  const query = listRatingsSchema.parse(req.query);
+  const { data, total } = await adminListOpenReports(query);
+  res.json({ data, meta: { page: query.page, limit: query.limit, total } });
+});
+
+adminRouter.post('/ratings/reports/:id/dismiss', async (req, res) => {
+  const { id } = z.object({ id: z.string().uuid('Invalid report id') }).parse(req.params);
+  res.json({ data: await adminDismissReport(id) });
+});
+
+// Removal deletes the rating and cascades to the report that asked for it.
+adminRouter.post('/ratings/:id/remove', async (req, res) => {
+  const { id } = z.object({ id: z.string().uuid('Invalid rating id') }).parse(req.params);
+  const input = ratingReasonSchema.parse(req.body);
+
+  const data = await adminRemoveRating({
+    adminId: req.session.userId!,
+    ratingId: id,
     reason: input.reason,
   });
 

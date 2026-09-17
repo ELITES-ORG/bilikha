@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../../middleware/require-auth.js';
-import { agreementAcceptLimiter } from '../../middleware/rate-limit.js';
+import { agreementAcceptLimiter, ratingCreateLimiter } from '../../middleware/rate-limit.js';
+import { leaveRatingSchema } from '../ratings/ratings.schema.js';
+import { rateAgreement, ratingForAgreement } from '../ratings/ratings.service.js';
 import {
   acceptAgreementSchema,
   agreementEventSchema,
@@ -67,4 +69,30 @@ agreementsRouter.post('/:id/events', async (req, res) => {
     note: input.note ?? null,
   });
   res.status(201).json({ data });
+});
+
+/**
+ * A rating is earned by this agreement being completed (ADR 0033), so it is
+ * left here rather than against the creative. Limited per user: abuse is
+ * bounded by the completed agreement, but the request publishes text about a
+ * named person.
+ */
+agreementsRouter.post('/:id/rating', ratingCreateLimiter, async (req, res) => {
+  const id = agreementIdSchema.parse(req.params.id);
+  const input = leaveRatingSchema.parse(req.body);
+  const data = await rateAgreement({
+    userId: req.session.userId!,
+    agreementId: id,
+    stars: input.stars,
+    comment: input.comment ?? null,
+  });
+  res.status(201).json({ data });
+});
+
+// What the record page needs to decide between "Rate this creative" and the
+// rating already left. Null when there is none.
+agreementsRouter.get('/:id/rating', async (req, res) => {
+  const id = agreementIdSchema.parse(req.params.id);
+  const data = await ratingForAgreement({ userId: req.session.userId!, agreementId: id });
+  res.json({ data });
 });

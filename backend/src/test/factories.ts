@@ -2,6 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   agreementAcceptances,
+  agreementEvents,
   agreementLineItems,
   agreements,
   conversations,
@@ -11,6 +12,7 @@ import {
   municipalities,
   offers,
   postings,
+  ratings,
   users,
 } from '../db/schema/index.js';
 import type { NewUser, User } from '../db/schema/users.js';
@@ -279,6 +281,72 @@ export async function makeAcceptedAgreement(
     .returning();
 
   return { agreement: accepted!, lineItems, acceptance: acceptance!, contentHash: hash };
+}
+
+/**
+ * An accepted agreement walked all the way to Completed: started, delivered,
+ * and confirmed by the client, one second apart so the newest event is never
+ * ambiguous.
+ *
+ * The events go in directly rather than through `recordEvent` — tests that
+ * exercise the transitions themselves live in the lifecycle suite, and this
+ * factory exists for everything downstream of them.
+ */
+export async function makeCompletedAgreement(
+  conversation: Conversation,
+  overrides: {
+    agreement?: Partial<typeof agreements.$inferInsert>;
+    lineItems?: AgreementLineItemInput[];
+  } = {},
+) {
+  const accepted = await makeAcceptedAgreement(conversation, overrides);
+  const base = Date.now();
+
+  const events = await db
+    .insert(agreementEvents)
+    .values([
+      {
+        agreementId: accepted.agreement.id,
+        actorUserId: conversation.creativeUserId,
+        type: 'started' as const,
+        createdAt: new Date(base),
+      },
+      {
+        agreementId: accepted.agreement.id,
+        actorUserId: conversation.creativeUserId,
+        type: 'delivery_marked' as const,
+        createdAt: new Date(base + 1000),
+      },
+      {
+        agreementId: accepted.agreement.id,
+        actorUserId: conversation.clientUserId,
+        type: 'completion_confirmed' as const,
+        createdAt: new Date(base + 2000),
+      },
+    ])
+    .returning();
+
+  return { ...accepted, events };
+}
+
+/** A rating on an agreement, written directly. */
+export async function makeRating(
+  agreementId: string,
+  raterUserId: string,
+  overrides: Partial<typeof ratings.$inferInsert> = {},
+) {
+  const [row] = await db
+    .insert(ratings)
+    .values({
+      agreementId,
+      raterUserId,
+      stars: 5,
+      comment: 'Delivered exactly what we agreed.',
+      ...overrides,
+    })
+    .returning();
+
+  return row!;
 }
 
 /** Suspends an account the way the admin service does, without the audit row. */
