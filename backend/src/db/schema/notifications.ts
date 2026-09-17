@@ -22,6 +22,9 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'agreement_delivered',
   'agreement_completed',
   'agreement_cancelled',
+  // Narrowly admitted under ADR 0030: appealing is the creative's only recourse
+  // against a rating, and it is useless if they do not know one arrived.
+  'rating_received',
 ]);
 
 /**

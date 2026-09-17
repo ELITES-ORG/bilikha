@@ -84,6 +84,9 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   // account has no creative profile, which subject_user_id covers.
   'account_suspended',
   'account_reinstated',
+  // An administrator removing a rating after a creative's appeal. Removal is
+  // the only answer available — nobody edits someone else's words (ADR 0033).
+  'rating_removed',
 ]);
 
 /**

@@ -371,6 +371,41 @@ changes again; everything afterwards is a new event
 
 Indexes: `(agreement_id, created_at)`.
 
+## `ratings`
+
+One opinion per completed agreement, by the client on that agreement
+([ADR 0033](../decisions/0033-ratings-earned-by-a-completed-agreement.md)). No
+`profile_id` — the creative is reached through
+`agreement → conversation → profile`. No stored average or count; both are
+derived on read and exclude suspended raters ([ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md)).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `agreement_id` | `uuid` FK → `agreements.id` | Unique; `ON DELETE CASCADE` |
+| `rater_user_id` | `uuid` FK → `users.id` | The client; `ON DELETE RESTRICT` |
+| `stars` | `integer` | Check between 1 and 5 |
+| `comment` | `text` null | Capped at 500 in the API schema |
+| `created_at` / `updated_at` | `timestamptz` | Edit/delete allowed for 14 days from `created_at` (service, not a trigger) |
+
+Indexes: unique `(agreement_id)`; `(rater_user_id)`.
+
+## `rating_reports`
+
+A creative's appeal of a rating on their profile. Modelled on
+`conversation_reports`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `rating_id` | `uuid` FK → `ratings.id` | `ON DELETE CASCADE` |
+| `reporter_user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `reason` | `text` | |
+| `status` | enum | Reuses `report_status`: `open` \| `reviewed` \| `dismissed` |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(status, created_at)`.
+
 ## `postings`
 
 Work a client wants done. Live on publish, reviewed after; expire by

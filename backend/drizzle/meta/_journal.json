@@ -176,6 +176,13 @@
       "when": 1789675757988,
       "tag": "0024_agreement_acceptance_immutable",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789682825946,
+      "tag": "0025_slimy_polaris",
+      "breakpoints": true
     }
   ]
 }
