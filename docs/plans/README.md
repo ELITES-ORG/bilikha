@@ -79,7 +79,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0017](./0017-notification-centre.md) | The notification centre | Complete |
 | [0018](./0018-web-push.md) | Web push | Deferred |
 | [0019](./0019-automated-tests.md) | Automated tests and CI | Complete |
-| [0020](./0020-agreement-integrity.md) | Precise agreement notifications, and a deletion guard | Ready |
+| [0020](./0020-agreement-integrity.md) | Precise agreement notifications, and a deletion guard | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

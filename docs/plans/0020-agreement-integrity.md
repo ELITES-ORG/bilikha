@@ -1,6 +1,6 @@
 # 0020. Precise agreement notifications, and a deletion guard
 
-- **Status:** Ready
+- **Status:** Complete
 - **Related:** [ADR 0032](../decisions/0032-an-accepted-agreement-is-not-deleted.md) ·
   [ADR 0030](../decisions/0030-notifications.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md)
@@ -66,9 +66,9 @@ apply unchanged. Six specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Precise notifications | 4 / 4 | Not started |
-| 2. The deletion guard | 2 / 2 | Not started |
-| 3. Verification | 4 / 4 | Not started |
+| 1. Precise notifications | 4 / 4 | Complete |
+| 2. The deletion guard | 2 / 2 | Complete |
+| 3. Verification | 3 / 4 | 3.3 needs a browser; 3.4 awaits CI |
 
 ---
 
@@ -76,17 +76,17 @@ apply unchanged. Six specific to this plan:
 
 ### Step 1.1 — The enum
 
-- [ ] **Action.** Add to `notificationTypeEnum` in
+- [x] **Action.** Add to `notificationTypeEnum` in
   `backend/src/db/schema/notifications.ts`: `agreement_delivered`,
   `agreement_completed`, `agreement_cancelled`.
-- [ ] **Action.** Migration with `ALTER TYPE ... ADD VALUE`, one per statement.
+- [x] **Action.** Migration with `ALTER TYPE ... ADD VALUE`, one per statement.
   Commit the Drizzle snapshot alongside it, then `db:generate` again and confirm
   it emits nothing.
-- [ ] **Note.** `agreement_event` stays in the enum. Rule 1.
+- [x] **Note.** `agreement_event` stays in the enum. Rule 1.
 
 ### Step 1.2 — Titles and recipients
 
-- [ ] **Action.** In `notifications.service.ts`, add to `TITLES`:
+- [x] **Action.** In `notifications.service.ts`, add to `TITLES`:
 
   | Type | Title | Told |
   |---|---|---|
@@ -94,37 +94,37 @@ apply unchanged. Six specific to this plan:
   | `agreement_completed` | Your work was confirmed complete | the creative |
   | `agreement_cancelled` | A work agreement was cancelled | the other party |
 
-- [ ] **Action.** Leave `agreement_event`'s title in place for rows already
+- [x] **Action.** Leave `agreement_event`'s title in place for rows already
   written.
-- [ ] **Action.** Add the three to the agreement branch of `resolveTargets`, so
+- [x] **Action.** Add the three to the agreement branch of `resolveTargets`, so
   they link to `/agreements/:id` like the rest.
-- [ ] **Action.** Mirror all three in
+- [x] **Action.** Mirror all three in
   `frontend/src/features/notifications/types.ts`.
 
 ### Step 1.3 — Emitting, and not emitting
 
-- [ ] **Action.** In `recordEvent`, replace the single `agreement_event` emit
+- [x] **Action.** In `recordEvent`, replace the single `agreement_event` emit
   with a map from event type to notification type:
   `delivery_marked → agreement_delivered`,
   `completion_confirmed → agreement_completed`,
   `cancelled → agreement_cancelled`.
-- [ ] **Action.** `started` sends **nothing**.
-- [ ] **Why.** [ADR 0030](../decisions/0030-notifications.md) lists the whole
+- [x] **Action.** `started` sends **nothing**.
+- [x] **Why.** [ADR 0030](../decisions/0030-notifications.md) lists the whole
   sanctioned set and "work started" is not in it — the catch-all added a
   notification nobody decided to send. It also fails that ADR's own test:
   notifications are for what a person must act on, and a client whose work has
   started is required to do nothing. The state is on the record and in the
   History index for anyone who wants it.
-- [ ] **Note.** If you disagree, say so rather than quietly keeping it. This is
+- [x] **Note.** If you disagree, say so rather than quietly keeping it. This is
   a judgement about noise, and the registrant may overrule it — but it should be
   a decision, which is what the catch-all avoided being.
 
 ### Step 1.4 — Tests
 
-- [ ] **Test.** Each of the three transitions notifies the right party, with the
+- [x] **Test.** Each of the three transitions notifies the right party, with the
   right type, and not the actor.
-- [ ] **Test.** `started` produces no notification at all.
-- [ ] **Test.** A row still carrying `agreement_event` renders with its title and
+- [x] **Test.** `started` produces no notification at all.
+- [x] **Test.** A row still carrying `agreement_event` renders with its title and
   a working link. Insert one directly; this is the regression guard for rule 1.
 
 ---
@@ -133,23 +133,23 @@ apply unchanged. Six specific to this plan:
 
 ### Step 2.1 — The trigger
 
-- [ ] **Action.** A migration adding `prevent_accepted_agreement_deletion`, a
+- [x] **Action.** A migration adding `prevent_accepted_agreement_deletion`, a
   `BEFORE DELETE` trigger on `agreements` that raises when `OLD.status =
   'accepted'`. Model it on `prevent_accepted_agreement_mutation` in
   `0021_agreement_freeze_triggers.sql`, including the comment block.
-- [ ] **Action.** The comment says what it is for and names
+- [x] **Action.** The comment says what it is for and names
   [ADR 0032](../decisions/0032-an-accepted-agreement-is-not-deleted.md). Rule 5
   of that ADR's consequences: the error message alone invites deleting the
   obstacle.
-- [ ] **Verify.** `db:generate` after migrating produces nothing.
+- [x] **Verify.** `db:generate` after migrating produces nothing.
 
 ### Step 2.2 — What it breaks, on purpose
 
-- [ ] **Action.** Check every existing test and factory that deletes a user or a
+- [x] **Action.** Check every existing test and factory that deletes a user or a
   conversation. Any that now fail are the intended warning, not breakage to work
   around — fix the test to use a non-accepted agreement, or to expect the
   refusal.
-- [ ] **Note.** `backend/src/test/setup.ts` truncates rather than deleting, and
+- [x] **Note.** `backend/src/test/setup.ts` truncates rather than deleting, and
   `TRUNCATE` does not fire row triggers, so the suite's reset is unaffected.
   Confirm that rather than assuming it.
 
@@ -159,14 +159,14 @@ apply unchanged. Six specific to this plan:
 
 ### Step 3.1 — The guard holds, in SQL
 
-- [ ] **Test.** Build an accepted agreement, then `DELETE` it directly. Refused.
-- [ ] **Test.** A `sent` agreement deletes cleanly.
-- [ ] **Test.** Deleting the conversation under an accepted agreement is refused
+- [x] **Test.** Build an accepted agreement, then `DELETE` it directly. Refused.
+- [x] **Test.** A `sent` agreement deletes cleanly.
+- [x] **Test.** Deleting the conversation under an accepted agreement is refused
   by the cascade hitting the trigger; deleting one under a draft is not.
 
 ### Step 3.2 — The cascade path
 
-- [ ] **Test.** Deleting the *client* user of an accepted agreement is refused.
+- [x] **Test.** Deleting the *client* user of an accepted agreement is refused.
   This is the path ADR 0032 exists for — the one that reaches the agreement
   without any code mentioning agreements.
 
