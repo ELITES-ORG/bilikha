@@ -60,12 +60,16 @@ export function SiteHeader() {
             >
               <Bell className="size-5" />
               {notifications > 0 && (
-                <span
+                // Same control as the Messages count, so one fact reads one
+                // way. Badge carries its own tones, which keeps this out of
+                // raw colours — plan 0014 rule 1.
+                <Badge
+                  tone="accent"
                   aria-hidden="true"
-                  className="absolute -top-0.5 -right-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-lawa-600 px-1 text-2xs leading-none text-white tabular-nums"
+                  className="absolute -top-1 -right-1 tabular-nums"
                 >
                   {notifications > 9 ? '9+' : notifications}
-                </span>
+                </Badge>
               )}
             </Link>
           )}

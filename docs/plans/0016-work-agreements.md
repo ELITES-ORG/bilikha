@@ -4,7 +4,7 @@
 - **Related:** [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
   [ADR 0024](../decisions/0024-offers-attach-to-messages.md) ·
   [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) ·
-  [plan 0017](./0017-notification-centre.md), which runs first
+  [plan 0017](./0017-notification-centre.md), already built
 
 ---
 
@@ -85,7 +85,7 @@ apply unchanged. Ten specific to this plan:
 - Declining outright — requesting changes covers it
 - Email or SMS of any kind. [ADR 0030](../decisions/0030-notifications.md)
 - The notification plumbing itself — [plan 0017](./0017-notification-centre.md)
-  runs first and owns it. This plan only emits through its `notify()`
+  built it. This plan adds four enum values and emits through its `notify()`
 
 ---
 
@@ -283,9 +283,23 @@ New module: `backend/src/modules/agreements/`.
   - Completed and Cancelled are terminal: nothing may follow them.
 - [ ] **Action.** Insert the event and post a message into the thread in one
   transaction, so the conversation shows the move.
-- [ ] **Action.** Emit a notification to the *other* party through `notify()`
-  from [plan 0017](./0017-notification-centre.md), adding the agreement types to
-  its enum. It never throws and never fails the transition.
+- [ ] **Action.** Emit a notification to the *other* party. The plumbing is
+  built — import from `backend/src/modules/notifications/notifications.service.js`:
+
+  ```ts
+  notify({ userId, actorUserId, type, targetId }): Promise<void>  // never throws
+  ```
+
+  Add the agreement types to `notificationTypeEnum` in
+  `backend/src/db/schema/notifications.ts` with a migration
+  (`ALTER TYPE ... ADD VALUE`), and their titles to the `TITLES` map and the
+  `switch` in `resolveTargets`. Target the agreement id and resolve it to
+  `/agreements/:id`.
+- [ ] **Action.** Call it *after* the transaction commits, as
+  `admin.service.ts` `notifyOwner` does. It swallows its own failures, so it
+  cannot affect the transition either way.
+- [ ] **Note.** `notify` already drops self-notifications, so the actor never
+  needs filtering at this call site.
 - [ ] **Action.** Take `pg_advisory_xact_lock(hashtext(agreementId))` before
   reading the newest event and inserting. Without it two taps race, both read the
   same newest event, and both insert — the same count-then-insert problem offers
