@@ -72,6 +72,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0010](./0010-offers-and-an-offer-directory.md) | Offers, and a directory that indexes them | Complete |
 | [0011](./0011-bottom-navigation-and-history.md) | Bottom navigation, and a history of what you inquired about | Complete |
 | [0012](./0012-inquire-from-an-offer-and-saved-offers.md) | Inquire from an offer, and saved offers | Complete |
+| [0013](./0013-client-postings-and-mode-mirrored-surfaces.md) | Client postings, and mode-mirrored surfaces | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006.

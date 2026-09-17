@@ -61,3 +61,4 @@ Number sequentially. Never renumber.
 | [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted |
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
 | [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |
+| [0025](./0025-client-postings-and-mirrored-home.md) | Client postings; Home shows the other side of the market | Accepted |
