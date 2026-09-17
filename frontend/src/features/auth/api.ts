@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { apiClient, toApiError } from '@/lib/api-client';
@@ -71,6 +72,7 @@ export function useLogin() {
 
 export function useLogout() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: async (): Promise<void> => {
@@ -80,7 +82,22 @@ export function useLogout() {
         throw toApiError(error);
       }
     },
-    // Clear everything — cached data may be scoped to the signed-out user.
-    onSuccess: () => queryClient.clear(),
+    onSuccess: () => {
+      /**
+       * Navigate first, then clear.
+       *
+       * Signing out used to leave you where you were and rely on RequireAuth
+       * to bounce you. That races: clearing the cache makes the page you are
+       * still on refetch, so the account page rendered "Could not load your
+       * profile — you must be signed in" before the guard moved. And the guard
+       * sends you to /login, which is not where someone who just chose to sign
+       * out wants to be.
+       *
+       * Leaving the page first unmounts those queries, so the clear that
+       * follows has no observers left to refetch and nothing flashes.
+       */
+      navigate('/', { replace: true });
+      queryClient.clear();
+    },
   });
 }
