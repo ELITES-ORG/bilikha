@@ -192,9 +192,16 @@
   --duration-slower: 450ms;
 
   /* Layout rhythm. Named so section spacing stays consistent across screens
-     instead of being re-guessed per page. */
+     instead of being re-guessed per page.
+
+     The phone value is deliberately much smaller than a proportional scaling
+     would give. A 64px header plus 64px of padding put 128px — a fifth of a
+     648px viewport — above the first word, and on a phone that fifth is far
+     more expensive than the same fraction of a desktop screen: there is less of
+     it, and what it pushes down is a list people came to read. Generous
+     whitespace is part of this design and it stays from md up. */
   --gutter: 1.25rem;
-  --section-gap: 4rem;
+  --section-gap: 2.5rem;
   --stack-gap: 1.5rem;
 }
 
