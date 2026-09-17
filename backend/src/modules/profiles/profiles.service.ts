@@ -31,8 +31,14 @@ export interface PublicProfile {
     description: string | null;
     priceMinCentavos: number | null;
     priceMaxCentavos: number | null;
-    subdomainSlug: string;
-    subdomainName: string;
+    /**
+     * Nested, matching `GET /offers`. It used to be flat `subdomainSlug` /
+     * `subdomainName` here and nested there, so one offer had two shapes
+     * depending on which endpoint returned it — and the client, written against
+     * the other one, read `offer.subdomain.name` on undefined and took the whole
+     * profile page down.
+     */
+    subdomain: { slug: string; name: string; domain: string };
     images: { id: string; url: string; thumbUrl: string; sortOrder: number }[];
   }[];
   memberSince: string;
@@ -102,9 +108,11 @@ async function offersForProfile(profileId: string): Promise<NonNullable<PublicPr
       priceMaxCentavos: offers.priceMaxCentavos,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      domainName: creativeDomains.name,
     })
     .from(offers)
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
+    .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .where(eq(offers.profileId, profileId))
     .orderBy(asc(offers.sortOrder), asc(offers.createdAt));
 
@@ -145,8 +153,7 @@ async function offersForProfile(profileId: string): Promise<NonNullable<PublicPr
     description: row.description,
     priceMinCentavos: row.priceMinCentavos,
     priceMaxCentavos: row.priceMaxCentavos,
-    subdomainSlug: row.subdomainSlug,
-    subdomainName: row.subdomainName,
+    subdomain: { slug: row.subdomainSlug, name: row.subdomainName, domain: row.domainName },
     images: imagesByOffer.get(row.id) ?? [],
   }));
 }
