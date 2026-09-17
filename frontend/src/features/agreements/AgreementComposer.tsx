@@ -8,7 +8,7 @@ import { useIssueAgreement } from './api';
 import { durationLine, endDateOf, formatDate, todayAsDateInput } from './format';
 import type { Agreement, IssueAgreementPayload } from './types';
 
-/** Matches the server's cap; thirty lines is generous for one package. */
+/** Matches the server's cap; thirty services is generous for one package. */
 const LINE_LIMIT = 30;
 
 type LineDraft = { key: number; description: string; price: string };
@@ -129,6 +129,17 @@ export function AgreementComposer({
     setFormError(null);
 
     const title = form.packageTitle.trim();
+
+    /*
+     * A row carrying a price but no description used to be dropped here
+     * without a word, because the filter keyed on the description alone — so a
+     * priced service the creative had typed simply vanished from the agreement
+     * they sent. Say so instead.
+     */
+    const pricedButUnnamed = form.lines.filter(
+      (line) => !line.description.trim() && pesoInputToCentavos(line.price) !== undefined,
+    );
+
     const lineItems = form.lines
       .filter((line) => line.description.trim().length > 0)
       .map((line) => ({
@@ -140,8 +151,17 @@ export function AgreementComposer({
       setFieldErrors({ packageTitle: 'Give the package a title' });
       return;
     }
+    if (pricedButUnnamed.length > 0) {
+      setFieldErrors(
+        Object.fromEntries(
+          pricedButUnnamed.map((line) => [`line-${line.key}`, 'Say what this service covers']),
+        ),
+      );
+      setFormError('A service with a price needs a description, or remove it.');
+      return;
+    }
     if (lineItems.length === 0) {
-      setFormError('Add at least one line saying what the package covers.');
+      setFormError('Add at least one service saying what the package covers.');
       return;
     }
     if (!form.startDate) {
@@ -216,34 +236,43 @@ export function AgreementComposer({
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium text-ink">What it covers</legend>
         {form.lines.map((line, index) => (
-          <div key={line.key} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1">
-              <Input
-                label={index === 0 ? 'Description' : undefined}
-                aria-label={index === 0 ? undefined : `Description, line ${index + 1}`}
-                maxLength={200}
-                value={line.description}
-                onChange={(event) => updateLine(line.key, { description: event.target.value })}
-              />
+          /*
+           * Each service is a numbered group rather than a bare row. The
+           * previous shape labelled only the first row and left the rest with
+           * an aria-label alone, so on a phone the second service was two
+           * unlabelled boxes.
+           */
+          <div key={line.key} className="rounded-sm border border-hairline p-3">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-medium text-ink">Service {index + 1}</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={form.lines.length === 1}
+                onClick={() => removeLine(line.key)}
+              >
+                Remove
+              </Button>
             </div>
-            <div className="w-full sm:w-40">
-              <PesoInput
-                label={index === 0 ? 'Price (₱)' : undefined}
-                aria-label={index === 0 ? undefined : `Price, line ${index + 1}`}
-                value={line.price}
-                onValueChange={(price) => updateLine(line.key, { price })}
-              />
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <Input
+                  label="Description"
+                  maxLength={200}
+                  value={line.description}
+                  onChange={(event) => updateLine(line.key, { description: event.target.value })}
+                  error={fieldErrors[`line-${line.key}`]}
+                />
+              </div>
+              <div className="w-full sm:w-40">
+                <PesoInput
+                  label="Price (₱)"
+                  value={line.price}
+                  onValueChange={(price) => updateLine(line.key, { price })}
+                />
+              </div>
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="self-start sm:self-end"
-              disabled={form.lines.length === 1}
-              onClick={() => removeLine(line.key)}
-            >
-              Remove
-            </Button>
           </div>
         ))}
         <Button
@@ -253,7 +282,7 @@ export function AgreementComposer({
           disabled={form.lines.length >= LINE_LIMIT}
           onClick={addLine}
         >
-          Add a line
+          Add a service
         </Button>
       </fieldset>
 
@@ -292,7 +321,7 @@ export function AgreementComposer({
           className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
         />
         <p className="text-xs text-ink-subtle">
-          Anything the lines do not say — what you need from the client, what is not included.
+          Anything the services do not say — what you need from the client, what is not included.
         </p>
       </div>
 
@@ -302,7 +331,7 @@ export function AgreementComposer({
           {endDate ? ` · ends ${formatDate(endDate)}` : ''}
         </p>
         <p className="mt-0.5 text-xs text-ink-subtle text-pretty">
-          Worked out from the lines and the dates above, here on this screen. Bilikha does not
+          Worked out from the services and the dates above, here on this screen. Bilikha does not
           handle payment.
         </p>
       </div>

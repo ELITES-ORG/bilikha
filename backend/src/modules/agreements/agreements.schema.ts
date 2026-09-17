@@ -4,7 +4,7 @@ export const agreementIdSchema = z.string().uuid('Invalid agreement id');
 
 /** Integer centavos, never pesos and never a float (ADR 0029). */
 const lineItemSchema = z.object({
-  description: z.string().trim().min(1, 'Say what this covers').max(200),
+  description: z.string().trim().min(1, 'Say what this service covers').max(200),
   priceCentavos: z.number().int('Prices are whole centavos').min(0).max(2_000_000_000),
 });
 
@@ -14,7 +14,7 @@ export const issueAgreementSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a date like 2026-10-03'),
   durationDays: z.coerce.number().int().min(1, 'Duration is at least one day').max(3650),
   // Thirty is generous for a package and still caps what one request can write.
-  lineItems: z.array(lineItemSchema).min(1, 'Add at least one line').max(30),
+  lineItems: z.array(lineItemSchema).min(1, 'Add at least one service').max(30),
   supersedesId: agreementIdSchema.optional(),
 });
 

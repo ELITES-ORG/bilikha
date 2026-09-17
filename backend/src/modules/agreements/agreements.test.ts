@@ -25,6 +25,7 @@ import {
   recordEvent,
   requestRevision,
 } from './agreements.service.js';
+import { issueAgreementSchema } from './agreements.schema.js';
 
 /**
  * Plan 0016 steps 7.1 to 7.5, against a real database. The two things worth
@@ -190,6 +191,48 @@ describe('the happy path (7.1)', () => {
     const card = posted.messages.at(-1);
     expect(card?.body).toBe('Sent a work agreement: Wedding coverage');
     expect(card?.agreement).toBeNull();
+  });
+});
+
+describe('a package has to cover something', () => {
+  it('refuses an agreement with no services', async () => {
+    const { creative, conversation } = await thread();
+
+    await expect(
+      issueAgreement(creative.user.id, conversation.id, { ...INPUT, lineItems: [] }),
+    ).rejects.toThrow();
+
+    const [tally] = await db.select({ value: count() }).from(agreements);
+    expect(tally?.value).toBe(0);
+  });
+
+  /*
+   * The shape rules live in the route's schema, not in the service — the
+   * service trusts input the route has already parsed, as every module here
+   * does. So they are asserted where they are enforced.
+   */
+  it('refuses a service whose description is only whitespace', () => {
+    const result = issueAgreementSchema.safeParse({
+      ...INPUT,
+      lineItems: [{ description: '   ', priceCentavos: 100_000 }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('refuses an empty list of services at the boundary too', () => {
+    const result = issueAgreementSchema.safeParse({ ...INPUT, lineItems: [] });
+    expect(result.success).toBe(false);
+  });
+
+  it('trims a description rather than storing the spaces', () => {
+    const result = issueAgreementSchema.safeParse({
+      ...INPUT,
+      lineItems: [{ description: '  Half-day shoot  ', priceCentavos: 100_000 }],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.lineItems[0]?.description).toBe('Half-day shoot');
   });
 });
 
