@@ -60,7 +60,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 
 | # | Plan | Status |
 |---|---|---|
-| [0002](./0002-deployment.md) | Deployment — Vercel, Render, Supabase | Complete |
+| [0002](./0002-deployment.md) | Deployment — Vercel, Render, Supabase | In progress |
 | [0001](./0001-registration-and-auth.md) | Registration and authentication | Complete |
 | [0003](./0003-admin-moderation.md) | Admin panel — registration moderation | Complete |
 | [0004](./0004-client-accounts-and-inquiries.md) | Client accounts and inquiries | Complete |
@@ -73,9 +73,9 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0011](./0011-bottom-navigation-and-history.md) | Bottom navigation, and a history of what you inquired about | Complete |
 | [0012](./0012-inquire-from-an-offer-and-saved-offers.md) | Inquire from an offer, and saved offers | Complete |
 | [0013](./0013-client-postings-and-mode-mirrored-surfaces.md) | Client postings, and mode-mirrored surfaces | Complete |
-| [0014](./0014-dark-mode.md) | Dark mode | Ready |
+| [0014](./0014-dark-mode.md) | Dark mode | Built; device pass outstanding |
 | [0015](./0015-account-hub.md) | The account hub | Complete |
-| [0016](./0016-work-agreements.md) | Work agreements in the thread | Complete |
+| [0016](./0016-work-agreements.md) | Work agreements in the thread | Built; device pass outstanding |
 | [0017](./0017-notification-centre.md) | The notification centre | Complete |
 | [0018](./0018-web-push.md) | Web push | Deferred |
 | [0019](./0019-automated-tests.md) | Automated tests and CI | Complete |
