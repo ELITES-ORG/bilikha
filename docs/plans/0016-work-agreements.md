@@ -57,6 +57,19 @@ apply unchanged. Ten specific to this plan:
     agreement's row never changes again. Everything that happens afterwards is a
     new event row. If you find yourself needing to update an accepted agreement
     to record progress, you have merged two things that ADR 0029 separates.
+11. **Tests ship in the same commit as the code they cover.** This plan was
+    written before the suite existed; it exists now
+    ([ADR 0031](../decisions/0031-testing-strategy.md),
+    [plan 0019](./0019-automated-tests.md)). Every service function here gets a
+    test against a real database, using the factories in
+    `backend/src/test/factories.ts`. Never mock the database — a mock would have
+    reported green through most of the bugs this project has had, and the two
+    hardest things in this plan (a content hash and a concurrency lock) are
+    exactly what a mock cannot see.
+12. **Do not tick a verification step you did not run.** The previous plan came
+    back with three interactive steps ticked that had not been performed. If a
+    step needs a browser and you have none, leave it unticked and say so — that
+    is a complete answer; a false tick is not.
 
 ---
 
@@ -73,6 +86,7 @@ apply unchanged. Ten specific to this plan:
   Completed, Cancelled — as append-only events
 - A permalink at `/agreements/:id` — the record, with its full timeline
 - An index as a third History segment, mirrored by mode
+- Automated tests for every service function added here. Rule 11
 
 **Out of scope** — do not build these
 - Anything called an invoice, receipt, or official receipt. Rule 1
@@ -99,7 +113,7 @@ apply unchanged. Ten specific to this plan:
 | 4. Compose | 3 / 3 | Not started |
 | 5. Review and accept | 4 / 4 | Not started |
 | 6. The record and the index | 5 / 5 | Not started |
-| 7. Verification | 10 / 10 | Not started |
+| 7. Verification | 11 / 11 | Not started |
 
 ---
 
@@ -467,8 +481,17 @@ New module: `backend/src/modules/agreements/`.
 
 # Phase 7 — Verification
 
-Run every check against a database that is actually up. Plan 0013 was marked
-verified with Docker stopped, and shipped a broken feed.
+**Steps 7.1 to 7.7 are automated tests, not manual checks.** Write them in
+`backend/src/modules/agreements/*.test.ts` against the real database, using the
+factories in `backend/src/test/factories.ts`. `npm test` must cover every one of
+them, so the next person to touch this gets the same assurance without reading
+this plan.
+
+Add whatever factories you need — `makeAgreement`, `makeAcceptedAgreement` —
+alongside the existing ones rather than building fixtures inside test files.
+
+Steps 7.8 and 7.9 are interactive and need a browser. Rule 12: if you cannot run
+them, leave them unticked and say so.
 
 ### Step 7.1 — The happy path
 
@@ -532,12 +555,21 @@ verified with Docker stopped, and shipped a broken feed.
   other party's index, while the agreement itself remains. Reinstate and confirm
   it comes back. ADR 0028.
 
+### Step 7.8b — The lock actually holds
+
+- [ ] **Test.** Fire two `recordEvent` calls for the same agreement
+  concurrently with `Promise.allSettled`. Exactly one lands; the other is
+  refused. Then remove the advisory lock and confirm the test fails — a
+  concurrency test that passes without the lock is testing nothing.
+- [ ] **Why.** This is the single hardest thing in the plan to get right and the
+  easiest to believe you have got right.
+
 ### Step 7.10 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `build`, `docs:check` all exit 0. Grep the
-  whole diff for `invoice`, for any log or response carrying `password`, and for
-  any place a state is decided from a date rather than an event. Delete every
-  test row created during this phase.
+- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0,
+  and CI is green on the pushed commit. Grep the whole diff for `invoice`, for
+  any log or response carrying `password`, and for any place a state is decided
+  from a date rather than an event.
 
 ---
 
@@ -557,6 +589,8 @@ verified with Docker stopped, and shipped a broken feed.
 - No column stores a total, an end date, or a current status.
 - No password material is stored, and no state changes without a person.
 - The word "invoice" appears nowhere in the diff.
+- Every service function added here has a test against a real database, and
+  `npm test` passes.
 
 ---
 
