@@ -211,6 +211,19 @@ covering it.
 - [x] **Verify.** Signed in, Home opens the directory. Signed out, `/` is the
   landing page.
 
+**This step was under-specified, and the gap showed up in use.** Pointing the
+*tab* at `/directory` says nothing about `/` itself, which kept rendering the
+landing page for everyone. Since a login with no `?next=` falls back to `/`, and
+so do the logo, the 404's "Back to the registry" and `RequireAdmin`'s bounce,
+signing in dropped you on the pitch page.
+
+`/` now decides by audience — `HomeRoute` renders the landing page signed out
+and redirects to the directory signed in, which is what
+[ADR 0023](../decisions/0023-bottom-navigation-on-phones.md) intended. It
+redirects rather than rendering the directory in place so the URL matches the
+page; otherwise the Home tab, which compares against `/directory`, never shows
+as active.
+
 ---
 
 # Phase 5 — The History page

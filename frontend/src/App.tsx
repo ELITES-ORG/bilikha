@@ -12,7 +12,7 @@ import { CreativesPage } from '@/pages/CreativesPage';
 import { ConversationPage } from '@/pages/ConversationPage';
 import { DirectoryPage } from '@/pages/DirectoryPage';
 import { HistoryPage } from '@/pages/HistoryPage';
-import { HomePage } from '@/pages/HomePage';
+import { HomeRoute } from '@/pages/HomeRoute';
 import { OfferDetailPage } from '@/pages/OfferDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { MessagesPage } from '@/pages/MessagesPage';
@@ -31,7 +31,7 @@ export default function App() {
       <ToastProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<HomeRoute />} />
             <Route path="/directory" element={<DirectoryPage />} />
             <Route path="/creatives" element={<CreativesPage />} />
             <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
