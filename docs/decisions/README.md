@@ -64,3 +64,4 @@ Number sequentially. Never renumber.
 | [0025](./0025-client-postings-and-mirrored-home.md) | Client postings; Home shows the other side of the market | Accepted |
 | [0026](./0026-dark-mode-follows-the-device.md) | Dark mode, following the device | Accepted |
 | [0027](./0027-account-is-a-hub.md) | The account page is a hub, not a page | Accepted |
+| [0028](./0028-suspension-is-enforced-per-request.md) | Suspension is enforced per request; content hidden by derivation | Accepted |
