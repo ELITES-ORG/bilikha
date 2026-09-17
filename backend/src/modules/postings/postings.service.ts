@@ -1,3 +1,4 @@
+import type { SQL } from 'drizzle-orm';
 import {
   and,
   asc,
@@ -378,22 +379,29 @@ export async function deletePosting(userId: string, postingId: string) {
   return { ok: true as const };
 }
 
+/**
+ * Postgres reads a bare constant in ORDER BY as a column ordinal, so
+ * `ORDER BY false` is error 42601 — not a no-op. Both fallbacks used to emit
+ * one, which meant the feed threw for any creative with no registered
+ * sub-domains, and would have for anyone with no municipality. Drop the key
+ * instead of ordering by a constant; there is nothing to sort on either way.
+ */
 function feedOrder(
   registeredSubdomainIds: string[],
   viewerMunicipalityId: string | null,
 ) {
-  const subdomainMatch = registeredSubdomainIds.length === 0
-    ? sql`false`
-    : inArray(postings.subdomainId, registeredSubdomainIds);
-  const municipalityMatch = viewerMunicipalityId
-    ? sql`${postings.municipalityId} = ${viewerMunicipalityId}`
-    : sql`false`;
-  return [
-    desc(subdomainMatch),
-    desc(municipalityMatch),
-    desc(postings.createdAt),
-    asc(postings.id),
-  ];
+  const order: SQL[] = [];
+
+  if (registeredSubdomainIds.length > 0) {
+    order.push(desc(inArray(postings.subdomainId, registeredSubdomainIds)));
+  }
+  if (viewerMunicipalityId) {
+    order.push(desc(sql`${postings.municipalityId} = ${viewerMunicipalityId}`));
+  }
+
+  // Newest first, with a stable tiebreaker so pagination cannot repeat or skip.
+  order.push(desc(postings.createdAt), asc(postings.id));
+  return order;
 }
 
 export async function listFeedPostings(
