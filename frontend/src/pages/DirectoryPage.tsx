@@ -183,68 +183,57 @@ export function DirectoryPage() {
             description="Browse published offers and creatives. Nothing here requires an account."
           />
 
-          <div
-            role="tablist"
-            aria-label="Directory sections"
-            className="mt-8 flex gap-6 border-b border-hairline"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === 'offers'}
-              className={cn(
-                'border-b-2 pb-2 text-sm font-medium transition-colors',
-                view === 'offers'
-                  ? 'border-lawa-700 text-ink'
-                  : 'border-transparent text-ink-muted hover:text-ink',
-              )}
-              onClick={() => setView('offers')}
-            >
-              Offers
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === 'creatives'}
-              className={cn(
-                'border-b-2 pb-2 text-sm font-medium transition-colors',
-                view === 'creatives'
-                  ? 'border-lawa-700 text-ink'
-                  : 'border-transparent text-ink-muted hover:text-ink',
-              )}
-              onClick={() => setView('creatives')}
-            >
-              Creatives
-            </button>
-          </div>
+          <div className="relative mt-8">
+            <div className="flex items-center justify-between gap-3 border-b border-hairline">
+              <div role="tablist" aria-label="Directory sections" className="flex gap-6">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={view === 'offers'}
+                  className={cn(
+                    '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
+                    view === 'offers'
+                      ? 'border-lawa-700 text-ink'
+                      : 'border-transparent text-ink-muted hover:text-ink',
+                  )}
+                  onClick={() => setView('offers')}
+                >
+                  Offers
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={view === 'creatives'}
+                  className={cn(
+                    '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
+                    view === 'creatives'
+                      ? 'border-lawa-700 text-ink'
+                      : 'border-transparent text-ink-muted hover:text-ink',
+                  )}
+                  onClick={() => setView('creatives')}
+                >
+                  Creatives
+                </button>
+              </div>
 
-          <div className="relative mt-6 border-b border-hairline pb-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
+              <button
                 type="button"
-                size="sm"
-                variant="secondary"
+                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink"
+                aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"
                 onClick={() => (filtersOpen ? setFiltersOpen(false) : openFilters())}
               >
                 <ListFilter className="size-4" aria-hidden />
-                Quick filters
                 {activeFilterCount > 0 && (
-                  <Badge tone="accent" className="tabular-nums">
+                  <Badge
+                    tone="accent"
+                    className="absolute -right-1 -top-1 min-w-4 justify-center px-1 tabular-nums"
+                  >
                     {activeFilterCount}
                   </Badge>
                 )}
-              </Button>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  className="text-sm text-ink-muted hover:text-ink"
-                  onClick={clearFilters}
-                >
-                  Clear all
-                </button>
-              )}
+              </button>
             </div>
 
             {filtersOpen && (
@@ -255,11 +244,22 @@ export function DirectoryPage() {
                 aria-label="Quick filters"
                 className={cn(
                   'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md',
-                  'md:left-0 md:right-auto md:w-full md:max-w-lg',
+                  'md:left-auto md:right-0 md:w-full md:max-w-lg',
                 )}
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-ink">Filters</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-medium text-ink">Filters</p>
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        className="text-sm text-ink-muted hover:text-ink"
+                        onClick={clearFilters}
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="button"
                     className="inline-flex size-8 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
