@@ -14,12 +14,16 @@ sends it into the thread. The client reviews it and either requests changes or
 accepts it by re-entering their password. An accepted agreement is frozen and
 carries a record of who accepted it and when.
 
+From there the engagement has a lifecycle both sides can follow — Agreed, In
+progress, Awaiting confirmation, Completed, or Cancelled — where every move is
+made by a person, not by the calendar.
+
 ---
 
 ## Rules for whoever executes this
 
 The rules in [plan 0001](./0001-registration-and-auth.md#rules-for-whoever-executes-this)
-apply unchanged. Eight specific to this plan:
+apply unchanged. Ten specific to this plan:
 
 1. **Never write the word "invoice" in code, copy, a route, a column or a type.**
    [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) explains why —
@@ -40,10 +44,18 @@ apply unchanged. Eight specific to this plan:
    from a client's accepted terms changing under them.
 7. **No payment tracking.** No deposit, no balance, no paid flag, no reminders.
    Out of scope and it stays out.
-8. **Do not invent a work status.** Schedule labels come from the stored dates —
-   "Starts 3 Oct", "Ended 14 Nov" — and nothing else. No *In progress*, no
-   *Completed*, no *Overdue*. Nobody maintains those, and a stale one is read as
-   a fact about the work.
+8. **No status changes without a person.** Every lifecycle transition is an
+   explicit act by a named user, stored as an event with their id and a
+   timestamp. Nothing moves because a date passed — a date arriving is not an
+   event. If you write code that sets a status from `now()`, you have broken the
+   feature's only claim to being trustworthy.
+9. **The current state is derived from the newest event, never stored.** No
+   `current_status` column on `agreements`. Rule 3 and rule 4 are the same rule
+   as this one.
+10. **The document freeze and the lifecycle are separate.** An accepted
+    agreement's row never changes again. Everything that happens afterwards is a
+    new event row. If you find yourself needing to update an accepted agreement
+    to record progress, you have merged two things that ADR 0029 separates.
 
 ---
 
@@ -56,13 +68,15 @@ apply unchanged. Eight specific to this plan:
 - Versioning: a revision supersedes its predecessor
 - Content hash, computed on read and checked on accept
 - An agreement card in the thread, in three states: pending, accepted, superseded
+- The engagement lifecycle — Agreed, In progress, Awaiting confirmation,
+  Completed, Cancelled — as append-only events
 - A permalink at `/agreements/:id` — the record, with its full timeline
 - An index as a third History segment, mirrored by mode
 
 **Out of scope** — do not build these
 - Anything called an invoice, receipt, or official receipt. Rule 1
 - Payments, deposits, escrow, payment status. Rule 7
-- A work-status field — no *In progress*, no *Completed*. Rule 8
+- A stored current-status column. It is derived from events. Rule 9
 - A fifth bottom-nav item. The index is a History segment
 - PDF export or a shareable public link
 - Admin visibility beyond the existing report flow
@@ -77,12 +91,12 @@ apply unchanged. Eight specific to this plan:
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Schema | 3 / 3 | Not started |
-| 2. Service | 5 / 5 | Not started |
+| 2. Service | 6 / 6 | Not started |
 | 3. API | 2 / 2 | Not started |
 | 4. Compose | 3 / 3 | Not started |
 | 5. Review and accept | 4 / 4 | Not started |
-| 6. The record and the index | 4 / 4 | Not started |
-| 7. Verification | 8 / 8 | Not started |
+| 6. The record and the index | 5 / 5 | Not started |
+| 7. Verification | 10 / 10 | Not started |
 
 ---
 
@@ -124,13 +138,30 @@ apply unchanged. Eight specific to this plan:
   - `contentHash` text not null — SHA-256 hex of the canonical content
   - `acceptedAt` timestamptz not null default now
 
+  `agreementEventTypeEnum`: `started`, `delivery_marked`, `completion_confirmed`,
+  `cancelled`.
+
+  `agreementEvents` — append-only, never updated, never deleted:
+  - `id` uuid pk
+  - `agreementId` → `agreements.id`, cascade
+  - `actorUserId` → `users.id`, restrict — who did it
+  - `type` enum
+  - `note` text nullable — required by the service for `cancelled`
+  - `createdAt` timestamptz not null default now
+
   Indexes: `agreements(conversation_id, created_at)`,
-  `agreement_line_items(agreement_id, sort_order)`.
+  `agreement_line_items(agreement_id, sort_order)`,
+  `agreement_events(agreement_id, created_at)`.
 
 - [ ] **Why.** Acceptance is a separate table because it is a different kind of
   fact: the agreement is what was proposed, the acceptance is an event that
   happened to it. A unique index on `agreement_id` makes double acceptance
   impossible at the storage layer.
+- [ ] **Why.** The events table exists because an accepted agreement is frozen
+  (rule 6) and its engagement keeps moving (rule 10). Those cannot be the same
+  row. It carries `actor_user_id` on every row because rule 8 means no state ever
+  arrives without a person attached to it.
+- [ ] **Note.** There is no `current_status` column anywhere. Rule 9.
 
 ### Step 1.2 — The attachment column
 
@@ -220,10 +251,42 @@ New module: `backend/src/modules/agreements/`.
   `endDate` as `startDate + durationDays`. Neither is read from a column.
 - [ ] **Action.** Extend `messageAttachmentFields` to branch three ways, adding
   `agreement` and `agreementRemoved`.
+- [ ] **Action.** Every read also returns the derived lifecycle state from
+  Step 2.6, with the timestamp and actor of the event that set it.
 
----
+### Step 2.6 — The lifecycle
 
-# Phase 3 — API
+- [ ] **Action.** `deriveState(agreement, events)` — a pure function, no database
+  access, so it can be reasoned about and reused by the list and the record:
+
+  | Condition | State shown |
+  |---|---|
+  | `status = 'sent'` | Awaiting response |
+  | `status = 'superseded'` or `'withdrawn'` | that word |
+  | accepted, no events | Agreed |
+  | newest event `started` | In progress |
+  | newest event `delivery_marked` | Awaiting confirmation |
+  | newest event `completion_confirmed` | Completed |
+  | newest event `cancelled` | Cancelled |
+
+- [ ] **Action.** `recordEvent({ userId, agreementId, type, note })` validates
+  the transition before inserting. The rules, all enforced server-side:
+  - Nothing may be recorded unless the agreement is `accepted`.
+  - `started` — creative only, from Agreed.
+  - `delivery_marked` — creative only, from In progress.
+  - `completion_confirmed` — **client only**, from Awaiting confirmation. The
+    creative cannot complete their own work. ADR 0029.
+  - `cancelled` — either party, from any non-terminal state, `note` required.
+  - Completed and Cancelled are terminal: nothing may follow them.
+- [ ] **Action.** Insert the event and post a message into the thread in one
+  transaction, so the conversation shows the move.
+- [ ] **Action.** Take `pg_advisory_xact_lock(hashtext(agreementId))` before
+  reading the newest event and inserting. Without it two taps race, both read the
+  same newest event, and both insert — the same count-then-insert problem offers
+  already solve this way.
+- [ ] **Verify.** No code path anywhere sets a state from `now()` or from
+  `startDate`. Rule 8. Grep the module for `new Date()` and check every hit is a
+  timestamp being written, never a state being decided.
 
 ### Step 3.1 — Routes
 
@@ -233,6 +296,7 @@ New module: `backend/src/modules/agreements/`.
   - `GET /agreements/:id` — read
   - `POST /agreements/:id/revision` — request changes
   - `POST /agreements/:id/accept` — accept
+  - `POST /agreements/:id/events` — a lifecycle transition, body `{ type, note? }`
 - [ ] **Action.** Validate every id with `z.string().uuid()`. Validate line items
   with a max count — 30 is generous — and a max description length.
 
@@ -333,8 +397,27 @@ New module: `backend/src/modules/agreements/`.
   when" has to be answerable on one screen without reading the thread.
 - [ ] **Action.** Every earlier version stays reachable through the chain. A
   superseded version renders with a banner saying so and a link forward.
+- [ ] **Action.** Lifecycle events appear in the same timeline as the document
+  events, in one list ordered by time — started, delivery marked, completion
+  confirmed, cancelled with its reason. Each names its actor.
 
-### Step 6.3 — The index
+### Step 6.3 — The lifecycle actions
+
+- [ ] **Action.** On the record page, show only the action the current state and
+  the viewer's side allow:
+  - Agreed, creative → **Mark as started**
+  - In progress, creative → **Mark work delivered**
+  - Awaiting confirmation, client → **Confirm completion**
+  - Any non-terminal state, either → **Cancel**, with a required reason
+- [ ] **Action.** Awaiting confirmation shows the creative a plain line: waiting
+  for the client to confirm. Not a button they can press. ADR 0029.
+- [ ] **Action.** No password on any of these. Only acceptance takes one.
+- [ ] **Action.** Every state on screen carries when it was set and by whom —
+  "In progress · marked by Ana, 3 Oct". A four-month-old state must read as old,
+  not as current.
+- [ ] **Action.** Everything goes through `toast.run`.
+
+### Step 6.4 — The index
 
 - [ ] **Action.** Add `agreements` as a third segment in `HistoryPage`, beside
   `inquired` and `saved`, following the existing `HistorySegment` type, the
@@ -348,7 +431,7 @@ New module: `backend/src/modules/agreements/`.
   14 Nov". Rule 8.
 - [ ] **Action.** Sort awaiting-response first, then by start date.
 
-### Step 6.4 — The backend for it
+### Step 6.5 — The backend for it
 
 - [ ] **Action.** `listAgreements(userId, mode)` in the agreements service,
   returning rows for whichever side the mode names. It filters on the caller
@@ -394,13 +477,33 @@ verified with Docker stopped, and shipped a broken feed.
 - [ ] A creative cannot accept their own agreement. A client cannot issue one. A
   third account gets 404 on every route for that agreement, not 403.
 
-### Step 7.6 — The record page
+### Step 7.6 — The lifecycle, in order
+
+- [ ] Accept an agreement, then walk it: creative marks started, creative marks
+  delivered, client confirms completion. Each state shows the actor and the
+  timestamp of the event that set it, and each posts a message into the thread.
+
+### Step 7.7 — The lifecycle, against the rules
+
+- [ ] The creative cannot confirm completion of their own work — refused
+  server-side, not merely hidden in the UI.
+- [ ] The client cannot mark started or delivered.
+- [ ] Nothing can be recorded against an agreement that is still `sent`.
+- [ ] Nothing can follow Completed or Cancelled.
+- [ ] Cancelling without a reason is refused.
+- [ ] Fire two transitions concurrently against one agreement; exactly one
+  lands. Without the advisory lock both do.
+- [ ] Wind a local agreement's `start_date` into the past and confirm the state
+  does not move on its own. Rule 8 — this is the check that the feature means
+  what it says.
+
+### Step 7.8 — The record page
 
 - [ ] Open `/agreements/:id` as each party: the document, the timeline and the
   acceptance fingerprint all render. Open it as a third account: 404. Follow the
   chain from a superseded version to its replacement and back.
 
-### Step 7.7 — The index, both modes
+### Step 7.9 — The index, both modes
 
 - [ ] With one account holding agreements on both sides, switch modes: *I'm for
   hire* lists what it issued, *I'm hiring* lists what it received, and neither
@@ -409,12 +512,12 @@ verified with Docker stopped, and shipped a broken feed.
   other party's index, while the agreement itself remains. Reinstate and confirm
   it comes back. ADR 0028.
 
-### Step 7.8 — Full pass
+### Step 7.10 — Full pass
 
 - [ ] `npm run typecheck`, `lint`, `build`, `docs:check` all exit 0. Grep the
   whole diff for `invoice`, for any log or response carrying `password`, and for
-  any status string the dates do not support — `progress`, `complete`,
-  `overdue`. Delete every test row created during this phase.
+  any place a state is decided from a date rather than an event. Delete every
+  test row created during this phase.
 
 ---
 
@@ -428,8 +531,11 @@ verified with Docker stopped, and shipped a broken feed.
 - Either party can open `/agreements/:id` and answer "who agreed to what, and
   when" from one screen, without reading the thread.
 - Both parties have an index of their agreements in History, mirrored by mode.
-- No column stores a total or an end date. No password material is stored.
-- No status is shown that the stored dates do not support.
+- An engagement moves Agreed → In progress → Awaiting confirmation → Completed,
+  or Cancelled from anywhere, and every move names who made it and when.
+- The creative cannot confirm completion of their own work.
+- No column stores a total, an end date, or a current status.
+- No password material is stored, and no state changes without a person.
 - The word "invoice" appears nowhere in the diff.
 
 ---

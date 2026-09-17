@@ -94,11 +94,44 @@ client sees agreements they hold. It is not a fifth item in the bottom bar: four
 is already tight at 346px, and History is precisely the "what has happened"
 surface this belongs to.
 
-**Schedule labels are derived from dates; work status is not invented.** The
-index can honestly say a job starts on the 3rd or ended on the 14th, because
-those are stored. It must not show *Completed* or *In progress* — nobody
-maintains that, and a stale "In progress" is read as a fact about the work. Same
-objection as payment status, for the same reason.
+**The engagement has a lifecycle: Agreed → In progress → Completed, or
+Cancelled.** *Inquiring* is the stage before any agreement exists, and it
+already has a home — it is the Inquired segment of History.
+
+**Every transition is an act by a named person, never a consequence of a date.**
+This is the whole condition on which the lifecycle is worth having. If *In
+progress* appears because the start date arrived, it is a guess, and it is wrong
+every time work slips — which is most of the time. If it appears because the
+creative said they had started, it is a claim with an author and a timestamp,
+and a client reading it knows exactly what they are reading. The same word
+carries completely different weight depending on who put it there.
+
+Until someone marks a start, the index says "Due to start 3 Oct", which is a
+fact about the agreement rather than a claim about the work.
+
+**Completion is confirmed by the client, not asserted by the creative.** The
+creative marks the work delivered; the state is *Awaiting confirmation* until
+the client agrees, and only then *Completed*. A creative who could mark their
+own work complete would be writing the only record that later says whether they
+did it. This is the same mutual shape as acceptance, and for the same reason.
+
+Confirmation does not need a password. Accepting terms is the consequential act;
+confirming delivery of work already accepted is not, and putting a password
+prompt on every step trains people to type it thoughtlessly.
+
+**Either party can cancel, alone, with a reason.** Cancellation is not mutual —
+requiring both to agree traps whoever wants out. It records who cancelled and
+why, and both sides see both. *Completed* and *Cancelled* are terminal.
+
+**The lifecycle lives outside the frozen document.** This is what forces the
+shape. An accepted agreement is immutable, and the engagement's state has to
+keep changing after acceptance — so they cannot be the same column. Transitions
+are rows in an append-only event log, and the current state is derived from the
+latest one. The document stays frozen, the engagement stays live, and the events
+are the traceability: who moved it, when, and what they said.
+
+Nothing is ever deleted. A cancelled engagement keeps its agreement and its
+whole history.
 
 **Participants only.** The agreement is visible to the two people in the thread.
 Administrators reach it only through an existing report, exactly as conversation
@@ -138,6 +171,27 @@ field audit trail to answer. Versions answer it with one column.
 **Store the total.** Rejected above. It would need a check constraint against
 the sum of its lines to be safe, at which point it is the sum of its lines.
 
+**Flip to *In progress* automatically when the start date arrives.** No taps, so
+the status is never stale from neglect. Rejected: it is stale from being wrong
+instead, which is worse because it looks maintained. Work slips, and a screen
+asserting that a job is underway when nobody has started is exactly the kind of
+false fact a client makes decisions on. A date arriving is not an event.
+
+**Let the creative mark the work Completed on their own.** One step instead of
+two. Rejected: it makes the person being judged the sole author of the record
+that judges them. The *Awaiting confirmation* state costs one tap and is the
+difference between a claim and an agreement.
+
+**Require mutual consent to cancel.** Rejected: it means neither party can leave
+a job that has gone wrong without the other's cooperation, which is precisely
+when cooperation is missing.
+
+**One status column covering documents and work together.** Simplest schema.
+Rejected: it collides head-on with acceptance freezing the document. The whole
+point of the freeze is that an accepted agreement's row stops changing, and the
+whole point of the lifecycle is that something keeps changing after acceptance.
+They are different facts with different lifetimes.
+
 **Payment schedules — deposit, balance, milestones.** Rejected for this round.
 Bilikha cannot see payments, so tracking them would show a status nobody
 maintains, and people would read an unpaid milestone as a fact about the money.
@@ -164,6 +218,21 @@ relying on scrollback, which is worse.
 **Bad.** A third attachment column, and a `messageAttachmentFields` that now
 branches three ways.
 
+**Bad.** The lifecycle only reflects reality while people keep it updated, and
+they will forget. A job stuck at *In progress* for four months means nothing
+happened on Bilikha, not that the work is still running. Every state therefore
+shows *when* it was set and by whom, so an old one reads as old rather than as
+current. This is a real limit, not a solved problem.
+
+**Bad.** Deriving state from the newest event is one more read per agreement
+than storing it. It is the right trade — a stored state and an event log
+eventually disagree, and then neither can be trusted — but it is not free.
+
 **Watch for.** Creatives issuing version after version to walk a price up, or
 clients requesting revisions indefinitely to stall. Neither is prevented here.
 If it happens, a cap on open versions per conversation is the first lever.
+
+**Watch for.** Engagements that reach *Awaiting confirmation* and stop, because
+the client has what they wanted and no reason to tap again. If that becomes
+common, the creative needs some way to move it along — but a nudge from Bilikha
+is a notification, and Bilikha has none.
