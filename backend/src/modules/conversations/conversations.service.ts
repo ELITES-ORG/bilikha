@@ -861,7 +861,7 @@ export async function listThreads(userId: string, options: ListThreadsInput) {
       id: row.id,
       profileSlug: row.profileSlug,
       otherPartyName: other ? formatName(other) : 'Unknown',
-      avatarUrl:
+      otherPartyAvatarUrl:
         other?.avatarKey && isStorageConfigured() ? publicUrl(other.avatarKey) : null,
       role: isClient ? ('client' as const) : ('creative' as const),
       lastMessage: last
@@ -928,6 +928,7 @@ export async function getThread(
     .select({
       firstName: users.firstName,
       lastName: users.lastName,
+      avatarKey: users.avatarKey,
     })
     .from(users)
     .where(eq(users.id, otherUserId))
@@ -938,6 +939,8 @@ export async function getThread(
     role: isClient ? ('client' as const) : ('creative' as const),
     otherPartyUserId: otherUserId,
     otherPartyName: other ? `${other.firstName} ${other.lastName}`.trim() : 'Unknown',
+    otherPartyAvatarUrl:
+      other?.avatarKey && isStorageConfigured() ? publicUrl(other.avatarKey) : null,
     messages: rows.map((row) => ({
       id: row.id,
       body: row.body,
