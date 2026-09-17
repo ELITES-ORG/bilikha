@@ -68,3 +68,4 @@ Number sequentially. Never renumber.
 | [0029](./0029-work-agreements-not-invoices.md) | Work agreements, accepted by re-authentication | Accepted |
 | [0030](./0030-notifications.md) | Notifications: a record, and two ways to deliver it | Accepted |
 | [0031](./0031-testing-strategy.md) | Tests run against a real database, at the service layer | Accepted |
+| [0032](./0032-an-accepted-agreement-is-not-deleted.md) | An accepted agreement is not deleted | Accepted |
