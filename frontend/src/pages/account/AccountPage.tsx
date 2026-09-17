@@ -61,6 +61,24 @@ export function AccountPage() {
             </div>
           )}
 
+          {/* Anyone with an account can post work, creative profile or not, so
+              this is not gated on having one. Post work itself lives on that
+              page rather than being repeated here. */}
+          {user && (
+            <section className="mt-10" aria-labelledby="postings-section-heading">
+              <h2 id="postings-section-heading" className="u-display text-2xl text-ink">
+                Your postings
+              </h2>
+              <p className="mt-2 max-w-xl text-sm text-ink-muted">
+                Work you have posted for creatives to reply to — open, closed and
+                expired.
+              </p>
+              <ButtonLink to="/postings/mine" variant="secondary" className="mt-5">
+                Your postings
+              </ButtonLink>
+            </section>
+          )}
+
           {profile.isSuccess && !profile.data && user && (
             <section className="mt-10" aria-labelledby="photo-section-heading">
               <h2 id="photo-section-heading" className="u-display text-2xl text-ink">

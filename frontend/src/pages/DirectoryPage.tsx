@@ -9,7 +9,6 @@ import {
   Avatar,
   Badge,
   Button,
-  ButtonLink,
   Container,
   EmptyState,
   SectionHeading,
@@ -59,7 +58,6 @@ export function DirectoryPage() {
   const mode = effectiveViewMode(user);
   const hasProfile = Boolean(user?.profileSlug);
   const creativeHome = hasProfile && mode === 'creative';
-  const signedInHiring = Boolean(user) && !creativeHome;
 
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
@@ -208,18 +206,10 @@ export function DirectoryPage() {
             }
           />
 
-          <div className="mt-6 flex flex-wrap items-center gap-4">
+          {/* Posting actions live on the account page now: this is a browse
+              surface, and managing your own postings is not browsing. */}
+          <div className="mt-6">
             <ModeSwitch size="md" />
-            {signedInHiring && (
-              <div className="flex flex-wrap gap-2">
-                <ButtonLink to="/postings/new" size="sm">
-                  Post work
-                </ButtonLink>
-                <ButtonLink to="/postings/mine" size="sm" variant="secondary">
-                  Your postings
-                </ButtonLink>
-              </div>
-            )}
           </div>
 
           {/* The switch decides three surfaces, not just this feed, and nothing
