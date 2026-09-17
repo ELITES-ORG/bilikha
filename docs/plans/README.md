@@ -74,6 +74,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0012](./0012-inquire-from-an-offer-and-saved-offers.md) | Inquire from an offer, and saved offers | Complete |
 | [0013](./0013-client-postings-and-mode-mirrored-surfaces.md) | Client postings, and mode-mirrored surfaces | Complete |
 | [0014](./0014-dark-mode.md) | Dark mode | Ready |
+| [0015](./0015-account-hub.md) | The account hub | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006.
