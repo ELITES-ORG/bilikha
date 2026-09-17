@@ -1,6 +1,6 @@
 # 0016. Work agreements in the thread
 
-- **Status:** Complete
+- **Status:** Built and gated; steps 7.8 and 7.9 await a device pass
 - **Related:** [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
   [ADR 0024](../decisions/0024-offers-attach-to-messages.md) ·
   [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) ·
