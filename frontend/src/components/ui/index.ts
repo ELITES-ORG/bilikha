@@ -11,6 +11,7 @@ export { Card, CardBody, CardFooter, type CardProps } from './Card';
 export { Container, type ContainerProps } from './Container';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Input, type InputProps } from './Input';
+export { Select, type SelectProps, type SelectOption, type SelectGroup } from './Select';
 export { SectionHeading, type SectionHeadingProps } from './SectionHeading';
 export { Skeleton, type SkeletonProps } from './Skeleton';
 export { Avatar, type AvatarProps } from './Avatar';

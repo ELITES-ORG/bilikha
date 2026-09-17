@@ -13,6 +13,7 @@ import {
   Container,
   EmptyState,
   SectionHeading,
+  Select,
   Skeleton,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -312,59 +313,47 @@ export function DirectoryPage() {
                 </div>
 
                 <div className="grid gap-4">
-                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                    Domain
-                    <select
-                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                      value={domain ?? ''}
-                      onChange={(e) =>
-                        setFilter({
-                          domain: e.target.value || undefined,
-                          subdomain: undefined,
-                        })
-                      }
-                    >
-                      <option value="">All domains</option>
-                      {domains.data?.map((d) => (
-                        <option key={d.id} value={d.slug}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <Select
+                    label="Domain"
+                    value={domain ?? ''}
+                    placeholder="All domains"
+                    onValueChange={(next) =>
+                      setFilter({ domain: next || undefined, subdomain: undefined })
+                    }
+                    options={[
+                      { value: '', label: 'All domains' },
+                      ...(domains.data ?? []).map((d) => ({ value: d.slug, label: d.name })),
+                    ]}
+                  />
 
-                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                    Sub-domain
-                    <select
-                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                      value={subdomain ?? ''}
-                      disabled={!selectedDomain}
-                      onChange={(e) => setFilter({ subdomain: e.target.value || undefined })}
-                    >
-                      <option value="">All sub-domains</option>
-                      {selectedDomain?.subdomains.map((s) => (
-                        <option key={s.id} value={s.slug}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <Select
+                    label="Sub-domain"
+                    value={subdomain ?? ''}
+                    placeholder="All sub-domains"
+                    disabled={!selectedDomain}
+                    onValueChange={(next) => setFilter({ subdomain: next || undefined })}
+                    options={[
+                      { value: '', label: 'All sub-domains' },
+                      ...(selectedDomain?.subdomains ?? []).map((sd) => ({
+                        value: sd.slug,
+                        label: sd.name,
+                      })),
+                    ]}
+                  />
 
-                  <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                    Municipality
-                    <select
-                      className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                      value={municipality ?? ''}
-                      onChange={(e) => setFilter({ municipality: e.target.value || undefined })}
-                    >
-                      <option value="">All municipalities</option>
-                      {municipalities.data?.map((m) => (
-                        <option key={m.id} value={m.slug}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <Select
+                    label="Municipality"
+                    value={municipality ?? ''}
+                    placeholder="All municipalities"
+                    onValueChange={(next) => setFilter({ municipality: next || undefined })}
+                    options={[
+                      { value: '', label: 'All municipalities' },
+                      ...(municipalities.data ?? []).map((m) => ({
+                        value: m.slug,
+                        label: m.name,
+                      })),
+                    ]}
+                  />
 
                   {!creativeHome && view === 'offers' && (
                     <fieldset className="grid gap-3">

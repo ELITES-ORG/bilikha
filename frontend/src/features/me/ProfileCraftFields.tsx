@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui';
+import { Input, Select } from '@/components/ui';
 import { useBarangays, useMunicipalities } from '@/features/taxonomy/api';
 import { SubdomainPicker } from '@/features/taxonomy/components/SubdomainPicker';
 import { cn } from '@/lib/cn';
@@ -97,81 +97,48 @@ export function ProfileCraftFields({
       {includeLocation && (
         <section className="space-y-4">
           <h3 className="text-lg font-medium text-ink">Location</h3>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="profile-municipality" className="text-sm font-medium text-ink">
-              Municipality
-              <span className="ms-0.5 text-danger-600" aria-hidden="true">
-                *
-              </span>
-            </label>
-            <select
-              id="profile-municipality"
-              required
-              value={form.municipalitySlug}
-              onChange={(event) => {
-                onUpdate('municipalitySlug', event.target.value);
-                onUpdate('barangaySlug', '');
-              }}
-              className={cn(
-                'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
-                'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
-                fieldErrors.municipalitySlug && 'border-danger-500',
-              )}
-            >
-              <option value="">Select a municipality</option>
-              {municipalities.data?.map((town) => (
-                <option key={town.id} value={town.slug}>
-                  {town.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.municipalitySlug && (
-              <p className="text-xs text-danger-700">{fieldErrors.municipalitySlug}</p>
-            )}
-          </div>
+          <Select
+            id="profile-municipality"
+            label="Municipality"
+            required
+            value={form.municipalitySlug}
+            placeholder="Select a municipality"
+            error={fieldErrors.municipalitySlug}
+            onValueChange={(next) => {
+              onUpdate('municipalitySlug', next);
+              onUpdate('barangaySlug', '');
+            }}
+            options={(municipalities.data ?? []).map((town) => ({
+              value: town.slug,
+              label: town.name,
+            }))}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="profile-barangay" className="text-sm font-medium text-ink">
-              Barangay
-              <span className="ms-0.5 text-danger-600" aria-hidden="true">
-                *
-              </span>
-            </label>
-            <select
-              id="profile-barangay"
-              required
-              value={form.barangaySlug}
-              disabled={!form.municipalitySlug || barangays.isPending || barangaysFailed}
-              onChange={(event) => onUpdate('barangaySlug', event.target.value)}
-              className={cn(
-                'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
-                'border-hairline-strong focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
-                'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
-                fieldErrors.barangaySlug && 'border-danger-500',
-              )}
-            >
-              <option value="">
-                {!form.municipalitySlug
-                  ? 'Select a municipality first'
-                  : barangays.isPending
-                    ? 'Loading…'
-                    : 'Select a barangay'}
-              </option>
-              {barangayList.map((barangay) => (
-                <option key={barangay.id} value={barangay.slug}>
-                  {barangay.name}
-                </option>
-              ))}
-            </select>
-            {barangaysFailed && (
-              <p className="text-xs text-danger-700">
-                Could not load barangays for that municipality. Try again.
-              </p>
-            )}
-            {fieldErrors.barangaySlug && (
-              <p className="text-xs text-danger-700">{fieldErrors.barangaySlug}</p>
-            )}
-          </div>
+          <Select
+            id="profile-barangay"
+            label="Barangay"
+            required
+            value={form.barangaySlug}
+            disabled={!form.municipalitySlug || barangays.isPending || barangaysFailed}
+            placeholder={
+              !form.municipalitySlug
+                ? 'Select a municipality first'
+                : barangays.isPending
+                  ? 'Loading…'
+                  : 'Select a barangay'
+            }
+            error={
+              fieldErrors.barangaySlug
+              ?? (barangaysFailed
+                ? 'Could not load barangays for that municipality. Try again.'
+                : undefined)
+            }
+            onValueChange={(next) => onUpdate('barangaySlug', next)}
+            options={barangayList.map((barangay) => ({
+              value: barangay.slug,
+              label: barangay.name,
+            }))}
+          />
         </section>
       )}
 

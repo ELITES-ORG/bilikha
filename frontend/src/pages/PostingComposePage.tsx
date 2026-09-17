@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Button, ButtonLink, Container, Input, Skeleton, useToast } from '@/components/ui';
+import { Button, ButtonLink, Container, Input,
+  Select, Skeleton, useToast } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { PesoInput } from '@/features/offers/PesoInput';
 import {
@@ -63,6 +64,23 @@ export function PostingComposePage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // The form is noValidate now that the sub-domain and municipality controls
+    // are listboxes rather than native selects, so the browser no longer
+    // enforces any of this.
+    if (title.trim().length < 3) {
+      toast.error('Give the posting a title of at least 3 characters.');
+      return;
+    }
+    if (!subdomainSlug) {
+      toast.error('Choose a sub-domain so the right creatives see this.');
+      return;
+    }
+    if (!municipalitySlug) {
+      toast.error('Choose the municipality where the work is.');
+      return;
+    }
+
     const min = pesoInputToCentavos(budgetMin);
     const max = pesoInputToCentavos(budgetMax);
     if (min != null && max != null && min > max) {
@@ -119,7 +137,7 @@ export function PostingComposePage() {
           {loadingForm && <Skeleton className="mt-10 h-96 w-full" />}
 
           {!loadingForm && (
-            <form onSubmit={(e) => void onSubmit(e)} className="mt-10 space-y-6">
+            <form onSubmit={(e) => void onSubmit(e)} className="mt-10 space-y-6" noValidate>
               <Input
                 label="Title"
                 required
@@ -129,60 +147,42 @@ export function PostingComposePage() {
                 onChange={(e) => setTitle(e.target.value)}
               />
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                Domain
-                <select
-                  required
-                  className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                  value={domainSlug}
-                  onChange={(e) => {
-                    setDomainSlug(e.target.value);
-                    setSubdomainSlug('');
-                  }}
-                >
-                  <option value="">Choose a domain</option>
-                  {domains.data?.map((d) => (
-                    <option key={d.id} value={d.slug}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="Domain"
+                required
+                value={domainSlug}
+                placeholder="Choose a domain"
+                onValueChange={(next) => {
+                  setDomainSlug(next);
+                  setSubdomainSlug('');
+                }}
+                options={(domains.data ?? []).map((d) => ({ value: d.slug, label: d.name }))}
+              />
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                Sub-domain
-                <select
-                  required
-                  className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                  value={subdomainSlug}
-                  disabled={!selectedDomain}
-                  onChange={(e) => setSubdomainSlug(e.target.value)}
-                >
-                  <option value="">Choose a sub-domain</option>
-                  {selectedDomain?.subdomains.map((s) => (
-                    <option key={s.id} value={s.slug}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="Sub-domain"
+                required
+                value={subdomainSlug}
+                placeholder="Choose a sub-domain"
+                disabled={!selectedDomain}
+                onValueChange={setSubdomainSlug}
+                options={(selectedDomain?.subdomains ?? []).map((sd) => ({
+                  value: sd.slug,
+                  label: sd.name,
+                }))}
+              />
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                Municipality (where the work is)
-                <select
-                  required
-                  className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-                  value={municipalitySlug}
-                  onChange={(e) => setMunicipalitySlug(e.target.value)}
-                >
-                  <option value="">Choose a municipality</option>
-                  {municipalities.data?.map((m) => (
-                    <option key={m.id} value={m.slug}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="Municipality (where the work is)"
+                required
+                value={municipalitySlug}
+                placeholder="Choose a municipality"
+                onValueChange={setMunicipalitySlug}
+                options={(municipalities.data ?? []).map((m) => ({
+                  value: m.slug,
+                  label: m.name,
+                }))}
+              />
 
               <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
                 Description

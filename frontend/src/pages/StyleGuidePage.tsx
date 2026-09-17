@@ -10,6 +10,7 @@ import {
   Container,
   EmptyState,
   Input,
+  Select,
   Skeleton,
   useToast,
 } from '@/components/ui';
@@ -26,6 +27,8 @@ import {
  */
 export function StyleGuidePage() {
   const toast = useToast();
+  const [demoTown, setDemoTown] = useState('');
+  const [demoCraft, setDemoCraft] = useState('game-developers');
   const [loading, setLoading] = useState(false);
 
   return (
@@ -245,6 +248,71 @@ export function StyleGuidePage() {
                 <p className="mt-1.5 text-sm text-ink-muted">Hover to see the lift.</p>
               </CardBody>
             </Card>
+          </div>
+        </Section>
+
+        <Section
+          title="Selects"
+          note="Drawn here rather than by the platform. A native select's option list is an OS surface that follows the device theme, so on a phone in dark mode it appears dark over a light page and no CSS reaches it."
+        >
+          <div className="grid gap-6 border-t border-hairline pt-6 sm:grid-cols-2">
+            <Select
+              label="Municipality"
+              required
+              value={demoTown}
+              placeholder="Select a municipality"
+              onValueChange={setDemoTown}
+              options={[
+                { value: 'naval', label: 'Naval' },
+                { value: 'kawayan', label: 'Kawayan' },
+                { value: 'almeria', label: 'Almeria' },
+                { value: 'maripipi', label: 'Maripipi' },
+              ]}
+            />
+
+            <Select
+              label="Sub-domain"
+              hint="Grouped, with one option disabled."
+              value={demoCraft}
+              placeholder="Choose one"
+              onValueChange={setDemoCraft}
+              groups={[
+                {
+                  label: 'Visual Arts',
+                  options: [
+                    { value: 'painters', label: 'Painters' },
+                    { value: 'sculptors', label: 'Sculptors' },
+                  ],
+                },
+                {
+                  label: 'Digital Interactive Media',
+                  options: [
+                    { value: 'game-developers', label: 'Game Developers' },
+                    { value: 'mobile-app-developers', label: 'Mobile App Developers' },
+                    { value: 'retired', label: 'A disabled option', disabled: true },
+                  ],
+                },
+              ]}
+            />
+
+            <Select
+              label="With an error"
+              required
+              error="Choose a municipality"
+              value=""
+              onValueChange={() => {}}
+              placeholder="Select a municipality"
+              options={[{ value: 'naval', label: 'Naval' }]}
+            />
+
+            <Select
+              label="Disabled"
+              disabled
+              value=""
+              onValueChange={() => {}}
+              placeholder="Select a municipality first"
+              options={[]}
+            />
           </div>
         </Section>
 

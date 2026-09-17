@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { Button, Input, useToast } from '@/components/ui';
+import { Button, Input, Select, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
   abandonUpload,
@@ -408,28 +408,20 @@ export function OfferEditor() {
             onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
           />
 
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-            Sub-domain
-            <select
-              required
-              className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base"
-              value={form.subdomainSlug}
-              onChange={(e) => setForm((c) => ({ ...c, subdomainSlug: e.target.value }))}
-            >
-              <option value="" disabled>
-                Choose one
-              </option>
-              {subdomainGroups.map((group) => (
-                <optgroup key={group.name} label={group.name}>
-                  {group.options.map((s) => (
-                    <option key={s.slug} value={s.slug}>
-                      {s.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Sub-domain"
+            required
+            value={form.subdomainSlug}
+            placeholder="Choose one"
+            onValueChange={(subdomainSlug) => setForm((c) => ({ ...c, subdomainSlug }))}
+            groups={subdomainGroups.map((group) => ({
+              label: group.name,
+              options: group.options.map((option) => ({
+                value: option.slug,
+                label: option.name,
+              })),
+            }))}
+          />
 
           <div className="flex flex-col gap-1.5">
             <label htmlFor="offer-description" className="text-sm font-medium text-ink">
