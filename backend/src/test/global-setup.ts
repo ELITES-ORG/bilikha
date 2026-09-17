@@ -54,8 +54,17 @@ export default async function setup() {
   // DATABASE_URL from the environment and build their own pools — running them
   // in-process would import the application's pool against the wrong database.
   const env = { ...process.env, DATABASE_URL: url, NODE_ENV: 'test' };
-  const run = (script: string) =>
-    execFileSync('npm', ['run', script], { cwd: process.cwd(), env, stdio: 'pipe', shell: true });
+  const run = (script: string) => {
+    try {
+      execFileSync('npm', ['run', script], { cwd: process.cwd(), env, stdio: 'pipe', shell: true });
+    } catch (error) {
+      // execFileSync's message is just the command. What is needed is the
+      // script's own stderr, which is where the actual reason is.
+      const stderr = (error as { stderr?: Buffer }).stderr?.toString() ?? '';
+      throw new Error(`"npm run ${script}" failed while preparing the test database.
+${stderr}`);
+    }
+  };
 
   run('db:migrate');
   run('db:seed');

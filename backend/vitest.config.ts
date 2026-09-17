@@ -23,7 +23,14 @@ function testDatabaseUrl(): string {
  * process environment.
  */
 const DATABASE_URL = testDatabaseUrl();
+const SESSION_SECRET = 'test-session-secret-at-least-32-characters-long';
+
 process.env.DATABASE_URL = DATABASE_URL;
+// globalSetup shells out to db:migrate and db:seed, which validate the whole
+// env schema. A developer machine has backend/.env to satisfy that; CI has
+// nothing, so the required values are set here or the seed fails there only.
+process.env.SESSION_SECRET = SESSION_SECRET;
+process.env.NODE_ENV = 'test';
 
 export default defineConfig({
   test: {
@@ -38,7 +45,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       DATABASE_URL,
-      SESSION_SECRET: 'test-session-secret-at-least-32-characters-long',
+      SESSION_SECRET,
       LOG_LEVEL: 'fatal',
     },
     hookTimeout: 60_000,
