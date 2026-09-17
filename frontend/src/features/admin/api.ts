@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, toApiError } from '@/lib/api-client';
 import type {
+  AdminAccount,
   AdminProfileDetail,
   AdminQueueMeta,
   AdminQueueRow,
@@ -98,5 +99,50 @@ export function useModerateProfile(id: string) {
         queryClient.invalidateQueries({ queryKey: adminKeys.detail(id) }),
       ]);
     },
+  });
+}
+
+export const adminAccountKeys = {
+  search: (q: string) => ['admin', 'accounts', q] as const,
+};
+
+/** Lookup, not a browsable list — you come here with a person in mind. */
+export function useAccountSearch(query: string) {
+  return useQuery({
+    queryKey: adminAccountKeys.search(query),
+    queryFn: async (): Promise<AdminAccount[]> => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<AdminAccount[]>>('/admin/accounts', {
+          params: { q: query },
+        });
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    enabled: query.trim().length >= 2,
+  });
+}
+
+export function useSetAccountStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      userId: string;
+      action: 'suspend' | 'reinstate';
+      reason?: string;
+    }): Promise<void> => {
+      try {
+        await apiClient.post(`/admin/accounts/${input.userId}/status`, {
+          action: input.action,
+          reason: input.reason,
+        });
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    // Suspension changes what the queues show, not just this row.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
   });
 }

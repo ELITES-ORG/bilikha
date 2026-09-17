@@ -3,11 +3,13 @@ import { z } from 'zod';
 import { requireAdmin } from '../../middleware/require-admin.js';
 import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
 import {
+  findAccounts,
   getProfile,
   listProfiles,
   listUnreviewedMedia,
   moderate,
   reviewMedia,
+  setAccountStatus,
   statusCounts,
 } from './admin.service.js';
 
@@ -68,4 +70,32 @@ adminRouter.post('/profiles/:id/moderate', async (req, res) => {
   });
 
   res.json({ data: updated });
+});
+
+const accountQuerySchema = z.object({
+  q: z.string().trim().min(2, 'Search for at least two characters'),
+});
+
+const accountStatusSchema = z.object({
+  action: z.enum(['suspend', 'reinstate']),
+  reason: z.string().trim().max(500).optional(),
+});
+
+adminRouter.get('/accounts', async (req, res) => {
+  const { q } = accountQuerySchema.parse(req.query);
+  res.json({ data: await findAccounts(q) });
+});
+
+adminRouter.post('/accounts/:id/status', async (req, res) => {
+  const { id } = z.object({ id: z.string().uuid('Invalid account id') }).parse(req.params);
+  const input = accountStatusSchema.parse(req.body);
+
+  const data = await setAccountStatus({
+    adminId: req.session.userId!,
+    userId: id,
+    action: input.action,
+    reason: input.reason,
+  });
+
+  res.json({ data });
 });

@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
+import { AdminAccountsPage } from '@/pages/admin/AdminAccountsPage';
 import { AdminMediaPage } from '@/pages/admin/AdminMediaPage';
 import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
@@ -161,6 +162,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin" element={<AdminQueuePage />} />
             <Route path="/admin/media" element={<AdminMediaPage />} />
+            <Route path="/admin/accounts" element={<AdminAccountsPage />} />
             <Route path="/admin/profiles/:id" element={<AdminProfilePage />} />
             {/* Internal design-system reference. Not linked from the product. */}
             <Route path="/styleguide" element={<StyleGuidePage />} />

@@ -5,7 +5,24 @@ export type ModerationActionType =
   | 'approved'
   | 'rejected'
   | 'returned_to_pending'
-  | 'acknowledged_edit';
+  | 'acknowledged_edit'
+  | 'account_suspended'
+  | 'account_reinstated';
+
+export type AccountStatus = 'active' | 'suspended';
+
+/** A person an administrator can act on — not necessarily a creative. */
+export interface AdminAccount {
+  id: string;
+  username: string;
+  fullName: string;
+  email: string;
+  role: 'member' | 'admin';
+  status: AccountStatus;
+  createdAt: string;
+  profileSlug: string | null;
+  profileStatus: ProfileStatus | null;
+}
 
 export interface AdminQueueRow {
   id: string;

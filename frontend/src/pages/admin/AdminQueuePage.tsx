@@ -68,9 +68,12 @@ function AdminQueueInner() {
             will see.
           </p>
 
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             <ButtonLink to="/admin/media" variant="secondary" size="sm">
               Media review
+            </ButtonLink>
+            <ButtonLink to="/admin/accounts" variant="secondary" size="sm">
+              Accounts
             </ButtonLink>
           </div>
 

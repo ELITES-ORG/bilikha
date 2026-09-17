@@ -79,6 +79,11 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   'returned_to_pending',
   'acknowledged_edit',
   'media_removed',
+  // Account-level, not profile-level: these target the person, and take their
+  // work off every public surface with them. profile_id is null when the
+  // account has no creative profile, which subject_user_id covers.
+  'account_suspended',
+  'account_reinstated',
 ]);
 
 /**

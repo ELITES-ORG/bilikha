@@ -608,6 +608,32 @@ Approve stamps the reviewed timestamp. Remove deletes the avatar object or the
 offer (and its storage objects) and writes a `media_removed` moderation action
 with `subjectUserId` set to the owner.
 
+### `GET /api/v1/admin/accounts`
+
+`?q=` matches username, email or full name, minimum two characters, capped at
+twenty. A lookup rather than a browsable list: it exists to reach a specific
+person after a report.
+
+Returns each account's status, role, and creative profile when there is one.
+
+### `POST /api/v1/admin/accounts/:id/status`
+
+Body `{ "action": "suspend" | "reinstate", "reason"?: string }`. A reason is
+**required to suspend** and recorded in the moderation history as
+`account_suspended` or `account_reinstated`, with `subjectUserId` set — and
+`profileId` null when the account has no creative profile.
+
+Suspending ends the account's session on its next request and removes its
+profile, offers and postings from every public surface. Reinstating restores all
+of it, because visibility is derived from `users.status` rather than copied onto
+each row.
+
+Refused with `400`: suspending **yourself**, which would end your own session
+and could leave the queue with no administrator; and suspending another
+**administrator**, which stays a deliberate act at the database rather than a
+button beside everyone else's. Re-applying the current status is a no-op with
+`changed: false`.
+
 ---
 
 ## Postings

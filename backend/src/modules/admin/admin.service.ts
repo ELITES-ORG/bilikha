@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
   creativeProfiles,
@@ -467,4 +467,121 @@ async function reviewOfferMedia(input: {
   });
 
   return { ok: true as const };
+}
+
+/**
+ * Accounts an administrator can act on, found by username, name or email.
+ * Deliberately a lookup rather than a browsable list: this exists to reach a
+ * specific person after a report, not to page through everyone.
+ */
+export async function findAccounts(query: string) {
+  const term = `%${query.trim().toLowerCase()}%`;
+
+  const rows = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+      email: users.email,
+      role: users.role,
+      status: users.status,
+      createdAt: users.createdAt,
+      profileSlug: creativeProfiles.slug,
+      profileStatus: creativeProfiles.status,
+    })
+    .from(users)
+    .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
+    .where(
+      or(
+        sql`lower(${users.username}) like ${term}`,
+        sql`lower(${users.email}) like ${term}`,
+        sql`lower(${users.firstName} || ' ' || ${users.lastName}) like ${term}`,
+      ),
+    )
+    .orderBy(asc(users.username))
+    .limit(20);
+
+  return rows.map((row) => ({
+    id: row.id,
+    username: row.username,
+    fullName: [row.firstName, row.middleName, row.lastName, row.suffix]
+      .filter(Boolean)
+      .join(' '),
+    email: row.email,
+    role: row.role,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    profileSlug: row.profileSlug,
+    profileStatus: row.profileStatus,
+  }));
+}
+
+/**
+ * Suspend or reinstate an account. Suspending ends their sessions at the next
+ * request and takes their work off every public surface; reinstating restores
+ * both, because visibility is derived from this column rather than copied onto
+ * each row.
+ */
+export async function setAccountStatus(input: {
+  adminId: string;
+  userId: string;
+  action: 'suspend' | 'reinstate';
+  reason?: string;
+}) {
+  if (input.action === 'suspend' && !input.reason?.trim()) {
+    throw AppError.badRequest('A reason is required when suspending.', { field: 'reason' });
+  }
+
+  // Suspending yourself would end your own session and leave the queue with one
+  // fewer administrator — possibly none.
+  if (input.userId === input.adminId) {
+    throw AppError.badRequest('You cannot suspend your own account.');
+  }
+
+  const [target] = await db
+    .select({ id: users.id, role: users.role, status: users.status })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1);
+
+  if (!target) throw AppError.notFound('No such account.');
+
+  // Administrators are not moderated through this surface. Removing one is a
+  // deliberate act at the database, not a button next to everyone else's.
+  if (target.role === 'admin') {
+    throw AppError.badRequest('Administrator accounts cannot be suspended here.');
+  }
+
+  const nextStatus = input.action === 'suspend' ? 'suspended' : 'active';
+  if (target.status === nextStatus) {
+    return { id: target.id, status: nextStatus, changed: false as const };
+  }
+
+  const [profile] = await db
+    .select({ id: creativeProfiles.id })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.userId, input.userId))
+    .limit(1);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({ status: nextStatus, updatedAt: new Date() })
+      .where(eq(users.id, input.userId));
+
+    await tx.insert(moderationActions).values({
+      // Null for an account with no creative profile; subjectUserId is what
+      // makes the row meaningful either way.
+      profileId: profile?.id ?? null,
+      subjectUserId: input.userId,
+      adminId: input.adminId,
+      action: input.action === 'suspend' ? 'account_suspended' : 'account_reinstated',
+      reason: input.reason?.trim() ?? null,
+    });
+  });
+
+  return { id: target.id, status: nextStatus, changed: true as const };
 }
