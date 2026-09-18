@@ -1,4 +1,9 @@
 import { and, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import type {
+  NotificationListResult,
+  NotificationType,
+  ResolvedNotification,
+} from '../../contracts/notifications.js';
 import { db } from '../../db/index.js';
 import {
   agreements,
@@ -12,7 +17,7 @@ import { logger } from '../../lib/logger.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type { Notification } from '../../db/schema/notifications.js';
 
-export type NotificationType = Notification['type'];
+export type { NotificationType, ResolvedNotification } from '../../contracts/notifications.js';
 
 /**
  * Raise a notification. Never throws.
@@ -80,18 +85,6 @@ export async function notifyOnce(input: {
   }
 
   await notify(input);
-}
-
-export interface ResolvedNotification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  detail: string | null;
-  /** Null when the target no longer resolves — rendered as a tombstone. */
-  link: string | null;
-  actor: { name: string; avatarUrl: string | null } | null;
-  readAt: string | null;
-  createdAt: string;
 }
 
 const TITLES: Record<NotificationType, string> = {
@@ -198,7 +191,7 @@ async function resolveActors(rows: Notification[]) {
 export async function listNotifications(
   userId: string,
   options: { page: number; limit: number },
-): Promise<{ data: ResolvedNotification[]; total: number }> {
+): Promise<NotificationListResult> {
   const offset = (options.page - 1) * options.limit;
 
   const [rows, [totals]] = await Promise.all([
