@@ -1,68 +1,35 @@
-import type { MessageAgreement } from '@/features/agreements/types';
+/**
+ * Conversation feature types. Response shapes live in `@contracts/conversations`
+ * (ADR 0037). Client-only payloads and history rows stay here.
+ */
+
+import type {
+  ConversationAgreementCard,
+  ConversationListItem,
+  ConversationMessage,
+  ConversationOfferCard,
+  ConversationPostingCard,
+  ConversationThread,
+} from '@contracts/conversations';
 import type { PostingStatus } from '@/features/postings/types';
 
-/** Offer card embedded on a message (GET /conversations/:id). */
-export type MessageOffer = {
-  id: string;
-  title: string;
-  priceMinCentavos: number | null;
-  priceMaxCentavos: number | null;
-  image: { url: string; thumbUrl: string } | null;
+export type {
+  ConversationAgreementCard,
+  ConversationListItem,
+  ConversationMessage,
+  ConversationOfferCard,
+  ConversationPostingCard,
+  ConversationThread,
 };
 
-/** Posting card embedded on a message (GET /conversations/:id). */
-export type MessagePosting = {
-  id: string;
-  title: string;
-  budgetMinCentavos: number | null;
-  budgetMaxCentavos: number | null;
-  status?: PostingStatus;
-};
+/** @deprecated Prefer ConversationOfferCard — kept as an alias for local imports. */
+export type MessageOffer = ConversationOfferCard;
 
-export interface ConversationMessage {
-  id: string;
-  body: string;
-  senderUserId: string;
-  fromSelf: boolean;
-  senderName: string;
-  createdAt: string;
-  /** Attached offer, or null/omitted when none / cleared after delete. */
-  offer?: MessageOffer | null;
-  /**
-   * When the backend still knows an offer was attached but can no longer
-   * resolve it (deleted). Optional so older payloads remain valid.
-   */
-  offerRemoved?: boolean;
-  posting?: MessagePosting | null;
-  postingRemoved?: boolean;
-  /** Attached work agreement card. Three attachment kinds, no more (ADR 0029). */
-  agreement?: MessageAgreement | null;
-  agreementRemoved?: boolean;
-}
+/** @deprecated Prefer ConversationPostingCard. */
+export type MessagePosting = ConversationPostingCard;
 
-export interface ConversationThread {
-  id: string;
-  role: 'client' | 'creative';
-  otherPartyUserId: string;
-  otherPartyName: string;
-  otherPartyAvatarUrl?: string | null;
-  messages: ConversationMessage[];
-}
-
-export interface ConversationListItem {
-  id: string;
-  profileSlug: string;
-  otherPartyName: string;
-  otherPartyAvatarUrl?: string | null;
-  role: 'client' | 'creative';
-  lastMessage: {
-    body: string;
-    fromSelf: boolean;
-    createdAt: string;
-  } | null;
-  unreadCount: number;
-  lastMessageAt: string;
-}
+/** @deprecated Prefer ConversationAgreementCard. */
+export type MessageAgreement = ConversationAgreementCard;
 
 export interface StartConversationPayload {
   profileSlug: string;

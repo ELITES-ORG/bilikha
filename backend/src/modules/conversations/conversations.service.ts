@@ -1,4 +1,11 @@
 import { and, asc, count, desc, eq, gt, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import type {
+  ConversationAgreementCard,
+  ConversationListResult,
+  ConversationOfferCard,
+  ConversationPostingCard,
+  ConversationThread,
+} from '../../contracts/conversations.js';
 import { db } from '../../db/index.js';
 import {
   conversations,
@@ -17,7 +24,6 @@ import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notifyOnce } from '../notifications/notifications.service.js';
 import { loadAgreementCards } from '../agreements/agreements.service.js';
-import type { AgreementCard } from '../agreements/agreements.service.js';
 import type {
   EnsureConversationInput,
   ListHistoryInput,
@@ -27,6 +33,13 @@ import type {
   SendMessageInput,
   StartConversationInput,
 } from './conversations.schema.js';
+
+export type {
+  ConversationListItem,
+  ConversationListResult,
+  ConversationMessage,
+  ConversationThread,
+} from '../../contracts/conversations.js';
 
 function formatName(parts: {
   firstName: string;
@@ -41,27 +54,6 @@ function formatName(parts: {
 
 const BLOCKED_MESSAGE = 'This message cannot be delivered.';
 
-type OfferCard = {
-  id: string;
-  title: string;
-  priceMinCentavos: number | null;
-  priceMaxCentavos: number | null;
-  image: { url: string; thumbUrl: string } | null;
-  available: boolean;
-};
-
-type PostingCard = {
-  id: string;
-  title: string;
-  budgetMinCentavos: number | null;
-  budgetMaxCentavos: number | null;
-  status: 'open' | 'closed' | 'expired';
-  expiresAt: string | null;
-  available: boolean;
-  municipalityName?: string;
-  subdomainName?: string;
-};
-
 /**
  * Three attachment columns, three branches. ADR 0029 fixes the line here: a
  * fourth means revisiting that decision, not adding another pair of fields.
@@ -70,9 +62,9 @@ function messageAttachmentFields(
   offerId: string | null,
   postingId: string | null,
   agreementId: string | null,
-  offerCards: Map<string, OfferCard>,
-  postingCards: Map<string, PostingCard>,
-  agreementCards: Map<string, AgreementCard>,
+  offerCards: Map<string, ConversationOfferCard>,
+  postingCards: Map<string, ConversationPostingCard>,
+  agreementCards: Map<string, ConversationAgreementCard>,
 ) {
   const offer = offerId ? (offerCards.get(offerId) ?? null) : null;
   const posting = postingId ? (postingCards.get(postingId) ?? null) : null;
@@ -173,9 +165,9 @@ async function resolveOfferForProfile(offerId: string, profileId: string): Promi
 }
 
 /** Batch-load offer cards for a page of messages — one query each for offers and images. */
-async function loadOfferCards(offerIds: string[]): Promise<Map<string, OfferCard>> {
+async function loadOfferCards(offerIds: string[]): Promise<Map<string, ConversationOfferCard>> {
   const unique = [...new Set(offerIds.filter((id): id is string => Boolean(id)))];
-  const result = new Map<string, OfferCard>();
+  const result = new Map<string, ConversationOfferCard>();
   if (unique.length === 0) return result;
 
   const offerRows = await db
@@ -223,9 +215,9 @@ async function loadOfferCards(offerIds: string[]): Promise<Map<string, OfferCard
 }
 
 /** Batch-load posting cards for messages — closed/expired rows stay readable. */
-async function loadPostingCards(postingIds: string[]): Promise<Map<string, PostingCard>> {
+async function loadPostingCards(postingIds: string[]): Promise<Map<string, ConversationPostingCard>> {
   const unique = [...new Set(postingIds.filter((id): id is string => Boolean(id)))];
-  const result = new Map<string, PostingCard>();
+  const result = new Map<string, ConversationPostingCard>();
   if (unique.length === 0) return result;
 
   const now = new Date();
@@ -403,8 +395,8 @@ export async function startOrContinue(userId: string, input: StartConversationIn
           null,
           null,
           offerCards,
-          new Map<string, PostingCard>(),
-          new Map<string, AgreementCard>(),
+          new Map<string, ConversationPostingCard>(),
+          new Map<string, ConversationAgreementCard>(),
         ),
       },
     };
@@ -777,7 +769,10 @@ export async function listHistory(userId: string, options: ListHistoryInput) {
   return listHistoryHiring(userId);
 }
 
-export async function listThreads(userId: string, options: ListThreadsInput) {
+export async function listThreads(
+  userId: string,
+  options: ListThreadsInput,
+): Promise<ConversationListResult> {
   const offset = (options.page - 1) * options.limit;
 
   /**
@@ -897,7 +892,7 @@ export async function getThread(
   conversationId: string,
   userId: string,
   options: ListMessagesInput,
-) {
+): Promise<ConversationThread> {
   const conversation = await requireParticipant(conversationId, userId);
 
   const conditions = [eq(messages.conversationId, conversation.id)];
@@ -1050,7 +1045,7 @@ export async function sendMessage(
       null,
       offerCards,
       postingCards,
-      new Map<string, AgreementCard>(),
+      new Map<string, ConversationAgreementCard>(),
     ),
   };
 }
