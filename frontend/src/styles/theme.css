@@ -215,6 +215,10 @@
      more expensive than the same fraction of a desktop screen: there is less of
      it, and what it pushes down is a list people came to read. Generous
      whitespace is part of this design and it stays from md up. */
+  /* Height of the phone tab bar's content row, excluding its top border
+     and the safe-area inset. The bar sets this as its height and the
+     conversation composer positions against it, so the two cannot drift. */
+  --bottom-nav-h: 3.25rem;
   --gutter: 1.25rem;
   --section-gap: 2.5rem;
   --stack-gap: 1.5rem;

@@ -47,7 +47,7 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-paper pb-[env(safe-area-inset-bottom,0px)] sm:hidden"
       aria-label="Primary"
     >
-      <ul className="flex">
+      <ul className="flex h-(--bottom-nav-h)">
         {TABS.map(({ to, label, icon: Icon }) => {
           const active = tabIsActive(pathname, to);
           const showBadge = to === '/messages' && unread > 0;
@@ -59,7 +59,7 @@ export function BottomNav() {
                 viewTransition
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 py-1.5',
+                  'flex h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5',
                   'text-2xs tracking-wide',
                   active ? 'font-semibold text-ink' : 'font-medium text-ink-muted',
                 )}
