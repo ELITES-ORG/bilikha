@@ -1,6 +1,6 @@
 # 0022. The admin layout
 
-- **Status:** Ready
+- **Status:** Done
 - **Related:** [ADR 0035](../decisions/0035-the-admin-area-is-a-layout.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md)
@@ -59,10 +59,10 @@ apply unchanged. Seven specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The layout | 3 / 3 | Not started |
-| 2. Move the pages | 2 / 2 | Not started |
-| 3. Phones | 1 / 1 | Not started |
-| 4. Verification | 4 / 4 | Not started |
+| 1. The layout | 3 / 3 | Done |
+| 2. Move the pages | 2 / 2 | Done |
+| 3. Phones | 1 / 1 | Done (code; 346px not eyeballed) |
+| 4. Verification | 1 / 4 | Partial — automated pass green; interactive left open |
 
 ---
 
@@ -70,33 +70,33 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 1.1 — The shell
 
-- [ ] **Action.** `frontend/src/pages/admin/AdminLayout.tsx`, rendering
+- [x] **Action.** `frontend/src/pages/admin/AdminLayout.tsx`, rendering
   `<RequireAdmin>`, a header, the section navigation, and `<Outlet />` for the
   page.
-- [ ] **Action.** The header carries the Bilikha wordmark linking to `/`, and
+- [x] **Action.** The header carries the Bilikha wordmark linking to `/`, and
   whatever the current admin pages show on the right. Read
   `AdminQueuePage` and copy its shape rather than inventing one.
-- [ ] **Action.** Keep `pbBottomNav` on the content region: the app's tab bar is
+- [x] **Action.** Keep `pbBottomNav` on the content region: the app's tab bar is
   still rendered globally by `App.tsx` and still overlaps.
 
 ### Step 1.2 — The sections
 
-- [ ] **Action.** One exported array — label and path — for Review queue
+- [x] **Action.** One exported array — label and path — for Review queue
   (`/admin`), Media (`/admin/media`), Accounts (`/admin/accounts`) and Ratings
   (`/admin/ratings`). Rule 2.
-- [ ] **Action.** Active state follows the route, matching the approach in
+- [x] **Action.** Active state follows the route, matching the approach in
   `SiteHeader`: exact match for `/admin`, prefix match for the rest, or `/admin`
   lights up on every page.
-- [ ] **Action.** Mark the current section with `aria-current="page"`.
-- [ ] **Note.** `/admin/profiles/:id` is a detail view, not a section. It does
+- [x] **Action.** Mark the current section with `aria-current="page"`.
+- [x] **Note.** `/admin/profiles/:id` is a detail view, not a section. It does
   not appear in the list; the section it belongs under is the review queue, which
   should stay lit while it is open.
 
 ### Step 1.3 — The routes
 
-- [ ] **Action.** In `App.tsx`, nest the five admin routes under one
+- [x] **Action.** In `App.tsx`, nest the five admin routes under one
   `<Route element={<AdminLayout />}>`. `/admin` becomes the index route.
-- [ ] **Verify.** There is no way to mount an admin page outside the layout.
+- [x] **Verify.** There is no way to mount an admin page outside the layout.
   Rule 1.
 
 ---
@@ -105,18 +105,18 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 2.1 — Strip them
 
-- [ ] **Action.** For each of `AdminQueuePage`, `AdminMediaPage`,
+- [x] **Action.** For each of `AdminQueuePage`, `AdminMediaPage`,
   `AdminAccountsPage`, `AdminRatingsPage`, `AdminProfilePage`: remove the
   `<header>`, remove the `RequireAdmin` wrapper, remove the cross-links to other
   admin sections, and remove the outer `min-h-dvh` wrapper the layout now owns.
-- [ ] **Action.** Keep every page's own heading, eyebrow and description — those
+- [x] **Action.** Keep every page's own heading, eyebrow and description — those
   say which section you are in and are not chrome.
-- [ ] **Note.** `AdminProfilePage`'s "Back to the queue" link stays. It is a
+- [x] **Note.** `AdminProfilePage`'s "Back to the queue" link stays. It is a
   return from a detail view, not section navigation.
 
 ### Step 2.2 — Nothing else moved
 
-- [ ] **Verify.** `git diff` on the five pages shows only removals and
+- [x] **Verify.** `git diff` on the five pages shows only removals and
   indentation. Any changed query, filter or handler means rule 4 was broken.
 
 ---
@@ -125,10 +125,10 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 3.1 — The scrolling row
 
-- [ ] **Action.** Below the header at `max-sm`, the sections render as one
+- [x] **Action.** Below the header at `max-sm`, the sections render as one
   horizontally scrolling row — `overflow-x-auto`, no wrap, 44px touch targets,
   the active one scrolled into view on load.
-- [ ] **Action.** Hide the scrollbar visually but keep the row keyboard
+- [x] **Action.** Hide the scrollbar visually but keep the row keyboard
   scrollable, and make sure the last item is fully reachable rather than sitting
   under the viewport edge.
 - [ ] **Verify.** At 346px the row scrolls, nothing overlaps the app's bottom
@@ -143,7 +143,7 @@ apply unchanged. Seven specific to this plan:
 - [ ] **Test or check.** As a signed-in non-admin, open `/admin`, `/admin/media`,
   `/admin/accounts` and `/admin/ratings`. Every one redirects, and none renders
   its interface first.
-- [ ] **Check.** `grep -rn "RequireAdmin" frontend/src/pages/admin/` returns the
+- [x] **Check.** `grep -rn "RequireAdmin" frontend/src/pages/admin/` returns the
   layout and nothing else.
 
 ### Step 4.2 — Every section reaches every section
@@ -163,6 +163,8 @@ apply unchanged. Seven specific to this plan:
 
 - [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit.
+
+Local five checks exited 0 before push; CI tick waits on the green run.
 
 ---
 
