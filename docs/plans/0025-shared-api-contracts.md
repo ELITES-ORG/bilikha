@@ -1,7 +1,8 @@
 # 0025. One definition of every API shape
 
 - **Status:** Complete, except live before/after response capture (API was not
-  running locally; shapes unchanged by construction under rule 5)
+  running locally at verification; shapes unchanged by construction under
+  rule 5). CI green on `22cba4f`.
 - **Related:** [ADR 0037](../decisions/0037-one-definition-of-an-api-shape.md) ·
   [ADR 0031](../decisions/0031-testing-strategy.md) ·
   [ADR 0014](../decisions/0014-modular-monolith-architecture.md)
@@ -71,7 +72,7 @@ apply unchanged. Eight specific to this plan:
 | 1. The mechanism | 2 / 2 | Complete |
 | 2. The two that broke production | 2 / 2 | Complete |
 | 3. The rest | 6 / 6 | Complete |
-| 4. Verification | 3 / 4 | Complete locally — live A/B skipped |
+| 4. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -170,7 +171,7 @@ disagreement found.
 ### Step 4.4 — Full pass
 
 - [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0.
-- [ ] CI green on the pushed commit.
+- [x] CI green on the pushed commit (`22cba4f`).
 
 ---
 
