@@ -1,6 +1,6 @@
 # 0026. Dark mode, following the device
 
-- **Status:** Accepted
+- **Status:** Accepted, amended 2026-09-19 — a theme choice now exists
 - **Date:** 2026-09-17
 - **Related:** [0010](./0010-theme-static-tokens.md) ·
   [0023](./0023-bottom-navigation-on-phones.md) ·
@@ -47,6 +47,56 @@ hairlines do the rest.
 **Both themes must meet WCAG AA** — 4.5:1 for body text, 3:1 for large text and
 interface borders. A palette that fails is not shipped on the grounds that it
 looks nice.
+
+## Amended 2026-09-19: a theme choice, with the device as the default
+
+This record said an in-app toggle was "worth revisiting if people ask to
+override it." The registrant asked. So there is one, on the account hub.
+
+**Three choices, not two: System, Light, Dark.** System is the default and stays
+reachable, or the control is a one-way door — someone who tries Light can never
+get back to following their phone.
+
+**The device still wins until somebody says otherwise.** Nothing is stored until
+a choice is made, so a fresh install behaves exactly as this record originally
+described.
+
+**The original objection stands and is answered rather than dismissed.** The
+worry was a third opinion: the app, the device, and now a stored preference, of
+the kind that produced a dark `<select>` on a light page. That bug came from the
+app disagreeing with the device *without anyone choosing it*. A preference
+somebody set deliberately is not the same failure, and `color-scheme` is set
+alongside the palette so native surfaces follow the choice too — which is what
+stops the disagreement recurring.
+
+### The palette moves to `light-dark()`
+
+Making the override work turned out to be a reason to fix something else. The
+palette was written as four blocks of the same 65 tokens — light in
+`@theme static`, dark under the media query, and both again for the style-guide
+specimens. 260 declarations, kept in step by hand, which the plan 0014 audit
+flagged as a drift risk.
+
+A manual override naively adds a fifth block. Instead each colour token carries
+both values in one declaration:
+
+```css
+--color-paper: light-dark(oklch(0.988 0.0035 85), oklch(0.18 0.008 60));
+```
+
+Lightning CSS resolves this from the computed `color-scheme`, so **setting
+`color-scheme` is the whole override** — every token follows at once. The
+specimen blocks collapse to a single `color-scheme` line each, and the media
+query's colour half disappears entirely.
+
+Verified before deciding, not assumed. A one-token spike showed Lightning CSS
+emits both fallback hexes for opacity modifiers — `bg-paper/90` today bakes only
+the light value, so `color-mix`-less browsers get a light-tinted header in dark
+mode. The move fixes that as a side effect.
+
+**Shadows stay selector-based.** The dark shadows are not merely recoloured;
+they add a hairline ring, which is different geometry. Six tokens, overridden
+the old way, and that is the honest limit of this approach.
 
 ## Alternatives considered
 

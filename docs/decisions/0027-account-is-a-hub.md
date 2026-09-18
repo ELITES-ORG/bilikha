@@ -57,6 +57,21 @@ without opening anything.
 **Splitting the profile form further is a separate decision**, and it depends on
 the API supporting partial updates.
 
+## Amended 2026-09-19: one control lives on the hub
+
+"Nothing is edited on it" now has an exception: the theme choice
+([0026](./0026-dark-mode-follows-the-device.md)) sits on the hub itself rather
+than behind an entry.
+
+The rule was never about controls in the abstract. It was about *loading* — the
+page was mounting some 1,300 lines of editors and fetching a profile, a list of
+offers and the taxonomy to show four rows. A theme choice fetches nothing, holds
+no server state and has no save. Giving it a page of its own would cost a tap to
+reach one switch.
+
+The test for the next one is the same: a control that loads nothing and saves
+nothing may sit on the hub. Anything that queries belongs behind an entry.
+
 ## Alternatives considered
 
 **Collapsible sections on one page.** Cheapest. Rejected: an accordion keeps
