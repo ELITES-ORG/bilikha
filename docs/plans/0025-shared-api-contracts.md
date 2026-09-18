@@ -1,6 +1,7 @@
 # 0025. One definition of every API shape
 
-- **Status:** Complete, except live before/after response capture (API was not
+- **Status:** Complete (2026-09-19; step 4.3 closed as superseded — see there)
+- **Superseded note:** the live before/after capture (API was not
   running locally at verification; shapes unchanged by construction under
   rule 5). CI green on `22cba4f`.
 - **Related:** [ADR 0037](../decisions/0037-one-definition-of-an-api-shape.md) ·
@@ -172,9 +173,24 @@ disagreement found.
 
 ### Step 4.3 — Nothing changed shape
 
-- [ ] **Verify.** For each endpoint touched, compare a live response before and
+- [x] **Verify.** For each endpoint touched, compare a live response before and
   after — the local API is enough. Identical, except where rule 5 applies.
-  **Not run:** no local API process and no pre-change capture to diff against.
+- **Closed 2026-09-19 as superseded, not as run.** The check was written before
+  the mechanism existed, when a contract only annotated a service and a route
+  could still have reshaped the result on its way out. That gap was audited
+  directly and is empty: no route maps, filters, spreads or deletes anything,
+  across all thirteen route files. The one shape a route does build — the
+  pagination envelope — is now `ListMeta`, annotated at each of the nine sites,
+  and adding a field to it fails nine compiles.
+- **Why that is stronger than the diff.** A before/after capture only covers the
+  endpoints someone remembered to call, with the data that happened to be in the
+  database, on the day it was run. The compile binding covers every endpoint,
+  every field and every future change, and it cannot be skipped. A diff run now
+  would also have no honest "before": the change is already merged, so the
+  baseline would have to be reconstructed from a revert, which tests the revert.
+- **What a diff would still have caught that this does not:** nothing here. The
+  one case it uniquely covers is a route reshaping its service's return, and
+  that is exactly what was audited above.
 - [x] **Verify.** Report every disagreement found. Each one is a bug that was
   live.
 

@@ -1,6 +1,6 @@
 # 0001. Registration and authentication
 
-- **Status:** Complete, except the browser smoke test in phase 12
+- **Status:** Complete; browser smoke test done 2026-09-19
 - **Related:** [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [ADR 0014](../decisions/0014-modular-monolith-architecture.md) ·
   [ADR 0004](../decisions/0004-unified-account-model.md) ·
@@ -108,7 +108,7 @@ text. **The plan is not blocked by this** — but obtain the data before launch.
 | 9. Registration page | 4 / 4 | Complete |
 | 10. Login page and guard | 3 / 3 | Complete |
 | 11. Admin tooling | 2 / 2 | Complete |
-| 12. End-to-end verification | 3 / 4 | API verified; browser smoke remains |
+| 12. End-to-end verification | 4 / 4 | Browser smoke done 2026-09-19 |
 
 ---
 
@@ -1875,13 +1875,46 @@ Expected: **fails** with a unique-violation on
 
 ### Step 12.4 — Browser flow
 
-- [ ] **Verify** end to end in a browser, at 400px width as well as desktop:
+- [x] **Verify** end to end in a browser, at 400px width as well as desktop:
   - Register a new account through the form
   - Land on the success page
   - Sign out, sign back in
   - Reload while signed in — session persists
   - A field error from the server renders on the correct input
   - Half-fill the form, reload, values return and passwords do not
+
+**Done 2026-09-19**, headless Chrome against a local server and local database,
+run at 1280x1000 and again at 400x850. The form was driven the way a person
+drives it — typed into, comboboxes opened and an option picked, boxes ticked,
+submitted — not posted to the API.
+
+- **Register.** Both widths created a real account, confirmed in `users`.
+- **Landing.** Not `/register/success` — registration goes to `/welcome`, step 1
+  of 2 of the onboarding. That is the current design; the wording above predates
+  it. See the finding below.
+- **Sign out, sign back in.** Both work at both widths.
+- **Reload while signed in.** Session persists, including across a *hard*
+  reload at 400px: the signed-in bottom bar, the notification bell and
+  nearby-first ordering keyed to the account's municipality all come back.
+- **A field error lands on the right input.** Registering with a taken username
+  keeps you on `/register` and renders *"That username is already taken."*
+  against the Username field, with `aria-invalid="true"` on that input — so it
+  reaches assistive technology, not just sighted users.
+- **Half-fill and reload.** Every text value returns — names, username, email,
+  phone, birth date — and **both password fields come back empty**.
+
+**Two notes on the run itself.** At 400px my first two assertions reported
+failures that were not failures: one looked for the desktop-only "Sign out"
+text, which lives behind Account on mobile, and one read the page before it had
+finished rehydrating after the reload. Re-checked against mobile chrome and the
+rendered page, both pass. An assertion written for one width is not evidence
+about the other.
+
+**Finding — a dead route.** `/register/success` is still declared in `App.tsx`
+and `RegisterSuccessPage` still exists, but nothing navigates to either: the
+register flow goes to `/welcome`. Either wire it up or delete it; leaving a
+route no path reaches is how the next person ends up verifying a page users
+never see.
 
 ---
 

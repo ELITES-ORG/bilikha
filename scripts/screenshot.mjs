@@ -38,6 +38,39 @@ const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9334;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function fillExpr(pairs) {
+  return `(() => {
+    const out = [];
+    for (const [sel, value] of ${JSON.stringify(pairs)}) {
+      const el = document.querySelector(sel);
+      if (!el) { out.push('MISSING ' + sel); continue; }
+      const proto = el instanceof HTMLTextAreaElement
+        ? HTMLTextAreaElement.prototype
+        : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        if (el.checked !== Boolean(value)) el.click();
+      } else {
+        Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      out.push(sel);
+    }
+    return out.join(', ');
+  })()`;
+}
+
+function clickExpr(target) {
+  return target.startsWith('text=')
+    ? `(() => { const t = ${JSON.stringify(target.slice(5))};
+        const el = Array.from(document.querySelectorAll('button,a,[role=tab],[role=option],li,label'))
+          .find((e) => e.textContent.trim() === t);
+        if (!el) return 'NOT FOUND: ' + t; el.click(); return 'clicked: ' + t; })()`
+    : `(() => { const el = document.querySelector(${JSON.stringify(target)});
+        if (!el) return 'NOT FOUND: ' + ${JSON.stringify(target)};
+        el.click(); return el.getAttribute('href') ?? el.textContent.trim().slice(0, 40); })()`;
+}
+
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
   `--remote-debugging-port=${PORT}`,
@@ -135,6 +168,37 @@ if (spec.seed) {
 await send('Page.navigate', { url: spec.url });
 await wait(spec.settle ?? 3500);
 
+// Fill form fields. React tracks its own value, so assigning `.value` directly
+// is ignored — the native setter has to be called and an input event dispatched,
+// or the framework never sees the change.
+if (spec.fill) {
+  const r = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const pairs = ${JSON.stringify(spec.fill)};
+      const out = [];
+      for (const [sel, value] of pairs) {
+        const el = document.querySelector(sel);
+        if (!el) { out.push('MISSING ' + sel); continue; }
+        const proto = el instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          if (el.checked !== Boolean(value)) el.click();
+        } else {
+          Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        out.push(sel);
+      }
+      return out.join(', ');
+    })()`,
+    returnByValue: true,
+  });
+  console.log('fill:', JSON.stringify(r?.result?.value));
+  await wait(spec.afterFill ?? 400);
+}
+
 // A selector, or `text=Label` to match a control by its visible text. An array
 // runs them in order, which is how a two-tap path gets checked.
 for (const target of [].concat(spec.click ?? [])) {
@@ -164,6 +228,36 @@ if (spec.record) {
   fs.writeFileSync(spec.out.replace(/\.png$/, '.frames.json'), r?.result?.value ?? '[]');
   const frames = JSON.parse(r?.result?.value ?? '[]');
   console.log('frames:', frames.length, 'first:', JSON.stringify(frames[0] ?? null));
+}
+
+// A sequence of actions, run in order. Anything beyond a single click needs
+// this: a registration form means fill, open a combobox, pick an option, tick
+// a box, submit — each waiting on the last.
+if (spec.steps) {
+  for (const [i, step] of spec.steps.entries()) {
+    if (step.fill) {
+      const r = await send('Runtime.evaluate', { expression: fillExpr(step.fill), returnByValue: true });
+      console.log(`step ${i} fill:`, JSON.stringify(r?.result?.value));
+    }
+    if (step.click) {
+      const r = await send('Runtime.evaluate', { expression: clickExpr(step.click), returnByValue: true });
+      console.log(`step ${i} click:`, JSON.stringify(r?.result?.value));
+    }
+    if (step.eval) {
+      const r = await send('Runtime.evaluate', { expression: step.eval, returnByValue: true });
+      console.log(`step ${i} eval:`, JSON.stringify(r?.result?.value));
+    }
+    if (step.shot) {
+      const { data } = await send('Page.captureScreenshot', { format: 'png' });
+      fs.writeFileSync(step.shot, Buffer.from(data, 'base64'));
+      console.log(`step ${i} shot:`, step.shot);
+    }
+    if (step.reload) {
+      await send('Page.reload', { ignoreCache: Boolean(step.hard) });
+      console.log(`step ${i} reload${step.hard ? ' (hard)' : ''}`);
+    }
+    await wait(step.wait ?? 1200);
+  }
 }
 
 const { data } = await send('Page.captureScreenshot', { format: 'png' });
