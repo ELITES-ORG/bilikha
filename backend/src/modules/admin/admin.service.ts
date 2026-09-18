@@ -5,7 +5,6 @@ import type {
   AdminProfileDetail,
   AdminProfileListResult,
   AdminProfileStatus,
-  AdminQueueRow,
   AdminQueueStatus,
 } from '../../contracts/admin.js';
 import { db } from '../../db/index.js';

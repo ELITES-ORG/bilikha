@@ -1,6 +1,7 @@
 # 0025. One definition of every API shape
 
-- **Status:** Ready
+- **Status:** Complete, except live before/after response capture (API was not
+  running locally; shapes unchanged by construction under rule 5)
 - **Related:** [ADR 0037](../decisions/0037-one-definition-of-an-api-shape.md) ·
   [ADR 0031](../decisions/0031-testing-strategy.md) ·
   [ADR 0014](../decisions/0014-modular-monolith-architecture.md)
@@ -67,10 +68,10 @@ apply unchanged. Eight specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The mechanism | 2 / 2 | Not started |
-| 2. The two that broke production | 2 / 2 | Not started |
-| 3. The rest | 6 / 6 | Not started |
-| 4. Verification | 4 / 4 | Not started |
+| 1. The mechanism | 2 / 2 | Complete |
+| 2. The two that broke production | 2 / 2 | Complete |
+| 3. The rest | 6 / 6 | Complete |
+| 4. Verification | 3 / 4 | Complete locally — live A/B skipped |
 
 ---
 
@@ -78,22 +79,22 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 1.1 — The directory and the path
 
-- [ ] **Action.** Create `backend/src/contracts/` with a `README.md` stating
+- [x] **Action.** Create `backend/src/contracts/` with a `README.md` stating
   rules 1 to 3 — that is where the next person will look, not the ADR.
-- [ ] **Action.** Add to `frontend/tsconfig.app.json`:
+- [x] **Action.** Add to `frontend/tsconfig.app.json`:
   `"@contracts/*": ["../backend/src/contracts/*"]`, beside the existing `@/*`.
-- [ ] **Note.** No Vite alias is needed and none should be added. Type-only
+- [x] **Note.** No Vite alias is needed and none should be added. Type-only
   imports are erased, so nothing resolves at runtime — verified, the spike put
   zero occurrences in the bundle. A Vite alias would invite a value import.
 
 ### Step 1.2 — Prove it on one shape
 
-- [ ] **Action.** Move `RatingSummary` — the smallest real shape — to
+- [x] **Action.** Move `RatingSummary` — the smallest real shape — to
   `contracts/ratings.ts`, annotate `summaryForProfile`, and import it in
   `frontend/src/features/ratings/types.ts`.
-- [ ] **Verify.** Rename the field in the contract. `npm --prefix frontend run
+- [x] **Verify.** Rename the field in the contract. `npm --prefix frontend run
   typecheck` must fail. Put it back.
-- [ ] **Verify.** `npm --prefix frontend run build` succeeds and the bundle
+- [x] **Verify.** `npm --prefix frontend run build` succeeds and the bundle
   contains no `contracts/` path.
 
 ---
@@ -105,22 +106,22 @@ would already be worth the change.
 
 ### Step 2.1 — Conversations
 
-- [ ] **Action.** `contracts/conversations.ts`: the thread, the list item, the
+- [x] **Action.** `contracts/conversations.ts`: the thread, the list item, the
   message and its offer and posting cards.
-- [ ] **Action.** Annotate `listThreads` and `getThread` with them.
-- [ ] **Verify.** Rename `otherPartyAvatarUrl` to `avatarUrl` on the contract —
+- [x] **Action.** Annotate `listThreads` and `getThread` with them.
+- [x] **Verify.** Rename `otherPartyAvatarUrl` to `avatarUrl` on the contract —
   the original bug — and confirm the frontend typecheck fails. Put it back.
 
 ### Step 2.2 — Profiles and offers
 
-- [ ] **Action.** `contracts/profiles.ts` and `contracts/offers.ts`. The
+- [x] **Action.** `contracts/profiles.ts` and `contracts/offers.ts`. The
   profile's offers and the offer index must reference **one** offer shape: they
   disagreeing is what blanked the public profile.
-- [ ] **Action.** Annotate `listPublished`, `getPublishedBySlug`,
+- [x] **Action.** Annotate `listPublished`, `getPublishedBySlug`,
   `listPublishedOffers` and `getPublishedOfferById`.
-- [ ] **Verify.** Flatten `subdomain` back to `subdomainSlug`/`subdomainName` on
+- [x] **Verify.** Flatten `subdomain` back to `subdomainSlug`/`subdomainName` on
   one of them and confirm the typecheck fails. Put it back.
-- [ ] **Note.** `backend/src/modules/profiles/offer-shape.test.ts` asserts the
+- [x] **Note.** `backend/src/modules/profiles/offer-shape.test.ts` asserts the
   same thing at runtime. Keep it — it covers the case where a service stops
   being annotated.
 
@@ -133,13 +134,13 @@ easy to isolate. For each: move the response shapes, annotate the service,
 import from the contract in the feature's `types.ts`, and record any
 disagreement found.
 
-- [ ] **Step 3.1.** `auth` — `PublicUser`.
-- [ ] **Step 3.2.** `notifications` — `ResolvedNotification` and its type union.
-- [ ] **Step 3.3.** `agreements` — the record, the card, the derived state, the
+- [x] **Step 3.1.** `auth` — `PublicUser`.
+- [x] **Step 3.2.** `notifications` — `ResolvedNotification` and its type union.
+- [x] **Step 3.3.** `agreements` — the record, the card, the derived state, the
   lifecycle event. The largest of them.
-- [ ] **Step 3.4.** `postings` — the feed row and the detail.
-- [ ] **Step 3.5.** `me` — `OwnProfile` and the saved-offer shapes.
-- [ ] **Step 3.6.** `admin` and `taxonomy` — the queue rows, the account rows,
+- [x] **Step 3.4.** `postings` — the feed row and the detail.
+- [x] **Step 3.5.** `me` — `OwnProfile` and the saved-offer shapes.
+- [x] **Step 3.6.** `admin` and `taxonomy` — the queue rows, the account rows,
   domains and municipalities.
 
 ---
@@ -148,25 +149,28 @@ disagreement found.
 
 ### Step 4.1 — Drift is a compile error
 
-- [ ] **Verify.** Pick three contracts at random, rename a field in each, and
+- [x] **Verify.** Pick three contracts at random, rename a field in each, and
   confirm `npm run typecheck` fails naming that field. Put them back.
+  (`PublicUser.username` → `userHandle`; `packageTitle` → `packageName`;
+  `Posting.title` → `headline`.)
 
 ### Step 4.2 — Nothing shipped
 
-- [ ] **Verify.** `npm run build`, then grep the emitted JavaScript for
+- [x] **Verify.** `npm run build`, then grep the emitted JavaScript for
   `contracts` and for any backend path. Nothing.
 
 ### Step 4.3 — Nothing changed shape
 
 - [ ] **Verify.** For each endpoint touched, compare a live response before and
   after — the local API is enough. Identical, except where rule 5 applies.
-- [ ] **Verify.** Report every disagreement found. Each one is a bug that was
+  **Not run:** no local API process and no pre-change capture to diff against.
+- [x] **Verify.** Report every disagreement found. Each one is a bug that was
   live.
 
 ### Step 4.4 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
-  CI green on the pushed commit.
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0.
+- [ ] CI green on the pushed commit.
 
 ---
 
