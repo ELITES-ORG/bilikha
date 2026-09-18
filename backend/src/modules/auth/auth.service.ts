@@ -6,27 +6,14 @@ import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
 import { normalizeEmail, normalizePhone } from '../../lib/contact.js';
 import { publicUrl } from '../../lib/storage.js';
+import type { PublicUser } from '../../contracts/auth.js';
 import type { RegisterInput } from './auth.schema.js';
+
+export type { PublicUser } from '../../contracts/auth.js';
 
 /** Bump when the privacy notice or terms change; existing users then need
  *  re-consent. */
 export const CONSENT_VERSION = '2026-09-15';
-
-export interface PublicUser {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  viewMode: 'hiring' | 'creative';
-  municipalitySlug: string | null;
-  municipalityName: string | null;
-  profileSlug: string | null;
-  profileStatus: string | null;
-  rejectionReason: string | null;
-  avatarUrl: string | null;
-}
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);

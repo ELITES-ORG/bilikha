@@ -1,20 +1,9 @@
+import type { PublicUser } from '@contracts/auth';
+
 export type ViewMode = 'hiring' | 'creative';
 
-export interface AuthUser {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: string;
-  municipalitySlug: string | null;
-  municipalityName: string | null;
-  profileSlug: string | null;
-  profileStatus: string | null;
-  rejectionReason: string | null;
-  avatarUrl: string | null;
-  viewMode: ViewMode;
-}
+/** Session user — same wire shape as `PublicUser` (ADR 0037). */
+export type AuthUser = PublicUser;
 
 export interface RegisterPayload {
   firstName: string;
