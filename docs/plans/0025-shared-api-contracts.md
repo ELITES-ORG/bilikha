@@ -143,6 +143,16 @@ disagreement found.
 - [x] **Step 3.5.** `me` — `OwnProfile` and the saved-offer shapes.
 - [x] **Step 3.6.** `admin` and `taxonomy` — the queue rows, the account rows,
   domains and municipalities.
+- [x] **Missed, and added on audit.** The media review queue was declared twice
+  and contracted neither time: `MediaQueueRow` local to `admin.service.ts`,
+  `MediaRow` local to `AdminMediaPage.tsx`, and no return annotation between
+  them. It escaped because this phase walked the feature `types.ts` files and
+  that frontend copy lives in the page component — a shape declared where shapes
+  are not usually declared is the one that hides. The two had already diverged:
+  the backend sends `profileId` and `images[].sortOrder` the frontend never
+  declared, and `title` is `string` on one side and `string | null` on the
+  other. Now `AdminMediaRow`, with the service's `_flagged` sort helper
+  intersected on top so it cannot reach the wire.
 
 ---
 
