@@ -39,6 +39,13 @@ function parseView(raw: string | null): DirectoryView {
   return raw === 'creatives' ? 'creatives' : 'offers';
 }
 
+function initialsFrom(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`.toUpperCase();
+}
+
 export function DirectoryPage() {
   const [params, setParams] = useSearchParams();
   const view = parseView(params.get('view'));
@@ -564,11 +571,20 @@ export function DirectoryPage() {
               <ul className="divide-y divide-hairline border-t border-hairline">
                 {offers.data.data.map((offer) => {
                   const creativeName = offer.creative.displayName ?? offer.creative.slug;
+                  // Same craft on every row when that filter is already on.
+                  const showSubdomain = !subdomain;
+                  // The "your town first" line already explains proximity.
+                  const showNearby =
+                    Boolean(offer.creative.isNearby) &&
+                    !(nearbyMunicipalityName && !municipality);
+                  const thumbClass =
+                    'size-20 shrink-0 object-cover sm:size-[120px]';
+
                   return (
                     <li key={offer.id}>
                       <Link
                         to={`/offers/${offer.id}`}
-                        className="group flex flex-col gap-4 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:gap-6"
+                        className="group flex flex-row items-start gap-3 py-5 transition-colors hover:bg-clay-50/60 sm:gap-6 sm:py-6"
                       >
                         {offer.image ? (
                           <img
@@ -578,18 +594,43 @@ export function DirectoryPage() {
                             height={120}
                             loading="lazy"
                             decoding="async"
-                            className="size-[120px] shrink-0 object-cover"
+                            className={thumbClass}
+                          />
+                        ) : offer.creative.avatarUrl ? (
+                          <img
+                            src={offer.creative.avatarUrl}
+                            alt=""
+                            width={120}
+                            height={120}
+                            loading="lazy"
+                            decoding="async"
+                            className={thumbClass}
                           />
                         ) : (
-                          <div className="size-[120px] shrink-0 bg-clay-100" aria-hidden />
+                          <div
+                            className={cn(
+                              thumbClass,
+                              'flex items-center justify-center bg-lawa-100 text-lawa-800',
+                            )}
+                            aria-hidden
+                          >
+                            <span className="text-sm font-medium tabular-nums sm:text-base">
+                              {initialsFrom(creativeName)}
+                            </span>
+                          </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
-                              {offer.title}
-                            </h2>
-                            <Badge tone="brand">{offer.subdomain.name}</Badge>
-                          </div>
+                          <h2
+                            className="u-display line-clamp-2 text-xl text-ink text-pretty group-hover:text-lawa-700"
+                            title={offer.title}
+                          >
+                            {offer.title}
+                          </h2>
+                          {showSubdomain && (
+                            <p className="mt-1 text-xs tracking-wide text-ink-muted">
+                              {offer.subdomain.name}
+                            </p>
+                          )}
                           <p className="mt-1 text-sm font-medium text-ink">
                             {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
                           </p>
@@ -603,10 +644,8 @@ export function DirectoryPage() {
                               <p className="truncate text-sm text-ink">{creativeName}</p>
                               <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
                                 <MapPin className="size-3" aria-hidden />
-                                {offer.creative.municipality}
-                                {offer.creative.isNearby && (
-                                  <Badge tone="accent">Nearby</Badge>
-                                )}
+                                <span>{offer.creative.municipality}</span>
+                                {showNearby && <span>· Nearby</span>}
                               </p>
                             </div>
                           </div>
