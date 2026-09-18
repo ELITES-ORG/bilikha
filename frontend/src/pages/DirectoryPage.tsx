@@ -12,11 +12,10 @@ import {
   Container,
   EmptyState,
   SectionHeading,
+  Select,
   Skeleton,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
-import { DirectoryFilters } from '@/features/directory/DirectoryFilters';
-import { parseBudget } from '@/features/directory/parse-budget';
 import { usePostingsFeed } from '@/features/postings/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { usePublishedOffers } from '@/features/offers/api';
@@ -28,6 +27,13 @@ import { formatTimeLeft } from '@/lib/posting-time';
 import { cn } from '@/lib/cn';
 
 type DirectoryView = 'offers' | 'creatives';
+
+function parseBudget(raw: string | null): number | undefined {
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) return undefined;
+  return n;
+}
 
 function parseView(raw: string | null): DirectoryView {
   return raw === 'creatives' ? 'creatives' : 'offers';
@@ -181,25 +187,6 @@ export function DirectoryPage() {
     && parseBudget(draftBudgetMax) != null
     && (parseBudget(draftBudgetMin) as number) > (parseBudget(draftBudgetMax) as number);
 
-  const showBudget = !creativeHome && view === 'offers';
-
-  const filterFieldProps = {
-    domain,
-    subdomain,
-    municipality,
-    selectedDomain,
-    domains: domains.data,
-    municipalities: municipalities.data,
-    showBudget,
-    draftBudgetMin,
-    draftBudgetMax,
-    budgetInvalid,
-    onFilter: setFilter,
-    onDraftBudgetMinChange: setDraftBudgetMin,
-    onDraftBudgetMaxChange: setDraftBudgetMax,
-    onBudgetBlur: applyBudget,
-  };
-
   return (
     <>
       <SiteHeader />
@@ -278,11 +265,9 @@ export function DirectoryPage() {
                 </p>
               )}
 
-              {/* Phone/tablet only — at lg the rail is the filters. Two controls for
-                  the same thing on one screen is a bug (ADR 0036). */}
               <button
                 type="button"
-                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink lg:hidden"
+                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink"
                 aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"
@@ -307,7 +292,7 @@ export function DirectoryPage() {
                 role="dialog"
                 aria-label="Quick filters"
                 className={cn(
-                  'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md lg:hidden',
+                  'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md',
                   'md:left-auto md:right-0 md:w-full md:max-w-lg',
                 )}
               >
@@ -334,51 +319,109 @@ export function DirectoryPage() {
                   </button>
                 </div>
 
-                <DirectoryFilters
-                  {...filterFieldProps}
-                  onApplyBudget={() => {
-                    applyBudget();
-                    setFiltersOpen(false);
-                  }}
-                />
+                <div className="grid gap-4">
+                  <Select
+                    label="Domain"
+                    value={domain ?? ''}
+                    placeholder="All domains"
+                    onValueChange={(next) =>
+                      setFilter({ domain: next || undefined, subdomain: undefined })
+                    }
+                    options={[
+                      { value: '', label: 'All domains' },
+                      ...(domains.data ?? []).map((d) => ({ value: d.slug, label: d.name })),
+                    ]}
+                  />
+
+                  <Select
+                    label="Sub-domain"
+                    value={subdomain ?? ''}
+                    placeholder="All sub-domains"
+                    disabled={!selectedDomain}
+                    onValueChange={(next) => setFilter({ subdomain: next || undefined })}
+                    options={[
+                      { value: '', label: 'All sub-domains' },
+                      ...(selectedDomain?.subdomains ?? []).map((sd) => ({
+                        value: sd.slug,
+                        label: sd.name,
+                      })),
+                    ]}
+                  />
+
+                  <Select
+                    label="Municipality"
+                    value={municipality ?? ''}
+                    placeholder="All municipalities"
+                    onValueChange={(next) => setFilter({ municipality: next || undefined })}
+                    options={[
+                      { value: '', label: 'All municipalities' },
+                      ...(municipalities.data ?? []).map((m) => ({
+                        value: m.slug,
+                        label: m.name,
+                      })),
+                    ]}
+                  />
+
+                  {!creativeHome && view === 'offers' && (
+                    <fieldset className="grid gap-3">
+                      <legend className="text-sm font-medium text-ink">Budget (₱)</legend>
+                      <p className="text-xs text-ink-muted">
+                        Optional. Leave blank for any price, including price on request.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex flex-col gap-1.5 text-sm text-ink">
+                          Min
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            placeholder="Any"
+                            value={draftBudgetMin}
+                            onChange={(e) => setDraftBudgetMin(e.target.value)}
+                            onBlur={applyBudget}
+                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-1.5 text-sm text-ink">
+                          Max
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            placeholder="Any"
+                            value={draftBudgetMax}
+                            onChange={(e) => setDraftBudgetMax(e.target.value)}
+                            onBlur={applyBudget}
+                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                          />
+                        </label>
+                      </div>
+                      {budgetInvalid && (
+                        <p className="text-xs text-danger-700">
+                          Maximum must be at least the minimum.
+                        </p>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={budgetInvalid}
+                        onClick={() => {
+                          applyBudget();
+                          setFiltersOpen(false);
+                        }}
+                      >
+                        Apply budget
+                      </Button>
+                    </fieldset>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="mt-10 lg:flex lg:items-start lg:gap-10">
-            {/* Desktop rail: always present, no open/closed state. DOM before
-                results so tab order is filters then list. */}
-            <aside
-              aria-label="Directory filters"
-              className="hidden w-64 shrink-0 lg:block"
-            >
-              <div className="sticky top-20 space-y-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-medium text-ink">Filters</h2>
-                  {activeFilterCount > 0 && (
-                    <p className="text-xs text-ink-muted tabular-nums">
-                      {activeFilterCount} active
-                    </p>
-                  )}
-                </div>
-                {activeFilterCount > 0 && (
-                  <button
-                    type="button"
-                    className="text-sm text-ink-muted hover:text-ink"
-                    onClick={clearFilters}
-                  >
-                    Clear all
-                  </button>
-                )}
-                <DirectoryFilters
-                  {...filterFieldProps}
-                  onApplyBudget={applyBudget}
-                />
-              </div>
-            </aside>
-
-            {/* Readable measure beside the rail — not a grid, not full-bleed. */}
-            <div className="min-w-0 flex-1 lg:max-w-3xl">
+          <div className="mt-10">
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
@@ -471,7 +514,7 @@ export function DirectoryPage() {
               )
             )}
 
-            {!creativeHome && view === 'creatives' && creatives.data && creatives.data.data.length === 0 && (
+            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
@@ -694,7 +737,6 @@ export function DirectoryPage() {
                 </Button>
               </div>
             )}
-            </div>
           </div>
         </Container>
       </main>

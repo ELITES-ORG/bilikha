@@ -1,11 +1,18 @@
 # 0023. A filter rail for the directory
 
-- **Status:** Built and gated; the interactive checks in phase 4 await a browser
+- **Status:** Reverted — built, reviewed, and undone at the registrant's call
 - **Related:** [ADR 0036](../decisions/0036-persistent-chrome-holds-the-most-used-control.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md) ·
   [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)
 
 ---
+
+> **Reverted on 2026-09-19.** The rail was built and then undone: the registrant
+> wants the listings to dominate the directory with the filters collapsible, as
+> they were. `89025ee`, `9980f2c` and `00caa80` are reverted and `DirectoryPage`
+> is byte-identical to what preceded them. Kept for the reasoning in
+> [ADR 0036](../decisions/0036-persistent-chrome-holds-the-most-used-control.md),
+> not as work to pick up.
 
 ## Goal
 

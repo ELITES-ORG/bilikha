@@ -1,6 +1,6 @@
 # 0036. Persistent chrome holds a surface's most-used control
 
-- **Status:** Accepted
+- **Status:** Accepted for navigation; the filter-rail half was reverted — see the amendment
 - **Date:** 2026-09-18
 - **Related:** [0035](./0035-the-admin-area-is-a-layout.md) ·
   [0023](./0023-bottom-navigation-on-phones.md) ·
@@ -36,6 +36,11 @@ That is the rule, and it decides both cases:
 **So: the product's navigation stays in the top bar, and the directory's filters
 become a persistent rail on wide screens.**
 
+> **The second clause is superseded.** The rail was built and reverted — see
+> [the amendment below](#amended-2026-09-19-the-directory-keeps-its-collapsible-filters).
+> The directory keeps its collapsible quick filters. Everything from here to
+> that heading describes the reasoning as it stood, not what ships.
+
 **The filter toggle stays for phones**, unchanged. The rail is an addition at a
 breakpoint, not a replacement — on a 346px screen the space genuinely is not
 there, and [0023](./0023-bottom-navigation-on-phones.md) already decided what
@@ -56,6 +61,40 @@ Android and the whole product is built phone-first because of it. But
 municipal offices, schools, NGOs — and those people are at a desk. The desktop
 directory is plausibly where the money browses, doing a search-and-compare task
 that wants filters in view.
+
+## Amended 2026-09-19: the directory keeps its collapsible filters
+
+The navigation half of this decision stands and was never in doubt — the
+product's nav stays in the top bar.
+
+The filter rail was built ([plan 0023](../plans/0023-directory-filter-rail.md))
+and reverted on sight. Two things the rule above did not account for:
+
+**On a browse surface the listings come first.** "Most-used control" is the
+wrong test when the page's purpose is reading the results. A permanent rail put
+a control panel in permanent competition with the thing people came to see, and
+the directory is a place to look at offers, not to operate filters.
+
+**Collapsibility was the feature, not the compromise.** This record treated the
+popover as filters hidden behind a tap. They were filters *out of the way* —
+summoned when wanted and gone the rest of the time, which is what keeps a thin
+list of results from being crowded.
+
+So the rule narrows: persistent chrome holds the most-used control **on a
+working surface**. The admin area is one — moderation is operating the tool. A
+browse surface is not, and there the content holds the space.
+
+The rail was also heavier than the popover it replaced: a two-line helper
+paragraph on Budget, and a full-width primary "Apply budget" button as the
+loudest element on the page. That made a marginal idea worse, but it was not the
+reason it went — the reason is the paragraph above.
+
+**Process note, since it is the more useful lesson.** The registrant asked
+whether the *navigation* should move to a side panel. The answer was no, and
+that answer was correct. Proposing a filter rail in the same breath turned a
+question about navigation into a change to something they had not asked about.
+An explicit "go" followed, so it was sanctioned — but the proposal was not
+theirs, and a reverted feature is the cost of that.
 
 ## Alternatives considered
 
