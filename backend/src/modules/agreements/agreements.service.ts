@@ -1,5 +1,12 @@
 import { createHash } from 'node:crypto';
 import { and, asc, eq, inArray, or, sql } from 'drizzle-orm';
+import type {
+  AgreementCard,
+  AgreementDetail,
+  AgreementListResult,
+  AgreementState,
+  DerivedState,
+} from '../../contracts/agreements.js';
 import { db } from '../../db/index.js';
 import {
   agreementAcceptances,
@@ -22,36 +29,14 @@ import { notify } from '../notifications/notifications.service.js';
 import { requireParticipant } from '../conversations/conversations.service.js';
 import type { IssueAgreementInput, ListAgreementsInput } from './agreements.schema.js';
 
+export type {
+  AgreementCard,
+  AgreementDetail,
+  AgreementState,
+  DerivedState,
+} from '../../contracts/agreements.js';
+
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-export type AgreementState =
-  | 'Awaiting response'
-  | 'Superseded'
-  | 'Withdrawn'
-  | 'Agreed'
-  | 'In progress'
-  | 'Awaiting confirmation'
-  | 'Completed'
-  | 'Cancelled';
-
-export interface DerivedState {
-  state: AgreementState;
-  /** Who put it in this state. Null only when an accepted row has no acceptance to read. */
-  actorUserId: string | null;
-  at: string | null;
-}
-
-export interface AgreementCard {
-  id: string;
-  version: number;
-  packageTitle: string;
-  totalCentavos: number;
-  startDate: string;
-  endDate: string;
-  durationDays: number;
-  status: Agreement['status'];
-  state: AgreementState;
-}
 
 type CanonicalAgreement = Pick<
   Agreement,
@@ -584,7 +569,10 @@ function refusalFor(status: Agreement['status']): string {
   }
 }
 
-export async function getAgreement(userId: string, agreementId: string) {
+export async function getAgreement(
+  userId: string,
+  agreementId: string,
+): Promise<AgreementDetail> {
   const { agreement, conversation } = await requireAgreementAccess(userId, agreementId);
 
   const [lineItems, events, acceptanceRows, successorRows, people] = await Promise.all([
@@ -864,7 +852,10 @@ function eventMessageBody(type: AgreementEvent['type'], note: string | null): st
  * The History index, mirrored by mode: a creative sees what it issued, a client
  * sees what it received.
  */
-export async function listAgreements(userId: string, options: ListAgreementsInput) {
+export async function listAgreements(
+  userId: string,
+  options: ListAgreementsInput,
+): Promise<AgreementListResult> {
   const mine =
     options.mode === 'creative'
       ? eq(conversations.creativeUserId, userId)
