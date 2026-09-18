@@ -1,5 +1,6 @@
 import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import type { RatingSummary } from '../../contracts/ratings.js';
 import { db } from '../../db/index.js';
 import {
   agreementEvents,
@@ -15,6 +16,8 @@ import type { Rating } from '../../db/schema/ratings.js';
 import { AppError } from '../../lib/http-error.js';
 import { deriveState, requireAgreementAccess } from '../agreements/agreements.service.js';
 import { notify } from '../notifications/notifications.service.js';
+
+export type { RatingSummary };
 
 /**
  * How long a client may change their mind, in days (ADR 0033). A first
@@ -40,12 +43,6 @@ export interface ProfileRating {
   raterName: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface RatingSummary {
-  /** Null when there is nothing to average. Never a column — ADR 0033. */
-  average: number | null;
-  count: number;
 }
 
 /**

@@ -2,7 +2,14 @@
  * Shapes returned by the ratings API. No average is ever stored (ADR 0033), so
  * everything here is derived on read and nothing is sent back up except the
  * stars and the note.
+ *
+ * Response shapes that cross the API boundary live in `@contracts/*` so both
+ * sides cannot drift (ADR 0037). Client-only types stay here.
  */
+
+import type { RatingSummary } from '@contracts/ratings';
+
+export type { RatingSummary };
 
 /** The rating left on one agreement, read by either party on its record. */
 export interface AgreementRating {
@@ -24,16 +31,6 @@ export interface ProfileRating {
   raterName: string;
   createdAt: string;
   updatedAt: string;
-}
-
-/**
- * The score and the count, always together. `average` is null when there is
- * nothing to average — the profile says so in words rather than rendering an
- * empty star row, which reads as zero.
- */
-export interface RatingSummary {
-  average: number | null;
-  count: number;
 }
 
 export interface RatingPayload {

@@ -12,7 +12,8 @@
     "noUncheckedIndexedAccess": true,
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@contracts/*": ["../backend/src/contracts/*"]
     },
 
     /* Bundler mode */
