@@ -1,6 +1,6 @@
 # 0022. The admin layout
 
-- **Status:** Built and gated; the interactive checks in Phase 4 await a browser
+- **Status:** Complete; Phase 4 verified in a browser 2026-09-19
 - **Related:** [ADR 0035](../decisions/0035-the-admin-area-is-a-layout.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md)
@@ -61,8 +61,8 @@ apply unchanged. Seven specific to this plan:
 |---|---|---|
 | 1. The layout | 3 / 3 | Done |
 | 2. Move the pages | 2 / 2 | Done |
-| 3. Phones | 1 / 1 | Done (code; 346px not eyeballed) |
-| 4. Verification | 3 / 4 | Marking now automated; the rest awaits a browser |
+| 3. Phones | 1 / 1 | Done; 346px measured 2026-09-19 |
+| 4. Verification | 4 / 4 | Complete; browser pass 2026-09-19 |
 
 ---
 
@@ -131,8 +131,13 @@ apply unchanged. Seven specific to this plan:
 - [x] **Action.** Hide the scrollbar visually but keep the row keyboard
   scrollable, and make sure the last item is fully reachable rather than sitting
   under the viewport edge.
-- [ ] **Verify.** At 346px the row scrolls, nothing overlaps the app's bottom
+- [x] **Verify.** At 346px the row scrolls, nothing overlaps the app's bottom
   bar, and no state was introduced. Rule 5.
+- **Done 2026-09-19** at 346x700. The row scrolls (`scrollWidth` 354 >
+  `clientWidth` 346) while the page itself does not scroll sideways. Scrolled to
+  the bottom, the last queue row clears the fixed bar by 49px — the
+  `pbBottomNav` padding doing its job, checked by measuring both rectangles
+  rather than by eye.
 
 ---
 
@@ -140,9 +145,14 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 4.1 — The guard is structural
 
-- [ ] **Test or check.** As a signed-in non-admin, open `/admin`, `/admin/media`,
+- [x] **Test or check.** As a signed-in non-admin, open `/admin`, `/admin/media`,
   `/admin/accounts` and `/admin/ratings`. Every one redirects, and none renders
   its interface first.
+- **Done 2026-09-19.** All four redirect a signed-in non-admin to `/directory`.
+  The second half of that sentence cannot be answered by the settled page, so
+  the run recorded every animation frame from first paint: 202 frames,
+  `/admin/media` → `/` → `/directory`, and not one frame contained any admin
+  text. It never renders before it redirects.
 - [x] **Check.** `grep -rn "RequireAdmin" frontend/src/pages/admin/` returns the
   layout and nothing else.
 
@@ -153,15 +163,25 @@ apply unchanged. Seven specific to this plan:
   every section path, that the review queue does not light on the others, and
   that `/admin/profiles/:id` keeps it lit. Verified by reinstating the `/admin`
   prefix trap and watching two of them fail.
-- [ ] **Still open.** That every section is *reachable* in one tap — the tests
-  cover the marking, not the rendering.
+- [x] **Done 2026-09-19.** Every section was clicked, not inspected. From
+  `/admin`, each of Media, Accounts and Ratings lands and renders its own screen
+  in one tap; and section-to-section (ratings → media → accounts → ratings →
+  queue) each also lands in one, so the claim holds from any section rather than
+  only from the default one.
 
 ### Step 4.3 — Nothing regressed
 
-- [ ] **Verify.** Approve and reject still work from the queue; media review
+- [x] **Verify.** Approve and reject still work from the queue; media review
   still works; account suspension and reinstatement still work; a rating appeal
   can still be dismissed and removed. Rule 4 means none of these changed, so this
   is checking that the move did not break them.
+- **Done 2026-09-19.** Approve published a profile; reject required a reason and
+  moved it to `suspended` (there is no separate rejected state), and
+  `returned_to_pending` put it back. Media review was exercised through the UI —
+  Approve emptied the queue to its empty state. Suspension and reinstatement
+  both worked and are what step 7.9 of plan 0016 leans on. A rating appeal was
+  raised and dismissed, then raised again and removed; removal refuses without a
+  reason.
 
 ### Step 4.4 — Full pass
 

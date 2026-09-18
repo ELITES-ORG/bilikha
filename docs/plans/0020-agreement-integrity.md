@@ -1,6 +1,6 @@
 # 0020. Precise agreement notifications, and a deletion guard
 
-- **Status:** Built and gated; step 3.3 awaits a browser
+- **Status:** Complete; verified in a browser 2026-09-19
 - **Related:** [ADR 0032](../decisions/0032-an-accepted-agreement-is-not-deleted.md) ·
   [ADR 0030](../decisions/0030-notifications.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md)
@@ -68,7 +68,7 @@ apply unchanged. Six specific to this plan:
 |---|---|---|
 | 1. Precise notifications | 4 / 4 | Complete |
 | 2. The deletion guard | 2 / 2 | Complete |
-| 3. Verification | 3 / 4 | 3.3 needs a browser |
+| 3. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -172,9 +172,19 @@ apply unchanged. Six specific to this plan:
 
 ### Step 3.3 — Notifications read correctly
 
-- [ ] **Verify.** Walk an engagement end to end and read the bell at each step.
+- [x] **Verify.** Walk an engagement end to end and read the bell at each step.
   Delivery and cancellation must be distinguishable at a glance, which is the
   entire point of Phase 1.
+- **Done 2026-09-19.** An engagement was walked issue → revision → supersede →
+  accept → started → delivered → cancelled, and the bell read at each step. Each
+  event has its own headline: *You received a work agreement*, *Changes were
+  requested on a work agreement*, *Your work agreement was accepted*, *Work was
+  marked delivered — confirm to close it*, *A work agreement was cancelled*.
+  Delivery names the action it wants; cancellation does not. Every row carries
+  the package title as its subtitle.
+- **Noted, not a defect.** The rows differ by wording alone — every one shows
+  the actor's avatar, so there is no per-type icon. It reads clearly at a
+  glance, but an icon would carry it at a skim.
 
 ### Step 3.4 — Full pass
 

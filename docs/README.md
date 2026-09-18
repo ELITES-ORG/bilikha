@@ -60,6 +60,7 @@ Different categories rot at different speeds. Treat them accordingly.
 - [Change the database schema](./guides/change-the-database-schema.md)
 - [Add a UI component](./guides/add-a-ui-component.md)
 - [Extend the taxonomy](./guides/extend-the-taxonomy.md)
+- [Check a screen in a browser](./guides/check-a-screen-in-a-browser.md)
 
 **Reference**
 - [API](./reference/api.md)

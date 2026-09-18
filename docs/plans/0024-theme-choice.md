@@ -1,6 +1,6 @@
 # 0024. A theme choice, and one palette instead of four
 
-- **Status:** Complete, except the no-flash check and a real device
+- **Status:** Complete, except the address bar on a real phone
 - **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0010](../decisions/0010-theme-static-tokens.md)
@@ -70,7 +70,7 @@ apply unchanged. Eight specific to this plan:
 | 1. One palette | 3 / 3 | Done |
 | 2. The override | 2 / 2 | Done |
 | 3. The control | 2 / 2 | Done |
-| 4. Verification | 3 / 4 | 4.2 outstanding; 4.3 partly |
+| 4. Verification | 4 / 4 | 4.3's phone check needs a real device |
 
 ---
 
@@ -100,7 +100,10 @@ apply unchanged. Eight specific to this plan:
 - [x] **Verify.** Build, then compare the emitted `--color-*` values before and
   after for both themes. Every rendered colour must be identical. This is a
   restructure; a changed colour is a bug, not an improvement.
-- [ ] **Verify.** The style guide still shows both palettes side by side.
+- [x] **Verify.** The style guide still shows both palettes side by side.
+- **Done 2026-09-19.** `/styleguide` renders Light and Dark next to each other
+  with every ramp — clay, lawa, palayok, success, warning, danger — which is
+  also the check that the `light-dark()` consolidation dropped no token.
 
 ---
 
@@ -170,9 +173,22 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 4.2 — No flash
 
-- [ ] **Verify.** Choose Light with the OS in dark, then hard-reload. No dark
+- [x] **Verify.** Choose Light with the OS in dark, then hard-reload. No dark
   frame at any point. Repeat on a throttled connection, where the gap between
   markup and stylesheet is wide enough to see.
+- **Done 2026-09-19.** A settled screenshot cannot answer this, so the run
+  records `data-theme` and the computed background on every animation frame
+  from first paint. Light chosen with the OS in dark: `data-theme` is already
+  `light` on the first frame, and across ~205 painted frames there is exactly
+  one background value, the light paper. Not one dark frame.
+- **And the inverse**, to prove the check is not vacuous: Dark chosen with the
+  OS in light gives one background across every frame too — the dark one. The
+  recorder does distinguish them.
+- **Throttled**, at 700ms latency and 700kbps, against the *built* app: 678 of
+  678 frames painted, all the same light paper, first paint at 1454ms. Run
+  against the dev server it proves nothing — Vite pays the latency once per
+  module, so nothing paints inside the window at all. That is a dev-server
+  artifact, and using it would have produced a tick that meant nothing.
 
 ### Step 4.3 — Native surfaces follow
 

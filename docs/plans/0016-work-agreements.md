@@ -1,6 +1,6 @@
 # 0016. Work agreements in the thread
 
-- **Status:** Built and gated; steps 7.8 and 7.9 await a device pass
+- **Status:** Complete; verified in a browser 2026-09-19
 - **Related:** [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
   [ADR 0024](../decisions/0024-offers-attach-to-messages.md) ·
   [ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md) ·
@@ -113,7 +113,7 @@ apply unchanged. Ten specific to this plan:
 | 4. Compose | 3 / 3 | Complete |
 | 5. Review and accept | 4 / 4 | Complete |
 | 6. The record and the index | 5 / 5 | Complete |
-| 7. Verification | 9 / 11 | 7.8 and 7.9 need a browser |
+| 7. Verification | 11 / 11 | 7.8 and 7.9 done in a browser 2026-09-19 |
 
 ---
 
@@ -542,18 +542,33 @@ them, leave them unticked and say so.
 
 ### Step 7.8 — The record page
 
-- [ ] Open `/agreements/:id` as each party: the document, the timeline and the
+- [x] Open `/agreements/:id` as each party: the document, the timeline and the
   acceptance fingerprint all render. Open it as a third account: 404. Follow the
   chain from a superseded version to its replacement and back.
+- **Done 2026-09-19**, headless Chrome against a local server and local
+  accounts. Both parties see the document; the fingerprint on the record
+  (`3297cc32b6ae`) is the prefix of the hash the acceptance stored. The actions
+  differ by party rather than being hidden from one: the client is offered
+  *Confirm completion*, the creative is not. A third account gets 404, not 403.
+  v1 says *This version was replaced. Open version 2*, v2 says *Replaces version
+  1*, and the link was clicked, not merely rendered — it navigated.
 
 ### Step 7.9 — The index, both modes
 
-- [ ] With one account holding agreements on both sides, switch modes: *I'm for
+- [x] With one account holding agreements on both sides, switch modes: *I'm for
   hire* lists what it issued, *I'm hiring* lists what it received, and neither
   shows the other's rows. Check both empty states.
-- [ ] Suspend a counterparty and confirm their name no longer surfaces in the
+- [x] Suspend a counterparty and confirm their name no longer surfaces in the
   other party's index, while the agreement itself remains. Reinstate and confirm
   it comes back. ADR 0028.
+- **Done 2026-09-19.** The index is the History page's Agreements tab, not a
+  route of its own. One account was put on both sides: for hire listed only the
+  agreement it issued, hiring only the two versions it received, neither
+  leaking into the other. Both empty states are mode-aware and each offers the
+  other mode. Suspending the counterparty turned their name to *Unknown* while
+  both agreements and every term stayed; reinstating brought the name back.
+- **Noted.** The mode toggle does not render for an account with no creative
+  profile, which is correct — there is no *for hire* side to switch to.
 
 ### Step 7.8b — The lock actually holds
 
