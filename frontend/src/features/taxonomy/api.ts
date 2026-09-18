@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient, toApiError } from '@/lib/api-client';
-import type { CreativeDomain, Municipality } from './types';
+import type { Barangay, CreativeDomain, Municipality } from './types';
+
+export type { Barangay };
 
 interface ApiResponse<T> {
   data: T;
@@ -45,12 +47,6 @@ export function useMunicipalities() {
     queryFn: fetchMunicipalities,
     staleTime: Infinity,
   });
-}
-
-export interface Barangay {
-  id: string;
-  slug: string;
-  name: string;
 }
 
 export function useBarangays(municipalitySlug: string | undefined) {

@@ -1,4 +1,13 @@
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import type {
+  AccountStatus,
+  AdminAccount,
+  AdminProfileDetail,
+  AdminProfileListResult,
+  AdminProfileStatus,
+  AdminQueueRow,
+  AdminQueueStatus,
+} from '../../contracts/admin.js';
 import { db } from '../../db/index.js';
 import {
   creativeProfiles,
@@ -15,14 +24,20 @@ import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.
 import { notify } from '../notifications/notifications.service.js';
 import type { NotificationType } from '../notifications/notifications.service.js';
 
-type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
-type ProfileQueueStatus = ProfileStatus | 'edited';
+export type {
+  AdminAccount,
+  AdminProfileDetail,
+  AdminQueueRow,
+} from '../../contracts/admin.js';
+
+type ProfileStatus = AdminProfileStatus;
+type ProfileQueueStatus = AdminQueueStatus;
 
 export async function listProfiles(options: {
   status: ProfileQueueStatus;
   page: number;
   limit: number;
-}) {
+}): Promise<AdminProfileListResult> {
   const offset = (options.page - 1) * options.limit;
 
   const rows = await db
@@ -74,7 +89,21 @@ export async function listProfiles(options: {
         : eq(creativeProfiles.status, options.status),
     );
 
-  return { rows, total: totals?.total ?? 0 };
+  return {
+    rows: rows.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      status: row.status as AdminProfileStatus,
+      createdAt: row.createdAt.toISOString(),
+      editedSinceReviewAt: row.editedSinceReviewAt?.toISOString() ?? null,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      username: row.username,
+      municipality: row.municipality,
+      subdomainCount: row.subdomainCount,
+    })),
+    total: totals?.total ?? 0,
+  };
 }
 
 /** Counts for the queue tabs, in one round trip rather than three. */
@@ -99,7 +128,7 @@ export async function statusCounts() {
   return counts;
 }
 
-export async function getProfile(id: string) {
+export async function getProfile(id: string): Promise<AdminProfileDetail> {
   const [profile] = await db
     .select({
       id: creativeProfiles.id,
@@ -153,7 +182,32 @@ export async function getProfile(id: string) {
     .where(eq(moderationActions.profileId, id))
     .orderBy(desc(moderationActions.createdAt));
 
-  return { ...profile, subdomains, history };
+  return {
+    id: profile.id,
+    slug: profile.slug,
+    status: profile.status as AdminProfileStatus,
+    editedSinceReviewAt: profile.editedSinceReviewAt?.toISOString() ?? null,
+    rejectionReason: profile.rejectionReason,
+    reviewedAt: profile.reviewedAt?.toISOString() ?? null,
+    createdAt: profile.createdAt.toISOString(),
+    userId: profile.userId,
+    firstName: profile.firstName,
+    middleName: profile.middleName,
+    lastName: profile.lastName,
+    suffix: profile.suffix,
+    username: profile.username,
+    email: profile.email,
+    phone: profile.phone,
+    birthDate: profile.birthDate,
+    municipality: profile.municipality,
+    subdomains,
+    history: history.map((entry) => ({
+      action: entry.action,
+      reason: entry.reason,
+      createdAt: entry.createdAt.toISOString(),
+      adminUsername: entry.adminUsername,
+    })),
+  };
 }
 
 /**
@@ -521,7 +575,7 @@ async function reviewOfferMedia(input: {
  * Deliberately a lookup rather than a browsable list: this exists to reach a
  * specific person after a report, not to page through everyone.
  */
-export async function findAccounts(query: string) {
+export async function findAccounts(query: string): Promise<AdminAccount[]> {
   const term = `%${query.trim().toLowerCase()}%`;
 
   const rows = await db
@@ -558,11 +612,11 @@ export async function findAccounts(query: string) {
       .filter(Boolean)
       .join(' '),
     email: row.email,
-    role: row.role,
-    status: row.status,
+    role: row.role as 'member' | 'admin',
+    status: row.status as AccountStatus,
     createdAt: row.createdAt.toISOString(),
     profileSlug: row.profileSlug,
-    profileStatus: row.profileStatus,
+    profileStatus: (row.profileStatus as AdminProfileStatus | null) ?? null,
   }));
 }
 

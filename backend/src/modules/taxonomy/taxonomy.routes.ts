@@ -1,72 +1,25 @@
 import { Router } from 'express';
-import { asc, eq } from 'drizzle-orm';
-import { db } from '../../db/index.js';
 import {
-  barangays,
-  creativeDomains,
-  creativeSubdomains,
-  municipalities,
-} from '../../db/schema/index.js';
-import { AppError } from '../../lib/http-error.js';
+  getDomainBySlug,
+  listBarangays,
+  listDomains,
+  listMunicipalities,
+} from './taxonomy.service.js';
 
 export const taxonomyRouter: Router = Router();
 
-/**
- * The full domain tree. Small, static, and requested on nearly every page, so
- * it is served in one round trip rather than as nested lookups. Worth putting
- * behind a cache header once traffic justifies it.
- */
 taxonomyRouter.get('/domains', async (_req, res) => {
-  const domains = await db.query.creativeDomains.findMany({
-    orderBy: asc(creativeDomains.displayOrder),
-    with: {
-      subdomains: {
-        orderBy: asc(creativeSubdomains.displayOrder),
-      },
-    },
-  });
-
-  res.json({ data: domains });
+  res.json({ data: await listDomains() });
 });
 
 taxonomyRouter.get('/domains/:slug', async (req, res) => {
-  const domain = await db.query.creativeDomains.findFirst({
-    where: eq(creativeDomains.slug, req.params.slug),
-    with: {
-      subdomains: {
-        orderBy: asc(creativeSubdomains.displayOrder),
-      },
-    },
-  });
-
-  if (!domain) {
-    throw AppError.notFound(`No creative domain with slug "${req.params.slug}"`);
-  }
-
-  res.json({ data: domain });
+  res.json({ data: await getDomainBySlug(req.params.slug!) });
 });
 
 taxonomyRouter.get('/municipalities', async (_req, res) => {
-  const rows = await db.select().from(municipalities).orderBy(asc(municipalities.name));
-  res.json({ data: rows });
+  res.json({ data: await listMunicipalities() });
 });
 
 taxonomyRouter.get('/municipalities/:slug/barangays', async (req, res) => {
-  const [municipality] = await db
-    .select()
-    .from(municipalities)
-    .where(eq(municipalities.slug, req.params.slug))
-    .limit(1);
-
-  if (!municipality) {
-    throw AppError.notFound(`No municipality with slug "${req.params.slug}"`);
-  }
-
-  const rows = await db
-    .select({ id: barangays.id, slug: barangays.slug, name: barangays.name })
-    .from(barangays)
-    .where(eq(barangays.municipalityId, municipality.id))
-    .orderBy(asc(barangays.name));
-
-  res.json({ data: rows });
+  res.json({ data: await listBarangays(req.params.slug!) });
 });

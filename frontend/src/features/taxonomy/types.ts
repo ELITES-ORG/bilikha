@@ -1,28 +1,13 @@
-export interface CreativeSubdomain {
-  id: string;
-  domainId: string;
-  slug: string;
-  name: string;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
+/**
+ * Taxonomy feature types. Response shapes live in `@contracts/taxonomy`
+ * (ADR 0037).
+ */
 
-export interface CreativeDomain {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  subdomains: CreativeSubdomain[];
-}
+import type {
+  Barangay,
+  CreativeDomain,
+  CreativeSubdomain,
+  Municipality,
+} from '@contracts/taxonomy';
 
-export interface Municipality {
-  id: string;
-  slug: string;
-  name: string;
-  psgcCode: string | null;
-  createdAt: string;
-}
+export type { Barangay, CreativeDomain, CreativeSubdomain, Municipality };
