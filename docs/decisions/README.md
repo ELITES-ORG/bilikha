@@ -73,3 +73,4 @@ Number sequentially. Never renumber.
 | [0034](./0034-navigation-transitions.md) | Navigation transitions use the browser's, not a library | Accepted |
 | [0035](./0035-the-admin-area-is-a-layout.md) | The admin area is a layout, not five pages | Accepted |
 | [0036](./0036-persistent-chrome-holds-the-most-used-control.md) | Persistent chrome holds a surface's most-used control | Accepted |
+| [0037](./0037-one-definition-of-an-api-shape.md) | One definition of an API shape, imported by both sides | Accepted |
