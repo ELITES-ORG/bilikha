@@ -1,6 +1,6 @@
 # 0001. Registration and authentication
 
-- **Status:** Complete
+- **Status:** Complete, except the browser smoke test in phase 12
 - **Related:** [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [ADR 0014](../decisions/0014-modular-monolith-architecture.md) ·
   [ADR 0004](../decisions/0004-unified-account-model.md) ·

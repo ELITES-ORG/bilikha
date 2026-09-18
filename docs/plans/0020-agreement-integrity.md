@@ -1,6 +1,6 @@
 # 0020. Precise agreement notifications, and a deletion guard
 
-- **Status:** Complete
+- **Status:** Built and gated; step 3.3 awaits a browser
 - **Related:** [ADR 0032](../decisions/0032-an-accepted-agreement-is-not-deleted.md) ·
   [ADR 0030](../decisions/0030-notifications.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md)

@@ -1,6 +1,6 @@
 # 0023. A filter rail for the directory
 
-- **Status:** Done
+- **Status:** Built and gated; the interactive checks in phase 4 await a browser
 - **Related:** [ADR 0036](../decisions/0036-persistent-chrome-holds-the-most-used-control.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md) ·
   [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)
