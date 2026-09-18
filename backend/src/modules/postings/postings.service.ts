@@ -10,6 +10,7 @@ import {
   ne,
   sql,
 } from 'drizzle-orm';
+import type { Posting, PostingListResult } from '../../contracts/postings.js';
 import { db } from '../../db/index.js';
 import {
   creativeDomains,
@@ -25,6 +26,8 @@ import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { detectContactDetails } from '../offers/offers.service.js';
 import type { ListPostingsQuery, PatchPostingBody, PostingBody } from './postings.schema.js';
+
+export type { Posting } from '../../contracts/postings.js';
 
 export const OPEN_POSTING_LIMIT = 5;
 
@@ -196,7 +199,7 @@ function mapPostingRow(
     hasReplied?: boolean;
     replyCount?: number;
   } = {},
-) {
+): Posting {
   return {
     id: row.id,
     title: row.title,
@@ -220,7 +223,7 @@ function mapPostingRow(
   };
 }
 
-export async function listMine(userId: string) {
+export async function listMine(userId: string): Promise<Posting[]> {
   const rows = await db
     .select({
       id: postings.id,
@@ -407,7 +410,7 @@ function feedOrder(
 export async function listFeedPostings(
   userId: string,
   options: ListPostingsQuery & { viewerMunicipalityId?: string | null },
-) {
+): Promise<PostingListResult> {
   await requireCreativeProfile(userId);
   const now = new Date();
   const registeredSubdomainIds = await registeredSubdomainIdsForUser(userId);
@@ -484,7 +487,7 @@ export async function listFeedPostings(
   };
 }
 
-export async function getPostingById(userId: string, postingId: string) {
+export async function getPostingById(userId: string, postingId: string): Promise<Posting> {
   const [row] = await db
     .select({
       id: postings.id,

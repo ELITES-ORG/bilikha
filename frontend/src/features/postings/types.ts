@@ -1,38 +1,22 @@
-export type PostingStatus = 'open' | 'closed' | 'expired';
+/**
+ * Postings feature types. Response shapes live in `@contracts/postings`
+ * (ADR 0037). Write inputs and query params stay here.
+ */
 
-export type PostingSubdomain = {
-  slug: string;
-  name: string;
-  domain: string;
-};
+import type {
+  Posting,
+  PostingClient,
+  PostingMunicipality,
+  PostingStatus,
+  PostingSubdomain,
+} from '@contracts/postings';
 
-export type PostingMunicipality = {
-  slug: string;
-  name: string;
-};
-
-export type PostingClient = {
-  name: string;
-  avatarUrl: string | null;
-};
-
-export type Posting = {
-  id: string;
-  title: string;
-  description: string | null;
-  budgetMinCentavos: number | null;
-  budgetMaxCentavos: number | null;
-  status: PostingStatus;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt: string;
-  flaggedAt: string | null;
-  reviewedAt: string | null;
-  subdomain: PostingSubdomain;
-  municipality: PostingMunicipality;
-  client?: PostingClient;
-  hasReplied?: boolean;
-  replyCount?: number;
+export type {
+  Posting,
+  PostingClient,
+  PostingMunicipality,
+  PostingStatus,
+  PostingSubdomain,
 };
 
 export type PostingWriteInput = {
