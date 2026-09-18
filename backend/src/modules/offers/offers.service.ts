@@ -1,4 +1,8 @@
 import { and, asc, count, desc, eq, inArray, max, sql } from 'drizzle-orm';
+import type {
+  PublishedOfferDetail,
+  PublishedOfferListResult,
+} from '../../contracts/offers.js';
 import { db } from '../../db/index.js';
 import {
   creativeDomains,
@@ -14,6 +18,12 @@ import { AppError } from '../../lib/http-error.js';
 import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { assertOwnOfferKey } from '../media/media.service.js';
 import type { ListOffersQuery, OfferBody, PatchOfferBody } from './offers.schema.js';
+
+export type {
+  ProfileOffer,
+  PublishedOfferCard,
+  PublishedOfferDetail,
+} from '../../contracts/offers.js';
 
 export const OFFER_LIMIT = 6;
 export const OFFER_IMAGE_LIMIT = 4;
@@ -399,7 +409,7 @@ export async function deleteOfferImage(userId: string, imageId: string) {
 
 export async function listPublishedOffers(
   options: ListOffersQuery & { viewerMunicipalityId?: string | null },
-) {
+): Promise<PublishedOfferListResult> {
   const offset = (options.page - 1) * options.limit;
   // Offers leave the directory with a suspended account — see profiles.service.
   const filters = [eq(creativeProfiles.status, 'published'), eq(users.status, 'active')];
@@ -506,7 +516,7 @@ export async function listPublishedOffers(
 export async function getPublishedOfferById(
   offerId: string,
   viewerMunicipalityId?: string | null,
-) {
+): Promise<PublishedOfferDetail> {
   const [row] = await db
     .select({
       id: offers.id,

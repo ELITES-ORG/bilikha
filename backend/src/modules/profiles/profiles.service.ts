@@ -1,4 +1,6 @@
 import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import type { ProfileOffer } from '../../contracts/offers.js';
+import type { PublicProfile, PublicProfileListResult } from '../../contracts/profiles.js';
 import { db } from '../../db/index.js';
 import {
   creativeDomains,
@@ -13,36 +15,10 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 
-// Public shape. Note what is absent: email, phone, birthDate, barangay.
-export interface PublicProfile {
-  slug: string;
-  displayName: string | null;
-  fullName: string;
-  bio: string | null;
-  avatarUrl: string | null;
-  municipality: string;
-  /** Present when the viewer has a municipality; true if it matches this row. */
-  isNearby?: boolean;
-  subdomains: { slug: string; name: string; domain: string; isPrimary: boolean }[];
-  /** Present on the detail endpoint only — not on directory cards. */
-  offers?: {
-    id: string;
-    title: string;
-    description: string | null;
-    priceMinCentavos: number | null;
-    priceMaxCentavos: number | null;
-    /**
-     * Nested, matching `GET /offers`. It used to be flat `subdomainSlug` /
-     * `subdomainName` here and nested there, so one offer had two shapes
-     * depending on which endpoint returned it — and the client, written against
-     * the other one, read `offer.subdomain.name` on undefined and took the whole
-     * profile page down.
-     */
-    subdomain: { slug: string; name: string; domain: string };
-    images: { id: string; url: string; thumbUrl: string; sortOrder: number }[];
-  }[];
-  memberSince: string;
-}
+export type { PublicProfile } from '../../contracts/profiles.js';
+
+/** Detail endpoint: directory card fields plus the profile's offers. */
+export type PublicProfileDetail = PublicProfile & { offers: ProfileOffer[] };
 
 export interface ListPublishedOptions {
   domain?: string;
@@ -98,7 +74,7 @@ async function subdomainsForProfiles(profileIds: string[]) {
   return map;
 }
 
-async function offersForProfile(profileId: string): Promise<NonNullable<PublicProfile['offers']>> {
+async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
   const rows = await db
     .select({
       id: offers.id,
@@ -158,7 +134,9 @@ async function offersForProfile(profileId: string): Promise<NonNullable<PublicPr
   }));
 }
 
-export async function listPublished(options: ListPublishedOptions) {
+export async function listPublished(
+  options: ListPublishedOptions,
+): Promise<PublicProfileListResult> {
   const offset = (options.page - 1) * options.limit;
   // A suspended account's work leaves the directory with them. Suspension is a
   // property of the user, and every public listing derives visibility from it —
@@ -251,7 +229,7 @@ export async function listPublished(options: ListPublishedOptions) {
   return { data, total: totals?.total ?? 0 };
 }
 
-export async function getPublishedBySlug(slug: string): Promise<PublicProfile> {
+export async function getPublishedBySlug(slug: string): Promise<PublicProfileDetail> {
   const [row] = await db
     .select({
       id: creativeProfiles.id,

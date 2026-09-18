@@ -1,17 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import type {
+  OfferImage,
+  ProfileOffer,
+  PublishedOfferCard,
+  PublishedOfferCreative,
+  PublishedOfferDetail,
+} from '@contracts/offers';
 import { apiClient, toApiError } from '@/lib/api-client';
+
+export type {
+  OfferImage,
+  ProfileOffer,
+  PublishedOfferCard,
+  PublishedOfferCreative,
+  PublishedOfferDetail,
+};
 
 interface ApiResponse<T> {
   data: T;
 }
-
-export type OfferImage = {
-  id: string;
-  url: string;
-  thumbUrl: string;
-  sortOrder?: number;
-};
 
 export type OwnOffer = {
   id: string;
@@ -37,50 +45,6 @@ export type OfferWriteInput = {
   description?: string | null;
   priceMinCentavos?: number | null;
   priceMaxCentavos?: number | null;
-};
-
-export type PublishedOfferCreative = {
-  slug: string;
-  displayName: string | null;
-  municipality: string;
-  avatarUrl: string | null;
-  isNearby?: boolean;
-};
-
-export type PublishedOfferCard = {
-  id: string;
-  title: string;
-  description: string | null;
-  priceMinCentavos: number | null;
-  priceMaxCentavos: number | null;
-  createdAt: string;
-  subdomain: { slug: string; name: string; domain: string };
-  image: OfferImage | null;
-  creative: PublishedOfferCreative;
-};
-
-export type PublishedOfferDetail = {
-  id: string;
-  title: string;
-  description: string | null;
-  priceMinCentavos: number | null;
-  priceMaxCentavos: number | null;
-  createdAt: string;
-  updatedAt: string;
-  subdomain: { slug: string; name: string; domain: string };
-  images: OfferImage[];
-  creative: PublishedOfferCreative;
-};
-
-/** Offer as embedded on a public creative profile (when the API includes it). */
-export type ProfileOffer = {
-  id: string;
-  title: string;
-  description: string | null;
-  priceMinCentavos: number | null;
-  priceMaxCentavos: number | null;
-  subdomain: { slug: string; name: string; domain: string };
-  images: OfferImage[];
 };
 
 export type ListOffersParams = {
