@@ -9,7 +9,7 @@ const TABS = [
   { to: '/directory', label: 'Home', icon: House },
   { to: '/messages', label: 'Messages', icon: MessageSquare },
   { to: '/history', label: 'History', icon: Clock },
-  { to: '/account', label: 'Profile', icon: User },
+  { to: '/account', label: 'Account', icon: User },
 ] as const;
 
 function tabIsActive(pathname: string, to: string) {
