@@ -1,6 +1,6 @@
 # 0022. The admin layout
 
-- **Status:** Done
+- **Status:** Built and gated; the interactive checks in Phase 4 await a browser
 - **Related:** [ADR 0035](../decisions/0035-the-admin-area-is-a-layout.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md)
@@ -62,7 +62,7 @@ apply unchanged. Seven specific to this plan:
 | 1. The layout | 3 / 3 | Done |
 | 2. Move the pages | 2 / 2 | Done |
 | 3. Phones | 1 / 1 | Done (code; 346px not eyeballed) |
-| 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
+| 4. Verification | 3 / 4 | Marking now automated; the rest awaits a browser |
 
 ---
 
@@ -148,9 +148,13 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 4.2 — Every section reaches every section
 
-- [ ] **Verify.** From each of the four, every other is one tap away, and the
-  current one is marked. This is the asymmetry the plan exists to remove.
-- [ ] **Verify.** Opening `/admin/profiles/:id` keeps the review queue lit.
+- [x] **Automated on audit.** Which section is marked is pure logic, so it needed
+  no browser: `admin-sections.test.ts` asserts exactly one section is marked on
+  every section path, that the review queue does not light on the others, and
+  that `/admin/profiles/:id` keeps it lit. Verified by reinstating the `/admin`
+  prefix trap and watching two of them fail.
+- [ ] **Still open.** That every section is *reachable* in one tap — the tests
+  cover the marking, not the rendering.
 
 ### Step 4.3 — Nothing regressed
 
