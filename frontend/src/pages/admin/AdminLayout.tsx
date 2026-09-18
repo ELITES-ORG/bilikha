@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ButtonLink, Container } from '@/components/ui';
+import { ButtonLink } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { cn } from '@/lib/cn';
@@ -26,14 +26,26 @@ function AdminShell() {
   return (
     <div className="min-h-dvh bg-paper">
       <header className="border-b border-hairline">
-        <Container width="wide" className="flex h-16 items-center justify-between">
-          <Link to="/" className="u-display text-xl font-semibold text-ink">
-            Bilikha
-          </Link>
-          <ButtonLink to="/" variant="ghost" size="sm">
-            Back to site
-          </ButtonLink>
-        </Container>
+        {/*
+          Logo sits in the same w-56 column as the aside, with the same p-4 +
+          px-3 inset as the nav links, so "Bilikha" shares a left edge with
+          "Review queue". Phones keep a simple gutter — there is no sidebar.
+        */}
+        <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center px-3 sm:w-56 sm:shrink-0 sm:px-4">
+            <Link
+              to="/"
+              className="u-display text-xl font-semibold text-ink sm:px-3"
+            >
+              Bilikha
+            </Link>
+          </div>
+          <div className="pr-3 sm:pr-(--gutter)">
+            <ButtonLink to="/" variant="ghost" size="sm">
+              Back to site
+            </ButtonLink>
+          </div>
+        </div>
       </header>
 
       <RegistrationStatusBanner />
