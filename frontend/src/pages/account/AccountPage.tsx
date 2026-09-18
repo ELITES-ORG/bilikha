@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -10,6 +11,11 @@ import { OFFER_LIMIT } from '@/features/offers/limits';
 import { useMyPostings } from '@/features/postings/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
+import {
+  readThemePreference,
+  setThemePreference,
+  type ThemePreference,
+} from '@/lib/theme-preference';
 
 function profileStatusLabel(status: ProfileStatus): string {
   switch (status) {
@@ -66,6 +72,62 @@ function HubRow({
         </span>
         <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
       </Link>
+    </li>
+  );
+}
+
+const APPEARANCE_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+function AppearanceRow() {
+  const [preference, setPreference] = useState<ThemePreference>(() => readThemePreference());
+
+  function choose(next: ThemePreference) {
+    setThemePreference(next);
+    setPreference(next);
+  }
+
+  return (
+    <li className="border-b border-hairline px-1 py-3">
+      <fieldset>
+        <legend className="text-sm font-medium text-ink">Appearance</legend>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          System follows your device. Light and Dark stay put.
+        </p>
+        <div
+          role="radiogroup"
+          aria-label="Appearance"
+          className="mt-3 flex flex-wrap gap-1"
+        >
+          {APPEARANCE_OPTIONS.map((option) => {
+            const selected = preference === option.value;
+            return (
+              <label
+                key={option.value}
+                className={cn(
+                  'inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-3 text-sm',
+                  selected
+                    ? 'bg-clay-100 font-medium text-ink'
+                    : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="appearance"
+                  value={option.value}
+                  checked={selected}
+                  onChange={() => choose(option.value)}
+                  className="sr-only"
+                />
+                {option.label}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
     </li>
   );
 }
@@ -138,6 +200,7 @@ export function AccountPage() {
                   label="Security"
                   summary="Password and sign out"
                 />
+                <AppearanceRow />
               </ul>
 
               {!profile.data && (

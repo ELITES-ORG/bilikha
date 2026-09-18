@@ -42,10 +42,10 @@ export function StyleGuidePage() {
             is on this page, the system needs extending — not the screen overriding.
           </p>
           <p className="mt-3 max-w-2xl text-sm text-ink-muted">
-            Theme follows the operating system via <code className="text-ink">prefers-color-scheme</code>
-            — there is no in-app toggle and no stored preference. Components must never use
-            per-theme utility prefixes in markup; change token values in{' '}
-            <code className="text-ink">theme.css</code> instead (ADR 0010 / 0026).
+            Theme defaults to the operating system via{' '}
+            <code className="text-ink">prefers-color-scheme</code>. Account → Appearance can pin
+            Light or Dark. Components must never use per-theme utility prefixes in markup; change
+            token values in <code className="text-ink">theme.css</code> instead (ADR 0010 / 0026).
           </p>
         </header>
 

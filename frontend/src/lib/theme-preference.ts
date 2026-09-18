@@ -35,9 +35,10 @@ export function readThemePreference(): ThemePreference {
 
 function syncThemeColorMeta(preference: ThemePreference): void {
   const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
-  if (metas.length < 2) return;
+  const first = metas.item(0);
+  const second = metas.item(1);
+  if (!first || !second) return;
 
-  const [first, second] = metas;
   if (preference === 'system') {
     first.content = THEME_COLOR_PAPER.light;
     first.media = '(prefers-color-scheme: light)';

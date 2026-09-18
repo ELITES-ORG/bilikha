@@ -1,6 +1,6 @@
 # 0024. A theme choice, and one palette instead of four
 
-- **Status:** Ready
+- **Status:** Done, except interactive verification
 - **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0010](../decisions/0010-theme-static-tokens.md)
@@ -67,10 +67,10 @@ apply unchanged. Eight specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. One palette | 3 / 3 | Not started |
-| 2. The override | 2 / 2 | Not started |
-| 3. The control | 2 / 2 | Not started |
-| 4. Verification | 4 / 4 | Not started |
+| 1. One palette | 3 / 3 | Done |
+| 2. The override | 2 / 2 | Done |
+| 3. The control | 2 / 2 | Done |
+| 4. Verification | 1 / 4 | Partial — automated + colour diff; interactive left open |
 
 ---
 
@@ -78,18 +78,18 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 1.1 — Convert the colours
 
-- [ ] **Action.** In `@theme static`, give every `--color-*` token both values:
+- [x] **Action.** In `@theme static`, give every `--color-*` token both values:
   `light-dark(<current light>, <current dark>)`. The dark value is whatever the
   `@media (prefers-color-scheme: dark)` block sets for that token today.
-- [ ] **Action.** Work token by token against that block. A token it does not
+- [x] **Action.** Work token by token against that block. A token it does not
   override keeps its single value — wrapping an unchanged colour in
   `light-dark(x, x)` is noise.
 
 ### Step 1.2 — Delete the copies
 
-- [ ] **Action.** Remove the colour declarations from the dark media query,
+- [x] **Action.** Remove the colour declarations from the dark media query,
   leaving only the six `--shadow-*` overrides. Rule 6.
-- [ ] **Action.** Reduce `[data-theme-specimen='light']` and
+- [x] **Action.** Reduce `[data-theme-specimen='light']` and
   `[data-theme-specimen='dark']` to `color-scheme: light` / `color-scheme: dark`
   plus the shadow overrides. Lightning CSS already flips `light-dark()` from
   `color-scheme` — confirmed in the built stylesheet, where both specimen
@@ -97,7 +97,7 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 1.3 — Prove nothing moved
 
-- [ ] **Verify.** Build, then compare the emitted `--color-*` values before and
+- [x] **Verify.** Build, then compare the emitted `--color-*` values before and
   after for both themes. Every rendered colour must be identical. This is a
   restructure; a changed colour is a bug, not an improvement.
 - [ ] **Verify.** The style guide still shows both palettes side by side.
@@ -108,19 +108,19 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 2.1 — The attribute
 
-- [ ] **Action.** `:root[data-theme='light'] { color-scheme: light; }` and
+- [x] **Action.** `:root[data-theme='light'] { color-scheme: light; }` and
   `:root[data-theme='dark'] { color-scheme: dark; }`. Nothing else — rule 3.
-- [ ] **Action.** No attribute means no rule, so the media query governs and
+- [x] **Action.** No attribute means no rule, so the media query governs and
   `System` needs no representation in CSS at all.
 
 ### Step 2.2 — Before the paint
 
-- [ ] **Action.** A small blocking inline script in `index.html` that reads the
+- [x] **Action.** A small blocking inline script in `index.html` that reads the
   stored value and sets `data-theme` on `<html>`. It runs before the stylesheet
   applies, so there is no flash. Rule 5.
-- [ ] **Action.** It must not throw when storage is unavailable — private
+- [x] **Action.** It must not throw when storage is unavailable — private
   browsing and blocked site data both return or throw on access. Wrap it.
-- [ ] **Action.** The two `theme-color` metas are media-query based and will not
+- [x] **Action.** The two `theme-color` metas are media-query based and will not
   follow a manual choice. Update the active one from the same script, keeping
   the values matching `--color-paper` in each theme.
 
@@ -130,22 +130,22 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 3.1 — On the hub
 
-- [ ] **Action.** Below the four entries on `/account`, an Appearance row with
+- [x] **Action.** Below the four entries on `/account`, an Appearance row with
   three options — System, Light, Dark — as a radio group, not a two-state
   switch. Rule 1.
-- [ ] **Action.** Match the existing hub rows: same height, same hairline, same
+- [x] **Action.** Match the existing hub rows: same height, same hairline, same
   type. It is a row on that list, not a panel bolted under it.
-- [ ] **Action.** Choosing writes the preference, sets `data-theme`, and updates
+- [x] **Action.** Choosing writes the preference, sets `data-theme`, and updates
   the `theme-color` meta. Choosing System removes both the stored value and the
   attribute.
 
 ### Step 3.2 — The logic, separately
 
-- [ ] **Action.** Reading, validating and applying the preference lives in a
+- [x] **Action.** Reading, validating and applying the preference lives in a
   plain module — not inside the component — so it can be tested and so the
   inline script and the control share one definition of what the stored values
   mean.
-- [ ] **Test.** An absent value, an unrecognised value and a storage read that
+- [x] **Test.** An absent value, an unrecognised value and a storage read that
   throws all resolve to System. Rule 7.
 
 ---
@@ -176,6 +176,14 @@ apply unchanged. Eight specific to this plan:
 
 - [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green. Grep the diff for any `dark:` class and for any second palette block.
+
+Local five checks exited 0 before push; CI tick waits on the green run. No
+`dark:` class in the changed files. Built `--color-*` light/dark pairs matched
+the pre-restructure values (65/65, diff count 0).
+
+Note on Step 2.1: `color-scheme` alone leaves shadow geometry wrong when the
+choice disagrees with the OS, so the six `--shadow-*` overrides also sit on
+`:root[data-theme]`. That is not a second colour palette.
 
 ---
 
