@@ -378,7 +378,7 @@ export function DirectoryPage() {
             </aside>
 
             {/* Readable measure beside the rail — not a grid, not full-bleed. */}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 lg:max-w-3xl">
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
