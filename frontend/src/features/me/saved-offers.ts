@@ -1,30 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import type { SavedOfferItem } from '@contracts/me';
 import { apiClient, toApiError } from '@/lib/api-client';
+
+export type { SavedOfferItem };
 
 interface ApiResponse<T> {
   data: T;
 }
 
-/** One row from GET /me/saved-offers. */
-export type SavedOfferItem = {
-  id: string;
-  savedAt?: string;
-  createdAt?: string;
-  offer: {
-    id: string;
-    title: string;
-    priceMinCentavos: number | null;
-    priceMaxCentavos: number | null;
-    image: { url?: string; thumbUrl: string } | null;
-  };
-  creative: {
-    slug: string;
-    displayName: string;
-    municipality?: string;
-    avatarUrl?: string | null;
-  };
-};
+/** One row from GET /me/saved-offers — see `@contracts/me`. */
 
 export const savedOfferKeys = {
   all: ['me', 'saved-offers'] as const,

@@ -1,24 +1,17 @@
-export type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
-export type ContactPreference = 'phone' | 'email';
+/**
+ * Account hub types. Response shapes live in `@contracts/me` (ADR 0037).
+ * Form payloads stay here.
+ */
 
-export interface OwnProfile {
-  firstName: string;
-  middleName: string | null;
-  lastName: string;
-  suffix: string | null;
-  displayName: string | null;
-  bio: string | null;
-  municipalitySlug: string | null;
-  barangaySlug: string | null;
-  contactPreference: ContactPreference;
-  email: string;
-  phone: string;
-  status: ProfileStatus;
-  rejectionReason: string | null;
-  editedSinceReviewAt: string | null;
-  subdomainSlugs: string[];
-  primarySubdomainSlug: string | null;
-}
+import type {
+  ContactPreference,
+  OwnProfile,
+  OwnProfileStatus,
+  SavedOfferItem,
+} from '@contracts/me';
+
+export type { ContactPreference, OwnProfile, SavedOfferItem };
+export type ProfileStatus = OwnProfileStatus;
 
 export interface UpdateProfilePayload {
   firstName: string;

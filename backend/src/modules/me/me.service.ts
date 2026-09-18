@@ -1,4 +1,10 @@
 import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
+import type {
+  ContactPreference,
+  OwnProfile,
+  OwnProfileStatus,
+  SavedOfferListResult,
+} from '../../contracts/me.js';
 import { db } from '../../db/index.js';
 import {
   barangays,
@@ -23,6 +29,8 @@ import type {
   ViewModeInput,
 } from './me.schema.js';
 
+export type { OwnProfile } from '../../contracts/me.js';
+
 function formatCreativeName(parts: {
   displayName: string | null;
   firstName: string;
@@ -34,25 +42,6 @@ function formatCreativeName(parts: {
   return [parts.firstName, parts.middleName, parts.lastName, parts.suffix]
     .filter(Boolean)
     .join(' ');
-}
-
-export interface OwnProfile {
-  firstName: string;
-  middleName: string | null;
-  lastName: string;
-  suffix: string | null;
-  displayName: string | null;
-  bio: string | null;
-  municipalitySlug: string | null;
-  barangaySlug: string | null;
-  contactPreference: string;
-  email: string;
-  phone: string;
-  status: string;
-  rejectionReason: string | null;
-  editedSinceReviewAt: string | null;
-  subdomainSlugs: string[];
-  primarySubdomainSlug: string | null;
 }
 
 type ProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
@@ -132,10 +121,10 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile | null> 
     bio: row.bio,
     municipalitySlug: row.municipalitySlug,
     barangaySlug: row.barangaySlug,
-    contactPreference: row.contactPreference,
+    contactPreference: row.contactPreference as ContactPreference,
     email: row.email,
     phone: row.phone,
-    status: row.status,
+    status: row.status as OwnProfileStatus,
     rejectionReason: row.rejectionReason,
     editedSinceReviewAt: row.editedSinceReviewAt?.toISOString() ?? null,
     subdomainSlugs: subdomainRows.map((s) => s.slug),
@@ -558,7 +547,7 @@ export async function unsaveOffer(userId: string, offerId: string) {
   return { ok: true as const };
 }
 
-export async function listSavedOffers(userId: string) {
+export async function listSavedOffers(userId: string): Promise<SavedOfferListResult> {
   const rows = await db
     .select({
       id: savedOffers.id,
