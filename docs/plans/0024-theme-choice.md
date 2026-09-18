@@ -70,7 +70,7 @@ apply unchanged. Eight specific to this plan:
 | 1. One palette | 3 / 3 | Done |
 | 2. The override | 2 / 2 | Done |
 | 3. The control | 2 / 2 | Done |
-| 4. Verification | 1 / 4 | Partial — automated + colour diff; interactive left open |
+| 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
 
 ---
 
@@ -174,12 +174,11 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 4.4 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green. Grep the diff for any `dark:` class and for any second palette block.
 
-Local five checks exited 0 before push; CI tick waits on the green run. No
-`dark:` class in the changed files. Built `--color-*` light/dark pairs matched
-the pre-restructure values (65/65, diff count 0).
+Built `--color-*` light/dark pairs matched the pre-restructure values (65/65,
+diff count 0). No `dark:` class in the changed files.
 
 Note on Step 2.1: `color-scheme` alone leaves shadow geometry wrong when the
 choice disagrees with the OS, so the six `--shadow-*` overrides also sit on
