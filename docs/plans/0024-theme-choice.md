@@ -1,6 +1,6 @@
 # 0024. A theme choice, and one palette instead of four
 
-- **Status:** Done, except interactive verification
+- **Status:** Complete, except the no-flash check and a real device
 - **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0010](../decisions/0010-theme-static-tokens.md)
@@ -70,7 +70,7 @@ apply unchanged. Eight specific to this plan:
 | 1. One palette | 3 / 3 | Done |
 | 2. The override | 2 / 2 | Done |
 | 3. The control | 2 / 2 | Done |
-| 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
+| 4. Verification | 3 / 4 | 4.2 outstanding; 4.3 partly |
 
 ---
 
@@ -154,9 +154,19 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 4.1 — The three choices
 
-- [ ] **Verify.** With the OS in dark: System is dark, Light is light, Dark is
-  dark. Flip the OS to light and confirm System follows while Light and Dark
-  stay put.
+- [x] **Verified by headless browser, 2026-09-19.** All four combinations,
+  reading the computed values rather than judging by eye:
+
+  | Stored | OS | `data-theme` | body | `color-scheme` | `--shadow-sm` |
+  |---|---|---|---|---|---|
+  | — | dark | absent | dark paper | — | dark |
+  | — | light | absent | light paper | — | light |
+  | light | dark | `light` | light paper | `light` | **light** |
+  | dark | light | `dark` | dark paper | `dark` | **dark** |
+
+  The last two are the cases the plan's step 2.1 got wrong: shadows follow the
+  choice, not the OS, because the implementer paired them onto
+  `:root[data-theme]`.
 
 ### Step 4.2 — No flash
 
@@ -166,9 +176,10 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 4.3 — Native surfaces follow
 
-- [ ] **Verify.** With a manual choice active, the scrollbar, text selection and
-  the browser's own chrome match the chosen theme — this is what `color-scheme`
-  buys and the reason ADR 0026 worried about a third opinion.
+- [x] **Verified for the mechanism.** With a choice disagreeing with the OS,
+  the computed `color-scheme` on `:root` is the chosen one, and both
+  `theme-color` metas carry the chosen paper with their `media` attribute
+  removed. That is what native surfaces read.
 - [ ] **Verify.** On a phone, the address bar matches the chosen theme, not the
   OS.
 

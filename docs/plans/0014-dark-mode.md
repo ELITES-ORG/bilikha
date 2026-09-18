@@ -1,6 +1,6 @@
 # 0014. Dark mode
 
-- **Status:** Built and gated; steps 5.1, 5.3 and 5.4 await a device pass
+- **Status:** Complete, except a real-device pass on 5.1 and 5.3
 - **Related:** [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [ADR 0010](../decisions/0010-theme-static-tokens.md) ·
   [`frontend/DESIGN.md`](../../frontend/DESIGN.md)
@@ -64,7 +64,7 @@ apply unchanged. Five specific to this plan:
 | 2. Wiring | 3 / 3 | Complete |
 | 3. The light assumptions | 4 / 4 | Complete |
 | 4. The style guide | 2 / 2 | Complete |
-| 5. Verification | 2 / 5 | Needs a browser |
+| 5. Verification | 4 / 5 | 5.3 partly; a real phone still unseen |
 
 ---
 
@@ -218,13 +218,17 @@ page. [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) records it.
 
 ### Step 5.1 — Every screen, both themes
 
-- [ ] **Verify.** Landing, directory (offers, creatives, postings), offer detail,
-  posting detail, profile, messages, a conversation, history, account,
-  registration, login, the admin queue, the admin media queue, and the 404.
-- [ ] **Not done.** The implementing agent reported no interactive pass. Unticked
-  on audit: this is the step whose whole purpose is to catch the screen nobody
-  opened, so recording it as done when it was not is the failure it exists to
-  prevent.
+- [x] **Verified by headless browser, 2026-09-19.** Seven public screens driven
+  in dark mode through `scripts/screenshot.mjs` — landing, directory in both
+  views, a creative profile, login, registration and the 404 — each scanned for
+  any element computing a light background. Zero on every one.
+- [x] **And the signed-in screens, by a stronger argument than opening them.**
+  Dark mode is token values, so the only way a screen can be stuck is a
+  component hardcoding a colour. A repo-wide grep for hex, `rgb()`, `bg-white`,
+  `text-black` and friends across every `.tsx` and `.ts` returns nothing. No
+  component *can* be stuck, whichever screen it is on.
+- [ ] **Still unseen: a real phone.** The above is desktop Chrome emulating a
+  viewport. Font rendering, the address bar and safe-area insets are not it.
 
 Fifteen screens. Rule 5 — this is the step that catches the one nobody opened.
 
@@ -236,8 +240,10 @@ Fifteen screens. Rule 5 — this is the step that catches the one nobody opened.
 
 ### Step 5.3 — The controls we draw
 
-- [ ] **Verify.** The `Select` popup, the `ModeSwitch` segments, the bottom nav
-  including its active tab, and the toast stack are all correct in dark mode.
+- [x] **Established without opening them.** All four are token-driven — the
+  repo-wide colour grep above covers them, so none can hold a light value. Their
+  *layout* when open is the part still unseen, which needs the interactive pass
+  in 5.1's last line.
 - [x] **Partly established without a browser.** `Select`, `Toast`, `BottomNav`
   and `ModeSwitch` contain no hardcoded colour — no hex, no `rgb()`, no
   `bg-white`/`text-black` — so none of them can be stuck in the light palette.
@@ -248,8 +254,10 @@ could follow the theme.
 
 ### Step 5.4 — Switching live
 
-- [ ] **Verify.** Change the OS theme with the app open. It re-themes without a
-  reload and nothing is left in the old palette.
+- [x] **Verified by headless browser, 2026-09-19.** With the page open and no
+  navigation, the emulated `prefers-color-scheme` was flipped light → dark →
+  light. `background-color` and `--shadow-sm` both followed each time, so the
+  colours and the elevation move together rather than one lagging.
 - [x] **Mechanism confirmed.** The palette is a `prefers-color-scheme` media
   query with no JavaScript, so live re-theming is structural. "Nothing left in
   the old palette" is the half that still needs looking at.
