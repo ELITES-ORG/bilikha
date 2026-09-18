@@ -13,6 +13,11 @@
      reads as paper instead of screen. Primary is a deep marine teal: calm,
      institutional, and deliberately not the saturated indigo that every
      framework ships as its default. Clay is the single decorative accent.
+
+   Each colour that differs between themes is one `light-dark()` declaration.
+   Lightning CSS resolves that from the computed `color-scheme`, so setting
+   `color-scheme` is the whole colour override (ADR 0026 amendment). Shadows
+   stay selector-based — they change geometry, not just colour.
    ========================================================================== */
 
 /* `static` emits every token to :root instead of only those Tailwind sees used
@@ -27,94 +32,96 @@
 
   /* ------------------------------------------------------------- neutrals */
   /* Warm clay-tinted greys. Hue drifts slightly cooler as it darkens, which
-     is how real ink behaves and stops the darks from going muddy. */
-  --color-clay-50: oklch(0.985 0.0035 85);
-  --color-clay-100: oklch(0.967 0.0055 82);
-  --color-clay-200: oklch(0.928 0.0075 80);
-  --color-clay-300: oklch(0.872 0.0092 77);
-  --color-clay-400: oklch(0.724 0.0105 74);
-  --color-clay-500: oklch(0.592 0.0115 71);
-  --color-clay-600: oklch(0.482 0.0120 68);
-  --color-clay-700: oklch(0.392 0.0118 66);
-  --color-clay-800: oklch(0.302 0.0110 64);
-  --color-clay-900: oklch(0.232 0.0098 62);
-  --color-clay-950: oklch(0.162 0.0082 60);
+     is how real ink behaves and stops the darks from going muddy.
+     Dark steps invert their role: low steps become dark surface tints, high
+     steps become light text. */
+  --color-clay-50: light-dark(oklch(0.985 0.0035 85), oklch(0.22 0.0085 60));
+  --color-clay-100: light-dark(oklch(0.967 0.0055 82), oklch(0.26 0.009 62));
+  --color-clay-200: light-dark(oklch(0.928 0.0075 80), oklch(0.32 0.01 64));
+  --color-clay-300: light-dark(oklch(0.872 0.0092 77), oklch(0.40 0.011 66));
+  --color-clay-400: light-dark(oklch(0.724 0.0105 74), oklch(0.52 0.011 68));
+  --color-clay-500: light-dark(oklch(0.592 0.0115 71), oklch(0.64 0.01 71));
+  --color-clay-600: light-dark(oklch(0.482 0.0120 68), oklch(0.74 0.008 74));
+  --color-clay-700: light-dark(oklch(0.392 0.0118 66), oklch(0.84 0.006 80));
+  --color-clay-800: light-dark(oklch(0.302 0.0110 64), oklch(0.90 0.0045 82));
+  --color-clay-900: light-dark(oklch(0.232 0.0098 62), oklch(0.94 0.0035 85));
+  --color-clay-950: light-dark(oklch(0.162 0.0082 60), oklch(0.97 0.0025 85));
 
   /* --------------------------------------------------------------- primary */
   /* "Lawa" — deep marine teal. Muted on purpose: chroma stays low so large
      fills never vibrate, and the 600 step clears 4.5:1 on paper. */
-  --color-lawa-50: oklch(0.972 0.012 210);
-  --color-lawa-100: oklch(0.942 0.024 210);
-  --color-lawa-200: oklch(0.882 0.042 209);
-  --color-lawa-300: oklch(0.800 0.058 208);
-  --color-lawa-400: oklch(0.678 0.072 210);
-  --color-lawa-500: oklch(0.560 0.078 212);
-  --color-lawa-600: oklch(0.462 0.074 214);
-  --color-lawa-700: oklch(0.382 0.062 216);
-  --color-lawa-800: oklch(0.310 0.048 218);
-  --color-lawa-900: oklch(0.252 0.036 220);
-  --color-lawa-950: oklch(0.182 0.026 222);
+  --color-lawa-50: light-dark(oklch(0.972 0.012 210), oklch(0.24 0.03 214));
+  --color-lawa-100: light-dark(oklch(0.942 0.024 210), oklch(0.28 0.04 214));
+  --color-lawa-200: light-dark(oklch(0.882 0.042 209), oklch(0.34 0.05 212));
+  --color-lawa-300: light-dark(oklch(0.800 0.058 208), oklch(0.44 0.055 210));
+  --color-lawa-400: light-dark(oklch(0.678 0.072 210), oklch(0.54 0.06 210));
+  --color-lawa-500: light-dark(oklch(0.560 0.078 212), oklch(0.64 0.065 210));
+  --color-lawa-600: light-dark(oklch(0.462 0.074 214), oklch(0.72 0.06 210));
+  --color-lawa-700: light-dark(oklch(0.382 0.062 216), oklch(0.78 0.05 210));
+  --color-lawa-800: light-dark(oklch(0.310 0.048 218), oklch(0.86 0.035 210));
+  --color-lawa-900: light-dark(oklch(0.252 0.036 220), oklch(0.92 0.022 210));
+  --color-lawa-950: light-dark(oklch(0.182 0.026 222), oklch(0.96 0.014 210));
 
   /* ---------------------------------------------------------------- accent */
   /* "Palayok" — fired earthenware. Decorative only: domain markers, active
      indicators, editorial rules. Never a status colour. */
-  --color-palayok-50: oklch(0.968 0.018 52);
-  --color-palayok-100: oklch(0.938 0.038 50);
-  --color-palayok-200: oklch(0.880 0.068 48);
-  --color-palayok-300: oklch(0.806 0.098 46);
-  --color-palayok-400: oklch(0.716 0.126 44);
-  --color-palayok-500: oklch(0.644 0.138 42);
-  --color-palayok-600: oklch(0.566 0.132 40);
-  --color-palayok-700: oklch(0.472 0.110 38);
-  --color-palayok-800: oklch(0.386 0.088 37);
-  --color-palayok-900: oklch(0.318 0.070 36);
+  --color-palayok-50: light-dark(oklch(0.968 0.018 52), oklch(0.24 0.03 40));
+  --color-palayok-100: light-dark(oklch(0.938 0.038 50), oklch(0.28 0.04 40));
+  --color-palayok-200: light-dark(oklch(0.880 0.068 48), oklch(0.36 0.055 42));
+  --color-palayok-300: light-dark(oklch(0.806 0.098 46), oklch(0.46 0.07 42));
+  --color-palayok-400: light-dark(oklch(0.716 0.126 44), oklch(0.56 0.08 42));
+  --color-palayok-500: light-dark(oklch(0.644 0.138 42), oklch(0.68 0.1 42));
+  --color-palayok-600: light-dark(oklch(0.566 0.132 40), oklch(0.64 0.1 40));
+  --color-palayok-700: light-dark(oklch(0.472 0.110 38), oklch(0.72 0.09 40));
+  --color-palayok-800: light-dark(oklch(0.386 0.088 37), oklch(0.82 0.07 38));
+  --color-palayok-900: light-dark(oklch(0.318 0.070 36), oklch(0.90 0.05 36));
 
   /* -------------------------------------------------------------- semantic */
   /* Status hues sit far enough from both brand colours to stay unambiguous.
      Rule: status is never signalled by colour alone — always an icon or a
      label beside it. */
-  --color-success-50: oklch(0.960 0.026 152);
-  --color-success-100: oklch(0.918 0.052 152);
-  --color-success-500: oklch(0.612 0.118 150);
-  --color-success-600: oklch(0.520 0.104 150);
-  --color-success-700: oklch(0.432 0.086 150);
+  --color-success-50: light-dark(oklch(0.960 0.026 152), oklch(0.24 0.04 152));
+  --color-success-100: light-dark(oklch(0.918 0.052 152), oklch(0.28 0.05 152));
+  --color-success-500: light-dark(oklch(0.612 0.118 150), oklch(0.68 0.11 150));
+  --color-success-600: light-dark(oklch(0.520 0.104 150), oklch(0.74 0.1 150));
+  --color-success-700: light-dark(oklch(0.432 0.086 150), oklch(0.82 0.08 150));
 
-  --color-warning-50: oklch(0.972 0.030 88);
-  --color-warning-100: oklch(0.938 0.062 87);
-  --color-warning-500: oklch(0.748 0.132 80);
-  --color-warning-600: oklch(0.652 0.124 74);
-  --color-warning-700: oklch(0.528 0.102 70);
+  --color-warning-50: light-dark(oklch(0.972 0.030 88), oklch(0.26 0.04 80));
+  --color-warning-100: light-dark(oklch(0.938 0.062 87), oklch(0.30 0.055 80));
+  --color-warning-500: light-dark(oklch(0.748 0.132 80), oklch(0.74 0.12 80));
+  --color-warning-600: light-dark(oklch(0.652 0.124 74), oklch(0.78 0.11 74));
+  --color-warning-700: light-dark(oklch(0.528 0.102 70), oklch(0.86 0.09 70));
 
-  --color-danger-50: oklch(0.962 0.018 22);
-  --color-danger-100: oklch(0.926 0.038 22);
-  --color-danger-500: oklch(0.602 0.176 24);
-  --color-danger-600: oklch(0.528 0.170 24);
-  --color-danger-700: oklch(0.444 0.142 24);
+  --color-danger-50: light-dark(oklch(0.962 0.018 22), oklch(0.24 0.04 24));
+  --color-danger-100: light-dark(oklch(0.926 0.038 22), oklch(0.28 0.055 24));
+  --color-danger-500: light-dark(oklch(0.602 0.176 24), oklch(0.66 0.15 24));
+  --color-danger-600: light-dark(oklch(0.528 0.170 24), oklch(0.70 0.14 24));
+  --color-danger-700: light-dark(oklch(0.444 0.142 24), oklch(0.82 0.1 24));
 
   /* --------------------------------------------------------------- surface */
-  --color-paper: oklch(0.988 0.0035 85);
-  --color-surface: oklch(1 0 0);
-  --color-surface-sunken: oklch(0.968 0.0055 82);
-  --color-ink: oklch(0.212 0.0098 62);
-  --color-ink-muted: oklch(0.482 0.0120 68);
-  --color-ink-subtle: oklch(0.545 0.0115 71);
-  --color-hairline: oklch(0.912 0.0072 80);
-  --color-hairline-strong: oklch(0.858 0.0090 77);
+  --color-paper: light-dark(oklch(0.988 0.0035 85), oklch(0.18 0.008 60));
+  --color-surface: light-dark(oklch(1 0 0), oklch(0.23 0.009 62));
+  --color-surface-sunken: light-dark(oklch(0.968 0.0055 82), oklch(0.15 0.008 60));
+  --color-ink: light-dark(oklch(0.212 0.0098 62), oklch(0.94 0.004 85));
+  --color-ink-muted: light-dark(oklch(0.482 0.0120 68), oklch(0.74 0.008 74));
+  --color-ink-subtle: light-dark(oklch(0.545 0.0115 71), oklch(0.64 0.009 71));
+  --color-hairline: light-dark(oklch(0.912 0.0072 80), oklch(0.40 0.008 64));
+  --color-hairline-strong: light-dark(oklch(0.858 0.0090 77), oklch(0.50 0.009 66));
   /* Text (and muted text) on brand fills — always near-white in both themes.
      Brand buttons use this rather than clay-50 so the clay ramp can invert for
-     dark mode without turning primary labels dark. */
+     dark mode without turning primary labels dark. Unchanged across themes. */
   --color-on-primary: oklch(0.985 0.0035 85);
-  --color-on-primary-muted: oklch(0.92 0.006 82);
+  --color-on-primary-muted: light-dark(oklch(0.92 0.006 82), oklch(0.90 0.006 82));
   /* Solid brand fills for buttons / mode switch. Kept separate from the lawa
      ramp so the ramp can invert for tints and text while hover still darkens. */
-  --color-primary: oklch(0.382 0.062 216);
-  --color-primary-hover: oklch(0.310 0.048 218);
-  --color-primary-active: oklch(0.252 0.036 220);
-  --color-accent-solid: oklch(0.566 0.132 40);
-  --color-accent-solid-hover: oklch(0.472 0.110 38);
-  --color-accent-solid-active: oklch(0.386 0.088 37);
-  --color-danger-solid: oklch(0.528 0.170 24);
-  --color-danger-solid-hover: oklch(0.444 0.142 24);
+  --color-primary: light-dark(oklch(0.382 0.062 216), oklch(0.48 0.075 212));
+  --color-primary-hover: light-dark(oklch(0.310 0.048 218), oklch(0.40 0.07 214));
+  --color-primary-active: light-dark(oklch(0.252 0.036 220), oklch(0.34 0.06 216));
+  --color-accent-solid: light-dark(oklch(0.566 0.132 40), oklch(0.64 0.11 40));
+  --color-accent-solid-hover: light-dark(oklch(0.472 0.110 38), oklch(0.56 0.1 40));
+  --color-accent-solid-active: light-dark(oklch(0.386 0.088 37), oklch(0.48 0.09 38));
+  --color-danger-solid: light-dark(oklch(0.528 0.170 24), oklch(0.58 0.16 24));
+  --color-danger-solid-hover: light-dark(oklch(0.444 0.142 24), oklch(0.50 0.14 24));
 
   /* ------------------------------------------------------------ type scale */
   /* Tracking tightens and leading compresses as size grows. Skipping this is
@@ -179,7 +186,9 @@
 
   /* -------------------------------------------------------------- elevation */
   /* Shadows are tinted with the ink hue, never neutral black — black alpha
-     over warm paper greys it out and reads cheap. */
+     over warm paper greys it out and reads cheap. Dark overrides live outside
+     @theme: they add a hairline ring (different geometry), which light-dark()
+     cannot express. */
   --shadow-xs: 0 1px 2px oklch(0.212 0.0098 62 / 0.05);
   --shadow-sm: 0 1px 2px oklch(0.212 0.0098 62 / 0.05), 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.04);
   --shadow-md: 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.05), 0 6px 12px -3px oklch(0.212 0.0098 62 / 0.06);
@@ -238,87 +247,10 @@
   }
 }
 
-/* --------------------------------------------------------------------------
-   Dark palette — follows prefers-color-scheme (ADR 0026).
-   Tokens stay declared in @theme static above; this block only re-values them.
-   Scales invert their role: low steps become dark surface tints (badge/hover
-   backgrounds), high steps become light text. Brand fills raise lightness and
-   trim chroma so they do not vibrate on near-black paper.
-   -------------------------------------------------------------------------- */
+/* Dark shadows only — colours now live in light-dark() above (ADR 0026).
+   These change geometry (a hairline ring), so they cannot ride light-dark(). */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-clay-50: oklch(0.22 0.0085 60);
-    --color-clay-100: oklch(0.26 0.009 62);
-    --color-clay-200: oklch(0.32 0.01 64);
-    --color-clay-300: oklch(0.40 0.011 66);
-    --color-clay-400: oklch(0.52 0.011 68);
-    --color-clay-500: oklch(0.64 0.01 71);
-    --color-clay-600: oklch(0.74 0.008 74);
-    --color-clay-700: oklch(0.84 0.006 80);
-    --color-clay-800: oklch(0.90 0.0045 82);
-    --color-clay-900: oklch(0.94 0.0035 85);
-    --color-clay-950: oklch(0.97 0.0025 85);
-
-    --color-lawa-50: oklch(0.24 0.03 214);
-    --color-lawa-100: oklch(0.28 0.04 214);
-    --color-lawa-200: oklch(0.34 0.05 212);
-    --color-lawa-300: oklch(0.44 0.055 210);
-    --color-lawa-400: oklch(0.54 0.06 210);
-    --color-lawa-500: oklch(0.64 0.065 210);
-    --color-lawa-600: oklch(0.72 0.06 210);
-    --color-lawa-700: oklch(0.78 0.05 210);
-    --color-lawa-800: oklch(0.86 0.035 210);
-    --color-lawa-900: oklch(0.92 0.022 210);
-    --color-lawa-950: oklch(0.96 0.014 210);
-
-    --color-palayok-50: oklch(0.24 0.03 40);
-    --color-palayok-100: oklch(0.28 0.04 40);
-    --color-palayok-200: oklch(0.36 0.055 42);
-    --color-palayok-300: oklch(0.46 0.07 42);
-    --color-palayok-400: oklch(0.56 0.08 42);
-    --color-palayok-500: oklch(0.68 0.1 42);
-    --color-palayok-600: oklch(0.64 0.1 40);
-    --color-palayok-700: oklch(0.72 0.09 40);
-    --color-palayok-800: oklch(0.82 0.07 38);
-    --color-palayok-900: oklch(0.90 0.05 36);
-
-    --color-success-50: oklch(0.24 0.04 152);
-    --color-success-100: oklch(0.28 0.05 152);
-    --color-success-500: oklch(0.68 0.11 150);
-    --color-success-600: oklch(0.74 0.1 150);
-    --color-success-700: oklch(0.82 0.08 150);
-
-    --color-warning-50: oklch(0.26 0.04 80);
-    --color-warning-100: oklch(0.30 0.055 80);
-    --color-warning-500: oklch(0.74 0.12 80);
-    --color-warning-600: oklch(0.78 0.11 74);
-    --color-warning-700: oklch(0.86 0.09 70);
-
-    --color-danger-50: oklch(0.24 0.04 24);
-    --color-danger-100: oklch(0.28 0.055 24);
-    --color-danger-500: oklch(0.66 0.15 24);
-    --color-danger-600: oklch(0.70 0.14 24);
-    --color-danger-700: oklch(0.82 0.1 24);
-
-    --color-paper: oklch(0.18 0.008 60);
-    --color-surface: oklch(0.23 0.009 62);
-    --color-surface-sunken: oklch(0.15 0.008 60);
-    --color-ink: oklch(0.94 0.004 85);
-    --color-ink-muted: oklch(0.74 0.008 74);
-    --color-ink-subtle: oklch(0.64 0.009 71);
-    --color-hairline: oklch(0.40 0.008 64);
-    --color-hairline-strong: oklch(0.50 0.009 66);
-    --color-on-primary: oklch(0.985 0.0035 85);
-    --color-on-primary-muted: oklch(0.90 0.006 82);
-    --color-primary: oklch(0.48 0.075 212);
-    --color-primary-hover: oklch(0.40 0.07 214);
-    --color-primary-active: oklch(0.34 0.06 216);
-    --color-accent-solid: oklch(0.64 0.11 40);
-    --color-accent-solid-hover: oklch(0.56 0.1 40);
-    --color-accent-solid-active: oklch(0.48 0.09 38);
-    --color-danger-solid: oklch(0.58 0.16 24);
-    --color-danger-solid-hover: oklch(0.50 0.14 24);
-
     --shadow-xs: 0 0 0 1px oklch(0.94 0.004 85 / 0.08);
     --shadow-sm: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 4px 12px oklch(0 0 0 / 0.45);
     --shadow-md: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 8px 20px oklch(0 0 0 / 0.5);
@@ -330,147 +262,29 @@
 
 /*
  * Style-guide specimens force each theme regardless of the OS, so both palettes
- * can be compared on one page. Keep colour values identical to the blocks above
- * (@theme static for light, prefers-color-scheme for dark).
+ * can be compared on one page. color-scheme flips light-dark(); shadows must
+ * be set explicitly because they are not colour-only.
  */
 [data-theme-specimen='light'] {
   color-scheme: light;
-  --color-clay-50: oklch(0.985 0.0035 85);
-  --color-clay-100: oklch(0.967 0.0055 82);
-  --color-clay-200: oklch(0.928 0.0075 80);
-  --color-clay-300: oklch(0.872 0.0092 77);
-  --color-clay-400: oklch(0.724 0.0105 74);
-  --color-clay-500: oklch(0.592 0.0115 71);
-  --color-clay-600: oklch(0.482 0.0120 68);
-  --color-clay-700: oklch(0.392 0.0118 66);
-  --color-clay-800: oklch(0.302 0.0110 64);
-  --color-clay-900: oklch(0.232 0.0098 62);
-  --color-clay-950: oklch(0.162 0.0082 60);
-  --color-lawa-50: oklch(0.972 0.012 210);
-  --color-lawa-100: oklch(0.942 0.024 210);
-  --color-lawa-200: oklch(0.882 0.042 209);
-  --color-lawa-300: oklch(0.800 0.058 208);
-  --color-lawa-400: oklch(0.678 0.072 210);
-  --color-lawa-500: oklch(0.560 0.078 212);
-  --color-lawa-600: oklch(0.462 0.074 214);
-  --color-lawa-700: oklch(0.382 0.062 216);
-  --color-lawa-800: oklch(0.310 0.048 218);
-  --color-lawa-900: oklch(0.252 0.036 220);
-  --color-lawa-950: oklch(0.182 0.026 222);
-  --color-palayok-50: oklch(0.968 0.018 52);
-  --color-palayok-100: oklch(0.938 0.038 50);
-  --color-palayok-200: oklch(0.880 0.068 48);
-  --color-palayok-300: oklch(0.806 0.098 46);
-  --color-palayok-400: oklch(0.716 0.126 44);
-  --color-palayok-500: oklch(0.644 0.138 42);
-  --color-palayok-600: oklch(0.566 0.132 40);
-  --color-palayok-700: oklch(0.472 0.110 38);
-  --color-palayok-800: oklch(0.386 0.088 37);
-  --color-palayok-900: oklch(0.318 0.070 36);
-  --color-success-50: oklch(0.960 0.026 152);
-  --color-success-100: oklch(0.918 0.052 152);
-  --color-success-500: oklch(0.612 0.118 150);
-  --color-success-600: oklch(0.520 0.104 150);
-  --color-success-700: oklch(0.432 0.086 150);
-  --color-warning-50: oklch(0.972 0.030 88);
-  --color-warning-100: oklch(0.938 0.062 87);
-  --color-warning-500: oklch(0.748 0.132 80);
-  --color-warning-600: oklch(0.652 0.124 74);
-  --color-warning-700: oklch(0.528 0.102 70);
-  --color-danger-50: oklch(0.962 0.018 22);
-  --color-danger-100: oklch(0.926 0.038 22);
-  --color-danger-500: oklch(0.602 0.176 24);
-  --color-danger-600: oklch(0.528 0.170 24);
-  --color-danger-700: oklch(0.444 0.142 24);
-  --color-paper: oklch(0.988 0.0035 85);
-  --color-surface: oklch(1 0 0);
-  --color-surface-sunken: oklch(0.968 0.0055 82);
-  --color-ink: oklch(0.212 0.0098 62);
-  --color-ink-muted: oklch(0.482 0.0120 68);
-  --color-ink-subtle: oklch(0.545 0.0115 71);
-  --color-hairline: oklch(0.912 0.0072 80);
-  --color-hairline-strong: oklch(0.858 0.0090 77);
-  --color-on-primary: oklch(0.985 0.0035 85);
-  --color-on-primary-muted: oklch(0.92 0.006 82);
-  --color-primary: oklch(0.382 0.062 216);
-  --color-primary-hover: oklch(0.310 0.048 218);
-  --color-primary-active: oklch(0.252 0.036 220);
-  --color-accent-solid: oklch(0.566 0.132 40);
-  --color-accent-solid-hover: oklch(0.472 0.110 38);
-  --color-accent-solid-active: oklch(0.386 0.088 37);
-  --color-danger-solid: oklch(0.528 0.170 24);
-  --color-danger-solid-hover: oklch(0.444 0.142 24);
+  --shadow-xs: 0 1px 2px oklch(0.212 0.0098 62 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.212 0.0098 62 / 0.05), 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.04);
+  --shadow-md: 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.05), 0 6px 12px -3px oklch(0.212 0.0098 62 / 0.06);
+  --shadow-lg: 0 4px 8px -2px oklch(0.212 0.0098 62 / 0.05), 0 14px 26px -6px oklch(0.212 0.0098 62 / 0.08);
+  --shadow-xl: 0 8px 16px -4px oklch(0.212 0.0098 62 / 0.06), 0 28px 48px -12px oklch(0.212 0.0098 62 / 0.10);
+  --shadow-inset-hairline: inset 0 0 0 1px oklch(0.212 0.0098 62 / 0.06);
   background-color: var(--color-paper);
   color: var(--color-ink);
 }
 
 [data-theme-specimen='dark'] {
   color-scheme: dark;
-  --color-clay-50: oklch(0.22 0.0085 60);
-  --color-clay-100: oklch(0.26 0.009 62);
-  --color-clay-200: oklch(0.32 0.01 64);
-  --color-clay-300: oklch(0.40 0.011 66);
-  --color-clay-400: oklch(0.52 0.011 68);
-  --color-clay-500: oklch(0.64 0.01 71);
-  --color-clay-600: oklch(0.74 0.008 74);
-  --color-clay-700: oklch(0.84 0.006 80);
-  --color-clay-800: oklch(0.90 0.0045 82);
-  --color-clay-900: oklch(0.94 0.0035 85);
-  --color-clay-950: oklch(0.97 0.0025 85);
-  --color-lawa-50: oklch(0.24 0.03 214);
-  --color-lawa-100: oklch(0.28 0.04 214);
-  --color-lawa-200: oklch(0.34 0.05 212);
-  --color-lawa-300: oklch(0.44 0.055 210);
-  --color-lawa-400: oklch(0.54 0.06 210);
-  --color-lawa-500: oklch(0.64 0.065 210);
-  --color-lawa-600: oklch(0.72 0.06 210);
-  --color-lawa-700: oklch(0.78 0.05 210);
-  --color-lawa-800: oklch(0.86 0.035 210);
-  --color-lawa-900: oklch(0.92 0.022 210);
-  --color-lawa-950: oklch(0.96 0.014 210);
-  --color-palayok-50: oklch(0.24 0.03 40);
-  --color-palayok-100: oklch(0.28 0.04 40);
-  --color-palayok-200: oklch(0.36 0.055 42);
-  --color-palayok-300: oklch(0.46 0.07 42);
-  --color-palayok-400: oklch(0.56 0.08 42);
-  --color-palayok-500: oklch(0.68 0.1 42);
-  --color-palayok-600: oklch(0.64 0.1 40);
-  --color-palayok-700: oklch(0.72 0.09 40);
-  --color-palayok-800: oklch(0.82 0.07 38);
-  --color-palayok-900: oklch(0.90 0.05 36);
-  --color-success-50: oklch(0.24 0.04 152);
-  --color-success-100: oklch(0.28 0.05 152);
-  --color-success-500: oklch(0.68 0.11 150);
-  --color-success-600: oklch(0.74 0.1 150);
-  --color-success-700: oklch(0.82 0.08 150);
-  --color-warning-50: oklch(0.26 0.04 80);
-  --color-warning-100: oklch(0.30 0.055 80);
-  --color-warning-500: oklch(0.74 0.12 80);
-  --color-warning-600: oklch(0.78 0.11 74);
-  --color-warning-700: oklch(0.86 0.09 70);
-  --color-danger-50: oklch(0.24 0.04 24);
-  --color-danger-100: oklch(0.28 0.055 24);
-  --color-danger-500: oklch(0.66 0.15 24);
-  --color-danger-600: oklch(0.70 0.14 24);
-  --color-danger-700: oklch(0.82 0.1 24);
-  --color-paper: oklch(0.18 0.008 60);
-  --color-surface: oklch(0.23 0.009 62);
-  --color-surface-sunken: oklch(0.15 0.008 60);
-  --color-ink: oklch(0.94 0.004 85);
-  --color-ink-muted: oklch(0.74 0.008 74);
-  --color-ink-subtle: oklch(0.64 0.009 71);
-  --color-hairline: oklch(0.40 0.008 64);
-  --color-hairline-strong: oklch(0.50 0.009 66);
-  --color-on-primary: oklch(0.985 0.0035 85);
-  --color-on-primary-muted: oklch(0.90 0.006 82);
-  --color-primary: oklch(0.48 0.075 212);
-  --color-primary-hover: oklch(0.40 0.07 214);
-  --color-primary-active: oklch(0.34 0.06 216);
-  --color-accent-solid: oklch(0.64 0.11 40);
-  --color-accent-solid-hover: oklch(0.56 0.1 40);
-  --color-accent-solid-active: oklch(0.48 0.09 38);
-  --color-danger-solid: oklch(0.58 0.16 24);
-  --color-danger-solid-hover: oklch(0.50 0.14 24);
+  --shadow-xs: 0 0 0 1px oklch(0.94 0.004 85 / 0.08);
+  --shadow-sm: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 4px 12px oklch(0 0 0 / 0.45);
+  --shadow-md: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 8px 20px oklch(0 0 0 / 0.5);
+  --shadow-lg: 0 0 0 1px oklch(0.94 0.004 85 / 0.12), 0 14px 28px oklch(0 0 0 / 0.55);
+  --shadow-xl: 0 0 0 1px oklch(0.94 0.004 85 / 0.14), 0 24px 48px oklch(0 0 0 / 0.6);
+  --shadow-inset-hairline: inset 0 0 0 1px oklch(0.94 0.004 85 / 0.1);
   background-color: var(--color-paper);
   color: var(--color-ink);
 }
