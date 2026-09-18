@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Inbox, TriangleAlert } from 'lucide-react';
 import {
   Button,
-  ButtonLink,
   Card,
   CardBody,
   Container,
@@ -12,21 +11,52 @@ import {
   Skeleton,
   useToast,
 } from '@/components/ui';
-import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { useAnswerRatingReport, useRatingReports } from '@/features/ratings/api';
 import { starsLabel } from '@/features/ratings/format';
 import { StarRow } from '@/features/ratings/components/StarRow';
 import type { RatingReport } from '@/features/ratings/types';
 import { toApiError } from '@/lib/api-client';
-import { pbBottomNav } from '@/lib/bottom-nav';
 
 export function AdminRatingsPage() {
+  const reports = useRatingReports();
+
   return (
-    <RequireAdmin>
-      <AdminRatingsInner />
-    </RequireAdmin>
+    <Container width="wide" className="py-(--section-gap)">
+      <p className="u-eyebrow">Administration</p>
+      <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Reported ratings</h1>
+      <p className="mt-3 max-w-xl text-md text-ink-muted">
+        Oldest first. An appeal is a creative's only recourse against a rating, so answer it
+        quickly: either the rating stands, or it goes with a reason on the record.
+      </p>
+
+      <div className="mt-10 space-y-4">
+        {reports.isPending && (
+          <>
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-56 w-full" />
+          </>
+        )}
+
+        {reports.isError && (
+          <EmptyState
+            icon={<TriangleAlert className="size-5" />}
+            title="Could not load the queue"
+            description={reports.error.message}
+          />
+        )}
+
+        {reports.data && reports.data.data.length === 0 && (
+          <EmptyState
+            icon={<Inbox className="size-5" />}
+            title="No reported ratings"
+            description="Appeals from creatives about ratings on their profile appear here."
+          />
+        )}
+
+        {reports.data?.data.map((report) => <ReportRow key={report.id} report={report} />)}
+      </div>
+    </Container>
   );
 }
 
@@ -149,65 +179,3 @@ function ReportRow({ report }: { report: RatingReport }) {
   );
 }
 
-function AdminRatingsInner() {
-  const reports = useRatingReports();
-
-  return (
-    <div className="min-h-dvh bg-paper">
-      <header className="border-b border-hairline">
-        <Container width="wide" className="flex h-16 items-center justify-between">
-          <Link to="/" className="u-display text-xl font-semibold text-ink">
-            Bilikha
-          </Link>
-          <div className="flex gap-2">
-            <ButtonLink to="/admin" variant="ghost" size="sm">
-              Review queue
-            </ButtonLink>
-            <ButtonLink to="/" variant="ghost" size="sm">
-              Back to site
-            </ButtonLink>
-          </div>
-        </Container>
-      </header>
-      <RegistrationStatusBanner />
-
-      <main className={pbBottomNav}>
-        <Container width="wide" className="py-(--section-gap)">
-          <p className="u-eyebrow">Administration</p>
-          <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Reported ratings</h1>
-          <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Oldest first. An appeal is a creative's only recourse against a rating, so answer it
-            quickly: either the rating stands, or it goes with a reason on the record.
-          </p>
-
-          <div className="mt-10 space-y-4">
-            {reports.isPending && (
-              <>
-                <Skeleton className="h-56 w-full" />
-                <Skeleton className="h-56 w-full" />
-              </>
-            )}
-
-            {reports.isError && (
-              <EmptyState
-                icon={<TriangleAlert className="size-5" />}
-                title="Could not load the queue"
-                description={reports.error.message}
-              />
-            )}
-
-            {reports.data && reports.data.data.length === 0 && (
-              <EmptyState
-                icon={<Inbox className="size-5" />}
-                title="No reported ratings"
-                description="Appeals from creatives about ratings on their profile appear here."
-              />
-            )}
-
-            {reports.data?.data.map((report) => <ReportRow key={report.id} report={report} />)}
-          </div>
-        </Container>
-      </main>
-    </div>
-  );
-}
