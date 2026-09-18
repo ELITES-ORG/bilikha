@@ -248,9 +248,11 @@
 }
 
 /* Dark shadows only — colours now live in light-dark() above (ADR 0026).
-   These change geometry (a hairline ring), so they cannot ride light-dark(). */
+   These change geometry (a hairline ring), so they cannot ride light-dark().
+   Skip when the user forced Light: otherwise a dark OS would keep dark
+   elevation under a light palette. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --shadow-xs: 0 0 0 1px oklch(0.94 0.004 85 / 0.08);
     --shadow-sm: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 4px 12px oklch(0 0 0 / 0.45);
     --shadow-md: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 8px 20px oklch(0 0 0 / 0.5);
@@ -258,6 +260,32 @@
     --shadow-xl: 0 0 0 1px oklch(0.94 0.004 85 / 0.14), 0 24px 48px oklch(0 0 0 / 0.6);
     --shadow-inset-hairline: inset 0 0 0 1px oklch(0.94 0.004 85 / 0.1);
   }
+}
+
+/*
+ * Manual theme choice. color-scheme flips every light-dark() token. Shadows
+ * are set here too: Step 2.1 said color-scheme alone, but without shadow
+ * resets Light-on-dark-OS and Dark-on-light-OS keep the wrong elevation —
+ * the same pairing specimens already need.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --shadow-xs: 0 1px 2px oklch(0.212 0.0098 62 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.212 0.0098 62 / 0.05), 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.04);
+  --shadow-md: 0 2px 4px -1px oklch(0.212 0.0098 62 / 0.05), 0 6px 12px -3px oklch(0.212 0.0098 62 / 0.06);
+  --shadow-lg: 0 4px 8px -2px oklch(0.212 0.0098 62 / 0.05), 0 14px 26px -6px oklch(0.212 0.0098 62 / 0.08);
+  --shadow-xl: 0 8px 16px -4px oklch(0.212 0.0098 62 / 0.06), 0 28px 48px -12px oklch(0.212 0.0098 62 / 0.10);
+  --shadow-inset-hairline: inset 0 0 0 1px oklch(0.212 0.0098 62 / 0.06);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --shadow-xs: 0 0 0 1px oklch(0.94 0.004 85 / 0.08);
+  --shadow-sm: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 4px 12px oklch(0 0 0 / 0.45);
+  --shadow-md: 0 0 0 1px oklch(0.94 0.004 85 / 0.1), 0 8px 20px oklch(0 0 0 / 0.5);
+  --shadow-lg: 0 0 0 1px oklch(0.94 0.004 85 / 0.12), 0 14px 28px oklch(0 0 0 / 0.55);
+  --shadow-xl: 0 0 0 1px oklch(0.94 0.004 85 / 0.14), 0 24px 48px oklch(0 0 0 / 0.6);
+  --shadow-inset-hairline: inset 0 0 0 1px oklch(0.94 0.004 85 / 0.1);
 }
 
 /*

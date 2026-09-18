@@ -22,6 +22,33 @@
       media="(prefers-color-scheme: dark)"
     />
 
+    <!--
+      Apply a stored theme choice before the stylesheet paints (plan 0024).
+      Key and valid values must stay in step with src/lib/theme-preference.ts.
+      Storage access is wrapped — private browsing and blocked site data throw.
+    -->
+    <script>
+      (function () {
+        var KEY = 'bilikha-theme';
+        var LIGHT_PAPER = '#fcfbf8';
+        var DARK_PAPER = '#14110e';
+        var pref = 'system';
+        try {
+          var raw = localStorage.getItem(KEY);
+          if (raw === 'light' || raw === 'dark') pref = raw;
+        } catch (e) {}
+        if (pref === 'system') return;
+        document.documentElement.setAttribute('data-theme', pref);
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        if (metas.length < 2) return;
+        var color = pref === 'light' ? LIGHT_PAPER : DARK_PAPER;
+        metas[0].content = color;
+        metas[0].removeAttribute('media');
+        metas[1].content = color;
+        metas[1].removeAttribute('media');
+      })();
+    </script>
+
     <title>Bilikha — Biliran Creative Industries Registry</title>
     <meta
       name="description"
