@@ -7,15 +7,13 @@ import type {
   RatingReport,
   RatingSummary,
 } from './types';
+import type { Paginated } from '@contracts/pagination';
 
 interface ApiResponse<T> {
   data: T;
 }
 
-interface ListResponse<T> {
-  data: T[];
-  meta: { page: number; limit: number; total: number };
-}
+type ListResponse<T> = Paginated<T>;
 
 export const ratingKeys = {
   all: ['ratings'] as const,

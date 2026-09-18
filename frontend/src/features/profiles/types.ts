@@ -12,6 +12,7 @@ import type {
   PublicProfile as ContractPublicProfile,
   PublicProfileSubdomain,
 } from '@contracts/profiles';
+import type { Paginated } from '@contracts/pagination';
 
 export type { ProfileOffer, PublicProfileSubdomain };
 
@@ -33,7 +34,4 @@ export interface ListPublishedParams {
   limit?: number;
 }
 
-export interface ListPublishedResult {
-  data: PublicProfile[];
-  meta: { page: number; limit: number; total: number };
-}
+export type ListPublishedResult = Paginated<PublicProfile>;

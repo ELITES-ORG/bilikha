@@ -6,6 +6,7 @@ import { users } from '../../db/schema/index.js';
 import { getPublishedBySlug, listPublished } from './profiles.service.js';
 import { listRatingsSchema } from '../ratings/ratings.schema.js';
 import { listForProfile, summaryForProfile } from '../ratings/ratings.service.js';
+import type { ListMeta } from '../../contracts/pagination.js';
 
 export const profilesRouter: Router = Router();
 
@@ -36,10 +37,8 @@ profilesRouter.get('/', async (req, res) => {
     viewerMunicipalityId,
   });
 
-  res.json({
-    data,
-    meta: { page: query.page, limit: query.limit, total },
-  });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total };
+  res.json({ data, meta });
 });
 
 profilesRouter.get('/:slug', async (req, res) => {
@@ -54,7 +53,8 @@ profilesRouter.get('/:slug', async (req, res) => {
 profilesRouter.get('/:slug/ratings', async (req, res) => {
   const query = listRatingsSchema.parse(req.query);
   const { data, total } = await listForProfile(req.params.slug!, query);
-  res.json({ data, meta: { page: query.page, limit: query.limit, total } });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total };
+  res.json({ data, meta });
 });
 
 profilesRouter.get('/:slug/ratings/summary', async (req, res) => {

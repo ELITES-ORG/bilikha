@@ -25,3 +25,17 @@ two sides cannot drift apart in authorship
 The service annotates its return type with the contract. That annotation is the
 whole mechanism — a function that happens to return the right shape proves
 nothing.
+
+## Paginated lists
+
+A list route answers `{ data, meta }`. Use `Paginated<T>` from `pagination.ts`,
+and annotate the meta the route builds:
+
+```ts
+const meta: ListMeta = { page: query.page, limit: query.limit, total };
+res.json({ data, meta });
+```
+
+The annotation is the point. `res.json()` takes `any`, so an unannotated object
+literal is checked against nothing — which is how the same three fields came to
+be written out sixteen times before anything tied them together.

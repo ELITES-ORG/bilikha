@@ -18,6 +18,8 @@ import {
   setAccountStatus,
   statusCounts,
 } from './admin.service.js';
+import type { AdminQueueMeta } from '../../contracts/admin.js';
+import type { ListMeta } from '../../contracts/pagination.js';
 
 export const adminRouter: Router = Router();
 
@@ -29,10 +31,14 @@ adminRouter.get('/profiles', async (req, res) => {
   const query = listQuerySchema.parse(req.query);
   const { rows, total } = await listProfiles(query);
 
-  res.json({
-    data: rows,
-    meta: { page: query.page, limit: query.limit, total, status: query.status },
-  });
+  const meta: AdminQueueMeta = {
+    page: query.page,
+    limit: query.limit,
+    total,
+    status: query.status,
+  };
+
+  res.json({ data: rows, meta });
 });
 
 adminRouter.get('/profiles/counts', async (_req, res) => {
@@ -43,7 +49,8 @@ adminRouter.get('/media', async (req, res) => {
   const page = z.coerce.number().int().positive().default(1).parse(req.query.page ?? 1);
   const limit = z.coerce.number().int().positive().max(50).default(20).parse(req.query.limit ?? 20);
   const { data, total } = await listUnreviewedMedia({ page, limit });
-  res.json({ data, meta: { page, limit, total } });
+  const meta: ListMeta = { page, limit, total };
+  res.json({ data, meta });
 });
 
 adminRouter.post('/media/:kind/:id/review', async (req, res) => {
@@ -118,7 +125,8 @@ const ratingReasonSchema = z.object({
 adminRouter.get('/ratings', async (req, res) => {
   const query = listRatingsSchema.parse(req.query);
   const { data, total } = await adminListOpenReports(query);
-  res.json({ data, meta: { page: query.page, limit: query.limit, total } });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total };
+  res.json({ data, meta });
 });
 
 adminRouter.post('/ratings/reports/:id/dismiss', async (req, res) => {

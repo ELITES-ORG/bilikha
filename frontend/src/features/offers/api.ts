@@ -8,6 +8,7 @@ import type {
   PublishedOfferDetail,
 } from '@contracts/offers';
 import { apiClient, toApiError } from '@/lib/api-client';
+import type { Paginated } from '@contracts/pagination';
 
 export type {
   OfferImage,
@@ -58,10 +59,7 @@ export type ListOffersParams = {
   limit?: number;
 };
 
-export type ListOffersResult = {
-  data: PublishedOfferCard[];
-  meta: { page: number; limit: number; total: number };
-};
+export type ListOffersResult = Paginated<PublishedOfferCard>;
 
 export class OfferNotFoundError extends Error {
   constructor() {

@@ -1,4 +1,5 @@
 import type { AdminMediaRow } from '@contracts/admin';
+import type { Paginated } from '@contracts/pagination';
 import { Link } from 'react-router-dom';
 import { Inbox } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,10 +10,7 @@ import { Badge, Button, Container, EmptyState, Skeleton } from '@/components/ui'
 type MediaKind = AdminMediaRow['kind'];
 
 
-interface ListResponse {
-  data: AdminMediaRow[];
-  meta: { page: number; limit: number; total: number };
-}
+type ListResponse = Paginated<AdminMediaRow>;
 
 function useAdminMedia() {
   return useQuery({

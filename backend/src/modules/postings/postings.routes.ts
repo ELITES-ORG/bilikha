@@ -18,6 +18,7 @@ import {
   listMine,
   updatePosting,
 } from './postings.service.js';
+import type { ListMeta } from '../../contracts/pagination.js';
 
 export const postingsRouter: Router = Router();
 
@@ -62,10 +63,8 @@ postingsRouter.get('/', requireAuth, async (req, res) => {
     ...query,
     viewerMunicipalityId: municipalityId,
   });
-  res.json({
-    data: result.data,
-    meta: { page: query.page, limit: query.limit, total: result.total },
-  });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total: result.total };
+  res.json({ data: result.data, meta });
 });
 
 postingsRouter.get('/:id', requireAuth, async (req, res) => {

@@ -84,6 +84,25 @@ would be a poor trade; this one costs none.
 service, not the route. A route that reshapes what it received puts the drift
 back one layer along, where nothing is watching.
 
+**Amended 2026-09-19, after auditing whether that was actually true.** It was,
+for row data: no route maps, filters, spreads or deletes anything — checked
+across all thirteen route files, not assumed from the rule's existence.
+
+But the paragraph had missed the one shape a route does build itself. The
+pagination envelope, `{ page, limit, total }`, was assembled by hand in nine
+routes and declared inline in seven more places across the two sides, bound by
+nothing. It is now `ListMeta` and `Paginated<T>` in
+[`contracts/pagination.ts`](../../backend/src/contracts/pagination.ts), and each
+route annotates the object it builds, so the envelope is checked the way a
+service's return is. Adding a field to `ListMeta` now fails nine compiles
+instead of silently shipping a short envelope; renaming one fails four pages on
+the reading side. Both directions tested.
+
+`page` and `limit` are built from the parsed query, which is correct only while
+no service clamps them — today the schemas reject an out-of-range limit rather
+than narrowing it. The contract says so, because that is the assumption that
+would make the meta lie if it ever stopped holding.
+
 **This fixes authoring drift, not deployment skew, and the difference matters.**
 The two tiers deploy independently — the frontend can be live on Vercel while
 Render still serves an older payload. A shared type cannot know that. Fields

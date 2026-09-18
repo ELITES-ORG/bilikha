@@ -1,11 +1,13 @@
 import type { AgreementCard } from './agreements.js';
+import type { Paginated } from './pagination.js';
 
 /**
  * Conversation list and thread responses (ADR 0037).
  *
- * The agreement card on a message is duplicated here rather than imported from
- * an agreements contract: contract files may not import anything, including
- * each other. Keep the fields in step with AgreementCard when that lands.
+ * The agreement card on a message is the agreements contract's card, named
+ * here rather than copied. An earlier rule forbade a contract from importing
+ * a sibling, which had produced a second copy of the card that inlined the
+ * status and lifecycle unions; the rule was amended and the copy removed.
  */
 
 export interface ConversationOfferCard {
@@ -75,7 +77,4 @@ export interface ConversationListItem {
   lastMessageAt: string;
 }
 
-export interface ConversationListResult {
-  data: ConversationListItem[];
-  meta: { total: number; page: number; limit: number };
-}
+export type ConversationListResult = Paginated<ConversationListItem>;

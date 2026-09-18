@@ -10,6 +10,7 @@ import type {
   PostingStatus,
   PostingSubdomain,
 } from '@contracts/postings';
+import type { Paginated } from '@contracts/pagination';
 
 export type {
   Posting,
@@ -46,7 +47,4 @@ export type ListPostingsParams = {
   limit?: number;
 };
 
-export type ListPostingsResult = {
-  data: Posting[];
-  meta: { page: number; limit: number; total: number };
-};
+export type ListPostingsResult = Paginated<Posting>;

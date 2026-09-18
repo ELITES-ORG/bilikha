@@ -2,6 +2,8 @@
  * Admin queue, profile detail, and account lookup responses (ADR 0037).
  */
 
+import type { ListMeta } from './pagination.js';
+
 export type AdminProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
 export type AdminQueueStatus = AdminProfileStatus | 'edited';
 
@@ -43,10 +45,8 @@ export interface AdminQueueRow {
   subdomainCount: number;
 }
 
-export interface AdminQueueMeta {
-  page: number;
-  limit: number;
-  total: number;
+/** The queue is the one list whose meta carries which tab was asked for. */
+export interface AdminQueueMeta extends ListMeta {
   status: AdminQueueStatus;
 }
 

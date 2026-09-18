@@ -13,15 +13,10 @@ import type {
   StartConversationPayload,
   StartConversationResult,
 } from './types';
+import type { ListMeta } from '@contracts/pagination';
 
 interface ApiResponse<T> {
   data: T;
-}
-
-interface ListMeta {
-  page: number;
-  limit: number;
-  total: number;
 }
 
 export const conversationKeys = {

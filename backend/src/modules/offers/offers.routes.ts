@@ -23,6 +23,7 @@ import {
   reorderOffers,
   updateOffer,
 } from './offers.service.js';
+import type { ListMeta } from '../../contracts/pagination.js';
 
 export const offersRouter: Router = Router();
 const ownOffersRouter: Router = Router();
@@ -79,10 +80,8 @@ offersRouter.get('/', async (req, res) => {
   const query = listOffersQuerySchema.parse(req.query);
   const municipalityId = await viewerMunicipalityId(req.session.userId);
   const result = await listPublishedOffers({ ...query, viewerMunicipalityId: municipalityId });
-  res.json({
-    data: result.data,
-    meta: { page: query.page, limit: query.limit, total: result.total },
-  });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total: result.total };
+  res.json({ data: result.data, meta });
 });
 
 offersRouter.get('/:id', async (req, res) => {

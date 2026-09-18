@@ -7,6 +7,7 @@ import {
   markRead,
   unreadCount,
 } from './notifications.service.js';
+import type { ListMeta } from '../../contracts/pagination.js';
 
 export const notificationsRouter: Router = Router();
 
@@ -21,7 +22,9 @@ notificationsRouter.get('/', async (req, res) => {
   const query = listSchema.parse(req.query);
   const { data, total } = await listNotifications(req.session.userId!, query);
 
-  res.json({ data, meta: { page: query.page, limit: query.limit, total } });
+  const meta: ListMeta = { page: query.page, limit: query.limit, total };
+
+  res.json({ data, meta });
 });
 
 /**
