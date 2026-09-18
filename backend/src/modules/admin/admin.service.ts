@@ -18,6 +18,7 @@ import {
   offers,
   users,
 } from '../../db/schema/index.js';
+import type { AdminMediaListResult, AdminMediaRow } from '../../contracts/admin.js';
 import { AppError } from '../../lib/http-error.js';
 import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notify } from '../notifications/notifications.service.js';
@@ -322,25 +323,8 @@ async function notifyOwner(
   await notify({ userId: ownerId, actorUserId: adminId, type, targetId: profileId });
 }
 
-type MediaQueueRow = {
-  id: string;
-  kind: 'avatar' | 'offer';
-  createdAt: string;
-  url: string | null;
-  thumbUrl: string | null;
-  caption: string | null;
-  ownerName: string;
-  profileSlug: string | null;
-  profileId: string | null;
-  title?: string;
-  description?: string | null;
-  priceMinCentavos?: number | null;
-  priceMaxCentavos?: number | null;
-  flaggedAt?: string | null;
-  images?: { id: string; url: string; thumbUrl: string; sortOrder: number }[];
-  /** Sort helper — flagged offers rank above everything else. */
-  _flagged: boolean;
-};
+/** The wire row plus the sort helper, which `listUnreviewedMedia` strips. */
+type MediaQueueRow = AdminMediaRow & { _flagged: boolean };
 
 async function imagesForOfferQueue(offerIds: string[]) {
   const result = new Map<
@@ -374,7 +358,9 @@ async function imagesForOfferQueue(offerIds: string[]) {
   return result;
 }
 
-export async function listUnreviewedMedia(options: { page: number; limit: number }) {
+export async function listUnreviewedMedia(
+  options: { page: number; limit: number },
+): Promise<AdminMediaListResult> {
   const offset = (options.page - 1) * options.limit;
 
   const offerRows = await db

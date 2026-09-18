@@ -89,3 +89,40 @@ export interface AdminProfileListResult {
   rows: AdminQueueRow[];
   total: number;
 }
+
+/** One image on an offer awaiting media review. */
+export interface AdminMediaImage {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  sortOrder: number;
+}
+
+/**
+ * A row in the media review queue — an avatar or an offer's images.
+ *
+ * This is the wire shape. The service carries an extra `_flagged` sort helper
+ * internally and strips it before responding, so it is deliberately absent here.
+ */
+export interface AdminMediaRow {
+  id: string;
+  kind: 'avatar' | 'offer';
+  createdAt: string;
+  url: string | null;
+  thumbUrl: string | null;
+  caption: string | null;
+  ownerName: string;
+  profileSlug: string | null;
+  profileId: string | null;
+  title?: string;
+  description?: string | null;
+  priceMinCentavos?: number | null;
+  priceMaxCentavos?: number | null;
+  flaggedAt?: string | null;
+  images?: AdminMediaImage[];
+}
+
+export interface AdminMediaListResult {
+  data: AdminMediaRow[];
+  total: number;
+}

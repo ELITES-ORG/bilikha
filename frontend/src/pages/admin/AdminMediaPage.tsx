@@ -1,3 +1,4 @@
+import type { AdminMediaRow } from '@contracts/admin';
 import { Link } from 'react-router-dom';
 import { Inbox } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -5,27 +6,11 @@ import { apiClient, toApiError } from '@/lib/api-client';
 import { formatPriceRange } from '@/lib/money';
 import { Badge, Button, Container, EmptyState, Skeleton } from '@/components/ui';
 
-type MediaKind = 'avatar' | 'offer';
+type MediaKind = AdminMediaRow['kind'];
 
-type MediaRow = {
-  id: string;
-  kind: MediaKind;
-  createdAt: string;
-  url: string | null;
-  thumbUrl: string | null;
-  caption: string | null;
-  ownerName: string;
-  profileSlug: string | null;
-  title?: string | null;
-  description?: string | null;
-  priceMinCentavos?: number | null;
-  priceMaxCentavos?: number | null;
-  flaggedAt?: string | null;
-  images?: Array<{ id: string; url: string; thumbUrl: string }>;
-};
 
 interface ListResponse {
-  data: MediaRow[];
+  data: AdminMediaRow[];
   meta: { page: number; limit: number; total: number };
 }
 
