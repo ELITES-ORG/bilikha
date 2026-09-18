@@ -62,7 +62,7 @@ apply unchanged. Seven specific to this plan:
 | 1. The layout | 3 / 3 | Done |
 | 2. Move the pages | 2 / 2 | Done |
 | 3. Phones | 1 / 1 | Done (code; 346px not eyeballed) |
-| 4. Verification | 1 / 4 | Partial — automated pass green; interactive left open |
+| 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
 
 ---
 
@@ -161,10 +161,8 @@ apply unchanged. Seven specific to this plan:
 
 ### Step 4.4 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit.
-
-Local five checks exited 0 before push; CI tick waits on the green run.
 
 ---
 
