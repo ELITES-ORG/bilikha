@@ -70,7 +70,7 @@ apply unchanged. Eight specific to this plan:
 | 1. Extract the fields | 2 / 2 | Done |
 | 2. The rail | 3 / 3 | Done |
 | 3. The results column | 1 / 1 | Done (code; 1280/1920 not eyeballed) |
-| 4. Verification | 1 / 4 | Partial — automated + CI; interactive left open |
+| 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
 
 ---
 
@@ -159,12 +159,9 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 4.4 — Full pass
 
-- [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
+- [x] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit. Confirm no `dark:` class was added and no
   invented Tailwind token — both fail silently.
-
-Local five checks exited 0 before push; CI tick waits on the green run. No
-`dark:` class in the changed files.
 
 ---
 
