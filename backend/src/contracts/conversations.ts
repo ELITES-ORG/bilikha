@@ -1,3 +1,5 @@
+import type { AgreementCard } from './agreements.js';
+
 /**
  * Conversation list and thread responses (ADR 0037).
  *
@@ -27,25 +29,12 @@ export interface ConversationPostingCard {
   subdomainName?: string;
 }
 
-export interface ConversationAgreementCard {
-  id: string;
-  version: number;
-  packageTitle: string;
-  totalCentavos: number;
-  startDate: string;
-  endDate: string;
-  durationDays: number;
-  status: 'sent' | 'accepted' | 'superseded' | 'withdrawn';
-  state:
-    | 'Awaiting response'
-    | 'Superseded'
-    | 'Withdrawn'
-    | 'Agreed'
-    | 'In progress'
-    | 'Awaiting confirmation'
-    | 'Completed'
-    | 'Cancelled';
-}
+/**
+ * The same card the agreements API returns — aliased, not copied. It used to
+ * be a duplicate that inlined the status and state unions, so adding a
+ * lifecycle state would have updated one copy and silently not the other.
+ */
+export type ConversationAgreementCard = AgreementCard;
 
 export interface ConversationMessage {
   id: string;

@@ -6,10 +6,15 @@ two sides cannot drift apart in authorship
 
 ## Rules
 
-1. **No imports.** Not from Drizzle, not from another contract, not from
-   anywhere. The backend resolves `NodeNext` (relative imports need `.js`) and
-   the frontend resolves `bundler`; a file with no specifiers has nothing to
-   disagree about.
+1. **No imports, except a type-only import of a sibling contract.**
+   `import type { AgreementCard } from './agreements.js'` is allowed and
+   typechecks under both resolution modes — the backend's `NodeNext` (which
+   needs the `.js`) and the frontend's `bundler`.
+
+   Nothing else. Not Drizzle, not a helper, not a schema. The rule started as
+   "no imports at all" and was relaxed once it had produced a copy of
+   `AgreementCard` inside `conversations.ts` — duplication in the one place
+   built to prevent it.
 
 2. **No runtime code.** No constants, no helpers, no functions, no enums that
    emit JavaScript, no zod. If it compiles to JS it does not belong here.

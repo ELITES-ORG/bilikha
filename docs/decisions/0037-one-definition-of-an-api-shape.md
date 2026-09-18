@@ -43,11 +43,28 @@ by both sides.**
 The backend annotates the service's return type with it. The frontend imports
 the same file. TypeScript then refuses to compile whichever side drifts.
 
-**Contracts contain types and nothing else — no imports, no runtime code.** That
-is a discipline and a necessity. The backend resolves modules as `NodeNext`,
-where a relative import needs a `.js` specifier; the frontend resolves as
-`bundler`. A contract that imports another file has to satisfy both. A
-self-contained one has nothing to resolve.
+**Contracts contain types and nothing else — no runtime code, and no imports
+except type-only imports of sibling contracts.**
+
+The original rule forbade imports outright, on the grounds that the backend
+resolves `NodeNext` — where a relative import needs a `.js` specifier — while
+the frontend resolves `bundler`, and a contract importing anything has to
+satisfy both.
+
+**Amended 2026-09-19, after the restriction cost more than it bought.** It is
+true of arbitrary imports and not of a sibling contract: `import type
+{ AgreementCard } from './agreements.js'` typechecks under both modes, builds,
+and still puts nothing in the bundle. Tested, not assumed.
+
+Forbidding it had produced exactly what this record exists to prevent —
+`ConversationAgreementCard` was a copy of `AgreementCard` that inlined the
+status and lifecycle-state unions, so adding a state would have updated one copy
+and silently not the other. Duplication inside the thing built to stop
+duplication. `PublicProfileDetail` had likewise been exiled to the service
+because it needed `ProfileOffer` from another file.
+
+Still no imports of anything else. A contract that needs a Drizzle type, a
+helper or a zod schema is not describing a response.
 
 It also keeps the contract honest. A shape that needs a Drizzle type to describe
 itself is describing a table, not a response.

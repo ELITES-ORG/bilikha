@@ -1,3 +1,5 @@
+import type { ProfileOffer } from './offers.js';
+
 /**
  * Public creative profile responses (ADR 0037).
  *
@@ -34,3 +36,9 @@ export interface PublicProfileListResult {
   data: PublicProfile[];
   total: number;
 }
+
+/**
+ * The single-profile response: the directory shape plus its offers. Lived in
+ * the service while contracts could not import each other.
+ */
+export type PublicProfileDetail = PublicProfile & { offers: ProfileOffer[] };

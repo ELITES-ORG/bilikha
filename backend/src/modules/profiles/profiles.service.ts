@@ -1,6 +1,10 @@
 import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { ProfileOffer } from '../../contracts/offers.js';
-import type { PublicProfile, PublicProfileListResult } from '../../contracts/profiles.js';
+import type {
+  PublicProfile,
+  PublicProfileDetail,
+  PublicProfileListResult,
+} from '../../contracts/profiles.js';
 import { db } from '../../db/index.js';
 import {
   creativeDomains,
@@ -15,10 +19,9 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 
-export type { PublicProfile } from '../../contracts/profiles.js';
+export type { PublicProfile, PublicProfileDetail } from '../../contracts/profiles.js';
 
 /** Detail endpoint: directory card fields plus the profile's offers. */
-export type PublicProfileDetail = PublicProfile & { offers: ProfileOffer[] };
 
 export interface ListPublishedOptions {
   domain?: string;
