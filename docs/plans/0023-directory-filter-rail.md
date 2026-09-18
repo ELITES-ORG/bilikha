@@ -1,6 +1,6 @@
 # 0023. A filter rail for the directory
 
-- **Status:** Ready
+- **Status:** Done
 - **Related:** [ADR 0036](../decisions/0036-persistent-chrome-holds-the-most-used-control.md) ·
   [ADR 0023](../decisions/0023-bottom-navigation-on-phones.md) ·
   [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)
@@ -67,10 +67,10 @@ apply unchanged. Eight specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Extract the fields | 2 / 2 | Not started |
-| 2. The rail | 3 / 3 | Not started |
-| 3. The results column | 1 / 1 | Not started |
-| 4. Verification | 4 / 4 | Not started |
+| 1. Extract the fields | 2 / 2 | Done |
+| 2. The rail | 3 / 3 | Done |
+| 3. The results column | 1 / 1 | Done (code; 1280/1920 not eyeballed) |
+| 4. Verification | 1 / 4 | Partial — automated + CI; interactive left open |
 
 ---
 
@@ -78,11 +78,11 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 1.1 — One filter component
 
-- [ ] **Action.** Move the fields out of `DirectoryPage`'s panel into
+- [x] **Action.** Move the fields out of `DirectoryPage`'s panel into
   `frontend/src/features/directory/DirectoryFilters.tsx`: domain, sub-domain
   (disabled until a domain is chosen), municipality, and the budget pair where
   the mode shows it.
-- [ ] **Action.** It takes the current values and the callbacks it already uses.
+- [x] **Action.** It takes the current values and the callbacks it already uses.
   It owns no state of its own — rule 1.
 - [ ] **Verify.** The panel renders it and behaves exactly as before: same
   clearing of sub-domain when the domain changes, same budget handling, same
@@ -90,7 +90,7 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 1.2 — Prove the move
 
-- [ ] **Verify.** `git diff` on `DirectoryPage` for this step shows the fields
+- [x] **Verify.** `git diff` on `DirectoryPage` for this step shows the fields
   leaving and the component arriving, and no change to `setFilter`,
   `clearFilters`, `applyBudget` or `activeFilterCount`. Rule 2.
 
@@ -100,26 +100,26 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 2.1 — The layout
 
-- [ ] **Action.** At `lg` and up, the results area becomes two columns: a rail of
+- [x] **Action.** At `lg` and up, the results area becomes two columns: a rail of
   about `w-64` and the results beside it. Below `lg`, nothing changes — the rail
   is hidden and the toggle is shown.
-- [ ] **Action.** The rail is `<aside>` with an accessible name, sticky below the
+- [x] **Action.** The rail is `<aside>` with an accessible name, sticky below the
   site header so it stays with the reader on a long list.
-- [ ] **Note.** The toggle button and its badge hide at `lg` and up. Two ways to
+- [x] **Note.** The toggle button and its badge hide at `lg` and up. Two ways to
   reach the same filters on one screen is a bug, not redundancy.
 
 ### Step 2.2 — What the rail shows
 
-- [ ] **Action.** A heading, the active-filter count, Clear all when anything is
+- [x] **Action.** A heading, the active-filter count, Clear all when anything is
   set, and `DirectoryFilters`.
-- [ ] **Action.** Whichever fields the current mode and view apply, exactly as
+- [x] **Action.** Whichever fields the current mode and view apply, exactly as
   the panel decides today. Rule 6 — check *I'm for hire* as well as *I'm hiring*.
 
 ### Step 2.3 — Keyboard and reading order
 
-- [ ] **Action.** The rail sits before the results in the DOM, so tab order runs
+- [x] **Action.** The rail sits before the results in the DOM, so tab order runs
   filters then results.
-- [ ] **Verify.** No focus trap, no Escape handler, no open/closed state on the
+- [x] **Verify.** No focus trap, no Escape handler, no open/closed state on the
   rail. It is always there; only the panel below `lg` has state.
 
 ---
@@ -128,7 +128,7 @@ apply unchanged. Eight specific to this plan:
 
 ### Step 3.1 — A readable measure
 
-- [ ] **Action.** With the rail taking its width, constrain the results column so
+- [x] **Action.** With the rail taking its width, constrain the results column so
   a row's content does not stretch across the full container. The list keeps its
   `divide-y` shape.
 - [ ] **Verify.** At 1280px and 1920px a result row reads as a row, not as a
@@ -162,6 +162,9 @@ apply unchanged. Eight specific to this plan:
 - [ ] `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all exit 0, and
   CI green on the pushed commit. Confirm no `dark:` class was added and no
   invented Tailwind token — both fail silently.
+
+Local five checks exited 0 before push; CI tick waits on the green run. No
+`dark:` class in the changed files.
 
 ---
 
