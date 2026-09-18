@@ -181,6 +181,25 @@ export function DirectoryPage() {
     && parseBudget(draftBudgetMax) != null
     && (parseBudget(draftBudgetMin) as number) > (parseBudget(draftBudgetMax) as number);
 
+  const showBudget = !creativeHome && view === 'offers';
+
+  const filterFieldProps = {
+    domain,
+    subdomain,
+    municipality,
+    selectedDomain,
+    domains: domains.data,
+    municipalities: municipalities.data,
+    showBudget,
+    draftBudgetMin,
+    draftBudgetMax,
+    budgetInvalid,
+    onFilter: setFilter,
+    onDraftBudgetMinChange: setDraftBudgetMin,
+    onDraftBudgetMaxChange: setDraftBudgetMax,
+    onBudgetBlur: applyBudget,
+  };
+
   return (
     <>
       <SiteHeader />
@@ -259,9 +278,11 @@ export function DirectoryPage() {
                 </p>
               )}
 
+              {/* Phone/tablet only — at lg the rail is the filters. Two controls for
+                  the same thing on one screen is a bug (ADR 0036). */}
               <button
                 type="button"
-                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink"
+                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink lg:hidden"
                 aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"
@@ -286,7 +307,7 @@ export function DirectoryPage() {
                 role="dialog"
                 aria-label="Quick filters"
                 className={cn(
-                  'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md',
+                  'absolute inset-x-0 top-full z-20 mt-2 rounded-md border border-hairline bg-surface p-4 shadow-md lg:hidden',
                   'md:left-auto md:right-0 md:w-full md:max-w-lg',
                 )}
               >
@@ -314,20 +335,7 @@ export function DirectoryPage() {
                 </div>
 
                 <DirectoryFilters
-                  domain={domain}
-                  subdomain={subdomain}
-                  municipality={municipality}
-                  selectedDomain={selectedDomain}
-                  domains={domains.data}
-                  municipalities={municipalities.data}
-                  showBudget={!creativeHome && view === 'offers'}
-                  draftBudgetMin={draftBudgetMin}
-                  draftBudgetMax={draftBudgetMax}
-                  budgetInvalid={budgetInvalid}
-                  onFilter={setFilter}
-                  onDraftBudgetMinChange={setDraftBudgetMin}
-                  onDraftBudgetMaxChange={setDraftBudgetMax}
-                  onBudgetBlur={applyBudget}
+                  {...filterFieldProps}
                   onApplyBudget={() => {
                     applyBudget();
                     setFiltersOpen(false);
@@ -337,7 +345,40 @@ export function DirectoryPage() {
             )}
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 lg:flex lg:items-start lg:gap-10">
+            {/* Desktop rail: always present, no open/closed state. DOM before
+                results so tab order is filters then list. */}
+            <aside
+              aria-label="Directory filters"
+              className="hidden w-64 shrink-0 lg:block"
+            >
+              <div className="sticky top-20 space-y-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="text-sm font-medium text-ink">Filters</h2>
+                  {activeFilterCount > 0 && (
+                    <p className="text-xs text-ink-muted tabular-nums">
+                      {activeFilterCount} active
+                    </p>
+                  )}
+                </div>
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    className="text-sm text-ink-muted hover:text-ink"
+                    onClick={clearFilters}
+                  >
+                    Clear all
+                  </button>
+                )}
+                <DirectoryFilters
+                  {...filterFieldProps}
+                  onApplyBudget={applyBudget}
+                />
+              </div>
+            </aside>
+
+            {/* Readable measure beside the rail — not a grid, not full-bleed. */}
+            <div className="min-w-0 flex-1">
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
@@ -430,7 +471,7 @@ export function DirectoryPage() {
               )
             )}
 
-            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && (
+            {!creativeHome && view === 'creatives' && creatives.data && creatives.data.data.length === 0 && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
@@ -653,6 +694,7 @@ export function DirectoryPage() {
                 </Button>
               </div>
             )}
+            </div>
           </div>
         </Container>
       </main>
