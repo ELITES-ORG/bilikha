@@ -621,7 +621,7 @@ export function DirectoryPage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <h2
-                            className="u-display line-clamp-2 text-xl text-ink text-pretty group-hover:text-lawa-700"
+                            className="u-display -mt-[0.2em] line-clamp-2 text-xl leading-[1.2] text-ink text-pretty group-hover:text-lawa-700"
                             title={offer.title}
                           >
                             {offer.title}
