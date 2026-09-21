@@ -1,6 +1,6 @@
 # 0026. Mode moves to the account hub
 
-- **Status:** Complete, except CI confirmation on the pushed commit
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md) ·
   [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) ·
@@ -73,7 +73,7 @@ has the reasoning.
 | 1. One name for the modes | 2 / 2 | Complete |
 | 2. The control on Account | 2 / 2 | Complete |
 | 3. The mirrored surfaces | 4 / 4 | Complete |
-| 4. Verification | 3 / 4 | Partial — local gates green; CI pending push |
+| 4. Verification | 4 / 4 | Complete |
 
 ---
 
@@ -223,7 +223,7 @@ thing twice:
 - [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0. Grep found no surviving `I'm hiring` / `I'm for hire`, and no new
   `useState` holding a mode (rule 5).
-- [ ] **Verify.** CI green on the pushed commit.
+- [x] **Verify.** CI green on the pushed commit (`b3e212a`).
 
 ---
 
