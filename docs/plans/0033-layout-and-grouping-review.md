@@ -68,7 +68,7 @@ paths.
 |---|---|---|
 | 1. The shared corrections | 3 / 3 | Done |
 | 2. Account hub grouping | 2 / 2 | Done |
-| 3. Profile by visibility | 0 / 2 | Not started |
+| 3. Profile by visibility | 2 / 2 | Done |
 | 4. Offers rows | 0 / 2 | Not started |
 | 5. Postings badges | 0 / 2 | Not started |
 | 6. Security structure | 0 / 2 | Not started |
@@ -464,20 +464,20 @@ assume them.
 
 ### Step 3.1 — Two groups, by what is published
 
-- [ ] **Action.** *Shown on your public profile*: photo, all four name fields,
+- [x] **Action.** *Shown on your public profile*: photo, all four name fields,
   display name, bio, what you do, primary craft, municipality. *Not shown
   publicly*: barangay, contact preference.
-- [ ] **Action.** Where a former section splits across the line — Location does —
+- [x] **Action.** Where a former section splits across the line — Location does —
   mark it per field rather than separating fields that belong together.
-- [ ] **Why this one matters most.** [Constraint 7](../explanation/constraints.md)
+- [x] **Why this one matters most.** [Constraint 7](../explanation/constraints.md)
   names per-field visibility as an RA 10173 obligation, and a creative currently
   has no way to learn that their middle name and suffix are published.
 
 ### Step 3.2 — The two save models
 
-- [ ] **Action.** The photo saves immediately; everything else waits for `Save
+- [x] **Action.** The photo saves immediately; everything else waits for `Save
   profile`. Say so, or fold the photo into the form.
-- [ ] **Action.** Put the review notice where an editor sees it before reaching
+- [x] **Action.** Put the review notice where an editor sees it before reaching
   the end of a 3.2-screen form, and give the form a save affordance reachable
   without scrolling to the bottom.
 

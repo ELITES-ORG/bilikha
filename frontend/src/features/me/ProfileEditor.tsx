@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { toApiError } from '@/lib/api-client';
+import { cn } from '@/lib/cn';
 import { useUpdateOwnProfile } from './api';
 import { ProfileCraftFields, type ProfileCraftFormState } from './ProfileCraftFields';
 import type { OwnProfile, UpdateProfilePayload } from './types';
@@ -57,6 +58,7 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const unchanged = JSON.stringify(form) === JSON.stringify(saved);
+  const dirty = !unchanged;
 
   function update<K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -110,14 +112,87 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
     }
   }
 
+  const saveButton = (
+    <Button
+      type="submit"
+      loading={updateProfile.isPending}
+      disabled={unchanged || updateProfile.isPending}
+    >
+      Save profile
+    </Button>
+  );
+
+  const nameFields = (
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium text-ink">Name</h4>
+      <p className="text-xs text-ink-subtle">
+        First, middle, last and suffix all appear as your full name on the
+        directory and your public profile.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="First name"
+          required
+          autoComplete="given-name"
+          value={form.firstName}
+          onChange={(event) => update('firstName', event.target.value)}
+          error={fieldErrors.firstName}
+        />
+        <Input
+          label="Middle name"
+          value={form.middleName}
+          onChange={(event) => update('middleName', event.target.value)}
+          error={fieldErrors.middleName}
+        />
+        <Input
+          label="Last name"
+          required
+          autoComplete="family-name"
+          value={form.lastName}
+          onChange={(event) => update('lastName', event.target.value)}
+          error={fieldErrors.lastName}
+        />
+        <Input
+          label="Suffix"
+          placeholder="Jr., Sr., III"
+          value={form.suffix}
+          onChange={(event) => update('suffix', event.target.value)}
+          error={fieldErrors.suffix}
+        />
+      </div>
+    </div>
+  );
+
+  const photoBlock = (
+    <div className="space-y-2">
+      <AvatarUploader
+        name={`${form.firstName} ${form.lastName}`.trim() || profile.displayName || 'You'}
+        avatarUrl={user?.avatarUrl ?? null}
+      />
+      <p className="text-xs text-ink-subtle">
+        Saved as soon as you upload — no need to press Save profile.
+      </p>
+    </div>
+  );
+
   return (
-    <form onSubmit={(event) => void onSubmit(event)} className="space-y-8" noValidate>
+    <form
+      onSubmit={(event) => void onSubmit(event)}
+      className={cn('space-y-8', dirty && 'pb-24')}
+      noValidate
+    >
       {profile.status === 'suspended' && profile.rejectionReason && (
         <p
           className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
           role="status"
         >
           {profile.rejectionReason}
+        </p>
+      )}
+
+      {profile.status === 'published' && (
+        <p className="rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+          Your profile stays visible while public changes are reviewed.
         </p>
       )}
 
@@ -130,54 +205,18 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
         </p>
       )}
 
-      <section className="space-y-4">
-        <h3 className="text-lg font-medium text-ink">Photo</h3>
-        <AvatarUploader
-          name={`${form.firstName} ${form.lastName}`.trim() || profile.displayName || 'You'}
-          avatarUrl={user?.avatarUrl ?? null}
-        />
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="text-lg font-medium text-ink">Name</h3>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="First name"
-            required
-            autoComplete="given-name"
-            value={form.firstName}
-            onChange={(event) => update('firstName', event.target.value)}
-            error={fieldErrors.firstName}
-          />
-          <Input
-            label="Middle name"
-            value={form.middleName}
-            onChange={(event) => update('middleName', event.target.value)}
-            error={fieldErrors.middleName}
-          />
-          <Input
-            label="Last name"
-            required
-            autoComplete="family-name"
-            value={form.lastName}
-            onChange={(event) => update('lastName', event.target.value)}
-            error={fieldErrors.lastName}
-          />
-          <Input
-            label="Suffix"
-            placeholder="Jr., Sr., III"
-            value={form.suffix}
-            onChange={(event) => update('suffix', event.target.value)}
-            error={fieldErrors.suffix}
-          />
-        </div>
-      </section>
-
       <ProfileCraftFields
         form={form}
         fieldErrors={fieldErrors}
         phone={profile.phone}
         email={profile.email}
+        groupByVisibility
+        leadingPublic={
+          <>
+            {photoBlock}
+            {nameFields}
+          </>
+        }
         onUpdate={(key, value) => {
           setForm((current) => ({ ...current, [key]: value }));
           setFieldErrors((current) => {
@@ -196,19 +235,27 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
         }}
       />
 
-      {profile.status === 'published' && (
-        <p className="rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
-          Your profile stays visible while public changes are reviewed.
-        </p>
+      {/*
+        Sticky save when dirty so a 3-screen form does not hide whether an edit
+        registered. Bottom offset matches the phone tab bar (see bottom-nav.ts).
+        Complete literals only — Tailwind emits nothing for composed class names.
+      */}
+      {dirty ? (
+        <div
+          className={cn(
+            'fixed inset-x-0 z-30 border-t border-hairline bg-paper/95 px-(--gutter) py-3 backdrop-blur-sm',
+            'max-sm:bottom-[calc(var(--bottom-nav-h)+1px+env(safe-area-inset-bottom,0px))]',
+            'sm:bottom-0',
+          )}
+        >
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
+            <p className="text-sm text-ink-muted">Unsaved changes</p>
+            {saveButton}
+          </div>
+        </div>
+      ) : (
+        saveButton
       )}
-
-      <Button
-        type="submit"
-        loading={updateProfile.isPending}
-        disabled={unchanged || updateProfile.isPending}
-      >
-        Save profile
-      </Button>
     </form>
   );
 }
