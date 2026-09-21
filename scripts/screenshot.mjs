@@ -147,10 +147,16 @@ if (spec.record) {
           window.__frames.push({
             t: Math.round(performance.now()),
             bg: getComputedStyle(document.body || el).backgroundColor,
+            htmlBg: getComputedStyle(el).backgroundColor,
             scheme: getComputedStyle(el).colorScheme,
             theme: el.getAttribute('data-theme'),
             path: location.pathname,
             text: (document.body ? document.body.innerText : '').slice(0, 160),
+            boot: (() => {
+              const m = document.getElementById('bk-boot');
+              if (!m) return null;
+              return Math.round(Number(getComputedStyle(m).opacity) * 1000) / 1000;
+            })(),
           });
         } catch (e) {}
         if (window.__frames.length < 3000) requestAnimationFrame(sample);

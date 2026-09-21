@@ -1,6 +1,6 @@
 # 0030. Something to look at while it boots
 
-- **Status:** Ready
+- **Status:** Partial
 - **Owner:** implementing agent
 - **Related:** [plan 0024](./0024-theme-choice.md) (the pre-paint script this sits beside) ·
   [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
@@ -77,8 +77,8 @@ than the blank it replaced.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The indicator | 0 / 3 | Not started |
-| 2. Verification | 0 / 3 | Not started |
+| 1. The indicator | 3 / 3 | Done |
+| 2. Verification | 2 / 3 | Partial — local gates green; CI pending push |
 
 ---
 
@@ -86,30 +86,30 @@ than the blank it replaced.
 
 ### Step 1.1 — Markup and styles
 
-- [ ] **Action.** Inside `#root` in `frontend/index.html`, a single element
+- [x] **Action.** Inside `#root` in `frontend/index.html`, a single element
   centred in the viewport, with a `<style>` block in `<head>` for its keyframes.
   Everything inline or in that block; nothing from the app stylesheet.
-- [ ] **Action.** It inherits the theme the pre-paint script already applied —
+- [x] **Action.** It inherits the theme the pre-paint script already applied —
   on a dark-pinned device the indicator is light-on-dark from the first frame,
   with no flash of the other theme. Plan 0024 established that the script runs
   before paint; this depends on it.
-- [ ] **Action.** `role="status"` with a visually hidden *Loading Bilikha*, so a
+- [x] **Action.** `role="status"` with a visually hidden *Loading Bilikha*, so a
   screen reader is told rather than left silent.
 
 ### Step 1.2 — The delay
 
-- [ ] **Action.** Opacity 0, animating to 1 with a ~400ms delay, then looping.
+- [x] **Action.** Opacity 0, animating to 1 with a ~400ms delay, then looping.
   Present in the DOM from the start; invisible until the wait is real.
-- [ ] **Why not `setTimeout`.** The main thread is parsing a 617 KB bundle at
+- [x] **Why not `setTimeout`.** The main thread is parsing a 617 KB bundle at
   exactly that moment. A timer is the least reliable thing available; CSS
   animation runs off the main thread.
 
 ### Step 1.3 — The loop
 
-- [ ] **Action.** A slow, quiet loop — opacity or transform only (rule 3).
+- [x] **Action.** A slow, quiet loop — opacity or transform only (rule 3).
   Nothing spinning fast or bouncing; this is a registry for a province of
   180,000, not a game loader.
-- [ ] **Action.** Under `prefers-reduced-motion: reduce`, the loop stops and the
+- [x] **Action.** Under `prefers-reduced-motion: reduce`, the loop stops and the
   mark is simply visible.
 
 ---
@@ -118,24 +118,25 @@ than the blank it replaced.
 
 ### Step 2.1 — It shows when it should
 
-- [ ] **Verify.** Record frames against the **built** app on 800ms latency /
+- [x] **Verify.** Record frames against the **built** app on 800ms latency /
   300 kbps, as the measurement above was taken. The indicator is visible during
   the blank window. `scripts/screenshot.mjs` takes `record` and `throttle`;
   `docs/guides/check-a-screen-in-a-browser.md` has the shape of it.
 
 ### Step 2.2 — It does not show when it should not
 
-- [ ] **Verify.** On an unthrottled local load, no frame has the indicator at
+- [x] **Verify.** On an unthrottled local load, no frame has the indicator at
   full opacity. This is the check that matters most — a loader that flashes on
   every fast load is the failure this plan is trying to avoid.
 
 ### Step 2.3 — Full pass
 
-- [ ] **Verify.** Both themes, light and dark, with no flash of the wrong one at
+- [x] **Verify.** Both themes, light and dark, with no flash of the wrong one at
   the first frame — the same check plan 0024 step 4.2 made for the theme itself.
 - [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for `setTimeout`, and for any animated width,
-  height, top, left or margin.
+  height, top, left or margin. Local gates and grep done 2026-09-22; CI pending
+  push.
 
 ---
 
