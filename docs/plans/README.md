@@ -68,25 +68,25 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0007](./0007-one-account-and-creative-role.md) | One account, creative as an added role | Complete |
 | [0006](./0006-conversations-and-login-gated-messaging.md) | Conversations and login-gated messaging | Complete |
 | [0008](./0008-location-at-registration-and-nearby-first.md) | Location at registration, nearby-first ordering | Complete |
-| [0009](./0009-bio-avatars-and-portfolio-images.md) | Bio on cards, avatars, and portfolio images | Complete |
+| [0009](./0009-bio-avatars-and-portfolio-images.md) | Bio on cards, avatars, and portfolio images | Complete for what shipped |
 | [0010](./0010-offers-and-an-offer-directory.md) | Offers, and a directory that indexes them | Complete |
 | [0011](./0011-bottom-navigation-and-history.md) | Bottom navigation, and a history of what you inquired about | Complete |
 | [0012](./0012-inquire-from-an-offer-and-saved-offers.md) | Inquire from an offer, and saved offers | Complete |
 | [0013](./0013-client-postings-and-mode-mirrored-surfaces.md) | Client postings, and mode-mirrored surfaces | Complete |
-| [0014](./0014-dark-mode.md) | Dark mode | Built; device pass outstanding |
+| [0014](./0014-dark-mode.md) | Dark mode | Complete |
 | [0015](./0015-account-hub.md) | The account hub | Complete |
-| [0016](./0016-work-agreements.md) | Work agreements in the thread | Built; device pass outstanding |
+| [0016](./0016-work-agreements.md) | Work agreements in the thread | Complete |
 | [0017](./0017-notification-centre.md) | The notification centre | Complete |
 | [0018](./0018-web-push.md) | Web push | Deferred |
 | [0019](./0019-automated-tests.md) | Automated tests and CI | Complete |
 | [0020](./0020-agreement-integrity.md) | Precise agreement notifications, and a deletion guard | Complete |
 | [0021](./0021-creative-ratings.md) | Ratings, earned by a completed agreement | Complete |
-| [0022](./0022-admin-layout.md) | The admin layout | Built; interactive checks outstanding |
+| [0022](./0022-admin-layout.md) | The admin layout | Complete |
 | [0023](./0023-directory-filter-rail.md) | A filter rail for the directory | Reverted |
-| [0024](./0024-theme-choice.md) | A theme choice, and one palette instead of four | Ready |
-| [0025](./0025-shared-api-contracts.md) | One definition of every API shape | Ready |
-| [0026](./0026-mode-moves-to-the-account-hub.md) | Mode moves to the account hub | Ready |
-| [0027](./0027-how-your-work-is-doing.md) | How your work is doing | Ready |
+| [0024](./0024-theme-choice.md) | A theme choice, and one palette instead of four | Complete |
+| [0025](./0025-shared-api-contracts.md) | One definition of every API shape | Complete (2026-09-19 |
+| [0026](./0026-mode-moves-to-the-account-hub.md) | Mode moves to the account hub | Complete |
+| [0027](./0027-how-your-work-is-doing.md) | How your work is doing | Complete |
 | [0028](./0028-the-money-in-full.md) | The money, in full | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and

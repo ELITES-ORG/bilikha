@@ -119,6 +119,37 @@ for (const name of names) {
   }
 }
 
+// --- check 3: the index must not contradict the plans ---
+//
+// Found on 2026-09-22: the plans README listed six finished plans as "Ready" or
+// "Built", including four this session had completed and recorded. The index is
+// what anyone scans first, so a stale row there is the same lie as a stale
+// status line — and nothing was checking it.
+const indexFailures = [];
+const indexPath = path.join(PLANS, 'README.md');
+const indexText = await readFile(indexPath, 'utf8');
+const ROW = /\|\s*\[(\d{4})\]\(\.\/([^)]+)\)\s*\|[^|]*\|\s*([^|]+?)\s*\|/g;
+
+/** The index carries the status up to its first clause break, not the essay. */
+const shortForm = (value) => value.split(';')[0].split(',')[0].split(' —')[0].trim();
+
+for (const match of indexText.matchAll(ROW)) {
+  const [, number, file, indexStatus] = match;
+  let planText;
+  try {
+    planText = await readFile(path.join(PLANS, file), 'utf8');
+  } catch {
+    indexFailures.push({ number, indexStatus, planStatus: '(file missing)' });
+    continue;
+  }
+  const statusLine = planText.split(/\r?\n/).find((line) => line.startsWith('- **Status:**'));
+  if (!statusLine) continue;
+  const planStatus = shortForm(statusLine.replace('- **Status:**', '').trim());
+  if (planStatus.toLowerCase() !== indexStatus.trim().toLowerCase()) {
+    indexFailures.push({ number, indexStatus: indexStatus.trim(), planStatus });
+  }
+}
+
 console.log(`Checked ${checked} plan(s) claiming to be finished.`);
 console.log(`Checked ${phasesChecked} phase(s) claiming to be finished.`);
 
@@ -138,7 +169,18 @@ if (boxFailures.length > 0) {
   console.error('\nTick them, or say in the table why they stay open (superseded, deferred, partly).');
 }
 
-if (statusFailures.length > 0 || boxFailures.length > 0) process.exit(1);
+if (indexFailures.length > 0) {
+  console.error(`\n${indexFailures.length} plan(s) disagree with the README index:\n`);
+  for (const { number, indexStatus, planStatus } of indexFailures) {
+    console.error(`  plan ${number}  index says "${indexStatus}" but the plan says "${planStatus}"`);
+  }
+  console.error('\nUpdate docs/plans/README.md — it is what people read first.');
+}
+
+if (statusFailures.length > 0 || boxFailures.length > 0 || indexFailures.length > 0) {
+  process.exit(1);
+}
 
 console.log('Every finished plan agrees with its own progress table.');
 console.log('Every finished phase has its boxes ticked.');
+console.log('The README index agrees with every plan.');
