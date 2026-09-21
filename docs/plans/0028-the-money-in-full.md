@@ -122,8 +122,23 @@ be a lie the first time someone did not.
   };
 ```
 
-- [ ] **Verify.** `grep -rn "agreedCentavos" backend frontend --include=*.ts
-  --include=*.tsx` — every hit is reviewed against rule 1 before you move on.
+- [ ] **Verify.** Every reader is reviewed against rule 1. They were enumerated
+  on 2026-09-22, so this is a checklist rather than a hunt:
+
+| File | What it does |
+|---|---|
+| `backend/src/contracts/work.ts` | the definition |
+| `backend/src/modules/me/work.service.ts` | accumulates both figures |
+| `backend/src/modules/me/work.test.ts` | five assertions — see below |
+| `frontend/src/features/work/next-action.test.ts` | the summary factory's defaults |
+| `frontend/src/pages/account/WorkPage.tsx` | `moneyCopy`, three references |
+
+- [ ] **The assertion that encodes the old meaning.** `work.test.ts` asserts
+  `agreedCentavos: 2_150_000 + 50_000`. That sum *is* the old definition —
+  a completed agreement plus an accepted one. Under the new shape it is
+  `committedCentavos`, and `agreedCentavos` is `50_000` alone. Re-read it, do
+  not mechanically retype it: if that expectation is updated by following the
+  compiler, the meaning change has been papered over rather than made.
 
 ### Step 1.2 — Accumulate where you count
 
@@ -153,7 +168,8 @@ be a lie the first time someone did not.
   confirmation, completed. Not proposed and not cancelled: neither is a price
   anyone agreed to.
 - [ ] **Action.** Even counts take the lower of the two middle values. Say which
-  in a comment; a reader should not have to guess.
+  in a comment; a reader should not have to guess. There is no median helper in
+  the repo — checked — so this is yours to write and to test.
 - [ ] **Action.** Null when there are none. Not zero — zero is a price.
 
 ### Step 2.2 — Tested at the edges
