@@ -20,6 +20,10 @@ coverage/
 # Scratch files from manual API testing. Cookie jars and request bodies hold
 # session ids and test passwords, so they must never reach the repository.
 tmp-*
+# Scratch output from verification runs — cookie jars and login payloads
+# land here, so it must never be committable (added after `git add -A` swept
+# 22 such files in on 2026-09-22).
+tmp/
 *.cookies
 cookies.txt
 
