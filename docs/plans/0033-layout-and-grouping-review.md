@@ -102,6 +102,89 @@ nobody "fixes" Mode by moving it off the hub.
 
 ---
 
+## Screen 2 — `/account/profile` (reviewed 2026-09-22)
+
+### What is there now
+
+One form, 3.2 screens tall at 390x800, with a single `Save profile` at the
+bottom (y=2439) disabled until the form is dirty. Five headed sections:
+
+| Section | Fields | Actually published? |
+|---|---|---|
+| Photo | avatar | **yes** |
+| Name | first, middle, last, suffix | **yes — all four** |
+| Public profile | display name, bio, what you do (9-domain accordion), primary craft | **yes** |
+| Location | municipality, barangay | municipality **yes**, barangay **no** |
+| Contact preference | phone / email choice | **no** — governs what is revealed inside a conversation |
+
+Verified against the contracts: `PublicProfile` returns `displayName`,
+`fullName`, `bio`, `avatarUrl`, `municipality`, `subdomains`, `memberSince`, and
+`formatFullName` joins first + middle + last + suffix. `barangaySlug` appears
+only in `contracts/me.ts` and the taxonomy — never in a public shape.
+
+### What is wrong
+
+**The headings misrepresent what is public, and that is the serious one.** Only
+one of five sections is labelled *Public profile*, while four of them contain
+published fields. A creative reading this page can reasonably conclude that
+their middle name and suffix are private. They are not — both are joined into
+the `fullName` every directory card and profile page shows.
+
+[Constraint 7](../explanation/constraints.md) names **per-field visibility** as
+an RA 10173 obligation, not a nicety. Grouping that implies the wrong answer to
+*"what will people see?"* is the one structural problem on this page that is not
+merely cosmetic.
+
+**Two save models, undifferentiated.** The photo uploads immediately; everything
+else waits for `Save profile`. Nothing on the page marks the difference, so a
+creative who changes their photo and leaves without saving has changed their
+photo, and one who edits their bio and leaves has not.
+
+**Save is never on screen while you edit.** It sits at the bottom of a 3.2-screen
+form. Correctly disabled until dirty, but a person cannot see whether their edit
+registered without scrolling to the end.
+
+**The review notice is only at the bottom.** *"Your profile stays visible while
+public changes are reviewed"* sits directly above Save — the right place for
+whoever reaches it, and invisible to whoever edits their name and stops.
+
+**Three levels of grouping.** *Primary craft* is a fieldset inside the *What you
+do* accordion inside the *Public profile* section. The accordion is also the
+heaviest interaction on the page and sits beside plain text inputs under one
+heading.
+
+**Contact preference is a privacy control, not a profile field.** It decides
+what is revealed inside a conversation. It is the same species as Security, not
+the same species as Bio.
+
+### What to do
+
+**Group by visibility, because that is both the user's question and the legal
+requirement:**
+
+```
+SHOWN ON YOUR PUBLIC PROFILE
+  Photo
+  Name            first · middle · last · suffix   (all four appear)
+  Display name
+  Bio
+  What you do     + primary craft
+  Municipality
+
+NOT SHOWN PUBLICLY
+  Barangay        used for nearby-first ordering only
+  Contact preference   which detail you share inside a conversation
+```
+
+Where a former section splits across the line — Location does — say so per
+field rather than moving the fields apart from each other.
+
+Then: mark the photo as saved immediately, or fold it into `Save profile`; put
+the review notice where an editor sees it before reaching the end; and give the
+form a save affordance that is reachable without scrolling to the bottom.
+
+---
+
 ## Screens still to review
 
 The registrant is working through the app. Add a section per screen in the same
