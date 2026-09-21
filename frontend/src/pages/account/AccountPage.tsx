@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -81,6 +81,21 @@ function HubRow({
   );
 }
 
+function HubGroup({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mt-10">
+      <h2 className="u-eyebrow px-1">{title}</h2>
+      <ul className="mt-3 border-t border-hairline">{children}</ul>
+    </section>
+  );
+}
+
 const APPEARANCE_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
@@ -145,6 +160,7 @@ const MODE_OPTIONS: Array<{ value: ViewMode; label: string }> = [
 /**
  * Account-wide mode. Layout mirrors AppearanceRow; value comes from the user
  * on the server (ADR 0038) — no local mirror of mode (house rule 5).
+ * Explanation lives on ModeNotice and the empty-state switch, not here.
  */
 function ModeRow() {
   const { data: user } = useCurrentUser();
@@ -163,10 +179,6 @@ function ModeRow() {
     <li className="border-b border-hairline px-1 py-3">
       <fieldset>
         <legend className="text-sm font-medium text-ink">Mode</legend>
-        <p className="mt-0.5 text-sm text-ink-muted">
-          Creative mode shows client postings on Home, and the clients who contacted
-          you in Messages. Client mode shows offers and creatives you can hire.
-        </p>
         <div
           role="radiogroup"
           aria-label="Mode"
@@ -249,7 +261,7 @@ export function AccountPage() {
 
           {profile.isSuccess && (
             <>
-              <ul className="mt-10 border-t border-hairline">
+              <HubGroup title="What people see">
                 <HubRow
                   to="/account/profile"
                   label="Profile"
@@ -266,26 +278,32 @@ export function AccountPage() {
                     summary={offersSummary(offers.data?.length)}
                   />
                 )}
-                {profile.data && (
-                  <HubRow
-                    to="/account/work"
-                    label="How your work is doing"
-                    summary={workSummaryLine}
-                  />
-                )}
                 <HubRow
                   to="/postings/mine"
                   label="Your postings"
                   summary={postingsSummary(openPostings)}
                 />
+              </HubGroup>
+
+              {profile.data && (
+                <HubGroup title="How it is going">
+                  <HubRow
+                    to="/account/work"
+                    label="How your work is doing"
+                    summary={workSummaryLine}
+                  />
+                </HubGroup>
+              )}
+
+              <HubGroup title="Settings">
+                <ModeRow />
+                <AppearanceRow />
                 <HubRow
                   to="/account/security"
                   label="Security"
                   summary="Password and sign out"
                 />
-                <AppearanceRow />
-                <ModeRow />
-              </ul>
+              </HubGroup>
 
               {!profile.data && (
                 <section className="mt-10" aria-labelledby="offer-work-heading">

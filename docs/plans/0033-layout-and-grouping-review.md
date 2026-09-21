@@ -67,7 +67,7 @@ paths.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. The shared corrections | 3 / 3 | Done |
-| 2. Account hub grouping | 0 / 2 | Not started |
+| 2. Account hub grouping | 2 / 2 | Done |
 | 3. Profile by visibility | 0 / 2 | Not started |
 | 4. Offers rows | 0 / 2 | Not started |
 | 5. Postings badges | 0 / 2 | Not started |
@@ -444,17 +444,17 @@ assume them.
 
 ### Step 2.1 — Three groups
 
-- [ ] **Action.** Split the seven rows under headings: *What people see*
+- [x] **Action.** Split the seven rows under headings: *What people see*
   (Profile, Offers, Your postings), *How it is going* (How your work is doing),
   *Settings* (Mode, Appearance, Security).
-- [ ] **Action.** Inline controls sit only under *Settings*, where a switch is
+- [x] **Action.** Inline controls sit only under *Settings*, where a switch is
   expected. Navigation rows keep their chevron; controls do not get one.
-- [ ] **Action.** Move Mode above Appearance and cut its three-line explanation.
+- [x] **Action.** Move Mode above Appearance and cut its three-line explanation.
   `ModeNotice` and the empty-state button explain mode where it is needed.
 
 ### Step 2.2 — Nothing moved that should not
 
-- [ ] **Verify.** The next-action summary on *How your work is doing* survives.
+- [x] **Verify.** The next-action summary on *How your work is doing* survives.
   It is [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md)
   working as intended, not an inconsistency to iron out.
 
