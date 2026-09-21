@@ -1,6 +1,6 @@
 # 0028. The money, in full
 
-- **Status:** Partial
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
@@ -86,7 +86,7 @@ be a lie the first time someone did not.
 | 1. Money per state | 3 / 3 | Done |
 | 2. What a typical agreement is worth | 2 / 2 | Done |
 | 3. The section | 2 / 2 | Done |
-| 4. Verification | 3 / 4 | Partial — local gates green; CI pending push |
+| 4. Verification | 4 / 4 | Done |
 
 ---
 
@@ -220,10 +220,10 @@ be a lie the first time someone did not.
 
 ### Step 4.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for `paid`, `earned`, `income`, `revenue`,
-  `outstanding`, `owed`, and for any second sum over line items. Local gates
-  and grep done 2026-09-22; CI pending push.
+  `outstanding`, `owed`, and for any second sum over line items. CI green on
+  `35641904821` (2026-09-22).
 
 ---
 
