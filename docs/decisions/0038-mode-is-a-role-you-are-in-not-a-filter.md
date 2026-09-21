@@ -67,6 +67,34 @@ protection is independent of the header toggle and survives its removal. **This
 is the load-bearing part of this decision**: without it, removing the toggle
 would reintroduce the trap 0025 identified.
 
+> **Amended 2026-09-22 — the escape stays, the toggle goes.**
+>
+> Shipped, this put two mode affordances on one screen: the notice at the top
+> saying which mode you are in, and a segmented control in the empty state
+> offering both. The registrant asked why the toggle was still there, having
+> already been told mode lives on the account.
+>
+> They are right, and this record is the reason why. The finding above is that a
+> **two-state control you pick between reads as a filter** — that is about the
+> control's shape, not about which part of the page it sits in. Moving it from
+> the header to the middle of an empty list does not change what it looks like.
+>
+> So the empty state keeps its one-tap way out and loses the toggle: a **single
+> action button naming what will happen** — *Switch to Creative mode* — instead
+> of a segmented control showing both states. An action is not a filter, and the
+> notice above already says which mode you are in, so nothing is lost by the
+> control no longer saying it twice.
+>
+> 0025's requirement is untouched: the way out is still on the list, still one
+> tap, still at the moment it is needed. Sending someone to Account and back
+> from an empty inbox would be the trap 0025 named.
+>
+> **And it must not be offered to someone who cannot take it.** An account with
+> no creative profile is currently told to *switch to Creative mode* by copy it
+> has no control for, because the control is correctly hidden. The copy has to be
+> profile-aware, not only mode-aware.
+> [Plan 0032](../plans/0032-an-action-not-a-toggle.md) carries it out.
+
 **Nothing changes about what mode means or how it is stored.** It stays on the
 user, server-side, following them between devices, with the same two values.
 This is a change to how it is presented and nothing else — no migration, no API
