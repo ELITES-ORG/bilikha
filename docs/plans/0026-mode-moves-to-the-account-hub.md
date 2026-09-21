@@ -72,7 +72,7 @@ has the reasoning.
 |---|---|---|
 | 1. One name for the modes | 0 / 2 | Not started |
 | 2. The control on Account | 0 / 2 | Not started |
-| 3. The mirrored surfaces | 0 / 3 | Not started |
+| 3. The mirrored surfaces | 0 / 4 | Not started |
 | 4. Verification | 0 / 4 | Not started |
 
 ---
@@ -143,12 +143,35 @@ export const MODE_AS: Record<ViewMode, string> = {
 
 ### Step 3.1 — A line that names the mode
 
-- [ ] **Action.** Add `frontend/src/components/ModeNotice.tsx`: a single line of
-  muted text reading *Viewing as a creative* (from `MODE_AS`), followed by a
-  plain text link — *change in Account* — to `/account`.
+**Read this before writing it.** The three surfaces do not start from the same
+place, and dropping a notice into each would leave Directory saying the same
+thing twice:
+
+| Surface | Today |
+|---|---|
+| Directory | Mode-aware description, **plus** a second paragraph ending *"Messages and History follow this mode too."* |
+| History | Mode-aware description. No cross-surface sentence |
+| Messages | Static description. Nothing mode-aware at all |
+
+- [ ] **Action.** Add `frontend/src/components/ModeNotice.tsx`: one line of muted
+  text naming the mode from `MODE_AS`, the fact that it spans surfaces, and a
+  plain text link to `/account`. One sentence, not two:
+
+  > Viewing as a creative — Home, Messages and History all follow this.
+  > [Change in Account]
+
+- [ ] **Action.** On Directory, **delete the trailing sentence** *"Messages and
+  History follow this mode too."* from the existing paragraph, leaving only what
+  describes the list itself (*"Showing work clients have posted, matched to your
+  sub-domains first."*). The cross-surface fact now lives in `ModeNotice` and
+  must be stated once.
 - [ ] **Action.** No button, no `aria-pressed`, no segmented control. Rule 2.
 - [ ] **Action.** Render nothing at all when the account has no creative
   profile. A client has one mode; telling them they are in it is noise.
+- [ ] **Leave the mode-aware descriptions alone** on Directory and History. They
+  describe *what is in the list*, which is a different job from naming the mode,
+  and they were written to read well. Messages having no mode-aware description
+  is a pre-existing inconsistency and is **out of scope** — see Follow-ups.
 
 ### Step 3.2 — Swap it in
 
@@ -214,3 +237,4 @@ export const MODE_AS: Record<ViewMode, string> = {
 | A mode badge in the global top bar | ADR 0038 rejected it on space at 375px. It is the answer if people turn out to switch mode while browsing rather than once — worth asking the same creatives after this ships |
 | Asking the creatives again | This plan came from one session with real users. The same session is how we would find out whether the notice is enough, and it costs nothing to repeat |
 | A first-run explanation of mode | A creative meets the concept for the first time on the account page now. Onboarding (`/welcome`) already asks what brings you here and could seed the mode instead of leaving it at the default |
+| Messages has no mode-aware description | Directory and History both change their description with the mode; Messages does not, and says the same static sentence either way. Noticed while planning this and deliberately left, because rewriting copy on a surface this change is already touching makes the diff harder to review |
