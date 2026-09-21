@@ -28,7 +28,7 @@ export interface MoneySegmentDef {
  * clay for cancelled (plan 0029 rules 2–5). Class names are static so Tailwind
  * emits the CSS.
  */
-export const MONEY_SEGMENT_DEFS: readonly MoneySegmentDef[] = [
+export const MONEY_SEGMENT_DEFS = [
   { key: 'proposed', label: 'Proposed', fillClass: 'bg-lawa-100', field: 'proposedCentavos' },
   { key: 'agreed', label: 'Agreed', fillClass: 'bg-lawa-300', field: 'agreedCentavos' },
   { key: 'inProgress', label: 'In progress', fillClass: 'bg-lawa-500', field: 'inProgressCentavos' },
@@ -40,7 +40,30 @@ export const MONEY_SEGMENT_DEFS: readonly MoneySegmentDef[] = [
   },
   { key: 'completed', label: 'Completed', fillClass: 'bg-lawa-950', field: 'completedCentavos' },
   { key: 'cancelled', label: 'Cancelled', fillClass: 'bg-clay-400', field: 'cancelledCentavos' },
-] as const;
+] as const satisfies readonly MoneySegmentDef[];
+
+/**
+ * Every money state must have a segment, and the compiler enforces it.
+ *
+ * Plan 0027's audit made the states partition their total in the service; the
+ * display layer kept no such guarantee, and `agreed` shipped missing from the
+ * agreements sentence for exactly that reason. Dropping `awaitingConfirmation`
+ * from the defs above passed every test in this file, so a test was not enough:
+ * the omission has to be a compile error.
+ *
+ * Add a state to the contract and this line fails until it has a segment.
+ */
+type MoneyStateField = Exclude<
+  keyof WorkSummary['money'],
+  'committedCentavos' | 'typicalCentavos'
+>;
+type CoveredField = (typeof MONEY_SEGMENT_DEFS)[number]['field'];
+type UncoveredField = Exclude<MoneyStateField, CoveredField>;
+const _everyMoneyStateHasASegment: UncoveredField extends never ? true : never = true;
+void _everyMoneyStateHasASegment;
+
+/** One entry of MONEY_SEGMENT_DEFS, with its literal field preserved. */
+type SegmentDef = (typeof MONEY_SEGMENT_DEFS)[number];
 
 export interface MoneySegment {
   key: MoneySegmentKey;
@@ -57,7 +80,7 @@ export function moneySegments(money: WorkSummary['money']): MoneySegment[] {
     const centavos = money[def.field];
     if (typeof centavos !== 'number' || centavos <= 0) return null;
     return { def, centavos };
-  }).filter((row): row is { def: MoneySegmentDef; centavos: number } => row != null);
+  }).filter((row): row is { def: SegmentDef; centavos: number } => row != null);
 
   const total = present.reduce((sum, row) => sum + row.centavos, 0);
   if (total <= 0) return [];

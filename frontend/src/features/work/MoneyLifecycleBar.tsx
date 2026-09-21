@@ -55,10 +55,20 @@ export function MoneyLifecycleBar({ money }: { money: WorkSummary['money'] }) {
                   } satisfies CSSProperties
                 }
               >
+                {/*
+                  Hidden on phones. Measured 2026-09-22 at 375px: "Agreed
+                  ₱2,000" had 57px and needed 86, "In progress ₱3,000" had 89
+                  and needed 105 — a share threshold cannot fix that, because
+                  what overflows is the text, not the fraction. The legend below
+                  carries every state with its swatch and amount, and the bar's
+                  aria-label carries all of it for a screen reader, so nothing
+                  is lost by dropping the chip where it does not fit.
+                */}
                 {showLabel && (
                   <span
                     className={cn(
-                      'mx-1 truncate rounded-xs px-1.5 py-0.5 text-[11px] font-medium leading-none',
+                      'mx-1 hidden truncate rounded-xs px-1.5 py-0.5 sm:inline-block',
+                      'text-[11px] font-medium leading-none',
                       'bg-paper/85 text-ink',
                     )}
                   >

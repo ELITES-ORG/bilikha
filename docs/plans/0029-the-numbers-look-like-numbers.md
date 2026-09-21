@@ -198,6 +198,41 @@ ramp allows — it was computed over every combination, not chosen by eye.
 - A creative with nothing still sees sentences and no empty chart.
 - Both themes verified, no new dependency, no new data.
 
+## Audit, 2026-09-22
+
+The page reads as a dashboard now: figures are figures, the bar is proportional
+(1:2:3:4 seeded → widths 32/65/97/129), lightness is monotonic in both themes,
+no interpolated Tailwind, no raw colours, no new dependency.
+
+**They caught a bug two of my audits missed.** The agreements sentence never
+rendered the `agreed` state. I added that bucket during the plan 0027 audit,
+asserted the partition in the service tests, and never checked the page
+displayed it — so a creative with an accepted-not-started agreement saw a
+breakdown that did not reconcile, which is the exact defect that audit claimed
+to fix. Fixed here as part of this plan.
+
+**Fixed: the in-bar labels still clipped.** Raising the threshold from 8% to 15%
+moved the boundary without fixing it, because what overflows is the text, not
+the fraction. Measured at 375px: *"Agreed ₱2,000"* had 57px and needed 86,
+*"In progress ₱3,000"* had 89 and needed 105. The chips are now hidden below
+`sm`; the legend carries every state with its swatch and amount, and the bar's
+`aria-label` carries all of it regardless, so nothing is lost. Chips return at
+desktop width where they fit.
+
+**Fixed: the same four figures appeared three times** — the money sentence, the
+in-bar chips and the legend. Plan step 1.2 said keep the group sentences, and
+for every other group that is right because the sentence carries what a number
+cannot. For money the sentence *is* the enumeration, so it now renders only
+when there is no bar: one state, cancelled only, or nothing.
+
+**Fixed: a missing segment was not a compile error.** Dropping
+`awaitingConfirmation` from `MONEY_SEGMENT_DEFS` passed every test in
+`money-bar.test.ts` — the same class of omission as the `agreed` bug, one state
+over. `MONEY_SEGMENT_DEFS` now uses `satisfies` so the literal fields survive,
+and an exhaustiveness type fails the build when a money state has no segment.
+The first version of that guard was vacuous, because the explicit array
+annotation widened the fields back to the full union; caught by breaking it.
+
 ## Follow-ups
 
 | Item | Why deferred |

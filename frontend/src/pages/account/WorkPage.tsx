@@ -7,6 +7,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useCurrentUser } from '@/features/auth/api';
 import { useWorkSummary, WorkNotFoundError } from '@/features/work/api';
 import { MoneyLifecycleBar } from '@/features/work/MoneyLifecycleBar';
+import { moneySegments, shouldShowMoneyBar } from '@/features/work/money-bar';
 import { nextAction } from '@/features/work/next-action';
 import { WorkKpiRow } from '@/features/work/WorkKpiRow';
 import type { WorkSummary } from '@contracts/work';
@@ -147,9 +148,16 @@ function moneyCopy(summary: WorkSummary): ReactNode {
   if (m.completedCentavos > 0) parts.push(`Completed ${formatPesos(m.completedCentavos)}`);
   if (m.cancelledCentavos > 0) parts.push(`Cancelled ${formatPesos(m.cancelledCentavos)}`);
 
+  // The bar and its legend already enumerate every state with its amount, so
+  // the sentence is a third copy of the same four figures when it renders.
+  // Keep it for the cases with no bar — one state, or cancelled only — where
+  // it is the whole answer.
+  const segments = moneySegments(m);
+  const barShows = shouldShowMoneyBar(segments);
+
   return (
     <>
-      <p>{parts.join(' · ')}</p>
+      {!barShows && <p>{parts.join(' · ')}</p>}
       <MoneyLifecycleBar money={m} />
       {m.typicalCentavos != null && (
         <p className="mt-2">
