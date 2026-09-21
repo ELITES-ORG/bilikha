@@ -22,6 +22,7 @@ import {
   unsaveOffer,
   updateOwnProfile,
 } from './me.service.js';
+import { workSummary } from './work.service.js';
 
 export const meRouter: Router = Router();
 
@@ -30,6 +31,11 @@ meRouter.use(requireAuth);
 meRouter.patch('/view-mode', async (req, res) => {
   const input = viewModeSchema.parse(req.body);
   const data = await setViewMode(req.session.userId!, input);
+  res.json({ data });
+});
+
+meRouter.get('/work', async (req, res) => {
+  const data = await workSummary(req.session.userId!);
   res.json({ data });
 });
 

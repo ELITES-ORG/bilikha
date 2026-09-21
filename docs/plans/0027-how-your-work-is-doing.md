@@ -1,6 +1,6 @@
 # 0027. How your work is doing
 
-- **Status:** Ready
+- **Status:** Partial
 - **Owner:** implementing agent
 - **Related:** [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
@@ -71,10 +71,10 @@ zero ratings. That is the design target, not an edge case
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. What the rows already say | 0 / 3 | Not started |
-| 2. The next action | 0 / 2 | Not started |
-| 3. The surface | 0 / 3 | Not started |
-| 4. Verification | 0 / 4 | Not started |
+| 1. What the rows already say | 3 / 3 | Done |
+| 2. The next action | 2 / 2 | Done |
+| 3. The surface | 3 / 3 | Done |
+| 4. Verification | 3 / 4 | Partial — local gates green; CI pending push |
 
 ---
 
@@ -82,7 +82,7 @@ zero ratings. That is the design target, not an edge case
 
 ### Step 1.1 — The contract
 
-- [ ] **Action.** Add `backend/src/contracts/work.ts` with the summary shape.
+- [x] **Action.** Add `backend/src/contracts/work.ts` with the summary shape.
   Types only, and it may type-import a sibling contract
   ([ADR 0037](../decisions/0037-one-definition-of-an-api-shape.md)):
 
@@ -105,15 +105,15 @@ export interface WorkSummary {
 }
 ```
 
-- [ ] **Why these and not others.** Each one is either something the creative can
+- [x] **Why these and not others.** Each one is either something the creative can
   act on, or evidence that the acting worked. `savedByOthers` is the only signal
   of interest that exists without view tracking.
 
 ### Step 1.2 — The service
 
-- [ ] **Action.** `backend/src/modules/me/work.service.ts` exporting
+- [x] **Action.** `backend/src/modules/me/work.service.ts` exporting
   `workSummary(userId): Promise<WorkSummary>`, annotated with the contract.
-- [ ] **Action.** Derive every field. **Reuse, do not reimplement** — these are
+- [x] **Action.** Derive every field. **Reuse, do not reimplement** — these are
   already exported from `agreements.service.ts` and a second copy would be a
   second answer:
 
@@ -124,20 +124,20 @@ export interface WorkSummary {
 | Rating average and count | `summaryForProfile(slug)` | A second `avg(stars)` |
 | Pesos on screen | `formatPesos(centavos)` from `@/lib/money` | Any new formatter |
 
-- [ ] **Action.** `savedByOthers` joins `saved_offers` to `offers` on
+- [x] **Action.** `savedByOthers` joins `saved_offers` to `offers` on
   `offer_id`, then to the profile. It is the only interest signal that exists
   without view tracking, so it is worth getting right.
-- [ ] **Action.** Integer centavos throughout. Never a float, never pesos in the
+- [x] **Action.** Integer centavos throughout. Never a float, never pesos in the
   service.
-- [ ] **Verify.** For a creative with no activity, every number is 0 and
+- [x] **Verify.** For a creative with no activity, every number is 0 and
   `ratings.average` is null — not 0, which would read as a one-star average.
 
 ### Step 1.3 — The route
 
-- [ ] **Action.** `GET /me/work` behind `requireAuth`, 404 for an account with no
+- [x] **Action.** `GET /me/work` behind `requireAuth`, 404 for an account with no
   creative profile. Not 403 — the existence of a creative surface is not
   something a client needs confirmed.
-- [ ] **Test.** Against the real database with factories: a creative with
+- [x] **Test.** Against the real database with factories: a creative with
   nothing, a creative with activity, and a client account getting a 404.
   Authorization and visibility first, per
   [ADR 0031](../decisions/0031-testing-strategy.md).
@@ -148,7 +148,7 @@ export interface WorkSummary {
 
 ### Step 2.1 — The rule
 
-- [ ] **Action.** `frontend/src/features/work/next-action.ts` exporting a pure
+- [x] **Action.** `frontend/src/features/work/next-action.ts` exporting a pure
   `nextAction(summary): { headline: string; body: string; to?: string }`, in
   this priority order:
 
@@ -163,16 +163,16 @@ export interface WorkSummary {
 | An agreement is awaiting the client's confirmation | Waiting on them — no action |
 | Everything is current | Say that, and do not invent a task |
 
-- [ ] **Why a table.** This is a state machine and it is the whole product logic
+- [x] **Why a table.** This is a state machine and it is the whole product logic
   of the page. Getting the order wrong tells a creative to add an offer while an
   unanswered client sits in their inbox.
 
 ### Step 2.2 — Tested without a browser
 
-- [ ] **Test.** `next-action.test.ts`: one case per row above, plus the
+- [x] **Test.** `next-action.test.ts`: one case per row above, plus the
   precedence pairs that matter — an unanswered inquiry outranks "add an offer",
   and a suspended profile outranks everything.
-- [ ] **Verify.** Break one precedence rule deliberately and watch a test fail.
+- [x] **Verify.** Break one precedence rule deliberately and watch a test fail.
   A table-driven test that passes in any order is testing nothing.
 
 ---
@@ -181,30 +181,30 @@ export interface WorkSummary {
 
 ### Step 3.1 — The page
 
-- [ ] **Action.** `/account/work`, titled *How your work is doing*, behind
+- [x] **Action.** `/account/work`, titled *How your work is doing*, behind
   `RequireAuth` and returning the not-found page for an account with no creative
   profile.
-- [ ] **Action.** Next action first, then the numbers grouped: your offers, your
+- [x] **Action.** Next action first, then the numbers grouped: your offers, your
   inquiries, your agreements, the value agreed, your rating.
-- [ ] **Never say paid, earned or income.** Bilikha does not handle payment and
+- [x] **Never say paid, earned or income.** Bilikha does not handle payment and
   the agreement record says so on its face. The figure is what was *agreed* and
   what was agreed on work since *completed* — whether money changed hands is
   between the two people, and claiming otherwise would be the platform asserting
   something it cannot know.
-- [ ] **Action.** Each group has a zero sentence. Rule 3.
+- [x] **Action.** Each group has a zero sentence. Rule 3.
 
 ### Step 3.2 — The hub row
 
-- [ ] **Action.** On `/account`, a `HubRow` to `/account/work` labelled
+- [x] **Action.** On `/account`, a `HubRow` to `/account/work` labelled
   *How your work is doing*, whose `summary` is the next action's headline —
   so the most useful sentence is visible without opening anything.
-- [ ] **Action.** Render the row only for an account with a creative profile.
+- [x] **Action.** Render the row only for an account with a creative profile.
 
 ### Step 3.3 — Money reads correctly
 
-- [ ] **Action.** Use the existing money formatter. Centavos in, pesos out,
+- [x] **Action.** Use the existing money formatter. Centavos in, pesos out,
   never a float.
-- [ ] **Verify.** An agreement of 2,150,000 centavos reads ₱21,500.
+- [x] **Verify.** An agreement of 2,150,000 centavos reads ₱21,500.
 
 ---
 
@@ -212,27 +212,28 @@ export interface WorkSummary {
 
 ### Step 4.1 — The zero case is the one to look at
 
-- [ ] **Verify.** As `nc0850896` — published profile, nothing else — open
+- [x] **Verify.** As `nc0850896` — published profile, nothing else — open
   `/account/work`. Every group shows its sentence, the next action is *add an
   offer*, and nothing on the page reads as a failure. Screenshot it; this is the
   page most creatives will see.
 
 ### Step 4.2 — The populated case
 
-- [ ] **Verify.** As `cre0299739`, the counts match the database. Check the
+- [x] **Verify.** As `cre0299739`, the counts match the database. Check the
   agreement states against `select status from agreements`, and the money
   against the line items, rather than against what the page says.
 
 ### Step 4.3 — Not for clients
 
-- [ ] **Verify.** As `adm0403418` (no creative profile): no hub row, and
+- [x] **Verify.** As `adm0403418` (no creative profile): no hub row, and
   `/account/work` does not render the page. `GET /me/work` returns 404.
 
 ### Step 4.4 — Full pass
 
 - [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, and CI green. Grep the diff for any counter column, any cached total,
-  and for the words `impression`, `views` or `reach`.
+  and for the words `impression`, `views` or `reach`. Local gates and grep done
+  2026-09-22; CI pending push.
 
 ---
 

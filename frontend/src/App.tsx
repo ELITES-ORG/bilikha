@@ -10,6 +10,7 @@ import { AdminProfilePage } from '@/pages/admin/AdminProfilePage';
 import { AdminQueuePage } from '@/pages/admin/AdminQueuePage';
 import { AdminRatingsPage } from '@/pages/admin/AdminRatingsPage';
 import { AccountPage } from '@/pages/account/AccountPage';
+import { WorkPage } from '@/pages/account/WorkPage';
 import { AgreementPage } from '@/pages/AgreementPage';
 import { OffersSettingsPage } from '@/pages/account/OffersSettingsPage';
 import { ProfileSettingsPage } from '@/pages/account/ProfileSettingsPage';
@@ -125,6 +126,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <AccountPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/account/work"
+              element={
+                <RequireAuth>
+                  <WorkPage />
                 </RequireAuth>
               }
             />

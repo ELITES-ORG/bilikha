@@ -11,6 +11,8 @@ import type { ProfileStatus } from '@/features/me/types';
 import { useOwnOffers } from '@/features/offers/api';
 import { OFFER_LIMIT } from '@/features/offers/limits';
 import { useMyPostings } from '@/features/postings/api';
+import { useWorkSummary } from '@/features/work/api';
+import { nextAction } from '@/features/work/next-action';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 import {
@@ -207,8 +209,11 @@ export function AccountPage() {
   const hasCreative = Boolean(profile.data);
   const offers = useOwnOffers(profile.isSuccess && hasCreative);
   const postings = useMyPostings();
+  const work = useWorkSummary(profile.isSuccess && hasCreative);
 
   const openPostings = postings.data?.filter((p) => p.status === 'open').length;
+  const workSummaryLine =
+    work.data != null ? nextAction(work.data).headline : work.isPending ? '…' : 'How things stand';
 
   return (
     <div className="min-h-dvh bg-paper">
@@ -258,6 +263,13 @@ export function AccountPage() {
                     to="/account/offers"
                     label="Offers"
                     summary={offersSummary(offers.data?.length)}
+                  />
+                )}
+                {profile.data && (
+                  <HubRow
+                    to="/account/work"
+                    label="How your work is doing"
+                    summary={workSummaryLine}
                   />
                 )}
                 <HubRow
