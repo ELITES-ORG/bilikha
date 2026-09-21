@@ -66,7 +66,7 @@ paths.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The shared corrections | 0 / 3 | Not started |
+| 1. The shared corrections | 3 / 3 | Done |
 | 2. Account hub grouping | 0 / 2 | Not started |
 | 3. Profile by visibility | 0 / 2 | Not started |
 | 4. Offers rows | 0 / 2 | Not started |
@@ -413,25 +413,28 @@ assume them.
 
 ### Step 1.1 — Descriptions that describe the page
 
-- [ ] **Action.** Rewrite the page description on `/account` and
+- [x] **Action.** Rewrite the page description on `/account` and
   `/account/security` to cover what those pages now hold. The hub is no longer
   only public details and sign-in; Security is not only passwords.
-- [ ] **Verify.** Read each description against its page's own headings. If it
+- [x] **Verify.** Read each description against its page's own headings. If it
   names fewer things than the page contains, it is still wrong.
 
 ### Step 1.2 — No label asserts what the code does not check
 
-- [ ] **Action.** `/postings/mine` renders `MODE_LABEL.hiring` as a static
+- [x] **Action.** `/postings/mine` renders `MODE_LABEL.hiring` as a static
   eyebrow. Either read the real mode, or stop naming a mode — the page's content
-  does not depend on one.
-- [ ] **Action.** No heading may imply a visibility that is untrue of the fields
-  under it. That is what Phase 3 rebuilds the profile page around.
-- [ ] **Verify.** Grep for `MODE_LABEL` outside the account hub, `ModeNotice`
+  does not depend on one. Eyebrow is now *Hiring* — places the page without
+  borrowing the word *mode*.
+- [x] **Verify.** Grep for `MODE_LABEL` outside the account hub, `ModeNotice`
   and `SwitchModeAction`. Anywhere else it names a state that page never reads.
+  (Consumers left: `AccountPage`, `SwitchModeAction`.)
+- **Note.** No heading may imply a visibility that is untrue of the fields under
+  it. That is what Phase 3 rebuilds the profile page around — not a Phase 1
+  checkbox.
 
 ### Step 1.3 — Destructive actions are not peers of safe ones
 
-- [ ] **Action.** Adopt the postings rule everywhere: a destructive action is
+- [x] **Action.** Adopt the postings rule everywhere: a destructive action is
   either conditional on being safe, or demoted out of the primary row. Offers is
   the screen that breaks it.
 

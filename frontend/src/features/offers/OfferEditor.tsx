@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { EllipsisVertical } from 'lucide-react';
 import { Button, Input, Select, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
@@ -20,6 +21,7 @@ import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from '@/features/offers/limits';
 import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
 import { toApiError } from '@/lib/api-client';
+import { cn } from '@/lib/cn';
 import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
 import { centavosToPesoInput, formatPriceRange, pesoInputToCentavos } from '@/lib/money';
 
@@ -94,6 +96,8 @@ export function OfferEditor() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
+  /** Which row's overflow menu is open — destructive actions stay out of the primary row. */
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const registeredSlugs = profile.data?.subdomainSlugs ?? [];
   const registeredKey = registeredSlugs.join('\0');
@@ -347,7 +351,7 @@ export function OfferEditor() {
                     : ''}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   size="sm"
@@ -375,15 +379,43 @@ export function OfferEditor() {
                 >
                   Edit
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => void onRemoveOffer(offer.id)}
-                >
-                  Delete
-                </Button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    className={cn(
+                      'inline-flex size-9 items-center justify-center rounded-sm text-ink-muted',
+                      'hover:bg-clay-100 hover:text-ink',
+                    )}
+                    aria-label={`More actions for ${offer.title}`}
+                    aria-expanded={menuOpenId === offer.id}
+                    aria-haspopup="menu"
+                    disabled={busy}
+                    onClick={() =>
+                      setMenuOpenId((current) => (current === offer.id ? null : offer.id))
+                    }
+                  >
+                    <EllipsisVertical className="size-4" aria-hidden />
+                  </button>
+                  {menuOpenId === offer.id && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 z-10 mt-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
+                        disabled={busy}
+                        onClick={() => {
+                          setMenuOpenId(null);
+                          void onRemoveOffer(offer.id);
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </li>
           ))}

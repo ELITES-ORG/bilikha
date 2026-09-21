@@ -225,7 +225,8 @@ export function AccountPage() {
           <p className="u-eyebrow">Account</p>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Your account</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Keep your public details and sign-in security up to date.
+            Your public profile and offers, how your work is doing, and settings
+            for mode, appearance and sign-in.
           </p>
 
           {profile.isPending && (

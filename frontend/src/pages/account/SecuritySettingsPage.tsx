@@ -18,7 +18,7 @@ export function SecuritySettingsPage() {
         <Container width="narrow" className="py-(--section-gap)">
           <AccountPageHeading title="Security" />
           <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Password settings for this account.
+            Change your password, or end this session on this device.
           </p>
 
           <Card elevation="flat" className="mt-10">

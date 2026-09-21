@@ -14,7 +14,6 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useClosePosting, useDeletePosting, useMyPostings } from '@/features/postings/api';
 import { formatTimeLeft } from '@/lib/posting-time';
 import { formatPriceRange } from '@/lib/money';
-import { MODE_LABEL } from '@/lib/view-mode';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 
@@ -47,7 +46,7 @@ export function MyPostingsPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <SectionHeading
-            eyebrow={MODE_LABEL.hiring}
+            eyebrow="Hiring"
             title="Your postings"
             description="Work you want done. Close a posting when it is filled or no longer needed."
           />
