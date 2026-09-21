@@ -1,6 +1,6 @@
 # 0033. Layout and grouping review
 
-- **Status:** Ready — review closed 2026-09-22 across five screens
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md) ·
@@ -72,7 +72,7 @@ paths.
 | 4. Offers rows | 2 / 2 | Done |
 | 5. Postings badges | 2 / 2 | Done |
 | 6. Security structure | 2 / 2 | Done |
-| 7. Verification | 0 / 4 | Not started |
+| 7. Verification | 4 / 4 | Done |
 
 ---
 
@@ -546,24 +546,27 @@ assume them.
 
 ### Step 7.1 — Every screen, both widths, both themes
 
-- [ ] **Verify.** All five screens at 375px and desktop, light and dark.
-  Screenshot each.
+- [x] **Verify.** All five screens at 375px and desktop, light and dark.
+  Screenshot each. (`tmp/shots-0033/`, 20 PNGs plus tall/scrolled extras.)
 
 ### Step 7.2 — The shared rules held
 
-- [ ] **Verify.** No page description names fewer things than its page holds; no
+- [x] **Verify.** No page description names fewer things than its page holds; no
   label names a mode the page does not read; no destructive action sits at the
-  weight of a safe one.
+  weight of a safe one. (`MODE_LABEL` consumers: AccountPage, SwitchModeAction
+  only. Offers Delete behind overflow. Descriptions match headings.)
 
 ### Step 7.3 — Populated, not only empty
 
-- [ ] **Verify.** Offers and postings with several rows. Neither page had ever
+- [x] **Verify.** Offers and postings with several rows. Neither page had ever
   been seen as a list before this review — the platform has one offer and zero
   postings — so an empty-state check proves nothing about either.
+  Local fixture `cre0299739`: **4 offers**, **3 postings** (2d / 29d / 44d left
+  — urgency tones distinct).
 
 ### Step 7.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green.
 
 ---
