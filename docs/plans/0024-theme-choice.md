@@ -70,7 +70,7 @@ apply unchanged. Eight specific to this plan:
 | 1. One palette | 3 / 3 | Done |
 | 2. The override | 2 / 2 | Done |
 | 3. The control | 2 / 2 | Done |
-| 4. Verification | 4 / 4 | 4.3's phone check needs a real device |
+| 4. Verification | 3 / 4 | Outstanding: 4.3's phone check needs a real device |
 
 ---
 

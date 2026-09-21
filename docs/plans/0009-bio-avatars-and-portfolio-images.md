@@ -1,6 +1,18 @@
 # 0009. Bio on cards, avatars, and portfolio images
 
-- **Status:** Complete
+- **Status:** Complete for what shipped — phase 6 superseded, phase 8 partly run
+- **Corrected 2026-09-19.** The table read all-Done while 44 boxes sat unticked,
+  which is the sort of thing a progress table exists to prevent. Phase 6 was
+  never built: [ADR 0022](../decisions/0022-offers-replace-portfolio.md) replaced
+  the portfolio with offers, `portfolio_items` was migrated by
+  `migrate-portfolio-to-offers.ts` and dropped, and there is no such table today.
+  Phase 7 did ship — `prune-orphan-media.ts`, the `media:prune` script, its
+  `commands.md` entry and both `/admin/media` routes all exist, and the queue was
+  exercised through the UI on 2026-09-19. Phase 8's remaining items are the
+  upload ones; they need a `SUPABASE_SERVICE_ROLE_KEY` that matches the project,
+  which local does not have. The security greps in it were run and pass: no
+  `service_role` anywhere in `frontend/`, no `supabase` in `frontend/src`, and
+  `/creatives` returns 200 signed out
 - **Depends on:** [plan 0008](./0008-location-at-registration-and-nearby-first.md) — the
   directory card and its nearby ordering are what this changes
 - **Related:** [ADR 0021](../decisions/0021-image-storage-and-upload-path.md) ·
@@ -96,9 +108,9 @@ apply unchanged. Five specific to this plan:
 | 3. Backend — upload tickets | 5 / 5 | Done |
 | 4. Frontend — the resize pipeline | 4 / 4 | Done |
 | 5. Avatars | 6 / 6 | Done |
-| 6. Portfolio | 7 / 7 | Done |
-| 7. Admin media review and cleanup | 4 / 4 | Done |
-| 8. Verification | 7 / 7 | Done |
+| 6. Portfolio | 0 / 7 | **Superseded** by [plan 0010](./0010-offers-and-an-offer-directory.md) — never built |
+| 7. Admin media review and cleanup | 4 / 4 | Shipped; boxes unticked — see note |
+| 8. Verification | 4 / 7 | **Partly** — the upload checks need working storage |
 
 ---
 

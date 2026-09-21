@@ -74,9 +74,9 @@ apply unchanged. Eight specific to this plan:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Extract the fields | 2 / 2 | Done |
-| 2. The rail | 3 / 3 | Done |
-| 3. The results column | 1 / 1 | Done (code; 1280/1920 not eyeballed) |
+| 1. Extract the fields | 2 / 2 | Reverted with the plan |
+| 2. The rail | 3 / 3 | Reverted with the plan |
+| 3. The results column | 1 / 1 | Reverted with the plan |
 | 4. Verification | 2 / 4 | Partial — automated + CI green; interactive left open |
 
 ---

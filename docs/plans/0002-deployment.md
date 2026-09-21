@@ -1,6 +1,20 @@
 # 0002. Deployment — Vercel, Render, Supabase (free tier)
 
 - **Status:** In progress
+- **On the unticked boxes (2026-09-19).** Phases 1, 2, 3 and 7 are done: the
+  Supabase project, the seeded production database, the Render API and
+  `deployments.md` all exist, and plan 0001 carries the proxy amendment as its
+  step 7.2. What was never done is ticking the individual actions as they were
+  performed, most of them clicks in a dashboard nobody can verify after the
+  fact. They are left unticked and the table says so, rather than being ticked
+  now on the strength of the result looking right.
+- **Phase 7 is the exception and was ticked**, because every one of its six
+  boxes is checkable after the fact and was checked on 2026-09-19:
+  `docs/reference/deployments.md` exists and `docs:check` exits 0; plan 0001's
+  Phase 7 carries the proxy step; and `backend/src/app.ts` still sets
+  `sameSite: 'lax'` with `secure: isProduction`, with the note about the
+  same-origin proxy present at plan 0001 step 4.5 — better worded than the text
+  this plan asked for, so it was left alone.
 - **Related:** [ADR 0002](../decisions/0002-pern-with-client-rendered-spa.md) ·
   [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [Plan 0001](./0001-registration-and-auth.md) ·
@@ -137,13 +151,13 @@ git status         # should be clean
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Supabase database | 6 / 6 | Done |
-| 2. Migrate and seed production | 3 / 3 | Done |
-| 3. Render API | 6 / 6 | Done |
+| 1. Supabase database | 6 / 6 | Live; per-action boxes unticked |
+| 2. Migrate and seed production | 3 / 3 | Live; per-action boxes unticked |
+| 3. Render API | 6 / 6 | Live; per-action boxes unticked |
 | 4. Vercel frontend and proxy | 4 / 5 | CORS_ORIGINS still to update |
 | 5. Verify the deployment | 3 / 4 | Safari check outstanding |
 | 6. Keep the free tier awake | 0 / 2 | Not started |
-| 7. Document and amend plan 0001 | 3 / 3 | Done |
+| 7. Document and amend plan 0001 | 3 / 3 | Done; verified 2026-09-19 |
 
 ---
 
@@ -536,7 +550,7 @@ curl -s -o /dev/null -w "%{time_total}s\n" https://<your-project>.vercel.app/api
 
 ### Step 7.1 — Write down what was deployed
 
-- [ ] **Action.** Create `docs/reference/deployments.md` recording, for each of
+- [x] **Action.** Create `docs/reference/deployments.md` recording, for each of
   the three services: the URL, the region, the settings that are non-obvious
   (Render's root directory and `--include=dev`; Vercel's root directory and the
   proxy), and which environment variables are set where.
@@ -544,13 +558,13 @@ curl -s -o /dev/null -w "%{time_total}s\n" https://<your-project>.vercel.app/api
 **Do not put secret values in it.** Record the variable names and where they
 live, not their contents.
 
-- [ ] **Verify.** `npm run docs:check` exits 0.
+- [x] **Verify.** `npm run docs:check` exits 0.
 
 ### Step 7.2 — Amend plan 0001 for the proxy
 
 Two things in plan 0001 are affected by running behind two proxies.
 
-- [ ] **Action.** Add to plan 0001, Phase 7 (Security hardening), a new step:
+- [x] **Action.** Add to plan 0001, Phase 7 (Security hardening), a new step:
 
 > **Rate limiting behind a proxy.** Requests now arrive at Render via Vercel's
 > edge, so `req.ip` is a proxy address, not the client. Left uncorrected, every
@@ -566,14 +580,14 @@ Two things in plan 0001 are affected by running behind two proxies.
 > `X-Forwarded-For` chain, letting a client spoof its address and bypass rate
 > limiting entirely.
 
-- [ ] **Verify.** The step is present in plan 0001's Phase 7.
+- [x] **Verify.** The step is present in plan 0001's Phase 7.
 
 ### Step 7.3 — Confirm the cookie config needs no change
 
-- [ ] **Action.** Confirm plan 0001 Step 4.5 keeps `sameSite: 'lax'` and
+- [x] **Action.** Confirm plan 0001 Step 4.5 keeps `sameSite: 'lax'` and
   `secure: isProduction`. It does. **Change nothing** — the proxy is what makes
   these correct.
-- [ ] **Verify.** Add a note to plan 0001 Step 4.5 reading: *"Correct as written
+- [x] **Verify.** Add a note to plan 0001 Step 4.5 reading: *"Correct as written
   because the API is proxied same-origin — see plan 0002. If that proxy is ever
   removed, this configuration breaks in Safari."*
 
