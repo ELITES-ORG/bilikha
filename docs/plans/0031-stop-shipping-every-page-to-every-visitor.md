@@ -58,8 +58,16 @@ The heaviest modules, none of which the landing page needs:
 
 ## Prerequisites
 
-- `npm run build` and note the current initial JS chunk — 617 KB at the time of
-  writing. Every claim in Phase 3 is measured against that number.
+- `npm run build` and note the current initial JS chunk. Measured 2026-09-22:
+
+  ```
+  dist/assets/index-DMeMl6j-.js   632.14 kB │ gzip: 180.17 kB
+  dist/assets/index-XkrQPenT.css   67.63 kB │ gzip:  12.52 kB
+  ```
+
+  **Compare against the build's own figure, not the file size on disk** — they
+  differ, and mixing them makes a before/after meaningless. Gzip is the number
+  that reaches a phone on metered data, so report both.
 - Read [plan 0030's audit](./0030-something-to-look-at-while-it-boots.md). It
   ends with the lesson this plan can most easily repeat.
 
