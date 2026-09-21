@@ -22,7 +22,17 @@ function summary(overrides: Partial<WorkSummary> = {}): WorkSummary {
       cancelled: 0,
       ...overrides.agreements,
     },
-    money: { agreedCentavos: 0, completedCentavos: 0, ...overrides.money },
+    money: {
+      proposedCentavos: 0,
+      agreedCentavos: 0,
+      inProgressCentavos: 0,
+      awaitingConfirmationCentavos: 0,
+      completedCentavos: 0,
+      cancelledCentavos: 0,
+      committedCentavos: 0,
+      typicalCentavos: null,
+      ...overrides.money,
+    },
     ratings: { average: null, count: 0, ...overrides.ratings },
   };
 }

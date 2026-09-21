@@ -21,8 +21,22 @@ import {
 } from '../../db/schema/index.js';
 import type { Agreement, AgreementEvent } from '../../db/schema/agreements.js';
 import { AppError } from '../../lib/http-error.js';
+import { medianCentavos } from '../../lib/median.js';
 import { deriveState, totalOf } from '../agreements/agreements.service.js';
 import { summaryForProfile } from '../ratings/ratings.service.js';
+
+function emptyMoney(): WorkSummary['money'] {
+  return {
+    proposedCentavos: 0,
+    agreedCentavos: 0,
+    inProgressCentavos: 0,
+    awaitingConfirmationCentavos: 0,
+    completedCentavos: 0,
+    cancelledCentavos: 0,
+    committedCentavos: 0,
+    typicalCentavos: null,
+  };
+}
 
 /**
  * A creative's work summary. 404 when the account has no creative profile —
@@ -145,7 +159,7 @@ async function loadAgreements(userId: string): Promise<{
       completed: 0,
       cancelled: 0,
     },
-    money: { agreedCentavos: 0, completedCentavos: 0 },
+    money: emptyMoney(),
   };
   if (agreementList.length === 0) return empty;
 
@@ -173,9 +187,13 @@ async function loadAgreements(userId: string): Promise<{
   // count, so the states always partition it. Taking it from the rows is how a
   // superseded version ended up in the total and in no state, leaving a reader
   // with "2 agreements · 1 cancelled" and nowhere to find the second.
+  //
+  // Money accumulates in the same case that counts: a second pass is how two
+  // numbers that must agree stop agreeing (plan 0027 audit / plan 0028).
   const counts = { ...empty.counts };
-  let agreedCentavos = 0;
-  let completedCentavos = 0;
+  const money = emptyMoney();
+  /** Values a client accepted and did not cancel — the set the typical draws from. */
+  const acceptedValues: number[] = [];
 
   for (const agreement of agreementList) {
     const lineItems = itemsById.get(agreement.id) ?? [];
@@ -190,44 +208,58 @@ async function loadAgreements(userId: string): Promise<{
       case 'Awaiting response':
         counts.awaitingClientAcceptance += 1;
         counts.total += 1;
+        money.proposedCentavos += value;
         break;
       case 'Agreed':
         counts.agreed += 1;
         counts.total += 1;
-        agreedCentavos += value;
+        money.agreedCentavos += value;
+        money.committedCentavos += value;
+        acceptedValues.push(value);
         break;
       case 'In progress':
         counts.inProgress += 1;
         counts.total += 1;
-        agreedCentavos += value;
+        money.inProgressCentavos += value;
+        money.committedCentavos += value;
+        acceptedValues.push(value);
         break;
       case 'Awaiting confirmation':
         counts.awaitingClientConfirmation += 1;
         counts.total += 1;
-        agreedCentavos += value;
+        money.awaitingConfirmationCentavos += value;
+        money.committedCentavos += value;
+        acceptedValues.push(value);
         break;
       case 'Completed':
         counts.completed += 1;
         counts.total += 1;
-        agreedCentavos += value;
-        completedCentavos += value;
+        money.completedCentavos += value;
+        money.committedCentavos += value;
+        acceptedValues.push(value);
         break;
       case 'Cancelled':
         counts.cancelled += 1;
         counts.total += 1;
+        money.cancelledCentavos += value;
         break;
       default:
         // Superseded and Withdrawn are not live engagements: a superseded row
         // is an earlier version of the agreement counted beside it, and a
         // withdrawn one never became anything. Counting either would report a
-        // single revised agreement as two.
+        // single revised agreement as two. Neither is money.
         break;
     }
   }
 
+  // A "typical" drawn from one agreement is that agreement. Only claim one
+  // once there are at least two accepted values to stand between.
+  money.typicalCentavos =
+    acceptedValues.length >= 2 ? medianCentavos(acceptedValues) : null;
+
   return {
     counts,
-    money: { agreedCentavos, completedCentavos },
+    money,
   };
 }
 

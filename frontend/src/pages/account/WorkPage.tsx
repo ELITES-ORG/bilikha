@@ -116,13 +116,43 @@ function agreementsCopy(summary: WorkSummary): string {
   return parts.length > 0 ? `${head} · ${parts.join(' · ')}` : head;
 }
 
-function moneyCopy(summary: WorkSummary): string {
-  if (summary.money.agreedCentavos === 0 && summary.money.completedCentavos === 0) {
+function moneyCopy(summary: WorkSummary): ReactNode {
+  const m = summary.money;
+  const hasAny =
+    m.proposedCentavos > 0 ||
+    m.agreedCentavos > 0 ||
+    m.inProgressCentavos > 0 ||
+    m.awaitingConfirmationCentavos > 0 ||
+    m.completedCentavos > 0 ||
+    m.cancelledCentavos > 0;
+
+  if (!hasAny) {
     return 'Nothing agreed yet — the figure here is what you and a client put in writing, not what changed hands.';
   }
-  const agreed = formatPesos(summary.money.agreedCentavos);
-  const completed = formatPesos(summary.money.completedCentavos);
-  return `Agreed ${agreed} · completed ${completed}. Bilikha does not handle payment.`;
+
+  // Lifecycle order; cancelled last and only when it happened. Zero states
+  // stay off the page so this never becomes six ₱0 rows.
+  const parts: string[] = [];
+  if (m.proposedCentavos > 0) parts.push(`Proposed ${formatPesos(m.proposedCentavos)}`);
+  if (m.agreedCentavos > 0) parts.push(`Agreed ${formatPesos(m.agreedCentavos)}`);
+  if (m.inProgressCentavos > 0) parts.push(`In progress ${formatPesos(m.inProgressCentavos)}`);
+  if (m.awaitingConfirmationCentavos > 0) {
+    parts.push(`Awaiting confirmation ${formatPesos(m.awaitingConfirmationCentavos)}`);
+  }
+  if (m.completedCentavos > 0) parts.push(`Completed ${formatPesos(m.completedCentavos)}`);
+  if (m.cancelledCentavos > 0) parts.push(`Cancelled ${formatPesos(m.cancelledCentavos)}`);
+
+  return (
+    <>
+      <p>{parts.join(' · ')}</p>
+      {m.typicalCentavos != null && (
+        <p className="mt-2">
+          A typical agreement of yours is {formatPesos(m.typicalCentavos)}.
+        </p>
+      )}
+      <p className="mt-2">Bilikha does not handle payment.</p>
+    </>
+  );
 }
 
 function ratingsCopy(summary: WorkSummary): string {

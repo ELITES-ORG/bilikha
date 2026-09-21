@@ -1,6 +1,6 @@
 # 0028. The money, in full
 
-- **Status:** Ready
+- **Status:** Partial
 - **Owner:** implementing agent
 - **Related:** [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md) ·
   [ADR 0029](../decisions/0029-work-agreements-not-invoices.md) ·
@@ -83,10 +83,10 @@ be a lie the first time someone did not.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Money per state | 0 / 3 | Not started |
-| 2. What a typical agreement is worth | 0 / 2 | Not started |
-| 3. The section | 0 / 2 | Not started |
-| 4. Verification | 0 / 4 | Not started |
+| 1. Money per state | 3 / 3 | Done |
+| 2. What a typical agreement is worth | 2 / 2 | Done |
+| 3. The section | 2 / 2 | Done |
+| 4. Verification | 3 / 4 | Partial — local gates green; CI pending push |
 
 ---
 
@@ -94,7 +94,7 @@ be a lie the first time someone did not.
 
 ### Step 1.1 — The contract
 
-- [ ] **Action.** Replace `money` in `backend/src/contracts/work.ts`:
+- [x] **Action.** Replace `money` in `backend/src/contracts/work.ts`:
 
 ```ts
   /**
@@ -122,7 +122,7 @@ be a lie the first time someone did not.
   };
 ```
 
-- [ ] **Verify.** Every reader is reviewed against rule 1. They were enumerated
+- [x] **Verify.** Every reader is reviewed against rule 1. They were enumerated
   on 2026-09-22, so this is a checklist rather than a hunt:
 
 | File | What it does |
@@ -133,7 +133,7 @@ be a lie the first time someone did not.
 | `frontend/src/features/work/next-action.test.ts` | the summary factory's defaults |
 | `frontend/src/pages/account/WorkPage.tsx` | `moneyCopy`, three references |
 
-- [ ] **The assertion that encodes the old meaning.** `work.test.ts` asserts
+- [x] **The assertion that encodes the old meaning.** `work.test.ts` asserts
   `agreedCentavos: 2_150_000 + 50_000`. That sum *is* the old definition —
   a completed agreement plus an accepted one. Under the new shape it is
   `committedCentavos`, and `agreedCentavos` is `50_000` alone. Re-read it, do
@@ -142,19 +142,19 @@ be a lie the first time someone did not.
 
 ### Step 1.2 — Accumulate where you count
 
-- [ ] **Action.** In `loadAgreements`, add the centavos to each state's total in
+- [x] **Action.** In `loadAgreements`, add the centavos to each state's total in
   the same `case` that increments its count. Do not compute money in a second
   pass; that is how two numbers that must agree stop agreeing.
-- [ ] **Action.** `committedCentavos` is agreed + inProgress + awaitingConfirmation
+- [x] **Action.** `committedCentavos` is agreed + inProgress + awaitingConfirmation
   + completed. Not proposed (nobody has accepted it) and not cancelled (it will
   not happen).
 
 ### Step 1.3 — The invariant
 
-- [ ] **Test.** The per-state figures sum to `committed + proposed + cancelled`,
+- [x] **Test.** The per-state figures sum to `committed + proposed + cancelled`,
   on a creative holding one agreement in each state.
-- [ ] **Test.** A superseded agreement contributes nothing to any figure.
-- [ ] **Verify.** Break the sum deliberately — add a state's centavos twice —
+- [x] **Test.** A superseded agreement contributes nothing to any figure.
+- [x] **Verify.** Break the sum deliberately — add a state's centavos twice —
   and watch the test fail.
 
 ---
@@ -163,18 +163,18 @@ be a lie the first time someone did not.
 
 ### Step 2.1 — The median
 
-- [ ] **Action.** `typicalCentavos` is the median value of this creative's
+- [x] **Action.** `typicalCentavos` is the median value of this creative's
   agreements that a client accepted — agreed, in progress, awaiting
   confirmation, completed. Not proposed and not cancelled: neither is a price
   anyone agreed to.
-- [ ] **Action.** Even counts take the lower of the two middle values. Say which
+- [x] **Action.** Even counts take the lower of the two middle values. Say which
   in a comment; a reader should not have to guess. There is no median helper in
   the repo — checked — so this is yours to write and to test.
-- [ ] **Action.** Null when there are none. Not zero — zero is a price.
+- [x] **Action.** Null when there are none. Not zero — zero is a price.
 
 ### Step 2.2 — Tested at the edges
 
-- [ ] **Test.** One agreement, two, three, and none. The two-agreement case is
+- [x] **Test.** One agreement, two, three, and none. The two-agreement case is
   the one that catches an off-by-one in the middle index.
 
 ---
@@ -183,18 +183,18 @@ be a lie the first time someone did not.
 
 ### Step 3.1 — It reads as a pipeline
 
-- [ ] **Action.** Rewrite `moneyCopy` in `WorkPage.tsx` to render only the
+- [x] **Action.** Rewrite `moneyCopy` in `WorkPage.tsx` to render only the
   states that are non-zero, in lifecycle order: proposed → agreed → in progress
   → awaiting confirmation → completed, with cancelled last and only when it
   happened.
-- [ ] **Action.** Keep the sentence that says the platform does not handle
+- [x] **Action.** Keep the sentence that says the platform does not handle
   payment. It is the one line that stops every figure above it being misread.
-- [ ] **Action.** Nothing agreed → the existing single sentence. Rule 6: do not
+- [x] **Action.** Nothing agreed → the existing single sentence. Rule 6: do not
   render six zero rows.
 
 ### Step 3.2 — The typical value
 
-- [ ] **Action.** Show it only when there are at least two accepted agreements.
+- [x] **Action.** Show it only when there are at least two accepted agreements.
   A "typical" drawn from one is that one, and saying otherwise is dressing a
   single number as a pattern.
 
@@ -204,25 +204,26 @@ be a lie the first time someone did not.
 
 ### Step 4.1 — Against the database
 
-- [ ] **Verify.** As `cli0299739`, every figure matches
+- [x] **Verify.** As `cli0299739`, every figure matches
   `select sum(price_centavos) ... group by` run against the line items. Check
   the numbers against SQL, not against the page.
 
 ### Step 4.2 — The states still add up
 
-- [ ] **Verify.** The money partition and the count partition agree: a state
+- [x] **Verify.** The money partition and the count partition agree: a state
   with agreements has centavos, a state with none has zero.
 
 ### Step 4.3 — Zero, and one
 
-- [ ] **Verify.** `nc0850896` sees one sentence, not a table of ₱0. A creative
+- [x] **Verify.** `nc0850896` sees one sentence, not a table of ₱0. A creative
   with exactly one accepted agreement sees no "typical" figure.
 
 ### Step 4.4 — Full pass
 
 - [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for `paid`, `earned`, `income`, `revenue`,
-  `outstanding`, `owed`, and for any second sum over line items.
+  `outstanding`, `owed`, and for any second sum over line items. Local gates
+  and grep done 2026-09-22; CI pending push.
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * Derived summary of a creative's work on the platform (ADR 0039 / plan 0027).
+ * Centavos per lifecycle state of a creative's agreements (ADR 0039 / plan 0028).
  * Every field is computed on read from rows that already exist — never a
  * counter column or cached total.
  */
@@ -34,7 +34,28 @@ export interface WorkSummary {
     completed: number;
     cancelled: number;
   };
-  /** Centavos, summed from line items. Never a float, never pesos. */
-  money: { agreedCentavos: number; completedCentavos: number };
+  /**
+   * Centavos per lifecycle state, mirroring `agreements` and partitioning the
+   * same way: the six below sum to `committedCentavos` plus `proposedCentavos`
+   * plus `cancelledCentavos`. Superseded and withdrawn contribute nothing.
+   *
+   * Every figure is what was put in writing. Bilikha does not handle payment
+   * and none of this is income (ADR 0039).
+   */
+  money: {
+    /** Issued, not yet accepted — on the table, not promised. */
+    proposedCentavos: number;
+    /** Accepted, not yet started. */
+    agreedCentavos: number;
+    inProgressCentavos: number;
+    awaitingConfirmationCentavos: number;
+    completedCentavos: number;
+    /** Accepted and then cancelled. Work that will not happen. */
+    cancelledCentavos: number;
+    /** Everything a client has accepted and not cancelled. */
+    committedCentavos: number;
+    /** The middle agreement by value. Null when fewer than two accepted. */
+    typicalCentavos: number | null;
+  };
   ratings: RatingSummary;
 }
