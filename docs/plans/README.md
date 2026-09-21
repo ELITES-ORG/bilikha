@@ -89,6 +89,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0027](./0027-how-your-work-is-doing.md) | How your work is doing | Complete |
 | [0028](./0028-the-money-in-full.md) | The money, in full | Complete |
 | [0029](./0029-the-numbers-look-like-numbers.md) | The numbers look like numbers | Complete |
+| [0030](./0030-something-to-look-at-while-it-boots.md) | Something to look at while it boots | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.
