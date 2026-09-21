@@ -2,22 +2,18 @@ import { useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ButtonLink } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { ADMIN_SECTIONS, isAdminSectionActive } from './admin-sections';
 
 /**
- * One shell for `/admin/*`: header, section nav, and the guard. Pages become
- * content. The guard lives here so it cannot be forgotten on a new page
- * (ADR 0035).
+ * One shell for `/admin/*`: header, section nav, and the outlet. The
+ * `RequireAdmin` guard lives on the route in `App.tsx`, outside this lazy
+ * module, so a non-admin redirect never downloads the admin chunk
+ * (plan 0031 / ADR 0035).
  */
 export function AdminLayout() {
-  return (
-    <RequireAdmin>
-      <AdminShell />
-    </RequireAdmin>
-  );
+  return <AdminShell />;
 }
 
 function AdminShell() {

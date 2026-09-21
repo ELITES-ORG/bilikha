@@ -49,6 +49,17 @@
     to { transform: rotate(360deg); }
   }
 
+  /* Lazy-route fallback (plan 0031). Opacity only; delay so a cached chunk
+     never flashes. */
+  @keyframes bk-route-fallback-in {
+    to { opacity: 1; }
+  }
+
+  @keyframes bk-route-fallback-pulse {
+    0%, 100% { opacity: 0.28; }
+    50% { opacity: 0.9; }
+  }
+
   /* ------------------------------------------------------------- utilities */
   .anim-fade-in {
     animation: bk-fade-in var(--duration-slow) var(--ease-out-quart) both;
@@ -196,6 +207,20 @@
     .interactive-lift:hover,
     .interactive-press:active:not(:disabled) {
       transform: none;
+    }
+
+    /*
+      Delayed fade stays; only the pulse stops. Killing the whole animation
+      made the mark opaque from frame 0 (plan 0030 audit) — the same defect
+      on every cached navigation here.
+    */
+    .bk-route-fallback {
+      animation: bk-route-fallback-in 0.35s ease 0.25s forwards !important;
+    }
+
+    .bk-route-fallback-dot {
+      animation: none !important;
+      opacity: 0.7 !important;
     }
 
     .skeleton::after {

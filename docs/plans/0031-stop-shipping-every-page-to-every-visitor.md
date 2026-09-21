@@ -1,6 +1,6 @@
 # 0031. Stop shipping every page to every visitor
 
-- **Status:** Ready
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [plan 0030](./0030-something-to-look-at-while-it-boots.md) (the blank this removes) ·
   [constraint 3](../explanation/constraints.md) (budget Android, metered data) ·
@@ -95,9 +95,9 @@ The heaviest modules, none of which the landing page needs:
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The fallback | 0 / 2 | Not started |
-| 2. Split the routes | 0 / 3 | Not started |
-| 3. Measure | 0 / 3 | Not started |
+| 1. The fallback | 2 / 2 | Done |
+| 2. Split the routes | 3 / 3 | Done |
+| 3. Measure | 3 / 3 | Done |
 
 ---
 
@@ -105,21 +105,21 @@ The heaviest modules, none of which the landing page needs:
 
 ### Step 1.1 — Something to show while a chunk arrives
 
-- [ ] **Action.** A `RouteFallback` component: the shared chrome that is already
+- [x] **Action.** A `RouteFallback` component: the shared chrome that is already
   loaded, plus a quiet mark in the content area. Not a blank, not a full-page
   spinner that replaces the header the person can already see.
-- [ ] **Action.** Invisible for the first ~250ms, then fading in — a cached
+- [x] **Action.** Invisible for the first ~250ms, then fading in — a cached
   chunk must never produce a flash. Shorter than the boot mark's 400ms because
   a chunk is smaller than a cold bundle.
-- [ ] **Action.** `prefers-reduced-motion` stops the movement and keeps the
+- [x] **Action.** `prefers-reduced-motion` stops the movement and keeps the
   delayed fade, matching `motion.css` and the correction made to plan 0030.
 
 ### Step 1.2 — One boundary, high up
 
-- [ ] **Action.** A single `Suspense` inside `BrowserRouter`, wrapping `Routes`.
+- [x] **Action.** A single `Suspense` inside `BrowserRouter`, wrapping `Routes`.
   Per-route boundaries would mean the chrome unmounts and remounts on every
   navigation.
-- [ ] **Verify.** Navigating between two split routes keeps the header and the
+- [x] **Verify.** Navigating between two split routes keeps the header and the
   bottom bar mounted throughout. If they flicker, the boundary is in the wrong
   place.
 
@@ -129,29 +129,49 @@ The heaviest modules, none of which the landing page needs:
 
 ### Step 2.1 — The ones nobody browsing needs
 
-- [ ] **Action.** `React.lazy` for: all six `pages/admin/*`, `StyleGuidePage`,
+- [x] **Action.** `React.lazy` for: all six `pages/admin/*`, `StyleGuidePage`,
   `RegisterPage`, the onboarding pages, `ConversationPage`, `HistoryPage`,
   `AgreementPage`, `account/*`, `PostingComposePage`, `MyPostingsPage`.
-- [ ] **Why these first.** Every one is behind a sign-in, an admin role, or a
+- [x] **Why these first.** Every one is behind a sign-in, an admin role, or a
   deliberate navigation. A visitor reading the landing page reaches none of them.
 
 ### Step 2.2 — What stays eager
 
-- [ ] **Action.** `HomeRoute`, the providers, the router, `SiteHeader`, the
+- [x] **Action.** `HomeRoute`, the providers, the router, `SiteHeader`, the
   bottom navigation, `RequireAuth`, the UI primitives and `NotFoundPage` stay in
   the initial chunk. Rule 3.
-- [ ] **Decide and record.** `DirectoryPage` is 32 KB and is the first tap from
+- [x] **Decide and record.** `DirectoryPage` is 32 KB and is the first tap from
   the landing page. Splitting it shrinks the initial chunk most; keeping it eager
   makes the commonest navigation instant. Pick one, measure both, and write down
   which and why — this is the one genuine trade-off in the plan.
 
+  **Decision: keep `DirectoryPage` eager.** Measured both ways against the same
+  build pipeline (raw / gzip):
+
+  | | Initial JS |
+  |---|---|
+  | Directory eager | **302.41 kB / 88.13 kB gzip** |
+  | Directory lazy | 287.03 kB / 85.14 kB gzip |
+
+  Lazy saves ~15 kB raw and ~3 kB gzip. Signed-in `/` redirects to `/directory`
+  (ADR 0023), so that path is the commonest entry after login — an extra chunk
+  round trip there costs more than 3 kB gzip is worth on metered data for a
+  visitor who never opens the directory. First tap from the landing page stays
+  instant.
+
 ### Step 2.3 — Nothing regressed
 
-- [ ] **Verify.** Every route still loads, including the admin ones and a
+- [x] **Verify.** Every route still loads, including the admin ones and a
   deep-linked `/agreements/:id`.
-- [ ] **Verify.** `RequireAuth` still redirects before a protected chunk is
+- [x] **Verify.** `RequireAuth` still redirects before a protected chunk is
   fetched. A guard that downloads the admin bundle and *then* redirects has
   leaked the existence of the surface and wasted the bytes.
+
+  Checked with `performance.getEntriesByType('resource')`: unsigned
+  `/agreements/:id` → `/login` with no Agreement chunk; unsigned `/admin` → `/`
+  with no Admin chunk. Admin session loads `AdminLayout` + queue/media chunks.
+  `RequireAdmin` wraps the lazy layout in `App.tsx` (moved out of
+  `AdminLayout`) so the guard runs before the admin module downloads.
 
 ---
 
@@ -159,21 +179,42 @@ The heaviest modules, none of which the landing page needs:
 
 ### Step 3.1 — The number
 
-- [ ] **Verify.** Initial JS chunk before and after, in KB, from `npm run build`.
+- [x] **Verify.** Initial JS chunk before and after, in KB, from `npm run build`.
   Report both. Rule 4.
+
+  | | Initial JS (build report) |
+  |---|---|
+  | Before | `index-DMeMl6j-.js` **632.14 kB / gzip 180.17 kB** |
+  | After (Directory eager) | `index-C3wR_23q.js` **302.41 kB / gzip 88.13 kB** |
+
+  Roughly **halved** on the wire (180 → 88 kB gzip).
 
 ### Step 3.2 — The window it was for
 
-- [ ] **Verify.** Against **production or a local preview of the built app**,
+- [x] **Verify.** Against **production or a local preview of the built app**,
   cold cache, at 400ms/600kbps: the blank window before React mounts, before and
   after. The 355ms above is the number to beat.
-- [ ] **Note.** `scripts/screenshot.mjs` needs `coldCache` for this. Without it
+- [x] **Note.** `scripts/screenshot.mjs` needs `coldCache` for this. Without it
   the scratch profile serves a warm bundle and you will measure a cache hit —
   this cost real time during plan 0030 and the browser guide now says so.
 
+  Local `vite preview` :4173, cold cache, 400ms / 600 kbps, blank = first frame
+  with `#bk-boot` present until the frame where it is gone (React replaced the
+  root). Same method before and after:
+
+  | | Blank before React mounts |
+  |---|---|
+  | Before (eager App, ~632 kB) | **2715 ms** |
+  | After (split, 302 kB) | **2015 ms** |
+
+  ~700 ms shorter on the same link. The production 355 ms figure is a different
+  host (CDN / real RTT); local preview under CDP throttle is slower in absolute
+  terms, so the fair comparison is this before/after pair, not absolute vs
+  production.
+
 ### Step 3.3 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Confirm no `Suspense` in the diff has a `null` or absent
   fallback.
 
@@ -195,3 +236,16 @@ The heaviest modules, none of which the landing page needs:
 | Prefetching on hover or idle | Makes a split route feel instant. Worth it once the split exists and the numbers are known, and it is easy to do badly — prefetching everything is the bundle again, arriving later |
 | Server-side rendering | Unchanged by this plan and still the launch blocker constraint 4 names |
 | Revisiting the boot mark's 400ms | If this shrinks the typical blank below ~200ms there may be nothing worth marking on a normal connection, and the mark becomes slow-connection-only by circumstance rather than by design |
+| `HomeRoute` / `RequireAuth` pending `null` | After React mounts, `/` still returns null while `useCurrentUser` resolves (~480 ms empty shell on the measured runs). That is the same class of blank plan 0030 named, but it is auth resolution rather than a Suspense fallback. Out of scope here; worth its own pass |
+
+## Notes from execution
+
+- **`RequireAdmin` had to leave `AdminLayout`.** Keeping the guard inside the
+  lazy admin module would download the admin chunk before redirecting a
+  non-admin. The plan stated the rule; the code had the guard colocated with
+  the shell.
+- **Pages left eager beyond the plan's list** (`LoginPage`, `CreativesPage`,
+  `CreativeProfilePage`, `OfferDetailPage`, `PostingDetailPage`, `MessagesPage`,
+  `NotificationsPage`) — the plan named what to split first, not an exhaustive
+  eager set. Left them in the initial chunk so common browse paths stay one
+  round trip.
