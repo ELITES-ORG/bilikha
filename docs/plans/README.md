@@ -92,7 +92,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0030](./0030-something-to-look-at-while-it-boots.md) | Something to look at while it boots | Complete |
 | [0031](./0031-stop-shipping-every-page-to-every-visitor.md) | Stop shipping every page to every visitor | Complete |
 | [0032](./0032-an-action-not-a-toggle.md) | An action, not a toggle | Complete |
-| [0033](./0033-layout-and-grouping-review.md) | Layout and grouping review | Draft |
+| [0033](./0033-layout-and-grouping-review.md) | Layout and grouping review | Ready |
 | [0034](./0034-the-privacy-notice-and-terms-do-not-exist.md) | The privacy notice and terms do not exist | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and

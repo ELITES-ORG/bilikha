@@ -1,9 +1,7 @@
 # 0033. Layout and grouping review
 
-- **Status:** Draft — collecting findings screen by screen. **Do not execute
-  yet**; the registrant is reviewing further screens so the changes can land as
-  one pass rather than a trickle of small diffs.
-- **Owner:** unassigned
+- **Status:** Ready — review closed 2026-09-22 across five screens
+- **Owner:** implementing agent
 - **Related:** [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
   [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md) ·
   [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md) ·
@@ -17,13 +15,64 @@ forces them.
 
 ## How this document works
 
-One section per screen. Each records **what is there now**, **what is wrong**,
-and **what to do** — the last being a recommendation, not yet an instruction.
-The plan stays in Draft until the review is finished, at which point the
-sections become phases and the recommendations become steps.
+The **screen sections** below record what was seen: what is there, what is
+wrong, what to do. They are evidence and stay as written.
 
-Reviewing several screens before changing any is the point: a grouping rule that
-only fits one page is not a rule, and the value here is consistency.
+The **phases** after them are the work. Phase 1 is the shared corrections — the
+faults that appear on more than one screen, which are the reason this was
+reviewed in one pass rather than five. The per-screen phases are independent and
+may ship as separate commits, but Phase 1 lands first: a per-screen phase that
+contradicts it is wrong.
+
+## What repeats, and is therefore a rule
+
+Five screens produced four faults that appear on more than one of them. These
+are the return on reviewing them together:
+
+1. **Page descriptions go stale and nobody notices.** The account hub still says
+   it is about *"public details and sign-in security"*; Security says
+   *"Password settings"* on a page that also ends your session. A description is
+   written once, with the page, and never revisited as the page grows.
+2. **Labels assert state that nothing checks.** `CLIENT MODE` on
+   `/postings/mine` is a static string that contradicts a creative-mode reader.
+   The *Public profile* heading implies the sections around it are not public,
+   when three of them are. Both make a claim the code never verifies.
+3. **Destructive actions sit at the weight of safe ones.** Offers puts Delete
+   beside Edit on every row, always. Postings gets this right — Delete is gated
+   on `(row.replyCount ?? 0) === 0` — and that is the standard the others should
+   meet.
+4. **Empty states lead with constraints, or repeat themselves.** Offers opens
+   with *"0 of 6 used"* and a rule about limits; Postings shows `Post work`
+   twice. The work page is the counter-example: it leads with a reason.
+
+## Where these screens live
+
+Verified 2026-09-22; every file and symbol named in the phases exists at these
+paths.
+
+| Screen | File |
+|---|---|
+| `/account` | `frontend/src/pages/account/AccountPage.tsx` (description, line 228) |
+| `/account/profile` | `frontend/src/pages/account/ProfileSettingsPage.tsx` |
+| `/account/offers` | `frontend/src/pages/account/OffersSettingsPage.tsx` |
+| `/account/security` | `frontend/src/pages/account/SecuritySettingsPage.tsx` (description, line 21) |
+| `/postings/mine` | `frontend/src/pages/MyPostingsPage.tsx` (eyebrow line 50, Delete gate line 121) |
+
+`MODE_LABEL` is `frontend/src/lib/view-mode.ts`. Its legitimate consumers are
+`AccountPage.tsx` (the mode control itself) and `SwitchModeAction.tsx`.
+`MyPostingsPage.tsx` is the third, and is the one step 1.2 removes.
+
+## Progress
+
+| Phase | Steps | Status |
+|---|---|---|
+| 1. The shared corrections | 0 / 3 | Not started |
+| 2. Account hub grouping | 0 / 2 | Not started |
+| 3. Profile by visibility | 0 / 2 | Not started |
+| 4. Offers rows | 0 / 2 | Not started |
+| 5. Postings badges | 0 / 2 | Not started |
+| 6. Security structure | 0 / 2 | Not started |
+| 7. Verification | 0 / 4 | Not started |
 
 ---
 
@@ -355,23 +404,183 @@ this plan.
 
 ---
 
-## Screens still to review
+---
 
-The registrant is working through the app. Add a section per screen in the same
-shape, then convert the whole document into phases.
+# Phase 1 — The shared corrections
 
-- [ ] *(awaiting review)*
+Do these first. Each appears on more than one screen, and the per-screen phases
+assume them.
+
+### Step 1.1 — Descriptions that describe the page
+
+- [ ] **Action.** Rewrite the page description on `/account` and
+  `/account/security` to cover what those pages now hold. The hub is no longer
+  only public details and sign-in; Security is not only passwords.
+- [ ] **Verify.** Read each description against its page's own headings. If it
+  names fewer things than the page contains, it is still wrong.
+
+### Step 1.2 — No label asserts what the code does not check
+
+- [ ] **Action.** `/postings/mine` renders `MODE_LABEL.hiring` as a static
+  eyebrow. Either read the real mode, or stop naming a mode — the page's content
+  does not depend on one.
+- [ ] **Action.** No heading may imply a visibility that is untrue of the fields
+  under it. That is what Phase 3 rebuilds the profile page around.
+- [ ] **Verify.** Grep for `MODE_LABEL` outside the account hub, `ModeNotice`
+  and `SwitchModeAction`. Anywhere else it names a state that page never reads.
+
+### Step 1.3 — Destructive actions are not peers of safe ones
+
+- [ ] **Action.** Adopt the postings rule everywhere: a destructive action is
+  either conditional on being safe, or demoted out of the primary row. Offers is
+  the screen that breaks it.
+
+---
+
+# Phase 2 — `/account`: group the hub
+
+### Step 2.1 — Three groups
+
+- [ ] **Action.** Split the seven rows under headings: *What people see*
+  (Profile, Offers, Your postings), *How it is going* (How your work is doing),
+  *Settings* (Mode, Appearance, Security).
+- [ ] **Action.** Inline controls sit only under *Settings*, where a switch is
+  expected. Navigation rows keep their chevron; controls do not get one.
+- [ ] **Action.** Move Mode above Appearance and cut its three-line explanation.
+  `ModeNotice` and the empty-state button explain mode where it is needed.
+
+### Step 2.2 — Nothing moved that should not
+
+- [ ] **Verify.** The next-action summary on *How your work is doing* survives.
+  It is [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md)
+  working as intended, not an inconsistency to iron out.
+
+---
+
+# Phase 3 — `/account/profile`: group by visibility
+
+### Step 3.1 — Two groups, by what is published
+
+- [ ] **Action.** *Shown on your public profile*: photo, all four name fields,
+  display name, bio, what you do, primary craft, municipality. *Not shown
+  publicly*: barangay, contact preference.
+- [ ] **Action.** Where a former section splits across the line — Location does —
+  mark it per field rather than separating fields that belong together.
+- [ ] **Why this one matters most.** [Constraint 7](../explanation/constraints.md)
+  names per-field visibility as an RA 10173 obligation, and a creative currently
+  has no way to learn that their middle name and suffix are published.
+
+### Step 3.2 — The two save models
+
+- [ ] **Action.** The photo saves immediately; everything else waits for `Save
+  profile`. Say so, or fold the photo into the form.
+- [ ] **Action.** Put the review notice where an editor sees it before reaching
+  the end of a 3.2-screen form, and give the form a save affordance reachable
+  without scrolling to the bottom.
+
+---
+
+# Phase 4 — `/account/offers`: one action per row
+
+### Step 4.1 — Demote the row
+
+- [ ] **Action.** The row opens the editor. Delete moves behind an overflow
+  (Phase 1, step 1.3).
+- [ ] **Action.** Take reordering out of the row — drag, or a *Reorder* mode
+  entered once. Sixteen buttons at four offers is what the rare case costs when
+  it is always present.
+
+### Step 4.2 — Show what a client sees
+
+- [ ] **Action.** A thumbnail and price as the directory renders them, so
+  *"these are what clients browse"* is true and the order means something.
+- [ ] **Action.** Lead the empty state with the reason, not `0 of 6 used`. The
+  limit belongs beside `Add offer`.
+- [ ] **Keep.** The no-sub-domains message and the at-limit quota already explain
+  their disabled buttons. Do not lose either.
+
+---
+
+# Phase 5 — `/postings/mine`: make the badges mean something
+
+### Step 5.1 — Expiry and status
+
+- [ ] **Action.** Encode urgency in the time-left badge. *2d left* and *44d left*
+  render the same tone today, and expiry is the only thing on the page that needs
+  a decision.
+- [ ] **Action.** Sentence-case the status and show it only when it is not
+  *open* — while a posting is open the time-left badge already says so.
+
+### Step 5.2 — The rest
+
+- [ ] **Action.** One `Post work` in the empty state.
+- [ ] **Keep.** Delete gated on `(row.replyCount ?? 0) === 0`. It is the standard
+  step 1.3 generalises from.
+
+---
+
+# Phase 6 — `/account/security`: give it structure
+
+### Step 6.1 — Headings
+
+- [ ] **Action.** Both sections get real headings. *Sign out* is a `<p>` styled
+  to look like one, and the password form has no heading at all.
+- [ ] **Verify.** Navigate the page by headings and confirm both sections are
+  reachable.
+
+### Step 6.2 — What is missing stays missing here
+
+- [ ] **Note, not an action.** Account deletion, data export and session
+  management are absent. They are named in
+  [constraint 7](../explanation/constraints.md) and tracked in
+  [plan 0034](./0034-the-privacy-notice-and-terms-do-not-exist.md)'s follow-ups.
+  Do not build them into this phase.
+
+---
+
+# Phase 7 — Verification
+
+### Step 7.1 — Every screen, both widths, both themes
+
+- [ ] **Verify.** All five screens at 375px and desktop, light and dark.
+  Screenshot each.
+
+### Step 7.2 — The shared rules held
+
+- [ ] **Verify.** No page description names fewer things than its page holds; no
+  label names a mode the page does not read; no destructive action sits at the
+  weight of a safe one.
+
+### Step 7.3 — Populated, not only empty
+
+- [ ] **Verify.** Offers and postings with several rows. Neither page had ever
+  been seen as a list before this review — the platform has one offer and zero
+  postings — so an empty-state check proves nothing about either.
+
+### Step 7.4 — Full pass
+
+- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+  exit 0, CI green.
 
 ---
 
 ## Out of scope for this review
 
 - What any screen *does*. This is arrangement, not behaviour.
-- Copy, except where a grouping decision makes a sentence wrong — the account
-  page description is the one example so far.
+- Copy, except where a grouping decision makes a sentence wrong. Two sentences
+  qualify, both page descriptions, and both are in Phase 1.
 - [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md)'s
   decision that the hub row carries a next action. That is deliberate and the
   grouping accommodates it rather than removing it.
+
+## Acceptance
+
+- The four repeated faults are gone from all five screens, not only from the
+  screen each was first noticed on.
+- Every screen renders at 375px and desktop, light and dark, with no clipped
+  label and no horizontal scroll.
+- Offers and postings have been seen populated, not only empty.
+- No new copy claims a state the page does not read.
 
 ## Follow-ups
 
