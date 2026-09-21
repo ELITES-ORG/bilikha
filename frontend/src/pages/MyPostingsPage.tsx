@@ -12,7 +12,7 @@ import {
 } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useClosePosting, useDeletePosting, useMyPostings } from '@/features/postings/api';
-import { formatTimeLeft } from '@/lib/posting-time';
+import { formatTimeLeft, expiryTone, formatPostingStatus } from '@/lib/posting-time';
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
@@ -39,6 +39,8 @@ export function MyPostingsPage() {
     );
   }
 
+  const empty = list.data && list.data.length === 0;
+
   return (
     <>
       <SiteHeader />
@@ -49,17 +51,20 @@ export function MyPostingsPage() {
             eyebrow="Hiring"
             title="Your postings"
             description="Work you want done. Close a posting when it is filled or no longer needed."
+            action={!empty ? <ButtonLink to="/postings/new">Post work</ButtonLink> : undefined}
           />
 
-          <div className="mt-6">
-            <ButtonLink to="/postings/new">Post work</ButtonLink>
-          </div>
+          {!list.data && (
+            <div className="mt-6">
+              <ButtonLink to="/postings/new">Post work</ButtonLink>
+            </div>
+          )}
 
           <div className="mt-10">
             {list.isPending && <Skeleton className="h-40 w-full" />}
             {list.isError && <p className="text-danger-700">{list.error.message}</p>}
 
-            {list.data && list.data.length === 0 && (
+            {empty && (
               <EmptyState
                 title="No postings yet"
                 description="Publish work you need done — matching creatives will see it on their Home feed."
@@ -89,9 +94,13 @@ export function MyPostingsPage() {
                             {row.municipality.name}
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
-                            <Badge tone={open ? 'brand' : 'neutral'}>{row.status}</Badge>
+                            {!open && (
+                              <Badge tone="neutral">{formatPostingStatus(row.status)}</Badge>
+                            )}
                             {open && (
-                              <Badge tone="accent">{formatTimeLeft(row.expiresAt)}</Badge>
+                              <Badge tone={expiryTone(row.expiresAt)}>
+                                {formatTimeLeft(row.expiresAt)}
+                              </Badge>
                             )}
                             {(row.replyCount ?? 0) > 0 && (
                               <Badge tone="neutral">

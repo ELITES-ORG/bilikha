@@ -70,7 +70,7 @@ paths.
 | 2. Account hub grouping | 2 / 2 | Done |
 | 3. Profile by visibility | 2 / 2 | Done |
 | 4. Offers rows | 2 / 2 | Done |
-| 5. Postings badges | 0 / 2 | Not started |
+| 5. Postings badges | 2 / 2 | Done |
 | 6. Security structure | 0 / 2 | Not started |
 | 7. Verification | 0 / 4 | Not started |
 
@@ -509,16 +509,16 @@ assume them.
 
 ### Step 5.1 — Expiry and status
 
-- [ ] **Action.** Encode urgency in the time-left badge. *2d left* and *44d left*
+- [x] **Action.** Encode urgency in the time-left badge. *2d left* and *44d left*
   render the same tone today, and expiry is the only thing on the page that needs
   a decision.
-- [ ] **Action.** Sentence-case the status and show it only when it is not
+- [x] **Action.** Sentence-case the status and show it only when it is not
   *open* — while a posting is open the time-left badge already says so.
 
 ### Step 5.2 — The rest
 
-- [ ] **Action.** One `Post work` in the empty state.
-- [ ] **Keep.** Delete gated on `(row.replyCount ?? 0) === 0`. It is the standard
+- [x] **Action.** One `Post work` in the empty state.
+- [x] **Keep.** Delete gated on `(row.replyCount ?? 0) === 0`. It is the standard
   step 1.3 generalises from.
 
 ---
