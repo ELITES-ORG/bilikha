@@ -185,6 +185,77 @@ form a save affordance that is reachable without scrolling to the bottom.
 
 ---
 
+## Screen 3 — `/account/offers` (reviewed 2026-09-22)
+
+### What is there now
+
+A quota line and `Add offer` above a list of offers. Each offer is a title, a
+meta line (*sub-domain · price · N images*) and **four equal-weight actions**:
+Move up, Move down, Edit, Delete.
+
+Reviewed with four offers, because nobody had ever seen this page as a list —
+only two accounts on the platform have an offer at all, and both have one. Three
+were created locally to see it.
+
+At four offers that is **sixteen buttons**; at the limit of six it is
+twenty-four. Only `Edit` is visually emphasised.
+
+### What is wrong
+
+**Reordering is the most prominent action and the rarest one.** Two of the four
+buttons on every row are Move up / Move down. `sortOrder` decides the order
+offers appear on the public profile — so this is merchandising, and worth
+getting right — but pairwise swaps are a poor mechanism for it: moving the last
+of six offers to the top costs five taps, and the buttons dominate every row
+while being used least.
+
+**Delete sits inline beside Edit with no separation**, at the same weight,
+repeated once per offer. Four adjacent touch targets on a phone, one of them
+destructive and irreversible.
+
+**The page says *"These are what clients browse"* and then shows nothing a
+client would see.** A client browses a card with an image, a price and the
+creative's avatar. This page shows a text row. A creative cannot tell from it
+how their offer actually looks, which is the one question the page's own
+description promises to answer.
+
+**The empty state leads with a quota.** *"0 of 6 used"* and *"No offers yet. Add
+up to 6, each with up to 4 images"* — a constraint and a rule, where the account
+hub's next action sent them with a reason: *"Clients cannot hire what they
+cannot see priced."* This is the state most creatives are in and the destination
+of that call to action.
+
+**The meta line changes shape.** *N images* appears only when images exist, so
+rows are not comparable down the column, and nothing shows whether an offer's
+image is still awaiting media review.
+
+### What is right, and should not be lost
+
+The no-sub-domains case explains itself — *"Save at least one sub-domain on your
+profile before adding offers"* — rather than leaving a disabled button with no
+reason. And at the limit, `Add offer` disables next to *"6 of 6 used"*, which
+says why without extra copy. Both are better than the equivalent handling
+elsewhere in the app.
+
+### What to do
+
+**Give the row one obvious action and demote the rest.** Edit is what a row is
+for; make the row itself open the editor, and move Delete behind an overflow so
+a destructive action is not one mis-tap from the primary one.
+
+**Take reordering out of the row.** Either drag-to-reorder, or a distinct
+*Reorder* mode entered once — so the common case (reading the list) is not
+carrying the cost of the rare case (rearranging it).
+
+**Show what a client sees.** A thumbnail and the price as the directory renders
+them, so *"these are what clients browse"* is literally true and the order means
+something visible.
+
+**Lead the empty state with the reason, not the quota.** The limit belongs next
+to `Add offer`, and only needs prominence as it is approached.
+
+---
+
 ## Screens still to review
 
 The registrant is working through the app. Add a section per screen in the same
