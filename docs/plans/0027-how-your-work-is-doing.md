@@ -36,9 +36,15 @@ zero ratings. That is the design target, not an edge case
 ## Prerequisites
 
 - Local stack up, and a creative account with *some* activity plus one with
-  none. `cre0299739` has an offer, an inquiry and two agreements;
-  `nc0850896` has a published profile and nothing else. Password
-  `verify-pass-2026`.
+  none. Both were confirmed in this state on 2026-09-22:
+
+| Account | Profile | Offers | Inquiries | Agreements | Use |
+|---|---|---|---|---|---|
+| `nc0850896` | published | 0 | 0 | 0 | the zero case — the one to design against |
+| `cre0299739` | published | 1 | 1 | 2 | the populated case |
+| `adm0403418` | **none** | — | — | — | must get a 404 and no hub row |
+
+  Password `verify-pass-2026` for all three. Local only.
 - Read [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md),
   particularly why the zero case is the default layout.
 
@@ -107,11 +113,22 @@ export interface WorkSummary {
 
 - [ ] **Action.** `backend/src/modules/me/work.service.ts` exporting
   `workSummary(userId): Promise<WorkSummary>`, annotated with the contract.
-- [ ] **Action.** Derive every field. Agreement states come from events the same
-  way the lifecycle already computes them — do **not** read a status column and
-  call it the state if the state is derived elsewhere.
-- [ ] **Action.** Money sums `agreement_line_items` for the relevant agreements.
-  Integer centavos throughout.
+- [ ] **Action.** Derive every field. **Reuse, do not reimplement** — these are
+  already exported from `agreements.service.ts` and a second copy would be a
+  second answer:
+
+| Need | Use | Not |
+|---|---|---|
+| The lifecycle state of an agreement | `deriveState(...)` | Reading `agreements.status` and calling it the state |
+| The value of an agreement | `totalOf(lineItems)` | A fresh `sum()` over line items |
+| Rating average and count | `summaryForProfile(slug)` | A second `avg(stars)` |
+| Pesos on screen | `formatPesos(centavos)` from `@/lib/money` | Any new formatter |
+
+- [ ] **Action.** `savedByOthers` joins `saved_offers` to `offers` on
+  `offer_id`, then to the profile. It is the only interest signal that exists
+  without view tracking, so it is worth getting right.
+- [ ] **Action.** Integer centavos throughout. Never a float, never pesos in the
+  service.
 - [ ] **Verify.** For a creative with no activity, every number is 0 and
   `ratings.average` is null — not 0, which would read as a one-star average.
 
