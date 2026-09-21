@@ -139,6 +139,7 @@ async function loadAgreements(userId: string): Promise<{
     counts: {
       total: 0,
       awaitingClientAcceptance: 0,
+      agreed: 0,
       inProgress: 0,
       awaitingClientConfirmation: 0,
       completed: 0,
@@ -168,7 +169,11 @@ async function loadAgreements(userId: string): Promise<{
   const eventsById = groupBy(events, (row) => row.agreementId);
   const acceptanceById = new Map(acceptances.map((row) => [row.agreementId, row]));
 
-  const counts = { ...empty.counts, total: agreementList.length };
+  // `total` is incremented per counted state rather than taken from the row
+  // count, so the states always partition it. Taking it from the rows is how a
+  // superseded version ended up in the total and in no state, leaving a reader
+  // with "2 agreements · 1 cancelled" and nowhere to find the second.
+  const counts = { ...empty.counts };
   let agreedCentavos = 0;
   let completedCentavos = 0;
 
@@ -184,28 +189,38 @@ async function loadAgreements(userId: string): Promise<{
     switch (state) {
       case 'Awaiting response':
         counts.awaitingClientAcceptance += 1;
+        counts.total += 1;
+        break;
+      case 'Agreed':
+        counts.agreed += 1;
+        counts.total += 1;
+        agreedCentavos += value;
         break;
       case 'In progress':
         counts.inProgress += 1;
+        counts.total += 1;
         agreedCentavos += value;
         break;
       case 'Awaiting confirmation':
         counts.awaitingClientConfirmation += 1;
+        counts.total += 1;
         agreedCentavos += value;
         break;
       case 'Completed':
         counts.completed += 1;
+        counts.total += 1;
         agreedCentavos += value;
         completedCentavos += value;
         break;
       case 'Cancelled':
         counts.cancelled += 1;
-        break;
-      case 'Agreed':
-        agreedCentavos += value;
+        counts.total += 1;
         break;
       default:
-        // Superseded / Withdrawn — in total only.
+        // Superseded and Withdrawn are not live engagements: a superseded row
+        // is an earlier version of the agreement counted beside it, and a
+        // withdrawn one never became anything. Counting either would report a
+        // single revised agreement as two.
         break;
     }
   }

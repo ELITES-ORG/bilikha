@@ -247,6 +247,35 @@ export interface WorkSummary {
 - A client sees none of it, and the endpoint 404s for them.
 - No new table, no counter column, no view tracking.
 
+## Audit, 2026-09-22
+
+Audited by breaking each rule. Money was verified on the path the
+implementation never exercised: `cli0299739` has a completed agreement worth
+900,000 centavos and `GET /me/work` returns 900,000 agreed and completed,
+matching the line items. Reuse held, the zero page reads as intended, and a
+client gets a 404 on both the page and the endpoint.
+
+**Fixed: the agreement breakdown did not reconcile.** `cre0299739` read
+*"2 agreements · 1 cancelled"*, with nowhere to find the second. `total` was
+the row count, while `Superseded`, `Withdrawn` and `Agreed` landed in no state
+at all — so the total could exceed the states in three ways, not one. `total`
+is now incremented per counted state, so the states partition it by
+construction; superseded and withdrawn rows are excluded, because a revised
+agreement is one engagement and reporting it as two is simply wrong. `agreed`
+became its own state. A test asserts the states sum to the total.
+
+**Fixed: an informational state outranked an actionable one.** The page led
+with *"Your edit is queued"* — no link, nothing to do — while reporting an
+unanswered client one line below. **This plan's own priority table said to do
+that**, and it was followed correctly; the table was wrong. Anything a creative
+can act on now outranks anything that only informs them, and profile state is
+shown as its own group on the page, so demoting it hides nothing. Both the old
+order and the fixed one were run against the tests.
+
+**Not a defect.** `draft` is a vestigial enum value: nothing writes it, the
+column defaults to `pending_review`, and no row has it. Letting it fall through
+is harmless.
+
 ## Follow-ups
 
 | Item | Why deferred |

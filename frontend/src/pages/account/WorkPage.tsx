@@ -28,6 +28,24 @@ function WorkGroup({
   );
 }
 
+/**
+ * Profile state, said plainly. `nextAction` ranks anything actionable above
+ * these, so this is where a creative learns their profile is under review or
+ * their edit is queued — it must not depend on being the next action.
+ */
+function profileCopy(summary: WorkSummary): string | null {
+  if (summary.profile.status === 'pending_review') {
+    return 'Your profile is with the team for review. It is not public yet.';
+  }
+  if (summary.profile.status === 'suspended') {
+    return 'Your profile is suspended and is not public.';
+  }
+  if (summary.profile.editedSinceReviewAt) {
+    return 'Your profile is live. An edit is queued and goes public after review.';
+  }
+  return 'Your profile is live in the directory.';
+}
+
 function offersCopy(summary: WorkSummary): string {
   if (summary.offers.total === 0) {
     return 'No offers yet — clients cannot hire what they cannot see priced.';
@@ -219,6 +237,7 @@ export function WorkPage() {
           </section>
 
           <div className="mt-12 space-y-0">
+            <WorkGroup title="Your profile">{profileCopy(work.data)}</WorkGroup>
             <WorkGroup title="Your offers">{offersCopy(work.data)}</WorkGroup>
             <WorkGroup title="Your inquiries">{inquiriesCopy(work.data)}</WorkGroup>
             <WorkGroup title="Your agreements">
