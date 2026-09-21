@@ -256,6 +256,68 @@ to `Add offer`, and only needs prominence as it is approached.
 
 ---
 
+## Screen 4 — `/postings/mine` (reviewed 2026-09-22)
+
+### What is there now
+
+An eyebrow, a title, a description, a `Post work` button, then a card per
+posting: title, *budget · sub-domain · municipality*, a row of badges, and
+actions. Reviewed with three postings created locally — the platform had **zero**
+postings, so this page had never been seen populated either.
+
+Badges per row: `status`, time left, and a reply count when there is one.
+Actions: Edit and Close while open, Delete only when nothing has replied.
+
+### What is wrong
+
+**The eyebrow says `CLIENT MODE` and can be a lie.** The page imports
+`MODE_LABEL` for that one line and never reads the actual mode. Verified by
+putting an account into Creative mode and loading the page: it still says
+*CLIENT MODE*. It is a static string asserting a state the reader may not be in,
+on a page whose content does not depend on mode at all — your postings are yours
+either way.
+
+**Expiry has one tone regardless of urgency.** `<Badge tone="accent">` renders
+*2d left* and *44d left* identically. Expiry is the only thing on this page that
+needs a decision — renew, close, or let it lapse — and it is the one fact the
+card refuses to emphasise. A posting two days from lapsing should not look like
+one with six weeks.
+
+**The status badge is a raw enum.** `{row.status}` prints lowercase *open*,
+against sentence case everywhere else. It also carries no information while
+every posting is open — it only starts meaning something once some are closed,
+which is exactly when the time-left badge disappears and could take its place.
+
+**`Post work` appears twice in the empty state** — once under the description
+and once inside the empty card, two taps apart.
+
+### What is right, and should not be lost
+
+**Delete only appears when `replyCount === 0`.** A posting somebody answered
+cannot be deleted out from under them. That protects the other person's
+conversation and is a better instinct than the offers screen shows, where Delete
+sits permanently beside Edit. Whatever happens to this page, that rule survives.
+
+Edit and Close are also correctly conditional on the posting still being open,
+and the reply count surfaces as soon as there is one.
+
+### What to do
+
+**Fix or drop the eyebrow.** If it is meant to say which mode you are in, read
+the mode. If it is meant to say this page is about hiring, say that without
+borrowing the word *mode*, which now names something specific.
+
+**Encode urgency in the expiry badge** — a tone that shifts as the date
+approaches, so the posting needing attention looks like it does.
+
+**Sentence-case the status, and show it only when it is not *open*.** While a
+posting is open the time-left badge already says so; the word is noise until it
+changes.
+
+**One `Post work` in the empty state.**
+
+---
+
 ## Screens still to review
 
 The registrant is working through the app. Add a section per screen in the same
