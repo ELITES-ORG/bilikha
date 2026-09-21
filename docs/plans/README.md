@@ -87,6 +87,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0025](./0025-shared-api-contracts.md) | One definition of every API shape | Ready |
 | [0026](./0026-mode-moves-to-the-account-hub.md) | Mode moves to the account hub | Ready |
 | [0027](./0027-how-your-work-is-doing.md) | How your work is doing | Ready |
+| [0028](./0028-the-money-in-full.md) | The money, in full | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

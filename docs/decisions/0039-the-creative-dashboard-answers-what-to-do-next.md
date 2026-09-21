@@ -70,6 +70,18 @@ handle payment and says so on every agreement record. A dashboard reporting
 "earned" would assert something the platform cannot know, and would be wrong the
 first time a client did not pay.
 
+**Amended 2026-09-22: what "everything about the money" can honestly mean.**
+The money is reported in full, as every lifecycle state of the agreed value —
+proposed, agreed, in progress, awaiting confirmation, completed, cancelled —
+partitioning exactly as the agreement counts do, plus the typical value of this
+creative's agreements. That is the whole of what the platform knows.
+
+It is not income, revenue, earnings or receipts, and no amount of demand for
+completeness can make it so: nothing here records a payment, so any figure
+claiming one would be invented. A creative reading *"₱21,500 completed"* has
+completed work worth that on paper. Whether they were paid is between them and
+the client. [Plan 0028](../plans/0028-the-money-in-full.md) carries it out.
+
 **Only a creative sees it.** The row and the page require a creative profile,
 the same `profileSlug` guard every other creative-only surface uses. A client has
 no work to report on.
