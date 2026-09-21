@@ -182,6 +182,44 @@ which mode you are in, so the control does not need to say it a second time.
 - `ModeSwitch` is gone and nothing imports it.
 - Removing the way out still fails a test.
 
+## Audit, 2026-09-22
+
+Everything claimed holds, checked by breaking rather than reading.
+
+`ModeSwitch` is gone from `frontend/src` entirely — the remaining hits are in
+historical plan records, which is where they belong. `aria-pressed` is 0 on
+every mirrored surface for both accounts, so no two-state control survives
+outside the account hub. Removing `SwitchModeAction` from `ModeAwareEmptyState`
+fails three tests. One tap works: the notice flips to *Viewing as a client* and
+the button relabels to *Switch to Creative mode*, so it always names the
+destination rather than the current state.
+
+**The defect this plan existed to close is closed.** `adm0403418`, which has no
+creative profile, sees *No conversations yet* and *No inquiries yet* with no
+button and **no mention of either mode**. No empty-state copy names a mode
+anywhere now; the only live use of `MODE_LABEL` in a page is the account hub
+explaining the choice, which is correct.
+
+**Tidied: two call sites passed the same string to both description props.**
+`HistoryPage`'s inquired and saved states supplied
+`descriptionWithoutProfile={sameValueAsDescription}`. Behaviour was right and
+the reading was wrong — identical values on a pair of props signals *these
+differ* to whoever edits next. Removed; the fallback already produces that
+string. The two sites where the variants genuinely differ now stand out as
+meaning something.
+
+**Worth knowing, not fixed.** `descriptionWithoutProfile` is optional and falls
+back to `description`, so a future copy change that names a mode without
+supplying the variant would reintroduce the defect at the seven sites that do
+not pass one. It is safe today only because no empty-state copy names a mode at
+all. If that changes, make the prop required rather than relying on whoever
+writes the copy to remember.
+
+**Also noted.** `MyPostingsPage` uses `MODE_LABEL.hiring` — *Client mode* — as
+its eyebrow, on a page that shows your own postings regardless of which mode you
+are in. Not a control and not wrong, but it labels a surface with a mode that
+does not govern it.
+
 ## Follow-ups
 
 | Item | Why deferred |

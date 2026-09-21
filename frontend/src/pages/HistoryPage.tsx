@@ -245,7 +245,6 @@ export function HistoryPage() {
                   <ModeAwareEmptyState
                     title="No inquiries yet"
                     description={hiringInquiredEmpty}
-                    descriptionWithoutProfile={hiringInquiredEmpty}
                     extraAction={
                       <ButtonLink to="/directory" size="sm" variant="secondary">
                         Browse Home
@@ -330,7 +329,6 @@ export function HistoryPage() {
                   <ModeAwareEmptyState
                     title="Nothing saved yet"
                     description={hiringSavedEmpty}
-                    descriptionWithoutProfile={hiringSavedEmpty}
                     extraAction={
                       <ButtonLink to="/directory" size="sm" variant="secondary">
                         Browse Home
