@@ -120,12 +120,25 @@ if (spec.cookies) {
 await send('Emulation.setDeviceMetricsOverride', {
   width: spec.w ?? 375, height: spec.h ?? 812, deviceScaleFactor: 2, mobile: (spec.w ?? 375) < 700,
 });
+// `media` adds further feature emulation, e.g. prefers-reduced-motion. A
+// reduced-motion user gets different CSS, so "does it flash" has to be asked
+// again under that preference rather than assumed from the default run.
 await send('Emulation.setEmulatedMedia', {
-  features: [{ name: 'prefers-color-scheme', value: spec.scheme ?? 'light' }],
+  features: [
+    { name: 'prefers-color-scheme', value: spec.scheme ?? 'light' },
+    ...Object.entries(spec.media ?? {}).map(([name, value]) => ({ name, value })),
+  ],
 });
 
 // A slow link widens the gap between markup arriving and the stylesheet
 // applying, which is exactly where a theme flash hides.
+// The scratch profile persists between runs, so a "cold" load is warm unless
+// the cache is turned off explicitly. Without this, any measurement of what
+// happens while the bundle downloads is measuring a cache hit.
+if (spec.coldCache) {
+  await send('Network.setCacheDisabled', { cacheDisabled: true });
+}
+
 if (spec.throttle) {
   await send('Network.emulateNetworkConditions', {
     offline: false,

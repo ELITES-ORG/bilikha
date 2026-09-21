@@ -147,6 +147,39 @@ than the blank it replaced.
 - Reduced motion is honoured, and a screen reader is told the page is loading.
 - No removal code, no timers, no layout animation.
 
+## Audit, 2026-09-22
+
+The mark works: on a cold 800ms/300kbps load it fades in and is clearly visible
+(peak opacity 0.69) from 2315ms while the page is still blank, and React mounts
+mid-fade, which is why it never reaches 1. On an unthrottled load it stays at 0.
+No wrong-theme flash on the first frame in either direction.
+
+**Fixed: reduced motion made it flash on every load.** The block set
+`#bk-boot { animation: none !important; opacity: 1 !important }`, so the mark was
+opaque from frame 0 — measured at 99ms on an unthrottled load. That is exactly
+what step 2.2 exists to prevent, scoped to the readers least well served by a
+flash, and it contradicts `motion.css`'s own rule that *movement goes, the
+cross-fade stays*. Only the dots' pulse is suppressed now; the delayed fade-in
+stays, and the fast case is back to 0.
+
+**Fixed: the inline `color-scheme` pinned native surfaces.** The boot script set
+`document.documentElement.style.colorScheme`, which outranks every stylesheet
+rule including `theme.css`'s `:root[data-theme] { color-scheme }`, and
+`applyThemePreference` only touches `data-theme`. After a runtime theme switch
+the page flipped while the computed scheme stayed put — measured `data-theme:
+dark` with `color-scheme: light` — leaving scrollbars, text selection and form
+chrome on the boot-time scheme, which is the one thing ADR 0026 uses
+`color-scheme` for. It was set so `CanvasText` on the dots matched the paper;
+the dots now use a fixed neutral that reads on both papers, so the scheme is not
+needed at all. After the fix the computed scheme follows `data-theme` again.
+
+**A measurement trap worth knowing.** The mark first read as "never visible" on
+three runs. The scratch browser profile persists between runs, so the bundle was
+cached and there was no download window to observe — the page was fine and the
+measurement was wrong. `screenshot.mjs` gained `coldCache`, and the browser
+guide now says so. `seed` compounds it by navigating twice; the implementer's
+note about that was pointing at the same thing from a narrower angle.
+
 ## Follow-ups
 
 | Item | Why deferred |

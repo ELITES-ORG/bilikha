@@ -26,6 +26,8 @@ node scripts/screenshot.mjs '{"url":"http://localhost:5173/directory","out":"sho
 | `steps` | A sequence: `{fill}`, `{click}`, `{eval}`, `{shot}`, `{reload, hard}`, each with its own `wait`. |
 | `record` | Samples every animation frame from first paint. |
 | `throttle` | `{latency, down, up}`. |
+| `coldCache` | Disables the HTTP cache. **Required for anything that measures loading.** |
+| `media` | Extra feature emulation, e.g. `{"prefers-reduced-motion": "reduce"}`. |
 | `settle` | Milliseconds to wait before shooting. Default 3500. |
 
 ## Signing in
@@ -96,6 +98,18 @@ every frame from first paint, and writes them beside the PNG as
 Run the inverse of whatever you are checking. "No dark frame" means nothing
 until you have shown the same recorder reports dark frames when the theme *is*
 dark — otherwise you have tested your parser, not the app.
+
+## A cold load is warm unless you say otherwise
+
+The scratch Chrome profile persists between runs, so the second time you measure
+a page load the bundle is already cached and you are timing a cache hit. This
+cost real time on 2026-09-22: a boot indicator read as "never visible" across
+three separate runs, which looked like a defect in the page and was a defect in
+the measurement. With `coldCache` the same page showed it for 37 frames.
+
+`seed` makes it worse, because it navigates twice — the second navigation is
+always warm. If you are measuring anything that happens *while assets download*,
+set `coldCache` and do not use `seed` in the same run.
 
 ## Throttle against the built app, not the dev server
 

@@ -47,9 +47,13 @@
           (pref === 'system' &&
             window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.style.backgroundColor = dark ? DARK_PAPER : LIGHT_PAPER;
-        // So CanvasText on the boot mark matches the paper before the stylesheet
-        // defines --color-ink (pinned light on a dark OS would otherwise invert).
-        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        // Deliberately NOT setting style.colorScheme here. An inline value
+        // outranks every stylesheet rule, including theme.css's
+        // `:root[data-theme] { color-scheme }`, and applyThemePreference only
+        // touches data-theme — so a runtime theme switch would leave scrollbars,
+        // text selection and form chrome on the boot-time scheme, which is the
+        // exact thing ADR 0026 uses color-scheme to prevent. The boot mark uses
+        // a fixed neutral instead, so it needs no scheme at all.
 
         if (pref === 'system') return;
         document.documentElement.setAttribute('data-theme', pref);
@@ -83,11 +87,14 @@
           opacity: 0.9;
         }
       }
+      /*
+        Movement goes; the delayed cross-fade stays — the rule motion.css
+        already follows. Killing #bk-boot's animation here made the mark opaque
+        from frame 0, so a reduced-motion reader saw it flash on every fast
+        load: the failure plan 0030 step 2.2 exists to prevent, scoped to the
+        people least well served by a flash.
+      */
       @media (prefers-reduced-motion: reduce) {
-        #bk-boot {
-          animation: none !important;
-          opacity: 1 !important;
-        }
         #bk-boot i {
           animation: none !important;
           opacity: 0.7 !important;
@@ -132,7 +139,6 @@
           justify-content: center;
           gap: 0.5rem;
           opacity: 0;
-          color: CanvasText;
           pointer-events: none;
           animation: bk-boot-in 0.45s ease 0.4s forwards;
         "
@@ -144,7 +150,7 @@
             width: 0.4rem;
             height: 0.4rem;
             border-radius: 999px;
-            background: currentColor;
+            background: #8a847c;
             opacity: 0.28;
             animation: bk-boot-pulse 1.8s ease-in-out 0.4s infinite;
           "
@@ -156,7 +162,7 @@
             width: 0.4rem;
             height: 0.4rem;
             border-radius: 999px;
-            background: currentColor;
+            background: #8a847c;
             opacity: 0.28;
             animation: bk-boot-pulse 1.8s ease-in-out 0.55s infinite;
           "
@@ -168,7 +174,7 @@
             width: 0.4rem;
             height: 0.4rem;
             border-radius: 999px;
-            background: currentColor;
+            background: #8a847c;
             opacity: 0.28;
             animation: bk-boot-pulse 1.8s ease-in-out 0.7s infinite;
           "
