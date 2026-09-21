@@ -75,3 +75,4 @@ Number sequentially. Never renumber.
 | [0036](./0036-persistent-chrome-holds-the-most-used-control.md) | Persistent chrome holds a surface's most-used control | Accepted |
 | [0037](./0037-one-definition-of-an-api-shape.md) | One definition of an API shape, imported by both sides | Accepted |
 | [0038](./0038-mode-is-a-role-you-are-in-not-a-filter.md) | Mode is a role you are in, not a filter you apply | Accepted |
+| [0039](./0039-the-creative-dashboard-answers-what-to-do-next.md) | A creative's dashboard answers what to do next | Accepted |
