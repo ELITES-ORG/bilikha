@@ -236,6 +236,48 @@ thing twice:
 - A client with no creative profile sees no mode control and no mode notice.
 - The stored values, the endpoint and the contract are untouched.
 
+## Audit, 2026-09-22
+
+Audited by breaking each rule and watching what caught it.
+
+**Held up.** Renaming both labels at `MODE_LABEL` propagated everywhere with the
+old strings gone, so rule 3 is genuinely one edit. The notice reports
+`aria-pressed: 0` with no buttons on non-empty lists at 1280px and 375px. Mode
+still drives content — creative mode renders *Client postings*. The Account
+control is a `radiogroup` reflecting server state with no local mirror. An
+account with no creative profile gets no notice, no control and no row on
+`/account`.
+
+**Found: the load-bearing rule was guarded by nothing.** Deleting `ModeSwitch`
+from `ModeAwareEmptyState` cleanly — component, import and the then-unused
+`hasProfile` — left all five gates green and 147 tests passing. ADR 0038 names
+that switch as the reason removing the header toggle is safe rather than a
+regression, and a tidy refactor would have taken it out silently.
+
+`frontend/src/components/mode-controls.test.ts` now guards it, along with the
+mirror image: the notice growing a button, and the switch returning to a page
+header. All three were reinstated and watched to fail — 3, 2 and 1 failing
+assertions respectively — then reverted. It reads source through Vite's `?raw`
+rather than rendering, because ADR 0031 puts component markup out of scope and
+buying jsdom to assert one element would contradict it. Coarse: it proves the
+wiring is present, not that it works. It catches the deletion, which is the
+failure that actually happened.
+
+**Found: a client is told to become a creative.** On Messages and History an
+account with no creative profile reads *"You are viewing 'Client mode'. No
+conversations yet — … or switch to 'Creative mode' …"*. They cannot:
+`effectiveViewMode` forces `hiring` without a profile, and no switch renders for
+them. **Pre-existing** — the identical sentence existed with the old labels and
+was translated faithfully — but worse under role framing, and against the point
+of this plan. Recorded as a follow-up rather than fixed here, because it is copy
+on a surface this change already touched and belongs in its own diff.
+
+**Not defects.** The implementer's evidence for "no in-place toggle" covered the
+hiring, non-empty case; extending it to creative and non-empty passes too. Their
+uncovered decision — radios on Account rather than `ModeSwitch`'s button group —
+was right, at the cost of the same choice appearing as radios in one place and
+pressed buttons in another.
+
 ## Follow-ups
 
 | Item | Why deferred |
@@ -243,4 +285,5 @@ thing twice:
 | A mode badge in the global top bar | ADR 0038 rejected it on space at 375px. It is the answer if people turn out to switch mode while browsing rather than once — worth asking the same creatives after this ships |
 | Asking the creatives again | This plan came from one session with real users. The same session is how we would find out whether the notice is enough, and it costs nothing to repeat |
 | A first-run explanation of mode | A creative meets the concept for the first time on the account page now. Onboarding (`/welcome`) already asks what brings you here and could seed the mode instead of leaving it at the default |
+| Empty-state copy offers a mode a client cannot enter | An account with no creative profile is told to "switch to Creative mode" on Messages and History. Pre-existing, found in the 2026-09-22 audit. The description is mode-aware but not profile-aware; it needs a third variant for an account with one mode |
 | Messages has no mode-aware description | Directory and History both change their description with the mode; Messages does not, and says the same static sentence either way. Noticed while planning this and deliberately left, because rewriting copy on a surface this change is already touching makes the diff harder to review |
