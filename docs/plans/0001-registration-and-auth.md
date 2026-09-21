@@ -1910,11 +1910,21 @@ finished rehydrating after the reload. Re-checked against mobile chrome and the
 rendered page, both pass. An assertion written for one width is not evidence
 about the other.
 
-**Finding — a dead route.** `/register/success` is still declared in `App.tsx`
-and `RegisterSuccessPage` still exists, but nothing navigates to either: the
-register flow goes to `/welcome`. Either wire it up or delete it; leaving a
-route no path reaches is how the next person ends up verifying a page users
-never see.
+**Finding — a dead route, now deleted.** `/register/success` was still declared
+in `App.tsx` and `RegisterSuccessPage` still existed, but nothing navigated to
+either: the register flow goes to `/welcome`.
+
+It was not merely unreachable, it was wrong. The page read *"Your creative
+profile is awaiting review"* — the original model, where registering meant
+becoming a creative. Under [plan 0007](./0007-one-account-and-creative-role.md)
+registering creates an account with an optional creative role, so wiring it back
+up would have told every client that a profile they never made was in review.
+`/welcome` asks *"What brings you to Bilikha?"* instead, and
+`/welcome/submitted` covers the awaiting-review case for people who do build a
+profile.
+
+Removed 2026-09-19: the route, its import, and the page.
+`RegistrationStatusBanner` stays — some twenty other pages use it.
 
 ---
 

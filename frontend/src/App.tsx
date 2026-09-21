@@ -32,7 +32,6 @@ import { IntentPage } from '@/pages/onboarding/IntentPage';
 import { ProfileSetupPage } from '@/pages/onboarding/ProfileSetupPage';
 import { ProfileSubmittedPage } from '@/pages/onboarding/ProfileSubmittedPage';
 import { RegisterPage } from '@/pages/RegisterPage';
-import { RegisterSuccessPage } from '@/pages/RegisterSuccessPage';
 import { StyleGuidePage } from '@/pages/StyleGuidePage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 
@@ -154,7 +153,6 @@ export default function App() {
               }
             />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/register/success" element={<RegisterSuccessPage />} />
             <Route
               path="/welcome"
               element={
