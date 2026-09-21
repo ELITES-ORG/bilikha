@@ -98,6 +98,8 @@ export function OfferEditor() {
   const [form, setForm] = useState<FormState>(emptyForm);
   /** Which row's overflow menu is open — destructive actions stay out of the primary row. */
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  /** Reorder is a mode entered once — pairwise Move buttons do not sit on every row. */
+  const [reordering, setReordering] = useState(false);
 
   const registeredSlugs = profile.data?.subdomainSlugs ?? [];
   const registeredKey = registeredSlugs.join('\0');
@@ -130,6 +132,8 @@ export function OfferEditor() {
   }, []);
 
   function startCreate() {
+    setReordering(false);
+    setMenuOpenId(null);
     setCreating(true);
     setEditingId(null);
     setForm({
@@ -140,6 +144,8 @@ export function OfferEditor() {
   }
 
   function startEdit(offer: OwnOffer) {
+    setReordering(false);
+    setMenuOpenId(null);
     setCreating(false);
     setEditingId(offer.id);
     setForm(offerToForm(offer));
@@ -305,17 +311,37 @@ export function OfferEditor() {
     return <p className="text-sm text-ink-muted">Loading offers…</p>;
   }
 
+  const atLimit = offers.length >= OFFER_LIMIT;
+  const canAdd =
+    !busy && !creating && !reordering && !atLimit && registeredSlugs.length > 0;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm text-ink-muted">
-          {offers.length} of {OFFER_LIMIT} used
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <p className="text-sm text-ink-muted">
+            {offers.length} of {OFFER_LIMIT} used
+          </p>
+          {offers.length > 1 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={busy || creating || showForm}
+              onClick={() => {
+                setMenuOpenId(null);
+                setReordering((current) => !current);
+              }}
+            >
+              {reordering ? 'Done reordering' : 'Reorder'}
+            </Button>
+          )}
+        </div>
         <Button
           type="button"
           size="sm"
           variant="secondary"
-          disabled={busy || creating || offers.length >= OFFER_LIMIT || registeredSlugs.length === 0}
+          disabled={!canAdd}
           onClick={startCreate}
         >
           Add offer
@@ -332,93 +358,138 @@ export function OfferEditor() {
 
       {offers.length === 0 && !creating ? (
         <p className="text-sm text-ink-muted">
-          No offers yet. Add up to {OFFER_LIMIT}, each with up to {OFFER_IMAGE_LIMIT} images.
+          Clients cannot hire what they cannot see priced.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {offers.map((offer, index) => (
-            <li
-              key={offer.id}
-              className="flex flex-col gap-2 border-b border-hairline pb-3 sm:flex-row sm:items-start sm:justify-between"
-            >
-              <div className="min-w-0">
-                <p className="font-medium text-ink">{offer.title}</p>
-                <p className="mt-0.5 text-sm text-ink-muted">
-                  {offer.subdomainName} ·{' '}
-                  {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
-                  {offer.images.length > 0
-                    ? ` · ${offer.images.length} image${offer.images.length === 1 ? '' : 's'}`
-                    : ''}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={index === 0}
-                  onClick={() => void move(offer.id, -1)}
-                >
-                  Move up
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={index === offers.length - 1}
-                  onClick={() => void move(offer.id, 1)}
-                >
-                  Move down
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => startEdit(offer)}
-                >
-                  Edit
-                </Button>
-                <div className="relative">
-                  <button
-                    type="button"
-                    className={cn(
-                      'inline-flex size-9 items-center justify-center rounded-sm text-ink-muted',
-                      'hover:bg-clay-100 hover:text-ink',
+        <ul className="divide-y divide-hairline border-t border-hairline">
+          {offers.map((offer, index) => {
+            const thumb = offer.images[0]?.thumbUrl;
+            return (
+              <li key={offer.id} className="flex items-start gap-3 py-3">
+                {reordering ? (
+                  <>
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="size-14 shrink-0 object-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
                     )}
-                    aria-label={`More actions for ${offer.title}`}
-                    aria-expanded={menuOpenId === offer.id}
-                    aria-haspopup="menu"
-                    disabled={busy}
-                    onClick={() =>
-                      setMenuOpenId((current) => (current === offer.id ? null : offer.id))
-                    }
-                  >
-                    <EllipsisVertical className="size-4" aria-hidden />
-                  </button>
-                  {menuOpenId === offer.id && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 z-10 mt-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-ink">{offer.title}</p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={index === 0 || busy}
+                        onClick={() => void move(offer.id, -1)}
+                      >
+                        Up
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        disabled={index === offers.length - 1 || busy}
+                        onClick={() => void move(offer.id, 1)}
+                      >
+                        Down
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex min-w-0 flex-1 gap-3 text-left transition-opacity',
+                        'hover:opacity-90',
+                        busy && 'pointer-events-none opacity-60',
+                      )}
+                      disabled={busy}
+                      onClick={() => {
+                        setMenuOpenId(null);
+                        startEdit(offer);
+                      }}
                     >
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt=""
+                          width={56}
+                          height={56}
+                          className="size-14 shrink-0 object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : (
+                        <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
+                      )}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-ink">
+                          {offer.title}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-ink-muted">
+                          {offer.subdomainName}
+                        </span>
+                        <span className="mt-0.5 block text-sm font-medium text-ink">
+                          {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                        </span>
+                      </span>
+                    </button>
+                    <div className="relative shrink-0">
                       <button
                         type="button"
-                        role="menuitem"
-                        className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
+                        className={cn(
+                          'inline-flex size-9 items-center justify-center rounded-sm text-ink-muted',
+                          'hover:bg-clay-100 hover:text-ink',
+                        )}
+                        aria-label={`More actions for ${offer.title}`}
+                        aria-expanded={menuOpenId === offer.id}
+                        aria-haspopup="menu"
                         disabled={busy}
-                        onClick={() => {
-                          setMenuOpenId(null);
-                          void onRemoveOffer(offer.id);
-                        }}
+                        onClick={() =>
+                          setMenuOpenId((current) => (current === offer.id ? null : offer.id))
+                        }
                       >
-                        Delete
+                        <EllipsisVertical className="size-4" aria-hidden />
                       </button>
+                      {menuOpenId === offer.id && (
+                        <div
+                          role="menu"
+                          className="absolute right-0 z-10 mt-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
+                            disabled={busy}
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              void onRemoveOffer(offer.id);
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            </li>
-          ))}
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

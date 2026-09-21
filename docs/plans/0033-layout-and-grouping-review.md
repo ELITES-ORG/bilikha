@@ -69,7 +69,7 @@ paths.
 | 1. The shared corrections | 3 / 3 | Done |
 | 2. Account hub grouping | 2 / 2 | Done |
 | 3. Profile by visibility | 2 / 2 | Done |
-| 4. Offers rows | 0 / 2 | Not started |
+| 4. Offers rows | 2 / 2 | Done |
 | 5. Postings badges | 0 / 2 | Not started |
 | 6. Security structure | 0 / 2 | Not started |
 | 7. Verification | 0 / 4 | Not started |
@@ -487,19 +487,20 @@ assume them.
 
 ### Step 4.1 — Demote the row
 
-- [ ] **Action.** The row opens the editor. Delete moves behind an overflow
+- [x] **Action.** The row opens the editor. Delete moves behind an overflow
   (Phase 1, step 1.3).
-- [ ] **Action.** Take reordering out of the row — drag, or a *Reorder* mode
+- [x] **Action.** Take reordering out of the row — drag, or a *Reorder* mode
   entered once. Sixteen buttons at four offers is what the rare case costs when
-  it is always present.
+  it is always present. (*Reorder* mode, not drag — layout animation is out
+  under constraint 3.)
 
 ### Step 4.2 — Show what a client sees
 
-- [ ] **Action.** A thumbnail and price as the directory renders them, so
+- [x] **Action.** A thumbnail and price as the directory renders them, so
   *"these are what clients browse"* is true and the order means something.
-- [ ] **Action.** Lead the empty state with the reason, not `0 of 6 used`. The
+- [x] **Action.** Lead the empty state with the reason, not `0 of 6 used`. The
   limit belongs beside `Add offer`.
-- [ ] **Keep.** The no-sub-domains message and the at-limit quota already explain
+- [x] **Keep.** The no-sub-domains message and the at-limit quota already explain
   their disabled buttons. Do not lose either.
 
 ---
