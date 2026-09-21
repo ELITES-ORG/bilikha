@@ -53,11 +53,18 @@ No new data. Everything here already comes back from `GET /me/work`.
    getting darker along the ramp. Never a rainbow of unrelated hues.
 3. **Cancelled sits off the ramp**, in `clay`. It is not a stage of progress and
    colouring it as one would say it is.
-4. **Never consecutive ramp steps for adjacent segments.** Measured 2026-09-22:
-   `lawa-600` and `lawa-700` differ by 0.08 lightness, ΔE 8.1 in *normal*
-   vision — indistinguishable side by side. Use steps at least two apart.
-5. **Nothing lighter than `lawa-400` as a fill on paper.** `lawa-200` is 1.37:1
-   against the page: a segment that light reads as empty track, not as data.
+4. **Use the computed spread, not steps that look far apart.** Measured
+   2026-09-22: `lawa-600`↔`lawa-700` differ by 0.08 lightness, ΔE 8.1 in
+   *normal* vision — indistinguishable side by side. The best-separated
+   five-step subset of the ramp was computed rather than guessed, and is in the
+   table below with a minimum gap of 0.142. **The dark end of the ramp
+   compresses** — 800, 900 and 950 sit within 0.07 of each other — so a
+   plausible-looking choice there is worse than the pair this rule bans.
+5. **The bar has a track, which is what makes the light steps usable.** The two
+   lightest segments are near-white and would disappear against the page; a
+   `clay-100` track with a `border-hairline` bounds them so they read as data
+   rather than as gap. Without the track, rule 4's spread is unusable and you
+   are back to the compressed dark end.
 6. **Every segment is directly labelled.** Required, not decorative: it is the
    secondary encoding that makes a single-hue ramp legible to a colourblind
    reader, and the relief for the contrast warning in rule 5.
@@ -110,14 +117,19 @@ No new data. Everything here already comes back from `GET /me/work`.
   in lifecycle order.
 - [ ] **Action.** Steps, all at least two apart on the ramp (rules 4 and 5):
 
-| Segment | Token |
-|---|---|
-| Proposed | `lawa-400` |
-| Agreed | `lawa-600` |
-| In progress | `lawa-800` |
-| Awaiting confirmation | `lawa-900` |
-| Completed | `lawa-950` |
-| Cancelled | `clay-400` — off the ramp (rule 3) |
+| Segment | Token | Lightness |
+|---|---|---|
+| Proposed | `lawa-100` | 0.942 |
+| Agreed | `lawa-300` | 0.800 |
+| In progress | `lawa-500` | 0.560 |
+| Awaiting confirmation | `lawa-700` | 0.382 |
+| Completed | `lawa-950` | 0.182 |
+| Cancelled | `clay-400` | off the ramp (rule 3) |
+
+Gaps: 0.142, 0.240, 0.178, 0.200. This is the widest-spread five-step subset the
+ramp allows — it was computed over every combination, not chosen by eye.
+
+- [ ] **Action.** The track: `clay-100` with `border-hairline`, rounded 4px.
 
 - [ ] **Action.** A 2px surface-coloured gap between segments, and 4px rounded
   outer ends. Adjacent fills of one hue need the gap to read as separate.
@@ -160,6 +172,9 @@ No new data. Everything here already comes back from `GET /me/work`.
 
 - [ ] **Verify.** Extract the rendered segment colours and confirm lightness is
   monotonic along the ramp in **both** themes.
+- [ ] **Verify.** The lightest segment is visibly distinct from the track it sits
+  on, measured rather than assumed — `lawa-100` on `clay-100` is the pair at
+  risk, and in dark mode the ramp inverts so the risk moves to the other end.
 - [ ] **Note.** The visualization validator run in *categorical* mode will FAIL
   this palette on lightness band, chroma floor and the normal-vision floor. That
   is expected and not a defect: those checks are for palettes whose job is
