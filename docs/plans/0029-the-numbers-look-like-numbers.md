@@ -1,6 +1,6 @@
 # 0029. The numbers look like numbers
 
-- **Status:** Partial
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md)
   (see the 2026-09-22 amendment) · [ADR 0010](../decisions/0010-theme-static-tokens.md) ·
@@ -78,7 +78,7 @@ No new data. Everything here already comes back from `GET /me/work`.
 |---|---|---|
 | 1. The figures are figures | 2 / 2 | Done |
 | 2. The money bar | 3 / 3 | Done |
-| 3. Verification | 3 / 4 | Partial — local gates green; CI pending push |
+| 3. Verification | 4 / 4 | Done |
 
 ---
 
@@ -184,10 +184,10 @@ ramp allows — it was computed over every combination, not chosen by eye.
 
 ### Step 3.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for an interpolated Tailwind class, for any
-  raw colour outside a token, and for a new dependency. Local gates and grep
-  done 2026-09-22; CI pending push.
+  raw colour outside a token, and for a new dependency. CI green on
+  `35649173420` (2026-09-22).
 
 ---
 
