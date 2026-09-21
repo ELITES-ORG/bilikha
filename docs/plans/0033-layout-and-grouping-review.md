@@ -318,6 +318,43 @@ changes.
 
 ---
 
+## Screen 5 — `/account/security` (reviewed 2026-09-22)
+
+### What is there now
+
+A change-password form (current, new, confirm) with the rule *At least 10
+characters*, a disabled-until-valid `Change password`, then a *Sign out* block
+with *Ends this session on this device only*.
+
+### What is wrong
+
+**Neither section has a heading.** The password form starts straight after the
+page description with no heading of its own, and *Sign out* is a `<p>` styled to
+look like one. Two sections, no headings between them — so the page has no
+structure for anyone navigating by headings.
+
+**The description undersells the page.** *"Password settings for this account"*,
+on a page that also ends your session. Same drift as the account hub's
+description, which also predates what its page now holds.
+
+**The page's scope is narrower than its name.** *Security* on a registry of
+named individuals offers a password change and a sign-out. There is no account
+deletion, no data export, no list of active sessions and no way to sign out
+elsewhere. Checked across the whole backend: no deletion endpoint, no export,
+nothing. Those absences are not layout problems, but this is the page where a
+person goes looking, so the review should say that the page's *category* is
+empty rather than that its contents are badly arranged.
+
+### What to do
+
+Give both sections a real heading, and rewrite the description to cover what the
+page does. Then decide whether *Security* is the right name for a page holding
+two controls, or whether it is the account's data-and-access page and currently
+missing most of itself — see the escalation below, which should not wait for
+this plan.
+
+---
+
 ## Screens still to review
 
 The registrant is working through the app. Add a section per screen in the same
