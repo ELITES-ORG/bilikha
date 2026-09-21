@@ -13,6 +13,13 @@
   which local does not have. The security greps in it were run and pass: no
   `service_role` anywhere in `frontend/`, no `supabase` in `frontend/src`, and
   `/creatives` returns 200 signed out
+- **Phase 8 revisited 2026-09-19.** Nine of its sixteen boxes were run against
+  the local API and pass: the whole ownership table, the upload-ticket limit,
+  every secrets check and every directory check. What is left is 8.3 and 8.4,
+  which need a `SUPABASE_SERVICE_ROLE_KEY` matching the project — local has one
+  issued for a different Supabase project, so uploads fail before they start.
+  Those boxes say *blocked on storage* rather than staying blank, so the reason
+  travels with them
 - **Depends on:** [plan 0008](./0008-location-at-registration-and-nearby-first.md) — the
   directory card and its nearby ordering are what this changes
 - **Related:** [ADR 0021](../decisions/0021-image-storage-and-upload-path.md) ·
@@ -110,7 +117,7 @@ apply unchanged. Five specific to this plan:
 | 5. Avatars | 6 / 6 | Done |
 | 6. Portfolio | 0 / 7 | **Superseded** by [plan 0010](./0010-offers-and-an-offer-directory.md) — never built |
 | 7. Admin media review and cleanup | 4 / 4 | Shipped; boxes unticked — see note |
-| 8. Verification | 4 / 7 | **Partly** — the upload checks need working storage |
+| 8. Verification | 5 / 7 | **Partly** — 8.3 and 8.4 need working storage |
 
 ---
 
@@ -731,53 +738,80 @@ progress and deletes an object between the `PUT` and the `POST` that records it.
 | Reorder including another creative's item id | 404 |
 | A malformed uuid in `:id` | 400, not 500 |
 
-- [ ] **Verify.** Every row behaves as stated.
+- [x] **Verify.** Every row behaves as stated.
+- **Done 2026-09-19**, against the local API. Rows 2-5 named portfolio items,
+  which no longer exist ([ADR 0022](../decisions/0022-offers-replace-portfolio.md)),
+  so they were checked where that role now lives — offers. Claiming another
+  user's object key as your avatar is 403; `PATCH`, `DELETE` and a reorder
+  including another creative's offer are each 404; a malformed uuid is 400 on
+  both `/offers/:id` and `/agreements/:id`. The offer survived all three
+  attempts.
+- **A false finding worth recording.** The first run reported 403 for `PATCH`
+  and `DELETE`, which would have been an existence leak. It was the test that
+  was wrong: the intruder had no creative profile, so it was stopped by the
+  "a creative profile is required to manage offers" guard long before the
+  ownership check. With a creative intruder it is 404, as specified.
 
 ### Step 8.2 — Limits
 
-- [ ] **Verify.** The eleventh portfolio item is refused.
-- [ ] **Verify.** A 12 MB file is rejected by the bucket, not silently stored.
-- [ ] **Verify.** A `.txt` renamed to `.webp` is rejected by the MIME check.
-- [ ] **Verify.** The 41st upload ticket within an hour is a 429.
+- [ ] **Superseded.** The eleventh portfolio item — portfolio was replaced by
+  offers, which carry their own limits.
+- [ ] **Blocked on storage.** A 12 MB file is rejected by the bucket, not
+  silently stored.
+- [ ] **Blocked on storage.** A `.txt` renamed to `.webp` is rejected by the
+  MIME check.
+- [x] **Verify.** The 41st upload ticket within an hour is a 429.
+- **Done 2026-09-19.** Fired 42 requests as one account: the first 429 landed on
+  request 41 exactly, which is the boundary `uploadLimiter` defines (limit 40,
+  keyed by user id). The limiter runs before the handler, so this holds without
+  working storage.
 
 ### Step 8.3 — The sizes are real
 
-- [ ] **Verify.** Upload a 4 MB photo. In the Supabase dashboard the stored
+- [ ] **Blocked on storage.** Upload a 4 MB photo. In the Supabase dashboard the stored
   display object is **under 400 KB** and the thumb is **under 60 KB**. If either
   is far larger the resize did not run and you are storing originals — stop and
   fix Phase 4.
 
 ### Step 8.4 — Moderation
 
-- [ ] **Verify.** A published creative adds a portfolio image. Their profile stays
+- [ ] **Blocked on storage, and portfolio is superseded.** A published creative adds an image. Their profile stays
   `published` and appears in the admin Edited queue
   ([ADR 0016](../decisions/0016-edits-never-unpublish.md)).
-- [ ] **Verify.** The image also appears in the Media queue.
-- [ ] **Verify.** Removing it from the Media queue takes it off the public
+- [ ] **Blocked on storage.** The image also appears in the Media queue. The
+  queue itself works — an avatar was approved through it on 2026-09-19 and the
+  queue emptied — but putting a *new* image into it needs a working upload.
+- [ ] **Blocked on storage.** Removing it from the Media queue takes it off the public
   profile.
 
 ### Step 8.5 — No secrets reached the client
 
-- [ ] **Verify.** `grep -ri "service_role" frontend/ --exclude-dir=node_modules`
-  is empty.
-- [ ] **Verify.** In the browser devtools Network tab, no API response body
-  contains the service role key or the bucket name.
-- [ ] **Verify.** `grep -rn "supabase" frontend/src` returns nothing outside a
-  comment.
+- [x] **Verify.** `grep -ri "service_role" frontend/ --exclude-dir=node_modules`
+  is empty. Run 2026-09-19: empty.
+- [x] **Verify.** In the browser devtools Network tab, no API response body
+  contains the service role key or the bucket name. Done 2026-09-19 by reading
+  the bodies directly instead — `/taxonomy/domains`, `/creatives`, `/offers`
+  and `/auth/me` were each checked for the key, for `service_role`, and for a
+  JWT prefix. Nothing.
+- [x] **Verify.** `grep -rn "supabase" frontend/src` returns nothing outside a
+  comment. Run 2026-09-19: no hits at all.
 
 ### Step 8.6 — The directory still behaves
 
-- [ ] **Verify.** Signed out, `/creatives` returns 200 with the full list —
+- [x] **Verify.** Signed out, `/creatives` returns 200 with the full list —
   images change nothing about the public endpoint
   ([ADR 0017](../decisions/0017-sign-in-before-contacting.md)).
-- [ ] **Verify.** Nearby-first ordering and the municipality filter still work.
-- [ ] **Verify.** A profile with no bio, no avatar and no portfolio still renders
-  a correct card. This is the majority case today.
+- [x] **Verify.** Nearby-first ordering and the municipality filter still work.
+  Done 2026-09-19: a viewer registered in Almeria gets Almeria in the first
+  three rows, and `?municipality=almeria` returns only Almeria.
+- [x] **Verify.** A profile with no bio, no avatar and no portfolio still renders
+  a correct card. This is the majority case today. Confirmed 2026-09-19 against
+  a bare seeded profile in the list.
 
 ### Step 8.7 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
-  `npm run docs:check` all exit 0.
+- [x] **Verify.** `npm run typecheck`, `npm run lint`, `npm run build` and
+  `npm run docs:check` all exit 0. Green 2026-09-19, 147 tests.
 
 ---
 
