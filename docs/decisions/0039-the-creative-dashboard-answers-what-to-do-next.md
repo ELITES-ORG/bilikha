@@ -135,6 +135,36 @@ larger number.
 for now and worth saying out loud, because the instinct to add charts to a
 dashboard is strong and there is nothing here to chart yet.
 
+> **Amended 2026-09-22 — this went too far, and the premise was measured wrong.**
+>
+> The shipped page renders every figure as a sentence: *"4 agreements · 1
+> awaiting acceptance · 1 in progress · 2 completed"*. That is four numbers in
+> prose. A reader cannot scan it, compare parts, or see a proportion, and no
+> amount of correct data makes it a dashboard.
+>
+> **The premise was measured against the wrong database.** "Nothing to chart"
+> came from the local fixture database — three agreements in total, no creative
+> holding as many as three. A real account has four agreements spread across
+> four states with money in three of them. That is a part-to-whole with an
+> order, which is chartable, and the conclusion was drawn from fixtures rather
+> than from the product.
+>
+> **Two things were conflated.** "Do not build a vanity analytics product" was
+> right. "Therefore render everything as prose" does not follow from it, and is
+> what actually shipped.
+>
+> So: the numbers become numbers — a KPI row of stat tiles — and the agreement
+> money becomes one horizontal stacked bar across the lifecycle, because the
+> states are ordered and part-to-whole. **The zero case keeps its sentences**;
+> that part of this record stands and is the reason the page degrades rather
+> than showing an empty chart frame.
+>
+> **Still no time series, and still no view tracking.** Those were rejected for
+> reasons this amendment does not touch: there is nothing to plot over time, and
+> nothing records a view. A bar of states a creative already has is not the same
+> claim. [Plan 0029](../plans/0029-the-numbers-look-like-numbers.md) carries it
+> out.
+
 **The question "is anyone looking?" stays unanswered.** The most likely
 follow-up request, and the reason the view-tracking ADR will be written. Until
 then the page should not imply an answer it does not have — no "impressions"
