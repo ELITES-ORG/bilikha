@@ -72,6 +72,19 @@ reach one switch.
 The test for the next one is the same: a control that loads nothing and saves
 nothing may sit on the hub. Anything that queries belongs behind an entry.
 
+> **Corrected 2026-09-22 — the test was worded too narrowly.** The mode control
+> ([0038](./0038-mode-is-a-role-you-are-in-not-a-filter.md)) saves, via
+> `PATCH /me/view-mode`, so by the letter above it should not be on the hub. It
+> plainly should be: it adds no query — it reads the `useCurrentUser` the hub
+> already calls — and no form, which is what the paragraph above actually
+> objects to.
+>
+> The test is about **what the page has to load**, not about whether a control
+> writes. Read it as: *a control that adds no query and no editor may sit on the
+> hub; anything that fetches, or that mounts a form, belongs behind an entry.*
+> Mode and the theme choice both pass. A profile editor does not, which is the
+> case the rule was written for.
+
 ## Alternatives considered
 
 **Collapsible sections on one page.** Cheapest. Rejected: an accordion keeps
