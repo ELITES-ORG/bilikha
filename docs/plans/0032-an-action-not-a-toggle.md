@@ -47,8 +47,20 @@ which mode you are in, so the control does not need to say it a second time.
 
 ## Prerequisites
 
-- `ModeSwitch` currently has exactly one consumer: `ModeAwareEmptyState`.
-  Account uses its own `ModeRow`. Confirm that before deleting it.
+- `ModeSwitch` is referenced in four files, but **imported by exactly one**.
+  Checked 2026-09-22:
+
+| File | Reference |
+|---|---|
+| `ModeAwareEmptyState.tsx` | the only import and render |
+| `ModeSwitch.tsx` | itself |
+| `mode-controls.test.ts` | assertions — see rule 5 |
+| `ModeNotice.tsx` | **a comment only**, which goes stale with this change and must be reworded |
+
+  Account uses its own `ModeRow` radio group and does not touch `ModeSwitch`.
+
+- The mode-naming copy sits in ten places: `DirectoryPage` (3), `HistoryPage`
+  (5), `MessagesPage` (2). All ten need the profile-aware variant from Phase 2.
 - Fixtures: `cre0299739` (creative, has a profile), `adm0403418` (**no creative
   profile** — the account that must never be told to switch). Password
   `verify-pass-2026`, local only.
