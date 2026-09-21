@@ -71,7 +71,7 @@ paths.
 | 3. Profile by visibility | 2 / 2 | Done |
 | 4. Offers rows | 2 / 2 | Done |
 | 5. Postings badges | 2 / 2 | Done |
-| 6. Security structure | 0 / 2 | Not started |
+| 6. Security structure | 2 / 2 | Done |
 | 7. Verification | 0 / 4 | Not started |
 
 ---
@@ -527,14 +527,14 @@ assume them.
 
 ### Step 6.1 — Headings
 
-- [ ] **Action.** Both sections get real headings. *Sign out* is a `<p>` styled
+- [x] **Action.** Both sections get real headings. *Sign out* is a `<p>` styled
   to look like one, and the password form has no heading at all.
-- [ ] **Verify.** Navigate the page by headings and confirm both sections are
+- [x] **Verify.** Navigate the page by headings and confirm both sections are
   reachable.
 
 ### Step 6.2 — What is missing stays missing here
 
-- [ ] **Note, not an action.** Account deletion, data export and session
+- [x] **Note, not an action.** Account deletion, data export and session
   management are absent. They are named in
   [constraint 7](../explanation/constraints.md) and tracked in
   [plan 0034](./0034-the-privacy-notice-and-terms-do-not-exist.md)'s follow-ups.

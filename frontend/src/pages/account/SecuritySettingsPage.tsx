@@ -22,24 +22,33 @@ export function SecuritySettingsPage() {
           </p>
 
           <Card elevation="flat" className="mt-10">
-            <CardBody className="space-y-6">
-              <PasswordForm />
+            <CardBody className="space-y-8">
+              <section className="space-y-4" aria-labelledby="password-heading">
+                <h2 id="password-heading" className="text-lg font-medium text-ink">
+                  Password
+                </h2>
+                <PasswordForm />
+              </section>
 
-              <div className="border-t border-hairline pt-6">
-                <p className="text-sm font-medium text-ink">Sign out</p>
-                <p className="mt-1 text-sm text-ink-muted">
+              <section
+                className="space-y-3 border-t border-hairline pt-6"
+                aria-labelledby="sign-out-heading"
+              >
+                <h2 id="sign-out-heading" className="text-lg font-medium text-ink">
+                  Sign out
+                </h2>
+                <p className="text-sm text-ink-muted">
                   Ends this session on this device only.
                 </p>
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="mt-3"
                   loading={logout.isPending}
                   onClick={() => void logout.mutateAsync()}
                 >
                   Sign out
                 </Button>
-              </div>
+              </section>
             </CardBody>
           </Card>
         </Container>
