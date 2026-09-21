@@ -229,10 +229,55 @@ The heaviest modules, none of which the landing page needs:
   and never a flash.
 - Every route still works, and guards still run before their chunk is fetched.
 
+## Audit, 2026-09-22
+
+The split is real and correctly built. The Suspense fallback is not null,
+`RequireAdmin` returns `<Navigate>` before rendering the lazy layout so a bounce
+never triggers the import, the `DirectoryPage` trade-off was measured both ways
+and recorded, and every gate is green.
+
+**Corrected: the headline number compared an entry chunk against a whole
+payload.** 302.41 kB / 88.13 kB gzip is the entry chunk alone. The built HTML
+also `modulepreload`s two shared chunks, so they are part of the same initial
+load:
+
+| Chunk | Raw | Gzip |
+|---|---|---|
+| `index` | 302.41 kB | 88.13 kB |
+| `ui` | 95.82 kB | 32.28 kB |
+| `api-client` | 79.09 kB | 27.31 kB |
+| **initial payload** | **477.32 kB** | **147.72 kB** |
+
+Against 632.14 / 180.17 that is **24% raw and 18% gzip**, not roughly halved.
+Worth doing, and smaller than reported. This is the same apples-to-oranges the
+Prerequisites warned about for disk size versus build figure, arriving through a
+different door: whenever the *shape* of the output changes, the "after" has to
+be re-derived rather than read off the line that looks like the old one.
+
+**The bytes moved less than the clock.** Cold, production, 400ms/600kbps:
+
+| | Before | After |
+|---|---|---|
+| Blank before React mounts | 355ms | **273ms** |
+| Blank after mount (auth) | — | **456ms** |
+| Content on screen | 2003ms | **1924ms** |
+
+So 82ms came off the pre-React window and **79ms came off time-to-content**,
+because what now dominates is the auth round trip, not the bundle. The
+implementer flagged `HomeRoute`/`RequireAuth` returning `null` while
+`useCurrentUser()` resolves as a follow-up; after this change it is no longer a
+footnote, it is the larger half of what a visitor waits through.
+
+**The boot mark now never shows on a typical load**, peak opacity 0 across cold
+and warm production runs — the window it waits 400ms for is 273ms. This plan's
+own follow-up predicted exactly that. It still fires on the slow row, so it is
+not wasted, but on a normal connection it is now decorative by circumstance.
+
 ## Follow-ups
 
 | Item | Why deferred |
 |---|---|
+| **The auth blank on `/`** | Now the largest single wait a visitor sees: 456ms of nothing after React mounts, while `useCurrentUser()` resolves. `HomeRoute` returns null deliberately, so a signed-in user is not shown the landing page before being redirected — but this is a public registry and most visitors are signed out, so every one of them pays a round trip to spare a flash for the minority. Rendering the landing page immediately and redirecting when auth resolves inverts that trade. It is a product call, not a refactor |
 | Prefetching on hover or idle | Makes a split route feel instant. Worth it once the split exists and the numbers are known, and it is easy to do badly — prefetching everything is the bundle again, arriving later |
 | Server-side rendering | Unchanged by this plan and still the launch blocker constraint 4 names |
 | Revisiting the boot mark's 400ms | If this shrinks the typical blank below ~200ms there may be nothing worth marking on a normal connection, and the mark becomes slow-connection-only by circumstance rather than by design |
