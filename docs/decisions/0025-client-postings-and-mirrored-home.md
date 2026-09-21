@@ -49,6 +49,18 @@ you asked about or saved. Profile is shared.
 If a list can be emptied by being in the wrong mode, the way out has to be on
 that list.
 
+> **Amended 2026-09-21 by [0038](./0038-mode-is-a-role-you-are-in-not-a-filter.md).**
+> Creatives in a user test found the toggle confusing, and the reason is where
+> it sits: repeated at the top of three list pages, directly above controls that
+> really are filters, it reads as one. Mode moves to the account hub and each
+> surface only *names* the mode it is showing.
+>
+> The concern in the paragraph above is untouched and still binding. The way out
+> of a list emptied by the wrong mode is still on that list — it lives in
+> `ModeAwareEmptyState`, which is exactly where it is needed and nowhere it can
+> be mistaken for a filter. Do not restore the header toggle on the strength of
+> this paragraph alone; read 0038 first.
+
 **Mode moves onto the account.** If it decides what Home shows, it cannot be a
 per-device preference — the product would be a different product on a phone than
 on a laptop.

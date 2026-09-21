@@ -85,6 +85,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0023](./0023-directory-filter-rail.md) | A filter rail for the directory | Reverted |
 | [0024](./0024-theme-choice.md) | A theme choice, and one palette instead of four | Ready |
 | [0025](./0025-shared-api-contracts.md) | One definition of every API shape | Ready |
+| [0026](./0026-mode-moves-to-the-account-hub.md) | Mode moves to the account hub | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

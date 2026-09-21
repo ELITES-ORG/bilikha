@@ -1,0 +1,216 @@
+# 0026. Mode moves to the account hub
+
+- **Status:** Ready
+- **Owner:** implementing agent
+- **Related:** [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md) ·
+  [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) ·
+  [ADR 0036](../decisions/0036-persistent-chrome-holds-the-most-used-control.md) ·
+  [ADR 0027](../decisions/0027-account-is-a-hub.md) ·
+  [plan 0024](./0024-theme-choice.md)
+
+## Goal
+
+A creative chooses *Client mode* or *Creative mode* once, on their account, and
+every mirrored surface tells them which one they are in without offering to
+change it. The `I'm hiring` / `I'm for hire` toggle disappears from the top of
+Directory, Messages and History.
+
+Real creatives were put in front of the app and said the toggle confuses them.
+This is the second set of labels to fail, so the fix is placement and framing,
+not a third rewording — [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md)
+has the reasoning.
+
+## Scope
+
+**In scope**
+- A mode control on `/account`, in the shape the theme control already uses.
+- The labels become **Client mode** and **Creative mode**, defined once.
+- A quiet, non-interactive mode line on Directory, Messages and History.
+- Removing `ModeSwitch` from those three page headers.
+- Rewording the eleven empty-state descriptions that name the old labels.
+
+**Out of scope**
+- What mode *means*. Which surface shows what is
+  [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) and does not
+  change here.
+- How mode is stored. It stays on the user, server-side, two values, same
+  endpoint. No migration, no contract change.
+- A mode badge in the global top bar. Considered and rejected on space in ADR
+  0038; it is the answer *if* people turn out to flip modes while browsing, and
+  that is a thing to learn from users, not to guess now.
+
+## Prerequisites
+
+- `npm run dev:api` and `npm run dev:web` both up, and a local account that has
+  a published creative profile — the control only renders for those. The
+  fixtures from the 2026-09-19 verification run qualify (`cre…`, `cli…`,
+  password `verify-pass-2026`), or make one through the form.
+- Read [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md)
+  first, particularly why the empty-state switch stays. Removing it too would
+  reintroduce exactly the trap ADR 0025 was written to prevent.
+
+## Rules for whoever executes this
+
+1. **The empty-state switch stays.** `ModeAwareEmptyState` keeps its
+   `ModeSwitch`. It is the load-bearing part of ADR 0038 — the header toggle can
+   go *because* this exists. Do not "finish the job" by removing it.
+2. **The mode line is not a control.** No button, no segmented control, no
+   `aria-pressed`. A sentence, and a plain link to `/account`. If it can be
+   toggled in place, this plan has failed and we have moved the same problem
+   two pixels down the page.
+3. **Name the labels once.** They are currently written out 23 times across five
+   files. Put them in one module and import. A third rename should be one edit.
+4. **Do not touch what mode does.** No change to `effectiveViewMode`, to the
+   `PATCH /me/view-mode` endpoint, to the contract, or to which surface shows
+   what. If a list's contents change, something has gone wrong.
+5. **Rule 5 of the house:** no new state. Mode already lives on the user; read
+   it, do not mirror it into a store or a context.
+
+## Progress
+
+| Phase | Steps | Status |
+|---|---|---|
+| 1. One name for the modes | 0 / 2 | Not started |
+| 2. The control on Account | 0 / 2 | Not started |
+| 3. The mirrored surfaces | 0 / 3 | Not started |
+| 4. Verification | 0 / 4 | Not started |
+
+---
+
+# Phase 1 — One name for the modes
+
+### Step 1.1 — A single source for the label
+
+- [ ] **Action.** In `frontend/src/lib/view-mode.ts`, beside `effectiveViewMode`,
+  export the display names:
+
+```ts
+/** The words a person sees. ADR 0038: the role, not the activity. */
+export const MODE_LABEL: Record<ViewMode, string> = {
+  hiring: 'Client mode',
+  creative: 'Creative mode',
+};
+
+/** For a sentence: "Viewing as a client". */
+export const MODE_AS: Record<ViewMode, string> = {
+  hiring: 'a client',
+  creative: 'a creative',
+};
+```
+
+- [ ] **Why.** `hiring` and `creative` stay as the stored values — this is a
+  presentation change and the API is untouched (rule 4). Only the words move.
+
+### Step 1.2 — Every string comes from it
+
+- [ ] **Action.** Replace all 23 literal occurrences of `I'm hiring` / `I'm for
+  hire` across `ModeSwitch.tsx`, `DirectoryPage.tsx`, `HistoryPage.tsx`,
+  `MessagesPage.tsx` and `MyPostingsPage.tsx` with the constants.
+- [ ] **Verify.** `grep -rn "I’m hiring\|I’m for hire\|I'm hiring\|I'm for hire"
+  frontend/src` returns nothing. Rule 3.
+
+---
+
+# Phase 2 — The control on Account
+
+### Step 2.1 — The row
+
+- [ ] **Action.** Add a `ModeRow` to `frontend/src/pages/account/AccountPage.tsx`,
+  directly modelled on the existing `AppearanceRow` — a `fieldset` with a
+  `legend`, the same segmented shape, the same spacing. Plan 0024 settled that
+  pattern for an account-wide setting and this is another one.
+- [ ] **Action.** Two options, `MODE_LABEL.hiring` and `MODE_LABEL.creative`,
+  writing through the existing `useSetViewMode()`. No new mutation.
+- [ ] **Action.** Under it, one line saying what the choice does, because this is
+  now the only place that explains it:
+
+  > Creative mode shows client postings on Home, and the clients who contacted
+  > you in Messages. Client mode shows offers and creatives you can hire.
+
+- [ ] **Verify.** The row renders only for an account with a creative profile —
+  same `user.profileSlug` guard `ModeSwitch` already uses. A client with no
+  profile has one mode and must not be shown a choice.
+
+### Step 2.2 — It is reachable
+
+- [ ] **Verify.** From `/account`, the control is visible without opening a
+  sub-page. ADR 0027 makes Account a hub; a setting buried a level down is not
+  the "go to my account and pick" the creatives described.
+
+---
+
+# Phase 3 — The mirrored surfaces
+
+### Step 3.1 — A line that names the mode
+
+- [ ] **Action.** Add `frontend/src/components/ModeNotice.tsx`: a single line of
+  muted text reading *Viewing as a creative* (from `MODE_AS`), followed by a
+  plain text link — *change in Account* — to `/account`.
+- [ ] **Action.** No button, no `aria-pressed`, no segmented control. Rule 2.
+- [ ] **Action.** Render nothing at all when the account has no creative
+  profile. A client has one mode; telling them they are in it is noise.
+
+### Step 3.2 — Swap it in
+
+- [ ] **Action.** On `DirectoryPage`, `MessagesPage` and `HistoryPage`, replace
+  `<ModeSwitch size="md" />` in the page header with `<ModeNotice />`.
+- [ ] **Verify.** `grep -rn "ModeSwitch" frontend/src/pages/` returns nothing.
+  The only remaining import is in `ModeAwareEmptyState.tsx`.
+
+### Step 3.3 — The empty states still rescue you
+
+- [ ] **Action.** Reword the eleven empty-state descriptions for the new labels,
+  keeping their shape: name the mode you are in, say what would fill this list,
+  and offer the other mode.
+- [ ] **Verify.** `ModeAwareEmptyState` still renders a working `ModeSwitch`.
+  Rule 1 — this is the one that must not be lost.
+
+---
+
+# Phase 4 — Verification
+
+### Step 4.1 — The control works
+
+- [ ] **Verify.** As a creative, switch to Creative mode on `/account`, then open
+  Directory, Messages and History. Each shows the creative side and says
+  *Viewing as a creative*. Switch back; each follows.
+
+### Step 4.2 — Nothing on a list can change the mode
+
+- [ ] **Verify.** On all three surfaces, with lists **non-empty**, there is no
+  control that changes mode — only the notice and its link. This is the whole
+  point of the change; a leftover toggle behind a breakpoint fails it.
+- [ ] **Verify.** At 375px as well as desktop. The old toggle was in a page
+  header that reflows.
+
+### Step 4.3 — The empty-list escape survives
+
+- [ ] **Verify.** Get a mirrored list into a genuinely empty state in the wrong
+  mode, and confirm the switch is offered *on that list* and works. ADR 0025's
+  requirement, and the reason removing the header toggle is safe.
+
+### Step 4.4 — Full pass
+
+- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+  exit 0, and CI green on the pushed commit. Grep the diff for any surviving
+  `I'm hiring` / `I'm for hire`, and for any new `useState` holding a mode
+  (rule 5).
+
+---
+
+## Acceptance
+
+- A creative picks Client or Creative mode on `/account` and nowhere else.
+- Directory, Messages and History each say which mode they are showing, and
+  offer no way to change it in place.
+- An empty mirrored list still offers the switch, on the list.
+- A client with no creative profile sees no mode control and no mode notice.
+- The stored values, the endpoint and the contract are untouched.
+
+## Follow-ups
+
+| Item | Why deferred |
+|---|---|
+| A mode badge in the global top bar | ADR 0038 rejected it on space at 375px. It is the answer if people turn out to switch mode while browsing rather than once — worth asking the same creatives after this ships |
+| Asking the creatives again | This plan came from one session with real users. The same session is how we would find out whether the notice is enough, and it costs nothing to repeat |
+| A first-run explanation of mode | A creative meets the concept for the first time on the account page now. Onboarding (`/welcome`) already asks what brings you here and could seed the mode instead of leaving it at the default |
