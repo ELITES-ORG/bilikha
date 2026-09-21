@@ -1,6 +1,6 @@
 # 0029. The numbers look like numbers
 
-- **Status:** Ready
+- **Status:** Partial
 - **Owner:** implementing agent
 - **Related:** [ADR 0039](../decisions/0039-the-creative-dashboard-answers-what-to-do-next.md)
   (see the 2026-09-22 amendment) · [ADR 0010](../decisions/0010-theme-static-tokens.md) ·
@@ -76,9 +76,9 @@ No new data. Everything here already comes back from `GET /me/work`.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The figures are figures | 0 / 2 | Not started |
-| 2. The money bar | 0 / 3 | Not started |
-| 3. Verification | 0 / 4 | Not started |
+| 1. The figures are figures | 2 / 2 | Done |
+| 2. The money bar | 3 / 3 | Done |
+| 3. Verification | 3 / 4 | Partial — local gates green; CI pending push |
 
 ---
 
@@ -86,24 +86,24 @@ No new data. Everything here already comes back from `GET /me/work`.
 
 ### Step 1.1 — A KPI row
 
-- [ ] **Action.** Above the existing groups, a row of stat tiles: **Agreements**
+- [x] **Action.** Above the existing groups, a row of stat tiles: **Agreements**
   (`agreements.total`), **Committed** (`money.committedCentavos`), **Completed**
   (`money.completedCentavos`), **Rating** (`ratings.average`, with `ratings.count`
   beneath).
-- [ ] **Action.** The value is the loud part — large, tabular figures, `u-display`
+- [x] **Action.** The value is the loud part — large, tabular figures, `u-display`
   — with the label small and muted above or below it. A stat tile whose label
   outweighs its number is a sentence with extra steps.
-- [ ] **Action.** A tile renders only when it has something to say. No rating
+- [x] **Action.** A tile renders only when it has something to say. No rating
   yet → no rating tile, and its sentence stays in the group below.
-- [ ] **Verify.** At 375px the row wraps to two columns and nothing truncates.
+- [x] **Verify.** At 375px the row wraps to two columns and nothing truncates.
   This is the width the complaint came from.
 
 ### Step 1.2 — The groups stay
 
-- [ ] **Action.** Keep the existing group sentences beneath the row. They carry
+- [x] **Action.** Keep the existing group sentences beneath the row. They carry
   the things a number cannot: *"1 waiting on your reply"*, *"none saved by
   others yet"*, the payment disclaimer.
-- [ ] **Why.** The tiles answer *how much*; the sentences answer *what now*.
+- [x] **Why.** The tiles answer *how much*; the sentences answer *what now*.
   Deleting them to make room would undo plan 0027.
 
 ---
@@ -112,10 +112,10 @@ No new data. Everything here already comes back from `GET /me/work`.
 
 ### Step 2.1 — The bar
 
-- [ ] **Action.** One horizontal stacked bar under the money group: each
+- [x] **Action.** One horizontal stacked bar under the money group: each
   lifecycle state with money is a segment, width proportional to its centavos,
   in lifecycle order.
-- [ ] **Action.** Steps, all at least two apart on the ramp (rules 4 and 5):
+- [x] **Action.** Steps, all at least two apart on the ramp (rules 4 and 5):
 
 | Segment | Token | Lightness |
 |---|---|---|
@@ -129,26 +129,26 @@ No new data. Everything here already comes back from `GET /me/work`.
 Gaps: 0.142, 0.240, 0.178, 0.200. This is the widest-spread five-step subset the
 ramp allows — it was computed over every combination, not chosen by eye.
 
-- [ ] **Action.** The track: `clay-100` with `border-hairline`, rounded 4px.
+- [x] **Action.** The track: `clay-100` with `border-hairline`, rounded 4px.
 
-- [ ] **Action.** A 2px surface-coloured gap between segments, and 4px rounded
+- [x] **Action.** A 2px surface-coloured gap between segments, and 4px rounded
   outer ends. Adjacent fills of one hue need the gap to read as separate.
-- [ ] **Action.** Widths come from an inline style or a custom property. **Not**
+- [x] **Action.** Widths come from an inline style or a custom property. **Not**
   an interpolated Tailwind class — it emits nothing.
 
 ### Step 2.2 — Labels and the legend
 
-- [ ] **Action.** Direct-label every segment with its state and amount. With
+- [x] **Action.** Direct-label every segment with its state and amount. With
   five segments a legend is also present (ADR 0039's amendment cites the
   visualization guidance: identity is never colour alone).
-- [ ] **Action.** Below ~8% width a segment's label moves outside or to the
+- [x] **Action.** Below ~8% width a segment's label moves outside or to the
   legend rather than being clipped.
 
 ### Step 2.3 — It degrades
 
-- [ ] **Action.** One state with money → no bar. A single full-width segment is
+- [x] **Action.** One state with money → no bar. A single full-width segment is
   a rectangle, not a comparison; the tile and the sentence already say it.
-- [ ] **Action.** Nothing agreed → no bar at all. Rule 1.
+- [x] **Action.** Nothing agreed → no bar at all. Rule 1.
 
 ---
 
@@ -156,26 +156,26 @@ ramp allows — it was computed over every combination, not chosen by eye.
 
 ### Step 3.1 — The three fixtures, both themes
 
-- [ ] **Verify.** `nc0850896`: sentences only, no tiles, no bar.
+- [x] **Verify.** `nc0850896`: sentences only, no tiles, no bar.
   `cre0299739`: cancelled only — no bar, and the cancelled figure does not
   masquerade as progress. `cli0299739`: one state — tiles, no bar.
-- [ ] **Verify.** Each in light and dark. Screenshot both.
+- [x] **Verify.** Each in light and dark. Screenshot both.
 
 ### Step 3.2 — A bar that actually has segments
 
-- [ ] **Verify.** Build a creative holding money in four states — the existing
+- [x] **Verify.** Build a creative holding money in four states — the existing
   factories do this in the `work.test.ts` partition test — and look at the bar.
   Confirm segment widths are proportional to the centavos, and that adjacent
   segments are separable at 375px.
 
 ### Step 3.3 — Colour, computed not eyeballed
 
-- [ ] **Verify.** Extract the rendered segment colours and confirm lightness is
+- [x] **Verify.** Extract the rendered segment colours and confirm lightness is
   monotonic along the ramp in **both** themes.
-- [ ] **Verify.** The lightest segment is visibly distinct from the track it sits
+- [x] **Verify.** The lightest segment is visibly distinct from the track it sits
   on, measured rather than assumed — `lawa-100` on `clay-100` is the pair at
   risk, and in dark mode the ramp inverts so the risk moves to the other end.
-- [ ] **Note.** The visualization validator run in *categorical* mode will FAIL
+- [x] **Note.** The visualization validator run in *categorical* mode will FAIL
   this palette on lightness band, chroma floor and the normal-vision floor. That
   is expected and not a defect: those checks are for palettes whose job is
   *identity*, and this ramp's job is *magnitude along an order*. Its own scope
@@ -186,7 +186,8 @@ ramp allows — it was computed over every combination, not chosen by eye.
 
 - [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for an interpolated Tailwind class, for any
-  raw colour outside a token, and for a new dependency.
+  raw colour outside a token, and for a new dependency. Local gates and grep
+  done 2026-09-22; CI pending push.
 
 ---
 

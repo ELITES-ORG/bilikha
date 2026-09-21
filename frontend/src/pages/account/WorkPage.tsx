@@ -6,7 +6,9 @@ import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCurrentUser } from '@/features/auth/api';
 import { useWorkSummary, WorkNotFoundError } from '@/features/work/api';
+import { MoneyLifecycleBar } from '@/features/work/MoneyLifecycleBar';
 import { nextAction } from '@/features/work/next-action';
+import { WorkKpiRow } from '@/features/work/WorkKpiRow';
 import type { WorkSummary } from '@contracts/work';
 import { formatPesos } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -93,6 +95,9 @@ function agreementsCopy(summary: WorkSummary): string {
         : `${agreements.awaitingClientAcceptance} awaiting acceptance`,
     );
   }
+  if (agreements.agreed > 0) {
+    parts.push(agreements.agreed === 1 ? '1 agreed' : `${agreements.agreed} agreed`);
+  }
   if (agreements.inProgress > 0) {
     parts.push(
       agreements.inProgress === 1 ? '1 in progress' : `${agreements.inProgress} in progress`,
@@ -145,6 +150,7 @@ function moneyCopy(summary: WorkSummary): ReactNode {
   return (
     <>
       <p>{parts.join(' · ')}</p>
+      <MoneyLifecycleBar money={m} />
       {m.typicalCentavos != null && (
         <p className="mt-2">
           A typical agreement of yours is {formatPesos(m.typicalCentavos)}.
@@ -265,6 +271,8 @@ export function WorkPage() {
               </ButtonLink>
             )}
           </section>
+
+          <WorkKpiRow summary={work.data} />
 
           <div className="mt-12 space-y-0">
             <WorkGroup title="Your profile">{profileCopy(work.data)}</WorkGroup>
