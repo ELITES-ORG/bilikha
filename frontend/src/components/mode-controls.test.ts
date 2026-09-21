@@ -3,12 +3,15 @@ import { describe, expect, it } from 'vitest';
 /**
  * ADR 0038 rests on two structural facts, and neither was enforced by anything.
  *
- * Deleting `ModeSwitch` from `ModeAwareEmptyState` — the component, its import
- * and the now-unused `hasProfile`, exactly as a tidy refactor would — left all
- * five gates green and 147 tests passing. That is the way out of a list emptied
- * by the wrong mode (ADR 0025), and the only reason removing the page-header
- * toggle was safe rather than a regression. Losing it silently would put the
- * original trap back.
+ * Deleting the way-out control from `ModeAwareEmptyState` — the component, its
+ * import and the now-unused `hasProfile`, exactly as a tidy refactor would —
+ * left all five gates green. That is the way out of a list emptied by the wrong
+ * mode (ADR 0025), and the only reason removing the page-header toggle was safe
+ * rather than a regression. Losing it silently would put the original trap back.
+ *
+ * Plan 0032 replaced the segmented toggle with a single `SwitchModeAction`. The
+ * invariant is the same: the empty state offers a way out. The particular
+ * component name is not the invariant.
  *
  * The mirror image matters too: if `ModeNotice` ever grows a button, the mode
  * control is back on the list pages, which is the entire thing ADR 0038
@@ -40,22 +43,27 @@ function source(map: Record<string, string>, endsWith: string): string {
   return map[key]!;
 }
 
-describe('the empty-list way out survives (ADR 0038, rule 1)', () => {
+describe('the empty-list way out survives (ADR 0038 / plan 0032)', () => {
   const src = source(componentSource, 'ModeAwareEmptyState.tsx');
 
-  it('imports ModeSwitch', () => {
-    expect(src).toMatch(/import\s*\{\s*ModeSwitch\s*\}\s*from/);
+  it('imports SwitchModeAction', () => {
+    expect(src).toMatch(/import\s*\{\s*SwitchModeAction\s*\}\s*from/);
   });
 
-  it('renders ModeSwitch', () => {
-    expect(src).toMatch(/<ModeSwitch\b/);
+  it('renders SwitchModeAction', () => {
+    expect(src).toMatch(/<SwitchModeAction\b/);
   });
 
   it('renders it only for an account that has a creative profile', () => {
     // A client has one mode; offering them a switch would be a control that
-    // cannot do anything.
+    // cannot do anything. The same signal picks the copy variant.
     expect(src).toMatch(/profileSlug/);
-    expect(src).toMatch(/hasProfile\s*&&\s*<ModeSwitch/);
+    expect(src).toMatch(/hasProfile\s*&&\s*<SwitchModeAction/);
+  });
+
+  it('picks copy with the same profileSlug signal as the button', () => {
+    expect(src).toMatch(/descriptionWithoutProfile/);
+    expect(src).toMatch(/hasProfile\s*\?\s*description/);
   });
 });
 
@@ -85,11 +93,13 @@ describe('the mode notice never becomes a control (ADR 0038, rule 2)', () => {
   });
 });
 
-describe('the page headers stay free of the switch (ADR 0038)', () => {
+describe('the page headers stay free of the mode action (ADR 0038)', () => {
   it.each(['DirectoryPage.tsx', 'MessagesPage.tsx', 'HistoryPage.tsx'])(
-    '%s does not render ModeSwitch',
+    '%s does not mount SwitchModeAction itself',
     (page) => {
-      expect(source(pageSource, page)).not.toMatch(/<ModeSwitch\b/);
+      // The action belongs in ModeAwareEmptyState only — pages must not mount
+      // it themselves (that would put a control back on every list).
+      expect(source(pageSource, page)).not.toMatch(/<SwitchModeAction\b/);
     },
   );
 });

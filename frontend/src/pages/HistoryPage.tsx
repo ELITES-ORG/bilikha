@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ModeNotice } from '@/components/ModeNotice';
-import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
+import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import { Avatar, Button, ButtonLink, Container, SectionHeading, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -104,15 +104,15 @@ export function HistoryPage() {
   }
 
   const hiringInquiredEmpty =
-    `You are viewing “${MODE_LABEL.hiring}”. No inquiries yet — browse offers on Home and inquire, or switch to “${MODE_LABEL.creative}” to see postings you replied to.`;
+    'No inquiries yet — browse offers on Home and inquire.';
   const hiringSavedEmpty =
-    `You are viewing “${MODE_LABEL.hiring}”. Nothing saved yet — save offers while browsing, or switch to “${MODE_LABEL.creative}” for posting replies.`;
+    'Nothing saved yet — save offers while browsing.';
   const creativeHistoryEmpty =
-    `You are viewing “${MODE_LABEL.creative}”. You have not replied to any postings yet — browse client work on Home, or switch to “${MODE_LABEL.hiring}” for offers you inquired about.`;
+    'You have not replied to any postings yet — browse client work on Home.';
   const hiringAgreementsEmpty =
-    `You are viewing “${MODE_LABEL.hiring}”. No work agreements yet — a creative sends one into your conversation once you have settled on the work, or switch to “${MODE_LABEL.creative}” to see the ones you issued.`;
+    'No work agreements yet — a creative sends one into your conversation once you have settled on the work.';
   const creativeAgreementsEmpty =
-    `You are viewing “${MODE_LABEL.creative}”. You have not sent any work agreements yet — open a conversation and draft one, or switch to “${MODE_LABEL.hiring}” to see the ones you received.`;
+    'You have not sent any work agreements yet — open a conversation and draft one.';
 
   return (
     <>
@@ -245,6 +245,7 @@ export function HistoryPage() {
                   <ModeAwareEmptyState
                     title="No inquiries yet"
                     description={hiringInquiredEmpty}
+                    descriptionWithoutProfile={hiringInquiredEmpty}
                     extraAction={
                       <ButtonLink to="/directory" size="sm" variant="secondary">
                         Browse Home
@@ -329,6 +330,7 @@ export function HistoryPage() {
                   <ModeAwareEmptyState
                     title="Nothing saved yet"
                     description={hiringSavedEmpty}
+                    descriptionWithoutProfile={hiringSavedEmpty}
                     extraAction={
                       <ButtonLink to="/directory" size="sm" variant="secondary">
                         Browse Home
@@ -398,6 +400,7 @@ export function HistoryPage() {
                   <ModeAwareEmptyState
                     title="No work agreements yet"
                     description={creativeMode ? creativeAgreementsEmpty : hiringAgreementsEmpty}
+                    descriptionWithoutProfile={hiringAgreementsEmpty}
                     extraAction={
                       <ButtonLink to="/messages" size="sm" variant="secondary">
                         Open messages

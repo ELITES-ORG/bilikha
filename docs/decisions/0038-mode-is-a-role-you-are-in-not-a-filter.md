@@ -16,10 +16,10 @@ mode or client mode — a place to say which of the two they currently are.
 
 This is the second time these labels have failed. They replaced *Hiring* and
 *My creative work*, changed because the second read as your own offers and
-portfolio when the mode actually shows other people's job posts. The
-[component's own comment](../../frontend/src/components/ModeSwitch.tsx) records
-that. A wording problem fixed by rewording does not usually come back; this one
-did, which is evidence the wording was never the problem.
+portfolio when the mode actually shows other people's job posts. The segmented
+control's own comment recorded that. A wording problem fixed by rewording does
+not usually come back; this one did, which is evidence the wording was never
+the problem.
 
 **Look at where the control sits.** On the directory, in order down the page:
 the mode toggle, then the `Offers | Creatives` tabs, then the filter icon. Three

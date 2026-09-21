@@ -4,8 +4,8 @@ import { effectiveViewMode, MODE_AS } from '@/lib/view-mode';
 
 /**
  * Names the mode on a mirrored surface without offering to change it
- * (ADR 0038). Empty lists keep ModeSwitch — that is the way out of a list
- * emptied by the wrong mode (ADR 0025).
+ * (ADR 0038). Empty lists keep a one-tap SwitchModeAction — that is the way
+ * out of a list emptied by the wrong mode (ADR 0025 / plan 0032).
  */
 export function ModeNotice() {
   const { data: user } = useCurrentUser();

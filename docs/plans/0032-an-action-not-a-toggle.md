@@ -1,6 +1,6 @@
 # 0032. An action, not a toggle
 
-- **Status:** Ready
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md)
   (see the 2026-09-22 amendment) · [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) ·
@@ -87,9 +87,9 @@ which mode you are in, so the control does not need to say it a second time.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The action | 0 / 2 | Not started |
-| 2. Copy that knows who is reading | 0 / 2 | Not started |
-| 3. Verification | 0 / 3 | Not started |
+| 1. The action | 2 / 2 | Done |
+| 2. Copy that knows who is reading | 2 / 2 | Done |
+| 3. Verification | 3 / 3 | Done |
 
 ---
 
@@ -97,21 +97,21 @@ which mode you are in, so the control does not need to say it a second time.
 
 ### Step 1.1 — `SwitchModeAction`
 
-- [ ] **Action.** A new component in `frontend/src/components/`: a single button
+- [x] **Action.** A new component in `frontend/src/components/`: a single button
   labelled from the mode you are *not* in — `Switch to ${MODE_LABEL[other]}` —
   writing through the existing `useSetViewMode()`. No new mutation, no new state.
-- [ ] **Action.** Renders nothing when `user.profileSlug` is absent, the same
+- [x] **Action.** Renders nothing when `user.profileSlug` is absent, the same
   guard `ModeSwitch` used.
-- [ ] **Action.** Use the existing button styling. It is an action in an empty
+- [x] **Action.** Use the existing button styling. It is an action in an empty
   state, so it should look like the other actions there rather than like a
   control panel.
 
 ### Step 1.2 — Swap and delete
 
-- [ ] **Action.** `ModeAwareEmptyState` renders `SwitchModeAction` instead of
+- [x] **Action.** `ModeAwareEmptyState` renders `SwitchModeAction` instead of
   `ModeSwitch`.
-- [ ] **Action.** Delete `frontend/src/components/ModeSwitch.tsx`.
-- [ ] **Verify.** `grep -rn "ModeSwitch" frontend/src` returns nothing outside
+- [x] **Action.** Delete `frontend/src/components/ModeSwitch.tsx`.
+- [x] **Verify.** `grep -rn "ModeSwitch" frontend/src` returns nothing outside
   the test file you are about to update. Rule 4.
 
 ---
@@ -120,19 +120,26 @@ which mode you are in, so the control does not need to say it a second time.
 
 ### Step 2.1 — Two variants, not one
 
-- [ ] **Action.** The ten empty-state descriptions naming both modes currently
+- [x] **Action.** The ten empty-state descriptions naming both modes currently
   read *"You are viewing X. … or switch to Y."* They need a second form for an
   account with no creative profile: what would fill this list, and nothing about
   a mode they cannot enter.
-- [ ] **Action.** Put the variant behind the same `profileSlug` signal the button
+- [x] **Action.** Put the variant behind the same `profileSlug` signal the button
   uses, so the copy and the control can never disagree — one condition, not two.
+
+  `ModeAwareEmptyState` takes `description` / `descriptionWithoutProfile` and
+  picks with the same `hasProfile` that gates `SwitchModeAction`. Page copy no
+  longer names the mode or the switch — `ModeNotice` and the button cover those.
 
 ### Step 2.2 — Say it once
 
-- [ ] **Verify.** On an empty mirrored list, the mode is named by `ModeNotice`
+- [x] **Verify.** On an empty mirrored list, the mode is named by `ModeNotice`
   at the top and by the empty-state copy, and the button names only the
   destination. If the same fact appears three times, cut it back to the notice
   and the button.
+
+  Cut: empty copy no longer says "You are viewing…" or "switch to…". Notice +
+  button only.
 
 ---
 
@@ -140,19 +147,26 @@ which mode you are in, so the control does not need to say it a second time.
 
 ### Step 3.1 — The creative
 
-- [ ] **Verify.** As `cre0299739` with an empty mirrored list: one button
+- [x] **Verify.** As `cre0299739` with an empty mirrored list: one button
   reading *Switch to Creative mode* (or Client), it works in one tap, and the
   list fills or empties accordingly. No segmented control anywhere on the page.
 
+  Phone + desktop Messages in client mode: one *Switch to Creative mode* button,
+  `aria-pressed` count 0. Click switches to creative; ModeNotice updates and the
+  thread list fills.
+
 ### Step 3.2 — The client with no profile
 
-- [ ] **Verify.** As `adm0403418` on empty Messages and History: no button, and
+- [x] **Verify.** As `adm0403418` on empty Messages and History: no button, and
   **no copy mentioning Creative mode**. This is the defect the plan exists to
   close as much as the toggle is.
 
+  Phone + desktop: empty copy is fill-the-list only; no switch button; body text
+  has no "Creative mode".
+
 ### Step 3.3 — Full pass
 
-- [ ] **Verify.** At 375px and desktop. `npm run typecheck`, `lint`, `test`,
+- [x] **Verify.** At 375px and desktop. `npm run typecheck`, `lint`, `test`,
   `build`, `docs:check` all exit 0, CI green. `mode-controls.test.ts` asserts the
   new action and still fails when the way out is removed — break it once to
   confirm, then restore.
@@ -174,3 +188,12 @@ which mode you are in, so the control does not need to say it a second time.
 |---|---|
 | Asking the creatives again | Two rounds of this control have now been changed on their feedback. The cheapest way to know whether it is finally clear is to ask the same people |
 | Messages having no mode-aware description | Directory and History change their description with the mode; Messages does not. Noted during plan 0026 and still true |
+
+## Notes from execution
+
+- After cutting switch-mention from all ten strings, the with/without-profile
+  variants often share the same fill-the-list sentence. The dual props still
+  matter: `ModeAwareEmptyState` selects by `profileSlug`, so a future with-profile
+  string that names Creative mode cannot leak to a client-only account.
+- Directory already branched to a plain `EmptyState` for no-profile hiring
+  empties; those paths were already clean and stayed that way.

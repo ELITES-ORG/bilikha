@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ModeNotice } from '@/components/ModeNotice';
-import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
+import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import { Avatar, Button, ButtonLink, Badge, Container, SectionHeading, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -23,8 +23,10 @@ export function MessagesPage() {
 
   const emptyDescription =
     mode === 'hiring'
-      ? `You are viewing “${MODE_LABEL.hiring}”. No conversations yet — contact a creative from the directory, or switch to “${MODE_LABEL.creative}” to reply to client postings.`
-      : `You are viewing “${MODE_LABEL.creative}”. No conversations yet — browse client postings on Home, or switch to “${MODE_LABEL.hiring}” to reach creatives.`;
+      ? 'No conversations yet — contact a creative from the directory.'
+      : 'No conversations yet — browse client postings on Home.';
+  const emptyDescriptionWithoutProfile =
+    'No conversations yet — contact a creative from the directory.';
 
   return (
     <>
@@ -53,6 +55,7 @@ export function MessagesPage() {
               <ModeAwareEmptyState
                 title="No conversations yet"
                 description={emptyDescription}
+                descriptionWithoutProfile={emptyDescriptionWithoutProfile}
                 extraAction={
                   <ButtonLink to="/directory" size="sm" variant="secondary">
                     Go to Home

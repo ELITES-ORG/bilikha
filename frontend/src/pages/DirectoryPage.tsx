@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ModeNotice } from '@/components/ModeNotice';
-import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
+import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import {
   Avatar,
@@ -465,7 +465,7 @@ export function DirectoryPage() {
             {creativeHome && postings.data && postings.data.data.length === 0 && (
               <ModeAwareEmptyState
                 title="No postings yet"
-                description={`You are viewing “${MODE_LABEL.creative}”. No postings match your sub-domains yet — switch to “${MODE_LABEL.hiring}” to browse creatives and post your own work.`}
+                description="No postings match your sub-domains yet."
                 extraAction={
                   activeFilterCount > 0 ? (
                     <Button size="sm" variant="secondary" onClick={clearFilters}>
@@ -480,7 +480,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="No offers here yet"
-                  description={`You are viewing “${MODE_LABEL.hiring}”. No offers match these filters yet — switch to “${MODE_LABEL.creative}” to browse client postings, or try another filter.`}
+                  description="No offers match these filters yet — try another filter, or browse creatives."
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('creatives')}>
@@ -518,7 +518,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
-                  description={`You are viewing “${MODE_LABEL.hiring}”. No creatives match these filters yet — switch to “${MODE_LABEL.creative}” for client postings, or browse offers instead.`}
+                  description="No creatives match these filters yet — try another filter, or browse offers."
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('offers')}>
