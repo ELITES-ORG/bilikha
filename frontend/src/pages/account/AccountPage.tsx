@@ -4,7 +4,9 @@ import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { useOwnProfile } from '@/features/me/api';
+import { useCurrentUser } from '@/features/auth/api';
+import type { ViewMode } from '@/features/auth/types';
+import { useOwnProfile, useSetViewMode } from '@/features/me/api';
 import type { ProfileStatus } from '@/features/me/types';
 import { useOwnOffers } from '@/features/offers/api';
 import { OFFER_LIMIT } from '@/features/offers/limits';
@@ -16,6 +18,7 @@ import {
   setThemePreference,
   type ThemePreference,
 } from '@/lib/theme-preference';
+import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 
 function profileStatusLabel(status: ProfileStatus): string {
   switch (status) {
@@ -132,6 +135,73 @@ function AppearanceRow() {
   );
 }
 
+const MODE_OPTIONS: Array<{ value: ViewMode; label: string }> = [
+  { value: 'hiring', label: MODE_LABEL.hiring },
+  { value: 'creative', label: MODE_LABEL.creative },
+];
+
+/**
+ * Account-wide mode. Layout mirrors AppearanceRow; value comes from the user
+ * on the server (ADR 0038) — no local mirror of mode (house rule 5).
+ */
+function ModeRow() {
+  const { data: user } = useCurrentUser();
+  const setMode = useSetViewMode();
+
+  if (!user?.profileSlug) return null;
+
+  const mode = effectiveViewMode(user);
+
+  function choose(next: ViewMode) {
+    if (next === mode || setMode.isPending) return;
+    void setMode.mutateAsync(next).catch(() => undefined);
+  }
+
+  return (
+    <li className="border-b border-hairline px-1 py-3">
+      <fieldset>
+        <legend className="text-sm font-medium text-ink">Mode</legend>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          Creative mode shows client postings on Home, and the clients who contacted
+          you in Messages. Client mode shows offers and creatives you can hire.
+        </p>
+        <div
+          role="radiogroup"
+          aria-label="Mode"
+          className="mt-3 flex flex-wrap gap-1"
+        >
+          {MODE_OPTIONS.map((option) => {
+            const selected = mode === option.value;
+            return (
+              <label
+                key={option.value}
+                className={cn(
+                  'inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-3 text-sm',
+                  selected
+                    ? 'bg-clay-100 font-medium text-ink'
+                    : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                  setMode.isPending && 'pointer-events-none opacity-60',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="view-mode"
+                  value={option.value}
+                  checked={selected}
+                  disabled={setMode.isPending}
+                  onChange={() => choose(option.value)}
+                  className="sr-only"
+                />
+                {option.label}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+    </li>
+  );
+}
+
 export function AccountPage() {
   const profile = useOwnProfile();
   const hasCreative = Boolean(profile.data);
@@ -201,6 +271,7 @@ export function AccountPage() {
                   summary="Password and sign out"
                 />
                 <AppearanceRow />
+                <ModeRow />
               </ul>
 
               {!profile.data && (

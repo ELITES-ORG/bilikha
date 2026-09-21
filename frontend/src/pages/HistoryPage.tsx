@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ModeSwitch } from '@/components/ModeSwitch';
-import { effectiveViewMode } from '@/lib/view-mode';
+import { ModeNotice } from '@/components/ModeNotice';
+import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import { Avatar, Button, ButtonLink, Container, SectionHeading, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -104,15 +104,15 @@ export function HistoryPage() {
   }
 
   const hiringInquiredEmpty =
-    'You are viewing “I’m hiring”. No inquiries yet — browse offers on Home and inquire, or switch to “I’m for hire” to see postings you replied to.';
+    `You are viewing “${MODE_LABEL.hiring}”. No inquiries yet — browse offers on Home and inquire, or switch to “${MODE_LABEL.creative}” to see postings you replied to.`;
   const hiringSavedEmpty =
-    'You are viewing “I’m hiring”. Nothing saved yet — save offers while browsing, or switch to “I’m for hire” for posting replies.';
+    `You are viewing “${MODE_LABEL.hiring}”. Nothing saved yet — save offers while browsing, or switch to “${MODE_LABEL.creative}” for posting replies.`;
   const creativeHistoryEmpty =
-    'You are viewing “I’m for hire”. You have not replied to any postings yet — browse client work on Home, or switch to “I’m hiring” for offers you inquired about.';
+    `You are viewing “${MODE_LABEL.creative}”. You have not replied to any postings yet — browse client work on Home, or switch to “${MODE_LABEL.hiring}” for offers you inquired about.`;
   const hiringAgreementsEmpty =
-    'You are viewing “I’m hiring”. No work agreements yet — a creative sends one into your conversation once you have settled on the work, or switch to “I’m for hire” to see the ones you issued.';
+    `You are viewing “${MODE_LABEL.hiring}”. No work agreements yet — a creative sends one into your conversation once you have settled on the work, or switch to “${MODE_LABEL.creative}” to see the ones you issued.`;
   const creativeAgreementsEmpty =
-    'You are viewing “I’m for hire”. You have not sent any work agreements yet — open a conversation and draft one, or switch to “I’m hiring” to see the ones you received.';
+    `You are viewing “${MODE_LABEL.creative}”. You have not sent any work agreements yet — open a conversation and draft one, or switch to “${MODE_LABEL.hiring}” to see the ones you received.`;
 
   return (
     <>
@@ -131,7 +131,7 @@ export function HistoryPage() {
           />
 
           <div className="mt-6">
-            <ModeSwitch size="md" />
+            <ModeNotice />
           </div>
 
           <div

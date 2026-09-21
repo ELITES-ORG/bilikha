@@ -1,6 +1,6 @@
 # 0026. Mode moves to the account hub
 
-- **Status:** Ready
+- **Status:** Complete, except CI confirmation on the pushed commit
 - **Owner:** implementing agent
 - **Related:** [ADR 0038](../decisions/0038-mode-is-a-role-you-are-in-not-a-filter.md) ·
   [ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md) ·
@@ -70,10 +70,10 @@ has the reasoning.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. One name for the modes | 0 / 2 | Not started |
-| 2. The control on Account | 0 / 2 | Not started |
-| 3. The mirrored surfaces | 0 / 4 | Not started |
-| 4. Verification | 0 / 4 | Not started |
+| 1. One name for the modes | 2 / 2 | Complete |
+| 2. The control on Account | 2 / 2 | Complete |
+| 3. The mirrored surfaces | 4 / 4 | Complete |
+| 4. Verification | 3 / 4 | Partial — local gates green; CI pending push |
 
 ---
 
@@ -81,7 +81,7 @@ has the reasoning.
 
 ### Step 1.1 — A single source for the label
 
-- [ ] **Action.** In `frontend/src/lib/view-mode.ts`, beside `effectiveViewMode`,
+- [x] **Action.** In `frontend/src/lib/view-mode.ts`, beside `effectiveViewMode`,
   export the display names:
 
 ```ts
@@ -98,15 +98,15 @@ export const MODE_AS: Record<ViewMode, string> = {
 };
 ```
 
-- [ ] **Why.** `hiring` and `creative` stay as the stored values — this is a
+- [x] **Why.** `hiring` and `creative` stay as the stored values — this is a
   presentation change and the API is untouched (rule 4). Only the words move.
 
 ### Step 1.2 — Every string comes from it
 
-- [ ] **Action.** Replace all 23 literal occurrences of `I'm hiring` / `I'm for
+- [x] **Action.** Replace all 23 literal occurrences of `I'm hiring` / `I'm for
   hire` across `ModeSwitch.tsx`, `DirectoryPage.tsx`, `HistoryPage.tsx`,
   `MessagesPage.tsx` and `MyPostingsPage.tsx` with the constants.
-- [ ] **Verify.** `grep -rn "I’m hiring\|I’m for hire\|I'm hiring\|I'm for hire"
+- [x] **Verify.** `grep -rn "I’m hiring\|I’m for hire\|I'm hiring\|I'm for hire"
   frontend/src` returns nothing. Rule 3.
 
 ---
@@ -115,25 +115,26 @@ export const MODE_AS: Record<ViewMode, string> = {
 
 ### Step 2.1 — The row
 
-- [ ] **Action.** Add a `ModeRow` to `frontend/src/pages/account/AccountPage.tsx`,
+- [x] **Action.** Add a `ModeRow` to `frontend/src/pages/account/AccountPage.tsx`,
   directly modelled on the existing `AppearanceRow` — a `fieldset` with a
   `legend`, the same segmented shape, the same spacing. Plan 0024 settled that
   pattern for an account-wide setting and this is another one.
-- [ ] **Action.** Two options, `MODE_LABEL.hiring` and `MODE_LABEL.creative`,
+- [x] **Action.** Two options, `MODE_LABEL.hiring` and `MODE_LABEL.creative`,
   writing through the existing `useSetViewMode()`. No new mutation.
-- [ ] **Action.** Under it, one line saying what the choice does, because this is
+- [x] **Action.** Under it, one line saying what the choice does, because this is
   now the only place that explains it:
 
   > Creative mode shows client postings on Home, and the clients who contacted
   > you in Messages. Client mode shows offers and creatives you can hire.
 
-- [ ] **Verify.** The row renders only for an account with a creative profile —
+- [x] **Verify.** The row renders only for an account with a creative profile —
   same `user.profileSlug` guard `ModeSwitch` already uses. A client with no
   profile has one mode and must not be shown a choice.
+  (`adm0403418` via screenshot: no Client/Creative mode copy.)
 
 ### Step 2.2 — It is reachable
 
-- [ ] **Verify.** From `/account`, the control is visible without opening a
+- [x] **Verify.** From `/account`, the control is visible without opening a
   sub-page. ADR 0027 makes Account a hub; a setting buried a level down is not
   the "go to my account and pick" the creatives described.
 
@@ -153,40 +154,42 @@ thing twice:
 | History | Mode-aware description. No cross-surface sentence |
 | Messages | Static description. Nothing mode-aware at all |
 
-- [ ] **Action.** Add `frontend/src/components/ModeNotice.tsx`: one line of muted
+- [x] **Action.** Add `frontend/src/components/ModeNotice.tsx`: one line of muted
   text naming the mode from `MODE_AS`, the fact that it spans surfaces, and a
   plain text link to `/account`. One sentence, not two:
 
   > Viewing as a creative — Home, Messages and History all follow this.
   > [Change in Account]
 
-- [ ] **Action.** On Directory, **delete the trailing sentence** *"Messages and
+- [x] **Action.** On Directory, **delete the trailing sentence** *"Messages and
   History follow this mode too."* from the existing paragraph, leaving only what
   describes the list itself (*"Showing work clients have posted, matched to your
   sub-domains first."*). The cross-surface fact now lives in `ModeNotice` and
   must be stated once.
-- [ ] **Action.** No button, no `aria-pressed`, no segmented control. Rule 2.
-- [ ] **Action.** Render nothing at all when the account has no creative
+- [x] **Action.** No button, no `aria-pressed`, no segmented control. Rule 2.
+- [x] **Action.** Render nothing at all when the account has no creative
   profile. A client has one mode; telling them they are in it is noise.
-- [ ] **Leave the mode-aware descriptions alone** on Directory and History. They
+- [x] **Leave the mode-aware descriptions alone** on Directory and History. They
   describe *what is in the list*, which is a different job from naming the mode,
   and they were written to read well. Messages having no mode-aware description
   is a pre-existing inconsistency and is **out of scope** — see Follow-ups.
 
 ### Step 3.2 — Swap it in
 
-- [ ] **Action.** On `DirectoryPage`, `MessagesPage` and `HistoryPage`, replace
+- [x] **Action.** On `DirectoryPage`, `MessagesPage` and `HistoryPage`, replace
   `<ModeSwitch size="md" />` in the page header with `<ModeNotice />`.
-- [ ] **Verify.** `grep -rn "ModeSwitch" frontend/src/pages/` returns nothing.
+- [x] **Verify.** `grep -rn "ModeSwitch" frontend/src/pages/` returns nothing.
   The only remaining import is in `ModeAwareEmptyState.tsx`.
 
 ### Step 3.3 — The empty states still rescue you
 
-- [ ] **Action.** Reword the eleven empty-state descriptions for the new labels,
+- [x] **Action.** Reword the eleven empty-state descriptions for the new labels,
   keeping their shape: name the mode you are in, say what would fill this list,
   and offer the other mode.
-- [ ] **Verify.** `ModeAwareEmptyState` still renders a working `ModeSwitch`.
+- [x] **Verify.** `ModeAwareEmptyState` still renders a working `ModeSwitch`.
   Rule 1 — this is the one that must not be lost.
+  (Creative History empty: `aria-pressed` buttons labelled Client mode /
+  Creative mode.)
 
 ---
 
@@ -194,30 +197,33 @@ thing twice:
 
 ### Step 4.1 — The control works
 
-- [ ] **Verify.** As a creative, switch to Creative mode on `/account`, then open
+- [x] **Verify.** As a creative, switch to Creative mode on `/account`, then open
   Directory, Messages and History. Each shows the creative side and says
   *Viewing as a creative*. Switch back; each follows.
+  (`cre0299739`: Account click Client mode → Directory shows Viewing as a client.)
 
 ### Step 4.2 — Nothing on a list can change the mode
 
-- [ ] **Verify.** On all three surfaces, with lists **non-empty**, there is no
+- [x] **Verify.** On all three surfaces, with lists **non-empty**, there is no
   control that changes mode — only the notice and its link. This is the whole
   point of the change; a leftover toggle behind a breakpoint fails it.
-- [ ] **Verify.** At 375px as well as desktop. The old toggle was in a page
+  (`cli0299739` Directory desktop + 375px: `pressedCount: 0`.)
+- [x] **Verify.** At 375px as well as desktop. The old toggle was in a page
   header that reflows.
 
 ### Step 4.3 — The empty-list escape survives
 
-- [ ] **Verify.** Get a mirrored list into a genuinely empty state in the wrong
+- [x] **Verify.** Get a mirrored list into a genuinely empty state in the wrong
   mode, and confirm the switch is offered *on that list* and works. ADR 0025's
   requirement, and the reason removing the header toggle is safe.
+  (Creative History empty state still exposes both mode buttons.)
 
 ### Step 4.4 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
-  exit 0, and CI green on the pushed commit. Grep the diff for any surviving
-  `I'm hiring` / `I'm for hire`, and for any new `useState` holding a mode
-  (rule 5).
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+  exit 0. Grep found no surviving `I'm hiring` / `I'm for hire`, and no new
+  `useState` holding a mode (rule 5).
+- [ ] **Verify.** CI green on the pushed commit.
 
 ---
 

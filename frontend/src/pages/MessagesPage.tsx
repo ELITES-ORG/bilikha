@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ModeSwitch } from '@/components/ModeSwitch';
-import { effectiveViewMode } from '@/lib/view-mode';
+import { ModeNotice } from '@/components/ModeNotice';
+import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import { Avatar, Button, ButtonLink, Badge, Container, SectionHeading, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -23,8 +23,8 @@ export function MessagesPage() {
 
   const emptyDescription =
     mode === 'hiring'
-      ? 'You are viewing “I’m hiring”. No conversations yet — contact a creative from the directory, or switch to “I’m for hire” to reply to client postings.'
-      : 'You are viewing “I’m for hire”. No conversations yet — browse client postings on Home, or switch to “I’m hiring” to reach creatives.';
+      ? `You are viewing “${MODE_LABEL.hiring}”. No conversations yet — contact a creative from the directory, or switch to “${MODE_LABEL.creative}” to reply to client postings.`
+      : `You are viewing “${MODE_LABEL.creative}”. No conversations yet — browse client postings on Home, or switch to “${MODE_LABEL.hiring}” to reach creatives.`;
 
   return (
     <>
@@ -39,7 +39,7 @@ export function MessagesPage() {
           />
 
           <div className="mt-6">
-            <ModeSwitch size="md" />
+            <ModeNotice />
           </div>
 
           <div className="mt-10">

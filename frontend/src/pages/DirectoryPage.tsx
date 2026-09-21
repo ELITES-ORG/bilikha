@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ModeSwitch } from '@/components/ModeSwitch';
-import { effectiveViewMode } from '@/lib/view-mode';
+import { ModeNotice } from '@/components/ModeNotice';
+import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import {
   Avatar,
@@ -205,9 +205,6 @@ export function DirectoryPage() {
             eyebrow={creativeHome ? 'Creative work' : 'Find work or people'}
             title={creativeHome ? 'Client postings' : 'Directory'}
             description={
-              // Accounts with a profile get the mode line below the switch
-              // instead, so the explanation sits next to the control it
-              // explains rather than above it.
               hasProfile
                 ? undefined
                 : user
@@ -216,19 +213,15 @@ export function DirectoryPage() {
             }
           />
 
-          {/* Posting actions live on the account page now: this is a browse
-              surface, and managing your own postings is not browsing. */}
           <div className="mt-6">
-            <ModeSwitch size="md" />
+            <ModeNotice />
           </div>
 
-          {/* The switch decides three surfaces, not just this feed, and nothing
-              else says so. Sits under the control rather than above it. */}
           {hasProfile && (
             <p className="mt-3 max-w-prose text-sm text-ink-muted">
               {creativeHome
-                ? 'Showing work clients have posted, matched to your sub-domains first. Messages and History follow this mode too.'
-                : 'Showing offers and creatives you can hire. Messages and History follow this mode too.'}
+                ? 'Showing work clients have posted, matched to your sub-domains first.'
+                : 'Showing offers and creatives you can hire.'}
             </p>
           )}
 
@@ -472,7 +465,7 @@ export function DirectoryPage() {
             {creativeHome && postings.data && postings.data.data.length === 0 && (
               <ModeAwareEmptyState
                 title="No postings yet"
-                description="You are viewing “I’m for hire”. No postings match your sub-domains yet — switch to “I’m hiring” to browse creatives and post your own work."
+                description={`You are viewing “${MODE_LABEL.creative}”. No postings match your sub-domains yet — switch to “${MODE_LABEL.hiring}” to browse creatives and post your own work.`}
                 extraAction={
                   activeFilterCount > 0 ? (
                     <Button size="sm" variant="secondary" onClick={clearFilters}>
@@ -487,7 +480,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="No offers here yet"
-                  description="You are viewing “I’m hiring”. No offers match these filters yet — switch to “I’m for hire” to browse client postings, or try another filter."
+                  description={`You are viewing “${MODE_LABEL.hiring}”. No offers match these filters yet — switch to “${MODE_LABEL.creative}” to browse client postings, or try another filter.`}
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('creatives')}>
@@ -525,7 +518,7 @@ export function DirectoryPage() {
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
-                  description="You are viewing “I’m hiring”. No creatives match these filters yet — switch to “I’m for hire” for client postings, or browse offers instead."
+                  description={`You are viewing “${MODE_LABEL.hiring}”. No creatives match these filters yet — switch to “${MODE_LABEL.creative}” for client postings, or browse offers instead.`}
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('offers')}>

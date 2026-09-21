@@ -1,21 +1,18 @@
 import { useCurrentUser } from '@/features/auth/api';
 import type { ViewMode } from '@/features/auth/types';
 import { useSetViewMode } from '@/features/me/api';
-import { effectiveViewMode } from '@/lib/view-mode';
+import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 import { cn } from '@/lib/cn';
 
 interface ModeSwitchProps {
   className?: string;
-  /** Larger touch targets for page headers (Account keeps its own layout). */
+  /** Larger touch targets for empty states (Account keeps its own layout). */
   size?: 'sm' | 'md';
 }
 
 /**
- * "I'm hiring" ↔ "I'm for hire". First person on purpose: the earlier labels
- * were "Hiring" and "My creative work", and the second actively misled — it
- * reads as your own offers and portfolio, when the mode shows other people's
- * job posts. Whose perspective this is has to be unambiguous, because the mode
- * decides what Home, Messages and History each contain.
+ * Client mode ↔ Creative mode. Lives on empty mirrored lists (ADR 0038) and on
+ * the account hub — not in page headers, where it was read as a filter.
  */
 export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
   const { data: user } = useCurrentUser();
@@ -56,7 +53,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
         disabled={setMode.isPending}
         onClick={() => choose('hiring')}
       >
-        I&apos;m hiring
+        {MODE_LABEL.hiring}
       </button>
       <button
         type="button"
@@ -71,7 +68,7 @@ export function ModeSwitch({ className, size = 'sm' }: ModeSwitchProps) {
         disabled={setMode.isPending}
         onClick={() => choose('creative')}
       >
-        I&apos;m for hire
+        {MODE_LABEL.creative}
       </button>
     </div>
   );
