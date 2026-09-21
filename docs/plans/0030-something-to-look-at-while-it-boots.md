@@ -1,6 +1,6 @@
 # 0030. Something to look at while it boots
 
-- **Status:** Partial
+- **Status:** Complete
 - **Owner:** implementing agent
 - **Related:** [plan 0024](./0024-theme-choice.md) (the pre-paint script this sits beside) ·
   [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
@@ -78,7 +78,7 @@ than the blank it replaced.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. The indicator | 3 / 3 | Done |
-| 2. Verification | 2 / 3 | Partial — local gates green; CI pending push |
+| 2. Verification | 3 / 3 | Done |
 
 ---
 
@@ -133,10 +133,9 @@ than the blank it replaced.
 
 - [x] **Verify.** Both themes, light and dark, with no flash of the wrong one at
   the first frame — the same check plan 0024 step 4.2 made for the theme itself.
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Grep the diff for `setTimeout`, and for any animated width,
-  height, top, left or margin. Local gates and grep done 2026-09-22; CI pending
-  push.
+  height, top, left or margin. CI green on `35655007448` (2026-09-22).
 
 ---
 
