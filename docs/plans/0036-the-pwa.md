@@ -120,9 +120,15 @@ they had not noticed — the Install icon was sitting in their address bar in th
 screenshot they sent to ask where it was. If the person who commissioned the
 feature cannot find it, a carpenter in Naval will not.
 
-- [x] **Action.** `InstallGuide` on the account page says where that control is,
-  in the words of the device it is being read on: the Share sheet on iOS, the
-  browser menu on Android, the address bar on desktop.
+- [x] **Action.** `InstallGuide` is a row in the account hub's **Settings**
+  group, between Appearance and Security — it is a choice about this device, and
+  it is shaped like the other two. The first attempt was three paragraphs at the
+  foot of the page and read as an afterthought beside the tidy rows above it.
+- [x] **Action.** A `How to install` button reveals the route for the device it
+  is read on: the Share sheet on iOS, the browser menu on Android, the address
+  bar on desktop. It is labelled `How to install` and not `Install`, because it
+  reveals rather than installs — a button that does not do what its label
+  promises is worse than no button, and worse than a sentence.
 - [x] **Action.** It renders nothing when the app is already installed, and
   nothing in a browser with no install flow. Firefox is deliberately silent —
   pointing at a menu item that does not exist sends somebody hunting through

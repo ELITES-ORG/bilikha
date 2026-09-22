@@ -299,6 +299,12 @@ export function AccountPage() {
               <HubGroup title="Settings">
                 <ModeRow />
                 <AppearanceRow />
+                {/*
+                  A choice about this device, like Appearance above it. Renders
+                  nothing once installed, and nothing in a browser with no
+                  install flow, so it is not a permanent fixture of the group.
+                */}
+                <InstallGuide />
                 <HubRow
                   to="/account/security"
                   label="Security"
@@ -320,12 +326,6 @@ export function AccountPage() {
                   </ButtonLink>
                 </section>
               )}
-
-              {/*
-                Renders nothing once installed, and nothing in a browser that
-                cannot install — so it is not a permanent fixture of the page.
-              */}
-              <InstallGuide />
 
               {/*
                 Not a fourth hub group: these are two documents to read, not

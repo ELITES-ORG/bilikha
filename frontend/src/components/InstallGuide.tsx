@@ -1,39 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { Button } from '@/components/ui';
 import { installHint, isRunningInstalled, type InstallHint } from '@/lib/install';
 
 /**
- * Tells somebody where their browser keeps the button that installs Bilikha.
+ * A row in the account hub's Settings group: what installing gets you, and a
+ * button that says where the browser keeps the control that does it.
  *
  * It cannot install anything itself — that needs `beforeinstallprompt`, which
  * Chrome only fires for sites with a service worker, and there is none by
- * design (plan 0036 phase 1). So this is a signpost, and it is written like
- * one: no "install prompt", no "PWA", no "home screen shortcut". Just where to
- * tap and what happens after.
+ * design (plan 0036 phase 1). The first version said so in three paragraphs at
+ * the foot of the page and read as an afterthought beside the tidy rows above
+ * it. This one is shaped like Mode and Appearance, because it is the same kind
+ * of thing: a choice about this device.
  *
- * It disappears once the app is installed, and never appears in a browser that
- * cannot install, because instructions for a menu item that is not there send
- * someone hunting through settings for nothing.
+ * The button reveals rather than installs, so it says `How to install` and not
+ * `Install`. A button that does not do what its label promises is worse than no
+ * button, and worse than a sentence.
  */
 
-const COPY: Record<Exclude<InstallHint, 'none'>, { where: string; then: string }> = {
+const COPY: Record<Exclude<InstallHint, 'none'>, { noun: string; steps: string }> = {
   ios: {
-    where: 'Tap the Share button at the bottom of the screen',
-    then: 'scroll down and choose Add to Home Screen.',
+    noun: 'phone',
+    steps:
+      'Tap the Share button at the bottom of the screen, scroll down, and choose Add to Home Screen.',
   },
   android: {
-    where: 'Tap the ⋮ button at the top right of your browser',
-    then: 'then choose Install app.',
+    noun: 'phone',
+    steps: 'Tap the ⋮ button at the top right of your browser, then choose Install app.',
   },
   desktop: {
-    where: 'Click the install icon at the right-hand end of the address bar',
-    then: 'where the web address is shown, at the top of this window.',
+    noun: 'computer',
+    steps:
+      'Click the install icon at the right-hand end of the address bar, where the web address is shown at the top of this window.',
   },
 };
 
 export function InstallGuide() {
-  // Resolved after mount: both inputs are browser state, and guessing on the
-  // server would render advice for the wrong device.
+  // Resolved after mount: both inputs are browser state, and guessing would
+  // render instructions for the wrong device.
   const [hint, setHint] = useState<InstallHint>('none');
+  const [open, setOpen] = useState(false);
+  const stepsId = useId();
 
   useEffect(() => {
     setHint(installHint(navigator.userAgent, isRunningInstalled()));
@@ -44,24 +51,30 @@ export function InstallGuide() {
   const copy = COPY[hint];
 
   return (
-    <section className="mt-10" aria-labelledby="install-heading">
-      <h2 id="install-heading" className="u-eyebrow px-1">
-        Bilikha on your {hint === 'desktop' ? 'computer' : 'phone'}
-      </h2>
-      <div className="mt-3 border-t border-hairline pt-4">
-        <p className="max-w-prose text-md text-ink">
-          You can add Bilikha to your{' '}
-          {hint === 'desktop' ? 'computer' : 'home screen'} and open it like any
-          other app, without the browser around it.
+    <li className="border-b border-hairline px-1 py-3">
+      <p className="text-sm font-medium text-ink">Install Bilikha</p>
+      <p className="mt-0.5 text-sm text-ink-muted">
+        Open it from your {copy.noun} like any other app, without the browser around
+        it. It still needs internet.
+      </p>
+
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        className="mt-3"
+        aria-expanded={open}
+        aria-controls={stepsId}
+        onClick={() => setOpen((current) => !current)}
+      >
+        {open ? 'Hide' : 'How to install'}
+      </Button>
+
+      {open && (
+        <p id={stepsId} className="mt-3 max-w-prose text-sm text-ink-muted">
+          {copy.steps}
         </p>
-        <p className="mt-2 max-w-prose text-md text-ink-muted">
-          {copy.where}, {copy.then}
-        </p>
-        <p className="mt-2 max-w-prose text-sm text-ink-subtle">
-          It still needs internet to work, and it is the same Bilikha — your
-          account, messages and work stay exactly as they are.
-        </p>
-      </div>
-    </section>
+      )}
+    </li>
   );
 }
