@@ -20,6 +20,8 @@ interface BeforeInstallPromptEvent extends Event {
 export function useInstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
+  /** Set when the browser's dialog was opened and not accepted. */
+  const [declined, setDeclined] = useState(false);
 
   useEffect(() => {
     function onBeforeInstallPrompt(e: Event) {
@@ -27,11 +29,16 @@ export function useInstallPrompt() {
       // page never gets the chance to ask at a sensible moment.
       e.preventDefault();
       setEvent(e as BeforeInstallPromptEvent);
+      // The browser fires this again after somebody dismisses its dialog. Each
+      // new event is a fresh offer, so anything shown because the last one was
+      // declined is now out of date.
+      setDeclined(false);
     }
 
     function onInstalled() {
       setInstalled(true);
       setEvent(null);
+      setDeclined(false);
     }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
@@ -49,14 +56,16 @@ export function useInstallPrompt() {
       const { outcome } = await event.userChoice;
       // The event is single-use; a dismissed prompt cannot be reopened from the
       // same one, and the browser fires a fresh event when it is ready to ask
-      // again.
+      // again — which clears `declined` above.
       setEvent(null);
+      setDeclined(outcome !== 'accepted');
       return outcome;
     } catch {
       setEvent(null);
+      setDeclined(true);
       return 'unavailable';
     }
   }
 
-  return { canInstall: event !== null, installed, install };
+  return { canInstall: event !== null, installed, declined, install };
 }

@@ -44,8 +44,7 @@ export function InstallGuide() {
   // Rendering nothing first and the row a tick later is correct here.
   const [hint, setHint] = useState<InstallHint>('none');
   const [open, setOpen] = useState(false);
-  const [dismissedPrompt, setDismissedPrompt] = useState(false);
-  const { canInstall, installed, install } = useInstallPrompt();
+  const { canInstall, installed, declined, install } = useInstallPrompt();
   const stepsId = useId();
 
   useEffect(() => {
@@ -70,13 +69,7 @@ export function InstallGuide() {
           size="sm"
           variant="secondary"
           className="mt-3"
-          onClick={() => {
-            void install().then((outcome) => {
-              // Dismissed means "not now", not "never" — but the event is spent,
-              // so fall back to telling them where the browser's own control is.
-              if (outcome !== 'accepted') setDismissedPrompt(true);
-            });
-          }}
+          onClick={() => void install()}
         >
           Install
         </Button>
@@ -94,7 +87,9 @@ export function InstallGuide() {
         </Button>
       )}
 
-      {(open || dismissedPrompt) && (
+      {/* `declined` clears itself when the browser offers again, so the
+          button and this fallback are never both on screen. */}
+      {(open || (declined && !canInstall)) && (
         <p id={stepsId} className="mt-3 max-w-prose text-sm text-ink-muted">
           {copy.steps}
         </p>

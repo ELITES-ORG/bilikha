@@ -24,9 +24,21 @@ export function NewBuildNotice() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+0.75rem)] z-30 flex justify-center px-4 sm:bottom-4"
+      /*
+        Top, under the header, at the same offset the toasts use — a notice
+        about the app itself belongs where the app's other notices appear, and
+        at the bottom it sat on the bottom nav's doorstep and read as part of
+        the page rather than about it.
+
+        z-30 keeps it under the header (z-40) rather than over it, which it
+        never overlaps anyway, and under toasts (z-50): a toast is transient and
+        answers something you just did, so it wins the rare collision.
+      */
+      className="pointer-events-none fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)] z-30 flex justify-center px-4"
     >
-      <div className="flex items-center gap-3 rounded-sm border border-hairline bg-surface px-4 py-3 shadow-sm">
+      {/* The wrapper is click-through so it never blocks the page behind it;
+          the card itself takes clicks back. */}
+      <div className="pointer-events-auto flex items-center gap-3 rounded-sm border border-hairline bg-surface px-4 py-3 shadow-sm">
         <p className="text-sm text-ink">A newer version of Bilikha is available.</p>
         <button
           type="button"
