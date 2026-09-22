@@ -11,6 +11,7 @@ import {
   Button,
   Container,
   EmptyState,
+  ProgressiveImage,
   SectionHeading,
   Select,
   Skeleton,
@@ -570,8 +571,8 @@ export function DirectoryPage() {
                   const showNearby =
                     Boolean(offer.creative.isNearby) &&
                     !(nearbyMunicipalityName && !municipality);
-                  const thumbClass =
-                    'size-20 shrink-0 object-cover sm:size-[120px]';
+                  const thumbClass = 'size-20 shrink-0 sm:size-[120px]';
+                  const thumbnailSrc = offer.image?.thumbUrl ?? offer.creative.avatarUrl;
 
                   return (
                     <li key={offer.id}>
@@ -579,25 +580,20 @@ export function DirectoryPage() {
                         to={`/offers/${offer.id}`}
                         className="group flex flex-row items-start gap-3 py-5 transition-colors hover:bg-clay-50/60 sm:gap-6 sm:py-6"
                       >
-                        {offer.image ? (
-                          <img
-                            src={offer.image.thumbUrl}
+                        {thumbnailSrc ? (
+                          <ProgressiveImage
+                            key={thumbnailSrc}
+                            src={thumbnailSrc}
                             alt=""
                             width={120}
                             height={120}
-                            loading="lazy"
-                            decoding="async"
                             className={thumbClass}
-                          />
-                        ) : offer.creative.avatarUrl ? (
-                          <img
-                            src={offer.creative.avatarUrl}
-                            alt=""
-                            width={120}
-                            height={120}
-                            loading="lazy"
-                            decoding="async"
-                            className={thumbClass}
+                            imageClassName="object-cover"
+                            fallback={
+                              <span className="text-sm font-medium tabular-nums text-lawa-800 sm:text-base">
+                                {initialsFrom(creativeName)}
+                              </span>
+                            }
                           />
                         ) : (
                           <div

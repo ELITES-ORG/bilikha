@@ -168,6 +168,51 @@
     animation: bk-shimmer 1.6s var(--ease-in-out-soft) infinite;
   }
 
+  /* Media keeps its final geometry while the network catches up. The image
+     settles into place only after its own load event, so cached and slow
+     responses use the same polished handoff without moving nearby content. */
+  .progressive-media {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    overflow: hidden;
+    width: var(--progressive-media-width);
+    height: var(--progressive-media-height);
+    background-color: var(--color-clay-200);
+    isolation: isolate;
+  }
+
+  .progressive-media__fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-out-quart);
+  }
+
+  .progressive-media__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: scale3d(0.985, 0.985, 1);
+    transition:
+      opacity var(--duration-slow) var(--ease-out-quart),
+      transform var(--duration-slow) var(--ease-out-expo);
+  }
+
+  .progressive-media[data-media-state='loaded'] > .progressive-media__image {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+
+  .progressive-media[data-media-state='failed'] > .progressive-media__fallback {
+    opacity: 1;
+  }
+
   @media (prefers-color-scheme: dark) {
     .skeleton::after {
       background: linear-gradient(

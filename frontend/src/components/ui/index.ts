@@ -14,6 +14,7 @@ export { Input, type InputProps } from './Input';
 export { Select, type SelectProps, type SelectOption, type SelectGroup } from './Select';
 export { SectionHeading, type SectionHeadingProps } from './SectionHeading';
 export { Skeleton, type SkeletonProps } from './Skeleton';
+export { ProgressiveImage, type ProgressiveImageProps } from './ProgressiveImage';
 export { Avatar, type AvatarProps } from './Avatar';
 export { ToastProvider } from './Toast';
 export { useToast, type ToastApi } from './toast-context';

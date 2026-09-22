@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
+import { ProgressiveImage } from './ProgressiveImage';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -39,14 +40,17 @@ export function Avatar({ src, name, size = 'md', className, ...props }: AvatarPr
       {...props}
     >
       {src ? (
-        <img
+        <ProgressiveImage
+          key={src}
           src={src}
           alt=""
           width={dims.px}
           height={dims.px}
-          loading="lazy"
-          decoding="async"
-          className="size-full object-cover"
+          className="size-full rounded-full bg-lawa-100"
+          imageClassName="object-cover"
+          fallback={
+            <span className={cn('font-medium tabular-nums', dims.text)}>{initials}</span>
+          }
         />
       ) : (
         <span className={cn('font-medium tabular-nums', dims.text)}>{initials}</span>
