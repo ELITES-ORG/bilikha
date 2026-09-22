@@ -1,7 +1,7 @@
 # 0036. The PWA
 
-- **Status:** Phase 1 complete
-- **Phases 2-3:** Ready, and deliberately not started
+- **Status:** Phase 2 complete — a worker that caches nothing, for the install button
+- **Phase 3 (offline):** Ready, and deliberately not started
 - **Owner:** unassigned
 - **Related:** [ADR 0040](../decisions/0040-a-deploy-must-not-break-an-open-tab.md)
   (the prerequisite) · [plan 0031](./0031-stop-shipping-every-page-to-every-visitor.md) ·
@@ -77,17 +77,17 @@ argument for being in no hurry about Phase 2.
 app shows the browser's offline page. That is deliberate
 ([rule 5](#rules-for-whoever-executes-this)) and is what Phase 2 is for.
 
-**It does not show an in-app install button** — see step 2.1. It does tell you
-where your browser's one is (step 1.3), which is the most a page without a
-service worker can do.
+**It shows a real Install button** where the browser offers the prompt, since
+Phase 2. Everywhere else — every browser on iOS — the row still tells you where
+the browser's own control is.
 
 ## Progress
 
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Installable, nothing cached | 3 / 3 | Done |
-| 2. The worker | 0 / 5 | Not started |
-| 3. Verification | 0 / 3 | Not started |
+| 2. The worker | 5 / 5 | Done |
+| 3. Verification | 2 / 3 | Real-phone pass outstanding |
 
 ---
 
@@ -164,43 +164,68 @@ drawing. Measure the output, do not look at it: ink centre should be 0.5, 0.5.
 
 # Phase 2 — The worker
 
-Do not start this until the open questions above are settled.
+Done, and scoped to one thing: the install button. It caches nothing. Offline is
+still ahead, and is the harder half.
 
 ### Step 2.1 — The install prompt, which is why a worker is needed at all
 
-- [ ] **Action.** Hold `beforeinstallprompt` and offer installation somewhere it
-  makes sense for a returning user, not on a first visit.
-- [ ] **Why this moved out of Phase 1.** Chrome dropped the service-worker
+- [x] **Action.** `useInstallPrompt` holds the event; the Settings row's button
+  becomes a real `Install` when it has one, and stays the `How to install`
+  disclosure everywhere it does not — which is every browser on iOS, where the
+  event does not exist and the Share sheet is the route.
+- [x] **Note what a button cannot do.** `prompt()` opens the *browser's* dialog
+  and the person still confirms. No website can install itself, on any browser.
+  Two taps is the floor, not a limitation to engineer around.
+- [x] **Why this moved out of Phase 1.** Chrome dropped the service-worker
   requirement for *installing from the browser menu* in version 108 on mobile
   and 112 on desktop, which is what makes Phase 1 possible at all. But the
   algorithm that fires `beforeinstallprompt` still requires a service worker
   with a `fetch` handler, so a custom in-app install button cannot work without
   one. Phase 1 therefore ships installability without a prompt: Android installs
   from the browser menu, iOS from Share → Add to Home Screen.
-- [ ] **Do not** add an empty `fetch` handler purely to unlock the prompt. That
-  is the exact workaround Chrome cited when it removed the requirement, and it
-  buys a durable cache in front of the update path for nothing.
+- [x] **Rule revisited, deliberately.** This plan previously said never to add
+  an empty `fetch` handler purely to unlock the prompt. That rule was written
+  against a worker that *caches*, and the reasoning was that it buys a durable
+  cache in front of the update path for nothing. The handler shipped here calls
+  `respondWith` never, so there is no cache and nothing in front of anything —
+  every request reaches the network exactly as if no worker existed. The
+  registrant asked for the button three times; the cost turned out to be a
+  worker that cannot affect a single request. Overriding the rule is recorded
+  here rather than done quietly.
 
 ### Step 2.2 — The kill switch, first
 
-- [ ] **Action.** Ship the ability to unregister before shipping the worker.
-  Rule 2 exists because the failure mode is a phone that cannot be reached.
+- [x] **Action.** Shipped in its own commit, before `sw.js` existed, so it could
+  be tested before there was anything it might have to remove.
+- [x] **Action.** It lives in the page, not the worker — `index.html` is always
+  fetched from the network, so publishing `off` in `/sw-enabled` unregisters on
+  every device at its next launch, with no deploy and no cooperation from a
+  worker that may be the thing that is broken.
+- [x] **Action.** A failed fetch never reads as `off`; a phone on a bad signal
+  would otherwise unregister every time the connection dropped. `?sw=off` does
+  the same for one device while the flag stays `on` for everyone else.
 
 ### Step 2.3 — What is cached
 
-- [ ] **Action.** The shell and hashed build output. Not `/api/*` (rule 3), and
-  not `build-id.txt` (rule 1).
+- [x] **Nothing.** Not the shell, not the build output, not `/api/*`, not
+  `build-id.txt`. The `fetch` handler exists because Chrome requires one and is
+  otherwise inert. Making it respond is what Phase 3 is, and is a decision, not
+  an increment.
 
 ### Step 2.4 — Update semantics
 
-- [ ] **Action.** Decide and document `skipWaiting` / `clients.claim`. Reuse the
-  existing `NewBuildNotice` rather than adding a second, differently-worded
-  prompt for the same thing.
+- [x] **Decided: `skipWaiting` on install, `clients.claim` on activate.** Both
+  are safe here for the same reason: with no cache, a new worker can never
+  disagree with the page it takes over. The usual argument against `skipWaiting`
+  is a half-swapped cache, and there is no cache.
+- [x] **`NewBuildNotice` is untouched.** Build updates are still the page's job,
+  exactly as in ADR 0040. The worker has no opinion about versions.
 
 ### Step 2.5 — Offline
 
-- [ ] **Action.** A page that cannot load offline says so in a sentence
-  (rule 4).
+- [x] **Not attempted, and the row says so.** "It still needs internet" is in
+  the install copy, so nobody installs it expecting something it does not do.
+  Rule 4 applies to Phase 3, where offline becomes real.
 
 ---
 
@@ -208,21 +233,31 @@ Do not start this until the open questions above are settled.
 
 ### Step 3.1 — The ADR 0040 scenario, with a worker installed
 
-- [ ] **Verify.** Remove a route chunk mid-session and navigate to it. One
-  reload, no loop, and the app recovers when the chunk exists again — the same
-  result as without the worker.
+- [x] **Verified.** With the worker active and controlling the page, removing a
+  route chunk and navigating to it gave `nav type=reload`, the guard set, and
+  the message rather than a loop — identical to the run without a worker.
+  Restoring the chunk rendered the page and cleared the guard, still controlled.
+- [x] **Verified.** Cache Storage is empty after activation.
+- [x] **Verified.** Flag set to `off`: registrations drop to 0 on next load and
+  the controller is gone after a reload, with the app working throughout. Set
+  back to `on`: it registers again. `?sw=off` unregisters that device alone.
 
 ### Step 3.2 — A real phone
 
-- [ ] **Verify.** Install it on a budget Android, launch from the home screen,
-  and use it on a throttled connection. Emulated Chrome is not a phone, which
+- [ ] **Outstanding, and it is the one thing headless cannot answer.** Headless
+  Chrome does not fire `beforeinstallprompt` — it has no install UI — so the
+  button fell back to the disclosure in every automated run. Whether the real
+  `Install` button appears has to be seen on a real browser. Everything around
+  it is verified; that one branch is not.
+- [ ] **Verify.** Install on a budget Android, launch from the home screen, use
+  it on a throttled connection. Emulated Chrome is not a phone, which
   [plan 0014](./0014-dark-mode.md) and [plan 0024](./0024-theme-choice.md) both
   say for the same reason.
 
 ### Step 3.3 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
-  exit 0, CI green.
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+  exit 0.
 
 ---
 

@@ -1,21 +1,22 @@
 import { useEffect, useId, useState } from 'react';
 import { Button } from '@/components/ui';
 import { installHint, isRunningInstalled, type InstallHint } from '@/lib/install';
+import { useInstallPrompt } from '@/lib/use-install-prompt';
 
 /**
- * A row in the account hub's Settings group: what installing gets you, and a
- * button that says where the browser keeps the control that does it.
+ * A row in the account hub's Settings group: install Bilikha on this device.
  *
- * It cannot install anything itself — that needs `beforeinstallprompt`, which
- * Chrome only fires for sites with a service worker, and there is none by
- * design (plan 0036 phase 1). The first version said so in three paragraphs at
- * the foot of the page and read as an afterthought beside the tidy rows above
- * it. This one is shaped like Mode and Appearance, because it is the same kind
- * of thing: a choice about this device.
+ * Two shapes, and which one appears is not a preference:
  *
- * The button reveals rather than installs, so it says `How to install` and not
- * `Install`. A button that does not do what its label promises is worse than no
- * button, and worse than a sentence.
+ * - **Install** — a real button, when the browser has offered its prompt. It
+ *   opens the browser's own dialog; the person still confirms. No website can
+ *   install itself, on any browser.
+ * - **How to install** — a disclosure naming where the browser keeps the
+ *   control, for everywhere the prompt never fires. That is every browser on
+ *   iOS, which has no such event and installs from the Share sheet.
+ *
+ * The fallback is not dead code waiting to be deleted. iOS is a large share of
+ * this audience and will never reach the first shape.
  */
 
 const COPY: Record<Exclude<InstallHint, 'none'>, { noun: string; steps: string }> = {
@@ -36,17 +37,22 @@ const COPY: Record<Exclude<InstallHint, 'none'>, { noun: string; steps: string }
 };
 
 export function InstallGuide() {
-  // Resolved after mount: both inputs are browser state, and guessing would
-  // render instructions for the wrong device.
+  // Resolved after mount, not in a lazy initialiser, and the lint warning about
+  // that is accepted on purpose. Both inputs are browser state; computing them
+  // during render would read `navigator` on the server once SSR lands
+  // (constraint 4) and would disagree with the server's markup at hydration.
+  // Rendering nothing first and the row a tick later is correct here.
   const [hint, setHint] = useState<InstallHint>('none');
   const [open, setOpen] = useState(false);
+  const [dismissedPrompt, setDismissedPrompt] = useState(false);
+  const { canInstall, installed, install } = useInstallPrompt();
   const stepsId = useId();
 
   useEffect(() => {
     setHint(installHint(navigator.userAgent, isRunningInstalled()));
   }, []);
 
-  if (hint === 'none') return null;
+  if (installed || hint === 'none') return null;
 
   const copy = COPY[hint];
 
@@ -58,19 +64,37 @@ export function InstallGuide() {
         it. It still needs internet.
       </p>
 
-      <Button
-        type="button"
-        size="sm"
-        variant="secondary"
-        className="mt-3"
-        aria-expanded={open}
-        aria-controls={stepsId}
-        onClick={() => setOpen((current) => !current)}
-      >
-        {open ? 'Hide' : 'How to install'}
-      </Button>
+      {canInstall ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="mt-3"
+          onClick={() => {
+            void install().then((outcome) => {
+              // Dismissed means "not now", not "never" — but the event is spent,
+              // so fall back to telling them where the browser's own control is.
+              if (outcome !== 'accepted') setDismissedPrompt(true);
+            });
+          }}
+        >
+          Install
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="mt-3"
+          aria-expanded={open}
+          aria-controls={stepsId}
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? 'Hide' : 'How to install'}
+        </Button>
+      )}
 
-      {open && (
+      {(open || dismissedPrompt) && (
         <p id={stepsId} className="mt-3 max-w-prose text-sm text-ink-muted">
           {copy.steps}
         </p>
