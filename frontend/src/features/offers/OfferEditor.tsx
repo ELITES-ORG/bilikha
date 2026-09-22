@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { EllipsisVertical } from 'lucide-react';
+import { ChevronRight, EllipsisVertical } from 'lucide-react';
 import { Button, Input, Select, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
@@ -96,8 +96,11 @@ export function OfferEditor() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
-  /** Which row's overflow menu is open — destructive actions stay out of the primary row. */
+  /** Which row's overflow is open — destructive actions stay out of the primary row. */
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const menuItemRef = useRef<HTMLButtonElement>(null);
   /** Reorder is a mode entered once — pairwise Move buttons do not sit on every row. */
   const [reordering, setReordering] = useState(false);
 
@@ -130,6 +133,45 @@ export function OfferEditor() {
       }
     })();
   }, []);
+
+  // Overflow claims role="menu" — dismiss on outside click / Escape, and move
+  // focus into the item on open so the role is not a lie.
+  useEffect(() => {
+    if (!menuOpenId) return;
+
+    menuItemRef.current?.focus();
+
+    function onDismiss(event: Event) {
+      const target = event.target as Node;
+      if (menuPanelRef.current?.contains(target)) return;
+      if (menuTriggerRef.current?.contains(target)) return;
+      setMenuOpenId(null);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMenuOpenId(null);
+        menuTriggerRef.current?.focus();
+        return;
+      }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+        event.preventDefault();
+        menuItemRef.current?.focus();
+      }
+    }
+
+    // pointerdown for real taps; click as well because programmatic .click()
+    // (and some assistive paths) never synthesise a pointer event.
+    document.addEventListener('pointerdown', onDismiss);
+    document.addEventListener('click', onDismiss);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onDismiss);
+      document.removeEventListener('click', onDismiss);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpenId]);
 
   function startCreate() {
     setReordering(false);
@@ -413,8 +455,8 @@ export function OfferEditor() {
                     <button
                       type="button"
                       className={cn(
-                        'flex min-w-0 flex-1 gap-3 text-left transition-opacity',
-                        'hover:opacity-90',
+                        'flex min-w-0 flex-1 items-center gap-3 text-left',
+                        'transition-opacity',
                         busy && 'pointer-events-none opacity-60',
                       )}
                       disabled={busy}
@@ -447,9 +489,11 @@ export function OfferEditor() {
                           {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
                         </span>
                       </span>
+                      <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
                     </button>
                     <div className="relative shrink-0">
                       <button
+                        ref={menuOpenId === offer.id ? menuTriggerRef : undefined}
                         type="button"
                         className={cn(
                           'inline-flex size-9 items-center justify-center rounded-sm text-ink-muted',
@@ -458,6 +502,9 @@ export function OfferEditor() {
                         aria-label={`More actions for ${offer.title}`}
                         aria-expanded={menuOpenId === offer.id}
                         aria-haspopup="menu"
+                        aria-controls={
+                          menuOpenId === offer.id ? `offer-overflow-${offer.id}` : undefined
+                        }
                         disabled={busy}
                         onClick={() =>
                           setMenuOpenId((current) => (current === offer.id ? null : offer.id))
@@ -467,10 +514,13 @@ export function OfferEditor() {
                       </button>
                       {menuOpenId === offer.id && (
                         <div
+                          ref={menuPanelRef}
+                          id={`offer-overflow-${offer.id}`}
                           role="menu"
                           className="absolute right-0 z-10 mt-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
                         >
                           <button
+                            ref={menuItemRef}
                             type="button"
                             role="menuitem"
                             className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { CircleAlert, Clock } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import {
   Badge,
@@ -12,10 +13,20 @@ import {
 } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useClosePosting, useDeletePosting, useMyPostings } from '@/features/postings/api';
-import { formatTimeLeft, expiryTone, formatPostingStatus } from '@/lib/posting-time';
+import {
+  formatTimeLeft,
+  expiryTone,
+  effectivePostingStatus,
+  formatPostingStatus,
+} from '@/lib/posting-time';
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
+
+function postingStatusTone(status: string): 'neutral' | 'warning' {
+  // Expired lapsed without a deliberate close — it should not look like Closed.
+  return status === 'expired' ? 'warning' : 'neutral';
+}
 
 export function MyPostingsPage() {
   const list = useMyPostings();
@@ -40,6 +51,7 @@ export function MyPostingsPage() {
   }
 
   const empty = list.data && list.data.length === 0;
+  const populated = Boolean(list.data && list.data.length > 0);
 
   return (
     <>
@@ -51,14 +63,10 @@ export function MyPostingsPage() {
             eyebrow="Hiring"
             title="Your postings"
             description="Work you want done. Close a posting when it is filled or no longer needed."
-            action={!empty ? <ButtonLink to="/postings/new">Post work</ButtonLink> : undefined}
+            action={
+              populated ? <ButtonLink to="/postings/new">Post work</ButtonLink> : undefined
+            }
           />
-
-          {!list.data && (
-            <div className="mt-6">
-              <ButtonLink to="/postings/new">Post work</ButtonLink>
-            </div>
-          )}
 
           <div className="mt-10">
             {list.isPending && <Skeleton className="h-40 w-full" />}
@@ -72,10 +80,12 @@ export function MyPostingsPage() {
               />
             )}
 
-            {list.data && list.data.length > 0 && (
+            {populated && (
               <ul className="divide-y divide-hairline border border-hairline">
-                {list.data.map((row) => {
-                  const open = row.status === 'open';
+                {list.data!.map((row) => {
+                  const status = effectivePostingStatus(row.status, row.expiresAt);
+                  const open = status === 'open';
+                  const timeTone = open ? expiryTone(row.expiresAt) : null;
                   return (
                     <li key={row.id} className="px-4 py-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -95,10 +105,26 @@ export function MyPostingsPage() {
                           </p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             {!open && (
-                              <Badge tone="neutral">{formatPostingStatus(row.status)}</Badge>
+                              <Badge
+                                tone={postingStatusTone(status)}
+                                icon={
+                                  status === 'expired' ? (
+                                    <CircleAlert className="size-3" aria-hidden />
+                                  ) : undefined
+                                }
+                              >
+                                {formatPostingStatus(status)}
+                              </Badge>
                             )}
-                            {open && (
-                              <Badge tone={expiryTone(row.expiresAt)}>
+                            {open && timeTone && (
+                              <Badge
+                                tone={timeTone}
+                                icon={
+                                  timeTone === 'warning' || timeTone === 'danger' ? (
+                                    <Clock className="size-3" aria-hidden />
+                                  ) : undefined
+                                }
+                              >
                                 {formatTimeLeft(row.expiresAt)}
                               </Badge>
                             )}

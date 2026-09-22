@@ -26,6 +26,20 @@ export function expiryTone(
   return 'neutral';
 }
 
+/**
+ * What the row should say it is, rather than what the column happens to hold.
+ *
+ * A posting can be past `expiresAt` while its stored status is still `open`,
+ * because the sweep that flips it has not run yet. That gap is invisible to
+ * whoever is reading the page, so the two must not render differently — a list
+ * showing `Expired` twice in two different tones is telling the reader about
+ * a background job, not about their postings.
+ */
+export function effectivePostingStatus(status: string, expiresAt: string): string {
+  if (status === 'open' && new Date(expiresAt).getTime() <= Date.now()) return 'expired';
+  return status;
+}
+
 /** Sentence-case a posting status enum for display. */
 export function formatPostingStatus(status: string): string {
   if (!status) return status;

@@ -124,7 +124,7 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
 
   const nameFields = (
     <div className="space-y-4">
-      <h4 className="text-sm font-medium text-ink">Name</h4>
+      <h3 className="text-sm font-medium text-ink">Name</h3>
       <p className="text-xs text-ink-subtle">
         First, middle, last and suffix all appear as your full name on the
         directory and your public profile.
@@ -191,7 +191,7 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
       )}
 
       {profile.status === 'published' && (
-        <p className="rounded-md border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+        <p className="rounded-md border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700">
           Your profile stays visible while public changes are reviewed.
         </p>
       )}

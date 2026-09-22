@@ -206,14 +206,14 @@ export function ProfileCraftFields({
     return (
       <>
         <section className="space-y-4">
-          <h3 className="text-lg font-medium text-ink">Shown on your public profile</h3>
+          <h2 className="text-lg font-medium text-ink">Shown on your public profile</h2>
           {leadingPublic}
           {displayAndBio}
           {municipalityField}
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-lg font-medium text-ink">Not shown publicly</h3>
+          <h2 className="text-lg font-medium text-ink">Not shown publicly</h2>
           {barangayField}
           {contactPreference}
         </section>
