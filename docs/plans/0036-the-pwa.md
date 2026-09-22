@@ -87,7 +87,7 @@ the browser's own control is.
 |---|---|---|
 | 1. Installable, nothing cached | 3 / 3 | Done |
 | 2. The worker | 5 / 5 | Done |
-| 3. Verification | 2 / 3 | Real-phone pass outstanding |
+| 3. Verification | 2 / 3 | Desktop install confirmed; real-phone pass outstanding |
 
 ---
 
@@ -244,11 +244,15 @@ still ahead, and is the harder half.
 
 ### Step 3.2 — A real phone
 
-- [ ] **Outstanding, and it is the one thing headless cannot answer.** Headless
-  Chrome does not fire `beforeinstallprompt` — it has no install UI — so the
-  button fell back to the disclosure in every automated run. Whether the real
-  `Install` button appears has to be seen on a real browser. Everything around
-  it is verified; that one branch is not.
+- [x] **Confirmed on a real browser.** Headless Chrome does not fire
+  `beforeinstallprompt` — it has no install UI — so every automated run fell
+  back to the disclosure and this branch could not be checked here. The
+  registrant saw the real `Install` button on Brave for Windows on 2026-09-23.
+- [x] **And it found a bug headless could not.** The button and the
+  where-to-find-it fallback were on screen together: the fallback appears when
+  the browser's dialog is dismissed, and Chrome then fires the event again,
+  restoring the button while the fallback stayed. Fixed — a new event clears the
+  declined state, and the fallback is gated on there being no button.
 - [ ] **Verify.** Install on a budget Android, launch from the home screen, use
   it on a throttled connection. Emulated Chrome is not a phone, which
   [plan 0014](./0014-dark-mode.md) and [plan 0024](./0024-theme-choice.md) both
