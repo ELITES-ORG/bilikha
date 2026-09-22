@@ -571,7 +571,8 @@ export function DirectoryPage() {
                   const showNearby =
                     Boolean(offer.creative.isNearby) &&
                     !(nearbyMunicipalityName && !municipality);
-                  const thumbClass = 'size-20 shrink-0 sm:size-[120px]';
+                  const thumbClass =
+                    'size-20 shrink-0 overflow-hidden rounded-xs sm:size-[120px]';
                   const thumbnailSrc = offer.image?.thumbUrl ?? offer.creative.avatarUrl;
 
                   return (
