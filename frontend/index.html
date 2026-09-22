@@ -3,6 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!--
+      Installable, with nothing cached (plan 0036 phase 1). There is no service
+      worker on purpose: Chrome dropped the service-worker requirement for
+      installing from the menu in 108 on mobile and 112 on desktop, and a worker
+      would put a durable cache in front of the update path ADR 0040 just built.
+
+      apple-touch-icon is separate because iOS ignores the manifest's icons.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Bilikha" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!--

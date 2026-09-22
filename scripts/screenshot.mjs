@@ -117,8 +117,15 @@ if (spec.cookies) {
     });
   }
 }
+// deviceScaleFactor 2 by default: screenshots are for looking at, and a retina
+// capture shows hairlines and text rendering that 1x hides. `dsf` overrides it
+// for the cases where the output IS the artefact rather than a picture of one —
+// an app icon at exactly 192px, say, not a 384px photograph of one.
 await send('Emulation.setDeviceMetricsOverride', {
-  width: spec.w ?? 375, height: spec.h ?? 812, deviceScaleFactor: 2, mobile: (spec.w ?? 375) < 700,
+  width: spec.w ?? 375,
+  height: spec.h ?? 812,
+  deviceScaleFactor: spec.dsf ?? 2,
+  mobile: (spec.w ?? 375) < 700,
 });
 // `media` adds further feature emulation, e.g. prefers-reduced-motion. A
 // reduced-motion user gets different CSS, so "does it flash" has to be asked
