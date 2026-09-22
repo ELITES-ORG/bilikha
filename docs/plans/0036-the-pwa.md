@@ -77,13 +77,15 @@ argument for being in no hurry about Phase 2.
 app shows the browser's offline page. That is deliberate
 ([rule 5](#rules-for-whoever-executes-this)) and is what Phase 2 is for.
 
-**It does not show an in-app install button** — see step 2.1.
+**It does not show an in-app install button** — see step 2.1. It does tell you
+where your browser's one is (step 1.3), which is the most a page without a
+service worker can do.
 
 ## Progress
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Installable, nothing cached | 2 / 2 | Done |
+| 1. Installable, nothing cached | 3 / 3 | Done |
 | 2. The worker | 0 / 5 | Not started |
 | 3. Verification | 0 / 3 | Not started |
 
@@ -110,6 +112,28 @@ The safe half. No service worker, so no new class of stale-content bug.
 - [x] **Action.** `start_url` is `/`, which is the pitch signed out and redirects
   to `/directory` signed in ([HomeRoute](../../frontend/src/pages/HomeRoute.tsx)),
   so one entry serves both. `scope` is `/` so every route stays in the app.
+
+### Step 1.3 — Say where the browser keeps the button
+
+The registrant installed nothing, because the only way in was a browser control
+they had not noticed — the Install icon was sitting in their address bar in the
+screenshot they sent to ask where it was. If the person who commissioned the
+feature cannot find it, a carpenter in Naval will not.
+
+- [x] **Action.** `InstallGuide` on the account page says where that control is,
+  in the words of the device it is being read on: the Share sheet on iOS, the
+  browser menu on Android, the address bar on desktop.
+- [x] **Action.** It renders nothing when the app is already installed, and
+  nothing in a browser with no install flow. Firefox is deliberately silent —
+  pointing at a menu item that does not exist sends somebody hunting through
+  settings for something that was never there.
+- [x] **Verify.** `installHint` is a pure function of the user agent with tests
+  against eight real strings, because the failure is silent: wrong instructions
+  look exactly like right ones until somebody follows them.
+
+**It is a signpost, not a button**, and it says so by not looking like one. The
+control that actually installs cannot live in the page until Phase 2 — see step
+2.1.
 
 ### How the icons were made, since it will come up again
 

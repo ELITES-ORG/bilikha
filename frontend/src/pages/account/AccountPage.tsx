@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
+import { InstallGuide } from '@/components/InstallGuide';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -319,6 +320,12 @@ export function AccountPage() {
                   </ButtonLink>
                 </section>
               )}
+
+              {/*
+                Renders nothing once installed, and nothing in a browser that
+                cannot install — so it is not a permanent fixture of the page.
+              */}
+              <InstallGuide />
 
               {/*
                 Not a fourth hub group: these are two documents to read, not
