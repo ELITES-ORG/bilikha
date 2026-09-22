@@ -93,6 +93,10 @@ before anyone has made a decision. Each is replaced here on purpose.
 - Empty states are a normal condition here, not an error — a province this size
   will have sub-domains with no registrants for a long time. Use `<EmptyState>`
   with a way forward, never a bare "no results".
+- A modal scrim uses `scrim`, never `ink`. `ink` is the text colour and inverts
+  with the theme, so a scrim built from it turns near-white in dark mode and
+  washes the page out instead of dimming it. Every dialog in the app had this
+  until it was found in the offer gallery.
 - No heading may imply a visibility that is untrue of the fields under it.
   Group by what is actually published (or say so per field), never by a label
   that leaves a creative guessing which of their details leave the page.

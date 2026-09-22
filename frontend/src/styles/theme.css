@@ -111,6 +111,12 @@
      Brand buttons use this rather than clay-50 so the clay ramp can invert for
      dark mode without turning primary labels dark. Unchanged across themes. */
   --color-on-primary: oklch(0.985 0.0035 85);
+  /* The scrim behind a modal. Always dark, like --color-on-primary is always
+     light, and for the same reason: its job is fixed regardless of theme.
+     Modals used `ink` for this, which is the TEXT colour and therefore inverts
+     — so every dialog in the app sat under a near-white wash in dark mode
+     instead of a dim one. A scrim dims; it does not follow the theme. */
+  --color-scrim: oklch(0.145 0.006 60);
   --color-on-primary-muted: light-dark(oklch(0.92 0.006 82), oklch(0.90 0.006 82));
   /* Solid brand fills for buttons / mode switch. Kept separate from the lawa
      ramp so the ramp can invert for tints and text while hover still darkens. */

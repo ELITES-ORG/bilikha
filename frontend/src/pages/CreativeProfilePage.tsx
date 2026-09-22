@@ -238,7 +238,7 @@ export function CreativeProfilePage() {
 
       <dialog
         ref={dialogRef}
-        className="m-auto max-h-[90vh] max-w-3xl border-0 bg-transparent p-0 backdrop:bg-ink/70"
+        className="m-auto max-h-[90vh] max-w-3xl border-0 bg-transparent p-0 backdrop:bg-scrim/70"
         onClose={closeLightbox}
         onClick={(event) => {
           if (event.target === dialogRef.current) closeLightbox();

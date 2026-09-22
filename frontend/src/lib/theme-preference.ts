@@ -54,6 +54,31 @@ function syncThemeColorMeta(preference: ThemePreference): void {
   second.removeAttribute('media');
 }
 
+/**
+ * The blocking script in index.html paints `<html>` inline so the boot mark
+ * sits on the right paper before the stylesheet arrives (plan 0030). Being
+ * inline, it outranks every rule — and it was never updated afterwards, so
+ * choosing Dark left `<html>` painted `#fcfbf8` under `data-theme="dark"`.
+ * That shows wherever the page does not cover the canvas: the overscroll
+ * bounce, and through a translucent modal scrim.
+ *
+ * That script's own comment reasons carefully about why it must not set
+ * `color-scheme` inline — a runtime switch would strand it — and then sets
+ * `background-color` inline one line above, which has the identical flaw.
+ *
+ * Once the stylesheet is up, CSS can own this. `system` therefore clears the
+ * inline value rather than resolving the media query here, so a later OS change
+ * is followed without any listener.
+ */
+function syncRootBackground(preference: ThemePreference): void {
+  const root = document.documentElement;
+  if (preference === 'system') {
+    root.style.removeProperty('background-color');
+    return;
+  }
+  root.style.backgroundColor = THEME_COLOR_PAPER[preference];
+}
+
 /** Apply preference to the document without writing storage. */
 export function applyThemePreference(preference: ThemePreference): void {
   const root = document.documentElement;
@@ -63,6 +88,7 @@ export function applyThemePreference(preference: ThemePreference): void {
     root.setAttribute('data-theme', preference);
   }
   syncThemeColorMeta(preference);
+  syncRootBackground(preference);
 }
 
 /** Persist and apply. System clears storage so a fresh install stays media-only. */

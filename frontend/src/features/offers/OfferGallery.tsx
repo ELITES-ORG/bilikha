@@ -120,7 +120,7 @@ export function OfferGallery({ images, offerTitle }: OfferGalleryProps) {
         aria-labelledby={titleId}
         className={cn(
           'm-auto max-h-[min(92vh,56rem)] w-[min(100%-1.5rem,48rem)] border-0 bg-transparent p-0',
-          'backdrop:bg-ink/70',
+          'backdrop:bg-scrim/70',
         )}
         onClose={closeLightbox}
         onClick={(event) => {

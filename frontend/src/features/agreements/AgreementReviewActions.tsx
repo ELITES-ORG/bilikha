@@ -56,7 +56,7 @@ function AcceptDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-scrim/40 p-4 sm:items-center">
       <div
         role="dialog"
         aria-modal="true"
