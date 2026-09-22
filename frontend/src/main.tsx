@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import { clearReloadGuard } from '@/lib/app-update'
+import { registerServiceWorker } from '@/lib/service-worker'
 
 // A render that got this far is a build that works, so the one-shot reload
 // guard can be released. Outside React on purpose: it must run even if App
@@ -17,3 +18,7 @@ createRoot(document.getElementById('root')!).render(
     </AppErrorBoundary>
   </StrictMode>,
 )
+
+// After render, never before: nothing here may delay first paint, and the kill
+// switch has to run on every start whether or not a worker is registered.
+void registerServiceWorker()
