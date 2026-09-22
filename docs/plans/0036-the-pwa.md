@@ -248,11 +248,22 @@ still ahead, and is the harder half.
   `beforeinstallprompt` — it has no install UI — so every automated run fell
   back to the disclosure and this branch could not be checked here. The
   registrant saw the real `Install` button on Brave for Windows on 2026-09-23.
-- [x] **And it found a bug headless could not.** The button and the
-  where-to-find-it fallback were on screen together: the fallback appears when
-  the browser's dialog is dismissed, and Chrome then fires the event again,
+- [x] **And it found two bugs headless could not.** First, the button and the
+  where-to-find-it fallback on screen together: the fallback appears when the
+  browser's dialog is dismissed, and Chrome then fires the event again,
   restoring the button while the fallback stayed. Fixed — a new event clears the
   declined state, and the fallback is gated on there being no button.
+- [x] **Second, and worse: the button appeared only by luck.** The listener for
+  `beforeinstallprompt` lived in a `useEffect` inside `InstallGuide`, which is
+  rendered by `AccountPage` — a lazy route chunk (plan 0031). The event fires
+  once, early, and nothing was listening until that chunk had downloaded and
+  mounted, so it was usually lost. It worked the first time the registrant
+  looked and not the second, which is exactly what a race looks like from the
+  outside. `lib/install-prompt-store.ts` now listens from `main.tsx`, during the
+  first script evaluation, and hands the event to whatever mounts later.
+- [x] **Verify.** Fire `beforeinstallprompt` on `/directory`, where the account
+  chunk has never mounted, then navigate to `/account`: the row renders
+  `["Install"]` with no fallback text. Before the change that event was gone.
 - [ ] **Verify.** Install on a budget Android, launch from the home screen, use
   it on a throttled connection. Emulated Chrome is not a phone, which
   [plan 0014](./0014-dark-mode.md) and [plan 0024](./0024-theme-choice.md) both

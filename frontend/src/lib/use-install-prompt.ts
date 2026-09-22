@@ -1,71 +1,49 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
+import { installPromptStore } from '@/lib/install-prompt-store';
 
 /**
- * Holds the browser's install prompt so a button in the page can open it.
+ * Reads the install offer that `install-prompt-store` caught at startup.
  *
- * The event fires once, early, and only when the browser considers the site
- * installable — so it has to be caught and kept rather than asked for on click.
+ * The listener deliberately does **not** live here: this hook is used from a
+ * lazily-loaded route, and `beforeinstallprompt` fires long before that chunk
+ * mounts. Subscribing to a store that has been listening since the first script
+ * ran is the difference between the button appearing and not.
  *
  * What this cannot do, on any browser: install silently. `prompt()` opens the
- * browser's own dialog and the person still chooses. That boundary is the
- * reason a website cannot put itself on your home screen, and it is not a gap
- * to be worked around.
+ * browser's own dialog and the person still chooses. That boundary is why a
+ * website cannot put itself on your home screen, and is not a gap to work
+ * around.
  */
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
 export function useInstallPrompt() {
-  const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installed, setInstalled] = useState(false);
+  const pending = useSyncExternalStore(
+    installPromptStore.subscribe,
+    installPromptStore.getPending,
+    () => null,
+  );
+  const installed = useSyncExternalStore(
+    installPromptStore.subscribe,
+    installPromptStore.isInstalled,
+    () => false,
+  );
+
   /** Set when the browser's dialog was opened and not accepted. */
   const [declined, setDeclined] = useState(false);
 
-  useEffect(() => {
-    function onBeforeInstallPrompt(e: Event) {
-      // Without this the browser shows its own mini-infobar instead, and the
-      // page never gets the chance to ask at a sensible moment.
-      e.preventDefault();
-      setEvent(e as BeforeInstallPromptEvent);
-      // The browser fires this again after somebody dismisses its dialog. Each
-      // new event is a fresh offer, so anything shown because the last one was
-      // declined is now out of date.
-      setDeclined(false);
-    }
-
-    function onInstalled() {
-      setInstalled(true);
-      setEvent(null);
-      setDeclined(false);
-    }
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
-  }, []);
-
-  async function install(): Promise<'accepted' | 'dismissed' | 'unavailable'> {
+  const install = useCallback(async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
+    const event = installPromptStore.getPending();
     if (!event) return 'unavailable';
     try {
       await event.prompt();
       const { outcome } = await event.userChoice;
-      // The event is single-use; a dismissed prompt cannot be reopened from the
-      // same one, and the browser fires a fresh event when it is ready to ask
-      // again — which clears `declined` above.
-      setEvent(null);
+      installPromptStore.clearPending();
       setDeclined(outcome !== 'accepted');
       return outcome;
     } catch {
-      setEvent(null);
+      installPromptStore.clearPending();
       setDeclined(true);
       return 'unavailable';
     }
-  }
+  }, []);
 
-  return { canInstall: event !== null, installed, declined, install };
+  return { canInstall: pending !== null, installed, declined, install };
 }
