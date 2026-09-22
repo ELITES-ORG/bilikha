@@ -1,0 +1,55 @@
+name: Keep the API awake
+
+# The API runs on Render's free tier, which spins a service down after 15
+# minutes without traffic and then takes about a minute to wake. That minute is
+# paid for by whoever opens Bilikha next.
+#
+# WHY NOT AROUND THE CLOCK. Free instance hours are capped at 750 per workspace
+# per month, and a service kept awake 24/7 burns 744 of them in a 31-day month.
+# Six hours of margin, for the whole workspace, shared with anything else free
+# running in it — and exceeding the cap does not throttle, it SUSPENDS every
+# free service until the next calendar month. A ping every ten minutes, all day,
+# would take Bilikha down completely about four weeks after this file was added,
+# on a date nobody would connect to it.
+#
+# So: waking hours in Biliran only. 06:00–22:50 Philippine time is roughly 17
+# hours a day, about 530 instance hours a month, which leaves real margin. A
+# visitor at three in the morning waits for the cold start, and that is the
+# right trade.
+#
+# PHT is UTC+8 with no daylight saving, so 06:00–22:50 PHT is 22:00–14:50 UTC,
+# which wraps midnight and therefore needs two entries.
+
+on:
+  schedule:
+    - cron: '*/10 22,23 * * *' # 06:00–07:50 PHT
+    - cron: '*/10 0-14 * * *' #  08:00–22:50 PHT
+  workflow_dispatch:
+
+# Two runs pinging at once would achieve nothing but noise.
+concurrency:
+  group: keep-awake
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Wake the API
+        run: |
+          # --max-time 90 because a cold start is about a minute: the request
+          # that does the waking is the slow one, and giving up on it would
+          # leave the service asleep for the next ten minutes.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 \
+            https://bilikha.onrender.com/api/v1/health/ready || echo 000)
+
+          echo "readiness returned $code"
+
+          # A ping that cannot reach the API is worth failing on: this workflow
+          # is also the only thing watching whether the API is up at all.
+          if [ "$code" != "200" ]; then
+            echo "::error::API did not report ready (got $code)"
+            exit 1
+          fi

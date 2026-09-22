@@ -89,7 +89,7 @@ Know these before you promise anyone a demo.
 
 | Limit | Effect | Mitigation |
 |---|---|---|
-| **Render spins down after ~15 min idle** | First request after idle takes 50+ seconds | Phase 6 adds an uptime pinger. 750 free instance-hours/month covers one service running continuously |
+| **Render spins down after ~15 min idle** | First request after idle takes 50+ seconds | Phase 6 pings during waking hours only. Continuous pinging costs 744 of the 750 free instance-hours a month, and exceeding the cap **suspends every free service until the next month** |
 | **Supabase pauses a project after ~7 days inactive** | Database unreachable until manually resumed | Phase 6's pinger keeps queries flowing |
 | **Supabase free: 500 MB database** | Plenty for sprint 1 | Watch it once portfolio metadata lands |
 | **Vercel free is fair-use** | Fine at this traffic | — |
@@ -156,7 +156,7 @@ git status         # should be clean
 | 3. Render API | 6 / 6 | Live; per-action boxes unticked |
 | 4. Vercel frontend and proxy | 4 / 5 | CORS_ORIGINS still to update |
 | 5. Verify the deployment | 3 / 4 | Safari check outstanding |
-| 6. Keep the free tier awake | 0 / 2 | Not started |
+| 6. Keep the free tier awake | 1 / 2 | Pinger live; cold-start check outstanding |
 | 7. Document and amend plan 0001 | 3 / 3 | Done; verified 2026-09-19 |
 
 ---
@@ -511,26 +511,32 @@ await fetch('/api/v1/health', { credentials: 'include' }).then(r => r.status)
 
 ### Step 6.1 — Uptime pinger
 
-- [ ] **Action.** Create a free account at
-  [uptimerobot.com](https://uptimerobot.com) → **Add New Monitor**:
+- [x] **Action.** `.github/workflows/keep-awake.yml` hits
+  `/api/v1/health/ready` every ten minutes. `ready` rather than `health` so a
+  query reaches Postgres on each check, which also stops Supabase pausing the
+  project after seven days idle. The workflow fails on a non-200, so it doubles
+  as the only thing watching whether the API is up.
+- [x] **Action.** **Waking hours only, and this is the point of the step.**
+  06:00–22:50 Philippine time, which is 22:00–14:50 UTC and therefore two cron
+  entries because it wraps midnight.
 
-| Setting | Value |
-|---|---|
-| Monitor Type | HTTP(s) |
-| Friendly Name | `bilikha-api` |
-| URL | `https://<your-service>.onrender.com/api/v1/health/ready` |
-| Monitoring Interval | 5 minutes |
+  An earlier draft of this plan said 750 free instance-hours a month "covers one
+  service running continuously". It does, with six hours to spare in a 31-day
+  month — and going over does not throttle, it **suspends every free service in
+  the workspace until the next calendar month**. A ten-minute ping running
+  around the clock would have taken Bilikha down about four weeks after it was
+  added, on a date nobody would have connected to it. Waking hours cost roughly
+  527 hours a month and leave 223 in hand.
 
-This does two jobs: prevents Render's 15-minute idle spin-down, and tells you
-when the API is down. Using `/health/ready` rather than `/health` means a query
-reaches Postgres on every check, which also keeps Supabase from pausing after 7
-days.
+  Someone opening Bilikha at three in the morning still waits for the cold
+  start. That is the trade, and it is the right one.
 
-One service pinged continuously uses about 744 of Render's 750 free
-instance-hours per month. That fits — but it means you cannot run a second free
-web service continuously on the same account.
-
-- [ ] **Verify.** The monitor reports **Up** within ten minutes.
+- [x] **Verify.** `/api/v1/health/ready` answered `{"status":"ready",
+  "database":"connected"}` — **in 32.5 seconds**, measured on an idle instance.
+  That is a real cold start, and it is also why the session bootstrap now allows
+  75 seconds rather than the client's usual 15 (see
+  `frontend/src/features/auth/api.ts`): at 15 seconds the request aborted and
+  the app concluded there was no session.
 
 ### Step 6.2 — Confirm cold starts are gone
 
