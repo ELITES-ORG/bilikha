@@ -143,22 +143,35 @@ control that actually installs cannot live in the page until Phase 2 — see ste
 
 ### How the icons were made, since it will come up again
 
-The source is `frontend/public/logo.png`, 1024px, with the artwork off-centre
-inside it — ink bounds `214,94 646x759`. Centring the *file* would push the bird
-off to one side of a circular mask, so the icons centre the *ink*: scaled to 82%
-of the square for `any`, 62% for `maskable`, whose outer fifth may be cropped to
-any shape.
+A white **B** in Fraunces Semibold — the wordmark's own face, at the wordmark's
+own weight — on `#14110e`, the app's black. Rendered from the font rather than
+drawn, so it stays correct if the type ever changes.
 
-They are rendered with `scripts/screenshot.mjs` at `dsf: 1`, which this work
-added — the default 2 is right for screenshots, which are pictures of something,
-and wrong when the output *is* the artefact.
+**The corner radius is not the same on all three, and that is deliberate:**
 
-One trap cost most of the time and is worth writing down: the harness emulates a
-mobile device below 700px wide, and a page with **no viewport meta** is laid out
-at Chrome's 980px default and scaled to fit. Every icon came out at 0.52 scale,
-up in the corner, and both a canvas and a CSS implementation produced identical
-wrong output — which is what finally pointed at the capture rather than the
-drawing. Measure the output, do not look at it: ink centre should be 0.5, 0.5.
+| Purpose | Radius | Why |
+|---|---|---|
+| `any` | 22% | Nothing masks these — desktop install dialogs, the taskbar — so the radius has to be in the image |
+| `maskable` | none | The launcher cuts its own shape. A baked radius shows as a rounded square floating inside the circle, with background corners around it |
+| `apple-touch-icon` | none | iOS applies its own superellipse; a baked radius double-rounds it |
+
+The maskable pair is also drawn smaller, to sit inside the safe zone — the outer
+fifth of a maskable icon can be cut away.
+
+Two things that cost time and are worth writing down:
+
+**Measure the output, do not look at it.** A "B" has unequal side bearings and
+lands right of the box it is laid out in — 0.7% right and 0.4% low here, which
+is invisible by eye and obvious in the numbers. The offsets in the generator are
+measured, not chosen.
+
+**The harness emulates a mobile device below 700px wide, so a page with no
+viewport meta is laid out at Chrome's 980px default and scaled to fit.** Every
+icon in the first attempt came out at 0.52 scale, up in the corner, and both a
+canvas and a CSS implementation produced identical wrong output — which is what
+finally pointed at the capture rather than the drawing. `scripts/screenshot.mjs`
+also gained `dsf`: the default 2 is right for screenshots, which are pictures of
+something, and wrong when the output *is* the artefact.
 
 ---
 
