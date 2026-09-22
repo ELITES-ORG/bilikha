@@ -41,3 +41,30 @@ export const fixedComposerAboveNav = [
   'max-sm:border-t max-sm:border-hairline max-sm:bg-paper max-sm:px-3 max-sm:py-2',
   'sm:static sm:mt-8 sm:border-t sm:border-hairline sm:bg-transparent sm:px-0 sm:pt-6 sm:pb-0',
 ].join(' ');
+
+/**
+ * Offer detail actions on phones. Same occupied height as the conversation
+ * composer estimate (~3.75rem): Inquire + Save in one dock row.
+ *
+ * Signed-in visitors also clear BottomNav; guests only clear the home indicator
+ * because BottomNav does not render for them.
+ */
+export const pbOfferActionDock =
+  'max-sm:pb-[calc(var(--bottom-nav-h)+1px+env(safe-area-inset-bottom,0px)+3.75rem)] sm:pb-0';
+
+export const pbOfferActionDockGuest =
+  'max-sm:pb-[calc(env(safe-area-inset-bottom,0px)+3.75rem)] sm:pb-0';
+
+export const fixedOfferActionDockAboveNav = [
+  'max-sm:fixed max-sm:inset-x-0 max-sm:z-30',
+  'max-sm:bottom-[calc(var(--bottom-nav-h)+1px+env(safe-area-inset-bottom,0px))]',
+  'max-sm:border-t max-sm:border-hairline max-sm:bg-paper/90 max-sm:px-3 max-sm:py-2 max-sm:backdrop-blur-sm',
+  'sm:static sm:mt-10 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none',
+].join(' ');
+
+export const fixedOfferActionDockGuest = [
+  'max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30',
+  'max-sm:border-t max-sm:border-hairline max-sm:bg-paper/90',
+  'max-sm:px-3 max-sm:pt-2 max-sm:pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] max-sm:backdrop-blur-sm',
+  'sm:static sm:mt-10 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none',
+].join(' ');
