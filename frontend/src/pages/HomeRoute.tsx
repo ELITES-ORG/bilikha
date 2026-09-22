@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { RouteFallback } from '@/components/RouteFallback';
 import { useCurrentUser } from '@/features/auth/api';
 import { HomePage } from '@/pages/HomePage';
 
@@ -19,9 +20,11 @@ import { HomePage } from '@/pages/HomePage';
 export function HomeRoute() {
   const { data: user, isPending } = useCurrentUser();
 
-  // Render nothing while resolving, as RequireAuth does. Showing the landing
-  // page first would flash it at every signed-in user on every visit to `/`.
-  if (isPending) return null;
+  // Not the landing page while resolving — that would flash the pitch at every
+  // signed-in user on every visit to `/`. Not nothing either: this returned
+  // null, and on a cold API that is a blank screen with no boot animation left
+  // to cover it, which is exactly what it looked like from Biliran.
+  if (isPending) return <RouteFallback chrome={false} slowAfterMs={8000} />;
 
   if (user) return <Navigate to="/directory" replace />;
 
