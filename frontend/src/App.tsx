@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
+import { NewBuildNotice } from '@/components/NewBuildNotice';
 import { RouteFallback } from '@/components/RouteFallback';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
@@ -296,6 +297,7 @@ export default function App() {
             </Routes>
           </Suspense>
           <BottomNav />
+          <NewBuildNotice />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>

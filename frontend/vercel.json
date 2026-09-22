@@ -6,7 +6,7 @@
       "destination": "https://bilikha.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
   ],
