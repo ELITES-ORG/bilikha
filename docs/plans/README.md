@@ -97,6 +97,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0035](./0035-the-layout-pass-left-nine-things-open.md) | The layout pass left nine things open | Complete |
 | [0036](./0036-the-pwa.md) | The PWA | Phase 2 complete |
 | [0037](./0037-offer-detail-puts-proof-and-action-first.md) | Offer detail puts proof and action first | Complete |
+| [0038](./0038-the-offer-card-shows-a-rating-once-there-is-one.md) | The offer card shows a rating once there is one | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

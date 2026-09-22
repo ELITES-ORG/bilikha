@@ -4,6 +4,7 @@ import { Bookmark, BookmarkCheck, ChevronRight, MapPin } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Badge, Button, ButtonLink, Container, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
+import { RatingScore } from '@/features/ratings/components/RatingScore';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useEnsureConversation } from '@/features/conversations/api';
 import { OfferGallery } from '@/features/offers/OfferGallery';
@@ -208,6 +209,18 @@ export function OfferDetailPage() {
                       <Badge tone="accent">Nearby</Badge>
                     )}
                   </span>
+                  {/*
+                    Only when there is one. Every creative on the platform has
+                    no ratings today, and "No ratings yet" under each of them
+                    would make unrated the loudest fact about a person at the
+                    moment somebody decides whether to inquire — which they
+                    cannot fix without first being hired (plan 0038 rule 2).
+                  */}
+                  {offer.data.creative.rating.count > 0 && (
+                    <span className="mt-1 block">
+                      <RatingScore summary={offer.data.creative.rating} size="sm" />
+                    </span>
+                  )}
                 </span>
                 <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
               </Link>

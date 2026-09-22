@@ -17,6 +17,7 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { assertOwnOfferKey } from '../media/media.service.js';
+import { summaryForProfile } from '../ratings/ratings.service.js';
 import type { ListOffersQuery, OfferBody, PatchOfferBody } from './offers.schema.js';
 
 export type {
@@ -551,7 +552,14 @@ export async function getPublishedOfferById(
     .limit(1);
   if (!row) throw AppError.notFound('No such offer.');
 
-  const imageMap = await imagesForOffers([row.id]);
+  // One offer means one creative, so this is a single extra aggregate rather
+  // than a query per row — which is exactly why the directory card does not
+  // carry a summary (plan 0038).
+  const [imageMap, rating] = await Promise.all([
+    imagesForOffers([row.id]),
+    summaryForProfile(row.creativeSlug),
+  ]);
+
   return {
     id: row.id,
     title: row.title,
@@ -567,6 +575,7 @@ export async function getPublishedOfferById(
       displayName: row.creativeDisplayName,
       municipality: row.municipality,
       avatarUrl: row.avatarKey && isStorageConfigured() ? publicUrl(row.avatarKey) : null,
+      rating,
       ...(viewerMunicipalityId
         ? { isNearby: row.municipalityId === viewerMunicipalityId }
         : {}),

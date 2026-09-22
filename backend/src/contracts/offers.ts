@@ -3,7 +3,13 @@
  * embed (ADR 0037). One nested `subdomain` object — the flat
  * `subdomainSlug`/`subdomainName` split blanked the public profile for every
  * creative who had an offer.
+ *
+ * The type-only import of the sibling ratings contract is what ADR 0037 allows
+ * and nothing more: the detail's creative carries a rating summary so the page
+ * needs one request rather than two.
  */
+
+import type { RatingSummary } from './ratings.js';
 
 export interface OfferSubdomain {
   slug: string;
@@ -37,6 +43,19 @@ export interface PublishedOfferCreative {
   isNearby?: boolean;
 }
 
+/**
+ * The detail's creative, which also carries the rating summary.
+ *
+ * Deliberately a separate type rather than an optional field on the card's
+ * creative. A summary is one aggregate per creative, so putting it on the card
+ * would mean one query per row of the directory — the hot path — to render
+ * something that is empty for everyone today. Detail only, where there is
+ * exactly one creative.
+ */
+export interface PublishedOfferDetailCreative extends PublishedOfferCreative {
+  rating: RatingSummary;
+}
+
 export interface PublishedOfferCard {
   id: string;
   title: string;
@@ -59,7 +78,7 @@ export interface PublishedOfferDetail {
   updatedAt: string;
   subdomain: OfferSubdomain;
   images: OfferImage[];
-  creative: PublishedOfferCreative;
+  creative: PublishedOfferDetailCreative;
 }
 
 export interface PublishedOfferListResult {
