@@ -6,6 +6,7 @@ import { NewBuildNotice } from '@/components/NewBuildNotice';
 import { RouteFallback } from '@/components/RouteFallback';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
+import { useRememberSession } from '@/features/auth/api';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 
@@ -110,6 +111,15 @@ const ProfileSubmittedPage = lazy(() =>
     default: m.ProfileSubmittedPage,
   })),
 );
+
+/**
+ * Mounted inside the providers so it can watch the session query. It renders
+ * nothing; it only keeps the device hint in step with the server's answer.
+ */
+function SessionMemory() {
+  useRememberSession();
+  return null;
+}
 
 export default function App() {
   return (
@@ -298,6 +308,7 @@ export default function App() {
           </Suspense>
           <BottomNav />
           <NewBuildNotice />
+          <SessionMemory />
         </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
