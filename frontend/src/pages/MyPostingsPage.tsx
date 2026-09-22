@@ -7,7 +7,6 @@ import {
   ButtonLink,
   Container,
   EmptyState,
-  SectionHeading,
   Skeleton,
   useToast,
 } from '@/components/ui';
@@ -22,6 +21,7 @@ import {
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
+import { AccountPageHeading } from './account/AccountPageHeading';
 
 function postingStatusTone(status: string): 'neutral' | 'warning' {
   // Expired lapsed without a deliberate close — it should not look like Closed.
@@ -59,14 +59,17 @@ export function MyPostingsPage() {
       <RegistrationStatusBanner />
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <SectionHeading
-            eyebrow="Hiring"
-            title="Your postings"
-            description="Work you want done. Close a posting when it is filled or no longer needed."
-            action={
-              populated ? <ButtonLink to="/postings/new">Post work</ButtonLink> : undefined
-            }
-          />
+          <AccountPageHeading title="Your postings" />
+          <p className="mt-3 max-w-xl text-md text-ink-muted">
+            Work you want done. Close a posting when it is filled or no longer needed.
+          </p>
+
+          {/* The empty state carries its own, so this is still one button. */}
+          {populated && (
+            <div className="mt-6">
+              <ButtonLink to="/postings/new">Post work</ButtonLink>
+            </div>
+          )}
 
           <div className="mt-10">
             {list.isPending && <Skeleton className="h-40 w-full" />}
