@@ -1,7 +1,7 @@
 # 0034. The privacy notice and terms do not exist
 
-- **Status:** Ready — **live defect, not gated on the layout review**
-- **Owner:** unassigned
+- **Status:** Complete — pages live, text written from the code, **legal review outstanding**
+- **Owner:** done 2026-09-22
 - **Related:** [constraint 7](../explanation/constraints.md) ·
   [plan 0001](./0001-registration-and-auth.md) (where the consent checkboxes were
   built) · [plan 0033](./0033-layout-and-grouping-review.md) (where this was
@@ -75,8 +75,8 @@ across `backend/src/modules` — there is no endpoint for either.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The pages exist | 0 / 2 | Not started |
-| 2. Reachable | 0 / 2 | Not started |
+| 1. The pages exist | 2 / 2 | Done |
+| 2. Reachable | 2 / 2 | Done |
 
 ---
 
@@ -84,16 +84,16 @@ across `backend/src/modules` — there is no endpoint for either.
 
 ### Step 1.1 — Routes and components
 
-- [ ] **Action.** `/privacy` and `/terms`, public, rendering whatever content
+- [x] **Action.** `/privacy` and `/terms`, public, rendering whatever content
   the registrant supplies. If none is supplied yet, a plainly-marked holding page
   naming who to contact and when it is expected — never prose that impersonates a
   finished notice (rule 1).
-- [ ] **Verify.** Both load signed out, and the registration checkbox link
+- [x] **Verify.** Both load signed out, and the registration checkbox link
   reaches the privacy page rather than the 404.
 
 ### Step 1.2 — Say what is collected
 
-- [ ] **Action.** Whatever the final text, the privacy page has to cover what
+- [x] **Action.** Whatever the final text, the privacy page has to cover what
   [constraint 7](../explanation/constraints.md) names: what is collected, what is
   published, and how to get it deleted or exported. The second of those is
   already answerable — plan 0033's profile review established exactly which
@@ -105,15 +105,50 @@ across `backend/src/modules` — there is no endpoint for either.
 
 ### Step 2.1 — Not only from a checkbox
 
-- [ ] **Action.** Reachable from the landing page and from the account area, not
+- [x] **Action.** Reachable from the landing page and from the account area, not
   only mid-registration.
 
 ### Step 2.2 — Full pass
 
-- [ ] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
+- [x] **Verify.** `npm run typecheck`, `lint`, `test`, `build`, `docs:check` all
   exit 0, CI green. Both routes load signed out at 375px and desktop.
 
 ---
+
+## What was actually written, and what is still owed
+
+Rule 1 says not to invent legal text. The registrant asked for the words to be
+written from what the project already does, which is a different thing, and that
+is what these pages are: **every factual claim was read off the code, not
+adapted from a template.**
+
+- The collected fields are `registerSchema` in
+  `backend/src/modules/auth/auth.schema.ts`, field for field.
+- The published fields are the `PublicProfile` contract, and the claim that all
+  four name parts appear is `formatFullName` in `profiles.service.ts`.
+- The sentences saying a thing is *not* published are true because no endpoint
+  returns it — checked against every `publicUrl` and profile call site.
+- The cookie paragraph is the `express-session` config in `app.ts`: one cookie,
+  `sameSite: 'lax'`, `httpOnly`, 30 days from `SESSION_TTL_DAYS`.
+- "No analytics, no tracker" is a grep for the usual suspects across the
+  frontend, which finds nothing.
+- The rights section says plainly that export and deletion are **handled by
+  request** rather than implying a button that does not exist.
+
+**What is still owed, and it is not cosmetic:**
+
+1. **A contact address.** `LEGAL_CONTACT` in `frontend/src/lib/legal.ts` is
+   `null`, and both pages say the channel is being set up rather than printing
+   an address that bounces. RA 10173 expects a data subject to have somewhere to
+   write. Setting that constant completes both pages.
+2. **Review by someone qualified.** These are accurate about the system. Whether
+   they are sufficient under RA 10173 — and whether NPC registration as a
+   personal information controller is required — is not an engineering question.
+
+`CONSENT_VERSION` was deliberately **not** bumped. These documents describe what
+the service has done since 2026-09-15 rather than introducing new terms, so
+re-stamping every stored consent record would misstate what happened. If a
+lawyer changes the substance, that is the moment to bump it and re-prompt.
 
 ## Acceptance
 

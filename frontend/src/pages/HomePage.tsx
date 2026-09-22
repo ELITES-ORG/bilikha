@@ -249,9 +249,19 @@ function SiteFooter() {
             A registry of creative work in the province of Biliran.
           </p>
         </div>
-        <p className="text-xs text-clay-400">
-          Creative domains follow RA 11904
-        </p>
+        <div className="flex flex-col gap-2 sm:items-end">
+          <p className="flex gap-4 text-sm">
+            <Link to="/privacy" className="link-underline text-ink-muted">
+              Privacy notice
+            </Link>
+            <Link to="/terms" className="link-underline text-ink-muted">
+              Terms of use
+            </Link>
+          </p>
+          <p className="text-xs text-clay-400">
+            Creative domains follow RA 11904
+          </p>
+        </div>
       </Container>
     </footer>
   );

@@ -50,6 +50,17 @@ const AdminProfilePage = lazy(() =>
   import('@/pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })),
 );
 
+/*
+ * Lazy: read once, by a minority of visitors, and long. Exactly what plan 0031
+ * splits — nobody pays for the privacy notice on their way to the directory.
+ */
+const PrivacyPage = lazy(() =>
+  import('@/pages/legal/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+);
+const TermsPage = lazy(() =>
+  import('@/pages/legal/TermsPage').then((m) => ({ default: m.TermsPage })),
+);
+
 const AccountPage = lazy(() =>
   import('@/pages/account/AccountPage').then((m) => ({ default: m.AccountPage })),
 );
@@ -255,6 +266,12 @@ export default function App() {
                 }
               />
               <Route path="/login" element={<LoginPage />} />
+              {/*
+                Public on purpose: registration asks you to accept both before
+                you have an account, so both must be readable without one.
+              */}
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
               {/*
                 RequireAdmin wraps the lazy layout so a bounce never downloads
                 the admin chunk.

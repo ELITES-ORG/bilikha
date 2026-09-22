@@ -319,6 +319,22 @@ export function AccountPage() {
                   </ButtonLink>
                 </section>
               )}
+
+              {/*
+                Not a fourth hub group: these are two documents to read, not
+                settings to change, and giving them the weight of Profile or
+                Security would misstate what they are. They sit below the
+                groups, the way a footer does, so the account area has them
+                without registration being the only place they are linked.
+              */}
+              <p className="mt-12 flex gap-4 border-t border-hairline pt-6 text-sm">
+                <Link to="/privacy" className="link-underline text-ink-muted">
+                  Privacy notice
+                </Link>
+                <Link to="/terms" className="link-underline text-ink-muted">
+                  Terms of use
+                </Link>
+              </p>
             </>
           )}
         </Container>
