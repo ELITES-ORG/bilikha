@@ -13,8 +13,9 @@ Run from the repository root.
 
 | Command | Does | Use when |
 |---|---|---|
-| `npm run setup` | Creates missing `.env` files, then installs both services | First clone; after a dependency change |
+| `npm run setup` | Creates missing `.env` files, installs the git hooks, then installs both services | First clone; after a dependency change |
 | `npm run setup:env` | Creates missing `.env` files from `.env.example`. Never overwrites | You deleted a `.env`, or a new variable was added |
+| `npm run hooks:install` | Points `core.hooksPath` at `.githooks/`. Run by `setup` | Hooks are not firing; you cloned without running setup |
 | `npm run db:up` | Starts the Postgres container | Start of a work session |
 | `npm run db:down` | Stops it, keeps the data volume | End of a session |
 | `npm run db:reset` | **Destroys the volume** and restarts clean | Schema is tangled locally; you want a known state |
@@ -26,6 +27,7 @@ Run from the repository root.
 | `npm run lint` | oxlint over the frontend | Before committing |
 | `npm run typecheck` | `tsc` over both services, no emit | Before committing |
 | `npm run docs:check` | Verifies every relative link in the docs resolves | After editing documentation |
+| `npm run check:commits` | Rejects AI attribution in `origin/main..HEAD`. Runs in CI too — see [ADR 0041](../decisions/0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md) | Before pushing work an agent committed |
 
 `db:reset` deletes all local data. It does not touch anything deployed, but you
 will re-run migrate and seed afterwards.
@@ -137,6 +139,11 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+The `commit-msg` hook runs on its own and rejects a message that credits an AI
+tool. If it fires, delete the offending line and commit again — do not reach for
+`--no-verify`, because CI runs the same check and a trailer that reaches GitHub
+once is credited there permanently.
 
 **Local database is a mess**
 

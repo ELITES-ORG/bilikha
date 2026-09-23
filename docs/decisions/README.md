@@ -77,3 +77,4 @@ Number sequentially. Never renumber.
 | [0038](./0038-mode-is-a-role-you-are-in-not-a-filter.md) | Mode is a role you are in, not a filter you apply | Accepted |
 | [0039](./0039-the-creative-dashboard-answers-what-to-do-next.md) | A creative's dashboard answers what to do next | Accepted |
 | [0040](./0040-a-deploy-must-not-break-an-open-tab.md) | A deploy must not break an open tab | Accepted |
+| [0041](./0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md) | AI attribution is blocked by a check, not by a rule | Accepted |

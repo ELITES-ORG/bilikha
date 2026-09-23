@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Blocks a commit whose message credits an AI tool.
+#
+# Version-controlled rather than left in .git/hooks, which is per-clone and
+# cannot be shared. `npm run setup` points core.hooksPath here; a clone that
+# never ran setup has no hook, which is why CI runs the same check.
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+# A machine without node on PATH should not be unable to commit. CI is the
+# backstop for that case.
+if ! command -v node >/dev/null 2>&1; then
+  echo "commit-msg: node not found, skipping the attribution check" >&2
+  exit 0
+fi
+
+exec node "$root/scripts/check-commit-msg.mjs" "$1"

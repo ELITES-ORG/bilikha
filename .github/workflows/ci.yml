@@ -35,6 +35,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The commit-message check needs history to resolve a range
+          # against. Nothing else here reads past the tip.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
@@ -43,6 +47,33 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
+
+      # The commit-msg hook only protects clones that ran `npm run setup`. An
+      # agent pushing from its own environment is exactly how the Cursor
+      # trailers reached this repository, so the real enforcement is here.
+      # See ADR 0041.
+      - name: Commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            range="$BASE..$PR_HEAD"
+          elif git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE..$HEAD_SHA"
+          elif git rev-parse -q --verify "$HEAD_SHA^" >/dev/null; then
+            # A new branch reports an all-zero `before`. Check its tip, which is
+            # the commit that would otherwise slip through unexamined.
+            range="$HEAD_SHA~1..$HEAD_SHA"
+          else
+            range="$HEAD_SHA"  # root commit, nothing to diff against
+          fi
+
+          echo "checking $range"
+          node scripts/check-commit-msg.mjs --range "$range"
 
       - name: Install backend
         run: npm ci --prefix backend

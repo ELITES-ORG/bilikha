@@ -4,8 +4,9 @@
   "private": true,
   "description": "Bilikha — Biliran Creative Industries Registry",
   "scripts": {
-    "setup": "npm run setup:env && npm --prefix backend install && npm --prefix frontend install",
+    "setup": "npm run setup:env && npm run hooks:install && npm --prefix backend install && npm --prefix frontend install",
     "setup:env": "node scripts/setup-env.mjs",
+    "hooks:install": "node scripts/install-git-hooks.mjs",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d",
@@ -17,6 +18,7 @@
     "lint": "npm --prefix backend run lint && npm --prefix frontend run lint",
     "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
     "test": "npm --prefix backend run test && npm --prefix frontend run test",
-    "docs:check": "node scripts/check-doc-links.mjs && node scripts/check-plan-status.mjs"
+    "docs:check": "node scripts/check-doc-links.mjs && node scripts/check-plan-status.mjs",
+    "check:commits": "node scripts/check-commit-msg.mjs --range origin/main..HEAD"
   }
 }

@@ -94,6 +94,14 @@ Add username uniqueness check to registration
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
+**This is enforced, not merely requested.** A `commit-msg` hook rejects the
+commit locally, and CI runs the same check on every push — see
+[ADR 0041](./docs/decisions/0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md).
+Stripping the trailer in a later amend is not a fix: GitHub credits a
+co-author the moment it first receives the commit and does not retract it when
+that commit is force-pushed away. Bilikha's contributor list carries a bot
+account for exactly this reason.
+
 ---
 
 ## Other standing rules
