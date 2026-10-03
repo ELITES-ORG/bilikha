@@ -131,6 +131,13 @@ rejects a reasonable alternative, gets an entry in
 `npm run docs:check`. Do not report work complete on the basis that it looks
 right.
 
+**Release only when reyxdz asks, and only by the procedure** in
+[`docs/guides/release-to-production.md`](./docs/guides/release-to-production.md):
+show what will ship, confirm CI is green on `main`, push `origin/main` to
+`production`, then confirm the release guard, the Vercel production build and
+the site's health. Never open a pull request into `production`, never force,
+never push any other ref.
+
 **Every pull request into `main` is audited before it merges, and only reyxdz
 merges.** Fill in the template GitHub pre-fills; the `pr-audit` check fails the
 pull request until it is complete. What each part is for, and what the audit

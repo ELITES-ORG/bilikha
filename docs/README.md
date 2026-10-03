@@ -62,6 +62,7 @@ Different categories rot at different speeds. Treat them accordingly.
 - [Extend the taxonomy](./guides/extend-the-taxonomy.md)
 - [Check a screen in a browser](./guides/check-a-screen-in-a-browser.md)
 - [Open a pull request](./guides/open-a-pull-request.md) — what the pre-merge audit needs
+- [Release to production](./guides/release-to-production.md) — staging to production, and rolling back
 
 **Reference**
 - [API](./reference/api.md)

@@ -28,8 +28,10 @@ an empty database.
 
 ### Releasing
 
-Every merge to `main` deploys to staging. Production changes only by
-fast-forwarding the `production` branch to a commit already on `main`:
+The full procedure — checks before, the command, what success and failure look
+like, rolling back — is [Release to production](../guides/release-to-production.md).
+In short: every merge to `main` deploys to staging, and production changes only
+by fast-forwarding the `production` branch to a commit already on `main`:
 
 ```bash
 git fetch origin
