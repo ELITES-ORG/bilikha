@@ -222,4 +222,5 @@ git fetch origin
 git push origin origin/main:production
 ```
 
-See [deployments](../reference/deployments.md#releasing).
+The whole procedure, with what to check and how to roll back:
+[Release to production](./release-to-production.md).
