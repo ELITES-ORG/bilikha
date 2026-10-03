@@ -21,6 +21,7 @@
     "test:scripts": "node --test scripts/*.test.mjs",
     "docs:check": "node scripts/check-doc-links.mjs && node scripts/check-plan-status.mjs",
     "check:commits": "node scripts/check-commit-msg.mjs --range origin/main..HEAD",
-    "check:pr": "node scripts/check-pr.mjs --base origin/main --head HEAD"
+    "check:pr": "node scripts/check-pr.mjs --base origin/main --head HEAD",
+    "check:bundle": "node scripts/check-bundle-size.mjs"
   }
 }

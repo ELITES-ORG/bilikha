@@ -95,5 +95,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # What the first visit downloads is a product constraint here: budget
+      # Android over prepaid data. Fails when it grows past
+      # frontend/bundle-budget.json; pr-audit asks for a reason when the budget
+      # itself goes up. See ADR 0043.
+      - name: Bundle size
+        run: npm run check:bundle
+
       - name: Docs
         run: npm run docs:check

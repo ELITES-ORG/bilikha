@@ -29,6 +29,7 @@ Run from the repository root.
 | `npm run docs:check` | Verifies every relative link in the docs resolves | After editing documentation |
 | `npm run check:commits` | Rejects AI attribution in `origin/main..HEAD`. Runs in CI too — see [ADR 0041](../decisions/0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md) | Before pushing work an agent committed |
 | `npm run check:pr -- --body-file pr.md` | Runs the `pr-audit` check locally: the description in `pr.md` against `origin/main...HEAD` — see [Open a pull request](../guides/open-a-pull-request.md) | Before opening a pull request |
+| `npm run check:bundle` | Measures the first page load (gzip) against `frontend/bundle-budget.json`. Needs `npm run build` first. Runs in CI | Before pushing a change that adds to the first page load |
 | `npm run test:scripts` | Tests the repo tooling in `scripts/`. Part of `npm test` | After changing a script |
 
 `db:reset` deletes all local data. It does not touch anything deployed, but you

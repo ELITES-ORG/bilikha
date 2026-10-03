@@ -49,6 +49,8 @@ const EXCEPTIONS = {
   migration: 'No migration',
   envDocs: 'No env docs',
   lockfile: 'Lockfile only',
+  tooling: 'Tooling change',
+  budget: 'Budget raised',
 };
 
 /** Paths that must never be committed. No exception: delete them. */
@@ -63,6 +65,40 @@ const isTest = (path) => /\.test\.(ts|tsx|mjs|js)$/.test(path) || path.startsWit
 const isAppCode = (path) => /^(backend|frontend)\/src\/.+\.(ts|tsx)$/.test(path) && !isTest(path);
 const isUi = (path) => /^frontend\/src\/.+\.(tsx|css)$/.test(path) && !isTest(path);
 const isRoutes = (path) => /^backend\/src\/(.+\.routes\.ts|routes\/.+\.ts)$/.test(path) && !isTest(path);
+
+/**
+ * The repository's own machinery: agent configuration and instructions, git
+ * hooks, CI, repo scripts, and the root package.json that runs them. A change
+ * here alters how everyone works, so it should not ride along inside a feature.
+ * Found in #11, where a local tool's hooks, MCP config and a CLAUDE.md section
+ * arrived inside a restyle.
+ */
+const isTooling = (path) =>
+  /^(\.claude\/|\.mcp\.json$|\.githooks\/|\.github\/|scripts\/|CLAUDE\.md$|package\.json$|CODEOWNERS$)/.test(path);
+const isProduct = (path) =>
+  /^(backend\/(src|drizzle)\/|frontend\/(src|public)\/|frontend\/index\.html$)/.test(path);
+
+/** Sections whose ticked boxes are claims that something was done. */
+const CLAIM_SECTIONS = ['Acceptance criteria', 'States checked', 'Rollout', 'Checklist'];
+
+/**
+ * A ticked box whose own note says the thing was not done. Deliberately a short
+ * list of unambiguous phrasings rather than anything clever — it catches the
+ * honest contradiction ("signed in not yet checked"), and the audit catches the
+ * rest. Found in #11, where every state was ticked and half the notes said
+ * otherwise.
+ */
+const NOT_DONE =
+  /\bnot (?:yet )?(?:been )?(?:checked|tested|verified|seen|opened|captured|looked at|run|tried)\b|\bstill (?:needs?|to do)\b|\bTODO\b|\bTBD\b/i;
+
+/**
+ * Fields npm uses to pick a platform's native binary. An npm that does not know
+ * one drops it when it rewrites the lockfile, and the diff looks harmless — #11
+ * stripped `libc` from 26 entries that way.
+ */
+const PLATFORM_FIELDS = ['libc', 'os', 'cpu'];
+
+export const BUDGET_FILE = 'frontend/bundle-budget.json';
 
 /** Removes template guidance so an untouched template reads as empty. */
 function stripComments(body) {
@@ -104,10 +140,12 @@ function exceptionReason(body, label) {
 }
 
 /**
- * The whole rule set, pure so it can be tested: a description and a list of
- * `{ status, path }` from `git diff --name-status`, in; a list of problems out.
+ * The whole rule set, pure so it can be tested: a description, a list of
+ * `{ status, path }` from `git diff --name-status`, and — for the few rules that
+ * read inside a file — `contents[path] = { before, after }`; a list of problems
+ * out.
  */
-export function auditPullRequest({ body, files }) {
+export function auditPullRequest({ body, files, contents = {} }) {
   const problems = [];
   const text = stripComments(body ?? '');
   const byTitle = sections(text);
@@ -146,6 +184,19 @@ export function auditPullRequest({ body, files }) {
     const content = byTitle.get(title.toLowerCase());
     if (content && /^\s*- \[ \]/m.test(content)) {
       problems.push(`Description: "${title}" has unticked boxes. Do the work, or explain in "Known gaps and risks".`);
+    }
+  }
+
+  for (const title of CLAIM_SECTIONS) {
+    const content = byTitle.get(title.toLowerCase()) ?? '';
+    for (const line of content.split('\n')) {
+      if (/^\s*- \[[xX]\]/.test(line) && NOT_DONE.test(line)) {
+        const claim = line.replace(/^\s*- \[[xX]\]\s*/, '').trim();
+        problems.push(
+          `Description: "${title}" ticks a box its own note says was not done — "${claim.slice(0, 120)}". ` +
+            'Untick it, or do it.',
+        );
+      }
     }
   }
 
@@ -188,6 +239,52 @@ export function auditPullRequest({ body, files }) {
     }
   }
 
+  for (const lock of changed.filter((path) => path.endsWith('package-lock.json'))) {
+    const { before, after } = contents[lock] ?? {};
+    if (before === undefined || after === undefined) continue;
+    let stripped;
+    try {
+      stripped = strippedPlatformFields(JSON.parse(before), JSON.parse(after));
+    } catch {
+      problems.push(`Diff: ${lock} is not valid JSON.`);
+      continue;
+    }
+    if (stripped.length > 0) {
+      const names = stripped.slice(0, 3).map(({ name, field }) => `${name} (${field})`).join(', ');
+      problems.push(
+        `Diff: ${lock} drops platform fields from ${stripped.length} package(s) that are still installed — ` +
+          `${names}${stripped.length > 3 ? ', …' : ''}. Your npm rewrote the lockfile without them; ` +
+          'restore it from main and apply only the dependency change.',
+      );
+    }
+  }
+
+  const tooling = changed.filter(isTooling);
+  if (tooling.length > 0 && changed.some(isProduct) && !exceptionReason(text, EXCEPTIONS.tooling)) {
+    problems.push(
+      `Diff: this changes the repository's own tooling (${tooling.slice(0, 4).join(', ')}` +
+        `${tooling.length > 4 ? ', …' : ''}) alongside the product. Move it to its own pull request, ` +
+        `or add "${EXCEPTIONS.tooling}: <why it belongs here>".`,
+    );
+  }
+
+  if (contents[BUDGET_FILE]) {
+    const { before, after } = contents[BUDGET_FILE];
+    if (before !== undefined && after === undefined) {
+      if (!exceptionReason(text, EXCEPTIONS.budget)) {
+        problems.push(`Diff: ${BUDGET_FILE} is deleted. Keep it, or add "${EXCEPTIONS.budget}: <why>".`);
+      }
+    } else if (before !== undefined && after !== undefined) {
+      const raised = raisedBudgets(before, after);
+      if (raised.length > 0 && !exceptionReason(text, EXCEPTIONS.budget)) {
+        problems.push(
+          `Diff: ${BUDGET_FILE} raises ${raised.join(', ')}. Say why with "${EXCEPTIONS.budget}: <why>" — ` +
+            'what the first page load gained, and why it cannot be lazy-loaded.',
+        );
+      }
+    }
+  }
+
   if (changed.some(isAppCode) && !touched.some(isTest) && !exceptionReason(text, EXCEPTIONS.tests)) {
     problems.push(`Diff: application code changed and no test did. Add a test, or "${EXCEPTIONS.tests}: <why>".`);
   }
@@ -227,6 +324,47 @@ export function auditPullRequest({ body, files }) {
   return problems;
 }
 
+/** Packages present in both lockfiles that had a platform field before and lost it. */
+export function strippedPlatformFields(before, after) {
+  const found = [];
+  for (const [name, entry] of Object.entries(before.packages ?? {})) {
+    const next = after.packages?.[name];
+    if (!next) continue;
+    for (const field of PLATFORM_FIELDS) {
+      if (entry[field] !== undefined && next[field] === undefined) found.push({ name, field });
+    }
+  }
+  return found;
+}
+
+/** Budget keys whose number went up, or that vanished. */
+export function raisedBudgets(beforeText, afterText) {
+  let before;
+  let after;
+  try {
+    before = JSON.parse(beforeText);
+    after = JSON.parse(afterText);
+  } catch {
+    return ['the budget (it is not valid JSON)'];
+  }
+  return Object.keys(before)
+    .filter((key) => typeof before[key] === 'number')
+    .filter((key) => typeof after[key] !== 'number' || after[key] > before[key]);
+}
+
+/** A file's text at a revision, or undefined if it does not exist there. */
+function fileAt(rev, path) {
+  try {
+    return execFileSync('git', ['show', `${rev}:${path}`], {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 /** `git diff --name-status` between the merge base and head, renames as their new path. */
 function changedFiles(base, head) {
   const out = execFileSync('git', ['diff', '--name-status', '--no-renames', `${base}...${head}`], {
@@ -260,7 +398,14 @@ function main() {
   }
 
   const files = changedFiles(base, head);
-  const problems = auditPullRequest({ body, files });
+  const mergeBase = execFileSync('git', ['merge-base', base, head], { encoding: 'utf8' }).trim();
+  const contents = {};
+  for (const { path } of files) {
+    if (path.endsWith('package-lock.json') || path === BUDGET_FILE) {
+      contents[path] = { before: fileAt(mergeBase, path), after: fileAt(head, path) };
+    }
+  }
+  const problems = auditPullRequest({ body, files, contents });
 
   if (problems.length === 0) {
     console.log(`Pull request ready for audit: ${files.length} file(s) checked, description complete.`);

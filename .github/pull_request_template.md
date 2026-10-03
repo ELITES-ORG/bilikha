@@ -70,6 +70,8 @@ No API docs: <why>
 No migration: <why>
 No env docs: <why>
 Lockfile only: <why>
+Tooling change: <why it belongs in this pull request>
+Budget raised: <why the first page load must grow>
 
 Delete this section if there are none. -->
 
