@@ -1,6 +1,6 @@
 # 0039. Staging and production — the current deployment becomes staging
 
-- **Status:** In progress
+- **Status:** Complete except two browser checks — see Progress
 - **Owner:** reyxdz
 - **Related:** [ADR 0042](../decisions/0042-main-is-staging-production-is-a-branch.md) ·
   [plan 0002](./0002-deployment.md) ·
@@ -84,13 +84,13 @@ git fetch origin && git status
 | Phase | Steps | Status |
 |---|---|---|
 | 1. The production branch | 2 / 2 | Done 2026-10-03 |
-| 2. Production database | 3 / 4 | Partial — the bucket (2.3) is proven by the upload in 7.3 |
+| 2. Production database | 4 / 4 | Done 2026-10-03 |
 | 3. Production API | 4 / 4 | Done 2026-10-03 |
-| 4. Staging frontend | 1 / 3 | Partial — CORS update and browser sign-in outstanding |
+| 4. Staging frontend | 3 / 3 | Partial — the browser sign-in on staging is unticked |
 | 5. Move bilikha.vercel.app to production | 2 / 2 | Done 2026-10-03 |
-| 6. Merge the repository changes | 0 / 2 | Not started |
-| 7. Cut over | 0 / 4 | Not started |
-| 8. Tidy up | 0 / 3 | Not started |
+| 6. Merge the repository changes | 2 / 2 | Done 2026-10-03, PR #1 |
+| 7. Cut over | 4 / 4 | Partial — the Safari / iPhone session check is unticked |
+| 8. Tidy up | 3 / 3 | Partial — the staging sign-in after the CORS change is unticked |
 
 ---
 
@@ -163,7 +163,7 @@ non-fast-forward, no bypass actors). Confirmed with
 
 ### Step 2.3 — Create the `media` bucket
 
-- [ ] **Action.** Storage → **New bucket**:
+- [x] **Action.** Storage → **New bucket**:
 
 | Setting | Value |
 |---|---|
@@ -175,7 +175,8 @@ non-fast-forward, no bypass actors). Confirmed with
 The size limit and MIME list are the only enforcement of either rule — see
 [plan 0009 Step 2.1](./0009-bio-avatars-and-portfolio-images.md).
 
-- [ ] **Verify.** `media` is listed and marked Public.
+- [x] **Verify.** `media` is listed and marked Public. Proven 2026-10-03 by the
+  avatar upload in Step 7.3.
 
 ### Step 2.4 — Get the storage credentials
 
@@ -293,11 +294,11 @@ Its production branch defaults to `main`, which is correct: for this project,
 
 ### Step 4.2 — Allow the staging origin on the staging API
 
-- [ ] **Action.** Render → `bilikha` (the original service) → Environment →
+- [x] **Action.** Render → `bilikha` (the original service) → Environment →
   set `CORS_ORIGINS` to
   `https://bilikha.vercel.app,https://bilikha-staging.vercel.app`.
   Both, for now — `bilikha.vercel.app` still calls this API until Phase 7.
-- [ ] **Verify.** The service redeploys and `/api/v1/health/ready` on
+- [x] **Verify.** The service redeploys and `/api/v1/health/ready` on
   `bilikha.onrender.com` returns `ready`.
 
 ### Step 4.3 — Confirm staging works end to end
@@ -365,14 +366,17 @@ The changes: `frontend/vercel.json`, `.github/workflows/keep-awake.yml`,
 [ADR 0042](../decisions/0042-main-is-staging-production-is-a-branch.md), this
 plan, and the documentation.
 
-- [ ] **Action.** Open a pull request into `main` and merge it after CI passes.
-- [ ] **Verify.** CI is green on `main`.
+- [x] **Action.** Open a pull request into `main` and merge it after CI passes.
+- [x] **Verify.** CI is green on `main`.
+
+Done 2026-10-03: [PR #1](https://github.com/ELITES-ORG/bilikha/pull/1), merged
+as `262e1f6`.
 
 ### Step 6.2 — Confirm what moved, and what did not
 
-- [ ] **Verify.** Vercel `bilikha-staging` deployed the merge commit; Vercel
+- [x] **Verify.** Vercel `bilikha-staging` deployed the merge commit; Vercel
   `bilikha` shows the build **skipped** (Ignored Build Step).
-- [ ] **Verify.** Staging carries the new headers; production does not yet:
+- [x] **Verify.** Staging carries the new headers; production does not yet:
 
 ```bash
 curl -sI https://bilikha-staging.vercel.app/ | grep -i x-robots-tag
@@ -380,6 +384,11 @@ curl -sI https://bilikha-staging.vercel.app/ | grep -i x-robots-tag
 curl -s https://bilikha-staging.vercel.app/api/v1/health/ready
 # {"status":"ready","database":"connected"}
 ```
+
+Confirmed 2026-10-03, on the pull request and again on the merge commit:
+`bilikha` reported "Canceled by Ignored Build Step", `bilikha-staging`
+deployed, staging sent `X-Robots-Tag: noindex`, and `bilikha.vercel.app` was
+unchanged.
 
 ---
 
@@ -390,19 +399,22 @@ staging API to production, and from the original data to an empty directory.
 
 ### Step 7.1 — Promote
 
-- [ ] **Action.**
+- [x] **Action.**
 
 ```bash
 git fetch origin
 git push origin origin/main:production
 ```
 
-- [ ] **Verify.** Vercel `bilikha` builds and promotes the new commit; Render
+- [x] **Verify.** Vercel `bilikha` builds and promotes the new commit; Render
   `bilikha-production` deploys it (if `backend/` changed).
+
+Done 2026-10-03: `production` moved `7992593..262e1f6`. No `backend/` change,
+so Render did not redeploy.
 
 ### Step 7.2 — The proxy points at production
 
-- [ ] **Verify.**
+- [x] **Verify.**
 
 ```bash
 curl -s https://bilikha.vercel.app/api/v1/health/ready
@@ -411,30 +423,52 @@ curl -sI https://bilikha.vercel.app/ | grep -i x-robots-tag
 # (no output — production is indexable)
 ```
 
-- [ ] **Verify.** In a browser on `bilikha.vercel.app`, an account that exists
+- [x] **Verify.** In a browser on `bilikha.vercel.app`, an account that exists
   on staging **cannot** sign in. That is the proof the site now talks to the
   production database.
 
+  Proven 2026-10-03 by data rather than a failed sign-in: straight after the
+  push, `bilikha.vercel.app` served 0 creatives and 0 offers while staging
+  still served 3 of each.
+
 ### Step 7.3 — Sessions survive on production
 
-- [ ] **Action.** Register a new account on `bilikha.vercel.app`.
+- [x] **Action.** Register a new account on `bilikha.vercel.app`.
 - [ ] **Verify.** Reload the page: still signed in. Repeat once in Safari or on
   an iPhone, as plan 0002 Step 5.4 requires.
-- [ ] **Verify.** Upload an avatar. It appears, and its image URL points at the
+- [x] **Verify.** Upload an avatar. It appears, and its image URL points at the
   **production** Supabase project. This is what proves the `media` bucket from
   Step 2.3.
 
+Done 2026-10-03: account `Hellmerry` registered and signed in, avatar shown;
+production's image URLs are on `zbymjbcbapvmgupkrfer.supabase.co`. The Safari
+/ iPhone half of the session check above was not done.
+
 ### Step 7.4 — Create the first production admin
 
-- [ ] **Action.** From the repo root, with the production connection string
+- [x] **Action.** From the repo root, with the production connection string
   from Step 2.2 (not committed, not saved to `.env`):
 
 ```bash
 DATABASE_URL="<production pooler string>" npm --prefix backend run admin:grant -- <your-username>
 ```
 
-- [ ] **Verify.** Signing out and back in on `bilikha.vercel.app` shows the
+Or, without the connection string leaving the dashboard: Supabase →
+`bilikha-production` → **SQL Editor**, with the username **in lowercase**:
+
+```sql
+update users
+set role = 'admin', updated_at = now()
+where username_normalized = 'your-username'
+returning username, role;
+```
+
+No rows returned means the username did not match — usually a capital letter.
+
+- [x] **Verify.** Signing out and back in on `bilikha.vercel.app` shows the
   admin area.
+
+Done 2026-10-03 through the SQL Editor, for `Hellmerry`.
 
 ---
 
@@ -442,36 +476,38 @@ DATABASE_URL="<production pooler string>" npm --prefix backend run admin:grant -
 
 ### Step 8.1 — Staging no longer serves the production origin
 
-- [ ] **Action.** Render → `bilikha` → `CORS_ORIGINS` =
+- [x] **Action.** Render → `bilikha` → `CORS_ORIGINS` =
   `https://bilikha-staging.vercel.app`.
 - [ ] **Verify.** Staging still signs in.
 
 ### Step 8.2 — The pinger reaches both
 
-- [ ] **Action.** GitHub → Actions → **Keep the API awake** → **Run workflow**,
+- [x] **Action.** GitHub → Actions → **Keep the API awake** → **Run workflow**,
   once with `production` and once with `staging`.
-- [ ] **Verify.** Both runs succeed, logging `production readiness returned 200`
+- [x] **Verify.** Both runs succeed, logging `production readiness returned 200`
   and `staging readiness returned 200`.
+
+Done 2026-10-03 with `gh workflow run keep-awake.yml -f environment=…`.
 
 ### Step 8.3 — Record it
 
-- [ ] **Action.** If any URL differs from the Values table defaults, correct it
+- [x] **Action.** If any URL differs from the Values table defaults, correct it
   in [deployments](../reference/deployments.md) and the README's Live table.
-- [ ] **Verify.** Tick this plan, set its status and Progress table, update
+- [x] **Verify.** Tick this plan, set its status and Progress table, update
   [the plan index](./README.md), and `npm run docs:check` exits 0.
 
 ---
 
 ## Acceptance
 
-- [ ] `bilikha.vercel.app` talks to `bilikha-production.onrender.com`, which
+- [x] `bilikha.vercel.app` talks to `bilikha-production.onrender.com`, which
   talks to the `bilikha-production` Supabase project
-- [ ] `bilikha-staging.vercel.app` talks to `bilikha.onrender.com`, which talks
+- [x] `bilikha-staging.vercel.app` talks to `bilikha.onrender.com`, which talks
   to the original Supabase project, with its data intact
-- [ ] A push to `main` changes staging only
-- [ ] `git push origin origin/main:production` is the only way production
+- [x] A push to `main` changes staging only
+- [x] `git push origin origin/main:production` is the only way production
   changes, and a force-push to `production` is rejected
-- [ ] Staging responses carry `X-Robots-Tag: noindex`; production's do not
+- [x] Staging responses carry `X-Robots-Tag: noindex`; production's do not
 
 ## Follow-ups
 
