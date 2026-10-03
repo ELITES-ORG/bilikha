@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, EllipsisVertical } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Button, Container, Input, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useAgreement } from '@/features/agreements/api';
@@ -272,10 +271,6 @@ export function ConversationPage() {
 
   return (
     <>
-      {/* Desktop keeps the site header; phones use the conversation chrome below. */}
-      <div className="hidden sm:block">
-        <SiteHeader />
-      </div>
       <RegistrationStatusBanner />
 
       {/* Phone chat header: back + avatar + name | ⋮ */}

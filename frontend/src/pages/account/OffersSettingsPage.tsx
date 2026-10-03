@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
 import { TriangleAlert } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useOwnProfile } from '@/features/me/api';
@@ -13,8 +12,7 @@ export function OffersSettingsPage() {
 
   if (profile.isPending) {
     return (
-      <div className="min-h-dvh bg-paper">
-        <SiteHeader />
+      <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
@@ -31,8 +29,7 @@ export function OffersSettingsPage() {
 
   if (profile.isError) {
     return (
-      <div className="min-h-dvh bg-paper">
-        <SiteHeader />
+      <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
@@ -55,8 +52,7 @@ export function OffersSettingsPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

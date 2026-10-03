@@ -30,9 +30,11 @@ export interface SiteHeaderProps {
    * the bar stays white so it recedes behind the content people came for.
    */
   tone?: HeaderTone;
+  /** Appended to the bar, e.g. to hide it on phones where a page has its own. */
+  className?: string;
 }
 
-export function SiteHeader({ tone = 'default' }: SiteHeaderProps = {}) {
+export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}) {
   const brand = tone === 'brand';
   const { data: user } = useCurrentUser();
   const logout = useLogout();
@@ -63,6 +65,7 @@ export function SiteHeader({ tone = 'default' }: SiteHeaderProps = {}) {
         brand
           ? 'bg-primary [--color-ring:var(--color-on-primary)]'
           : 'border-b border-hairline bg-paper/90 backdrop-blur-sm',
+        className,
       )}
     >
       <Container width="wide" className="flex h-16 items-center justify-between gap-6">

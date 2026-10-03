@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Container, Eyebrow, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { AgreementNotFoundError, useAgreement } from '@/features/agreements/api';
@@ -108,7 +107,6 @@ export function AgreementPage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

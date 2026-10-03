@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { NewBuildNotice } from '@/components/NewBuildNotice';
 import { RouteFallback } from '@/components/RouteFallback';
+import { SiteLayout } from '@/components/SiteLayout';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
 import { useRememberSession } from '@/features/auth/api';
@@ -127,130 +128,140 @@ export default function App() {
       <ToastProvider>
         <BrowserRouter>
           {/*
-            One Suspense high up so SiteHeader / BottomNav are not remounted on
-            every navigation. Fallback is never null (plan 0031 rule 1).
+            One Suspense high up for the routes outside SiteLayout. BottomNav
+            sits outside the routes and SiteHeader inside SiteLayout, so neither
+            is remounted on navigation. Fallback is never null (plan 0031 rule 1).
           */}
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<HomeRoute />} />
-              <Route path="/directory" element={<DirectoryPage />} />
-              <Route path="/creatives" element={<CreativesPage />} />
-              <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
-              <Route path="/offers/:id" element={<OfferDetailPage />} />
-              <Route
-                path="/postings/new"
-                element={
-                  <RequireAuth>
-                    <PostingComposePage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/postings/mine"
-                element={
-                  <RequireAuth>
-                    <MyPostingsPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/postings/:id/edit"
-                element={
-                  <RequireAuth>
-                    <PostingComposePage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/postings/:id"
-                element={
-                  <RequireAuth>
-                    <PostingDetailPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/messages"
-                element={
-                  <RequireAuth>
-                    <MessagesPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/messages/:id"
-                element={
-                  <RequireAuth>
-                    <ConversationPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/agreements/:id"
-                element={
-                  <RequireAuth>
-                    <AgreementPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/history"
-                element={
-                  <RequireAuth>
-                    <HistoryPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <RequireAuth>
-                    <NotificationsPage />
-                  </RequireAuth>
-                }
-              />
-              <Route path="/inbox" element={<Navigate to="/messages" replace />} />
-              <Route path="/inquiries" element={<Navigate to="/messages" replace />} />
-              <Route
-                path="/account"
-                element={
-                  <RequireAuth>
-                    <AccountPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/account/work"
-                element={
-                  <RequireAuth>
-                    <WorkPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/account/profile"
-                element={
-                  <RequireAuth>
-                    <ProfileSettingsPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/account/offers"
-                element={
-                  <RequireAuth>
-                    <OffersSettingsPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/account/security"
-                element={
-                  <RequireAuth>
-                    <SecuritySettingsPage />
-                  </RequireAuth>
-                }
-              />
+              {/* Every page with the site header: rendered once by SiteLayout. */}
+              <Route element={<SiteLayout />}>
+                <Route path="/directory" element={<DirectoryPage />} />
+                <Route path="/creatives" element={<CreativesPage />} />
+                <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
+                <Route path="/offers/:id" element={<OfferDetailPage />} />
+                <Route
+                  path="/postings/new"
+                  element={
+                    <RequireAuth>
+                      <PostingComposePage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/postings/mine"
+                  element={
+                    <RequireAuth>
+                      <MyPostingsPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/postings/:id/edit"
+                  element={
+                    <RequireAuth>
+                      <PostingComposePage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/postings/:id"
+                  element={
+                    <RequireAuth>
+                      <PostingDetailPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/messages"
+                  element={
+                    <RequireAuth>
+                      <MessagesPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/messages/:id"
+                  element={
+                    <RequireAuth>
+                      <ConversationPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/agreements/:id"
+                  element={
+                    <RequireAuth>
+                      <AgreementPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <RequireAuth>
+                      <HistoryPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <RequireAuth>
+                      <NotificationsPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="/inbox" element={<Navigate to="/messages" replace />} />
+                <Route path="/inquiries" element={<Navigate to="/messages" replace />} />
+                <Route
+                  path="/account"
+                  element={
+                    <RequireAuth>
+                      <AccountPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/account/work"
+                  element={
+                    <RequireAuth>
+                      <WorkPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/account/profile"
+                  element={
+                    <RequireAuth>
+                      <ProfileSettingsPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/account/offers"
+                  element={
+                    <RequireAuth>
+                      <OffersSettingsPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/account/security"
+                  element={
+                    <RequireAuth>
+                      <SecuritySettingsPage />
+                    </RequireAuth>
+                  }
+                />
+                {/*
+                  Public on purpose: registration asks you to accept both before
+                  you have an account, so both must be readable without one.
+                */}
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+              </Route>
               <Route path="/register" element={<RegisterPage />} />
               <Route
                 path="/welcome"
@@ -277,12 +288,6 @@ export default function App() {
                 }
               />
               <Route path="/login" element={<LoginPage />} />
-              {/*
-                Public on purpose: registration asks you to accept both before
-                you have an account, so both must be readable without one.
-              */}
-              <Route path="/privacy" element={<PrivacyPage />} />
-              <Route path="/terms" element={<TermsPage />} />
               {/*
                 RequireAdmin wraps the lazy layout so a bounce never downloads
                 the admin chunk.

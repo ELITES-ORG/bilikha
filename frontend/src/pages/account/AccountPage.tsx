@@ -2,7 +2,6 @@ import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
-import { SiteHeader } from '@/components/SiteHeader';
 import {
   ButtonLink,
   Container,
@@ -234,8 +233,7 @@ export function AccountPage() {
     work.data != null ? nextAction(work.data).headline : work.isPending ? '…' : 'How things stand';
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

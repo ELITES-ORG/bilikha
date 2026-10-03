@@ -1,4 +1,3 @@
-import { SiteHeader } from '@/components/SiteHeader';
 import { Button, Card, CardBody, Container } from '@/components/ui';
 import { useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -10,8 +9,7 @@ export function SecuritySettingsPage() {
   const logout = useLogout();
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

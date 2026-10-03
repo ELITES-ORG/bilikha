@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { TriangleAlert } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCurrentUser } from '@/features/auth/api';
@@ -186,8 +185,7 @@ export function WorkPage() {
 
   if (userPending) {
     return (
-      <div className="min-h-dvh bg-paper">
-        <SiteHeader />
+      <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
@@ -213,8 +211,7 @@ export function WorkPage() {
     }
 
     return (
-      <div className="min-h-dvh bg-paper">
-        <SiteHeader />
+      <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
@@ -234,8 +231,7 @@ export function WorkPage() {
 
   if (work.isPending || !work.data) {
     return (
-      <div className="min-h-dvh bg-paper">
-        <SiteHeader />
+      <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
           <Container width="narrow" className="py-(--section-gap)">
@@ -254,8 +250,7 @@ export function WorkPage() {
   const action = nextAction(work.data);
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">

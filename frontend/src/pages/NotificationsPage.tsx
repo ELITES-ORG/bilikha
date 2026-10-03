@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { SiteHeader } from '@/components/SiteHeader';
 import {
   Avatar,
   Button,
@@ -99,8 +98,7 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>
