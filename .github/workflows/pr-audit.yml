@@ -21,15 +21,9 @@ name: PR audit
 on:
   pull_request_target:
     types: [opened, edited, synchronize, reopened, ready_for_review]
-  # TRANSITIONAL — delete in the next pull request. Until main has the
-  # pull_request_target trigger, the pull request adding it can only be checked
-  # by its own copy, and pr-audit is a required check nobody may skip. Once this
-  # is on main, the pull request removing this trigger is checked by main's copy.
-  pull_request:
-    types: [opened, edited, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: pr-audit-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  group: pr-audit-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 # Read-only. pull_request_target would otherwise hand this job a token that can
