@@ -5,7 +5,11 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ProgressiveImage } from './ProgressiveImage';
-import { progressiveImageReducer, progressiveImageStatus } from './progressive-image-state';
+import {
+  forgetLoadedImages,
+  progressiveImageReducer,
+  progressiveImageStatus,
+} from './progressive-image-state';
 
 const mountedRoots: Array<ReturnType<typeof createRoot>> = [];
 
@@ -19,6 +23,7 @@ afterEach(() => {
     act(() => root.unmount());
   }
   document.body.replaceChildren();
+  forgetLoadedImages();
 });
 
 function mountImage(callbacks: { onLoad?: () => void; onError?: () => void } = {}) {
@@ -122,5 +127,45 @@ describe('progressive image loading', () => {
     expect(frame.dataset.mediaState).toBe('failed');
     expect(frame.textContent).toContain('BK');
     expect(onError).toHaveBeenCalledOnce();
+  });
+
+  it('shows a source loaded earlier in this tab at once, without the fade', () => {
+    const first = mountImage();
+    act(() => first.container.querySelector('img')!.dispatchEvent(new Event('load')));
+
+    // The header remounting on navigation: a fresh component, same source.
+    const again = mountImage();
+    const frame = again.container.querySelector<HTMLElement>('[data-media-state]')!;
+
+    expect(frame.dataset.mediaState).toBe('loaded');
+    expect(frame.hasAttribute('data-media-instant')).toBe(true);
+    expect(frame.classList.contains('skeleton')).toBe(false);
+    expect(frame.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('keeps the fade for a first load, and does not cut it short on load', () => {
+    const { container } = mountImage();
+    const frame = container.querySelector<HTMLElement>('[data-media-state]')!;
+
+    expect(frame.dataset.mediaState).toBe('loading');
+    expect(frame.hasAttribute('data-media-instant')).toBe(false);
+
+    act(() => container.querySelector('img')!.dispatchEvent(new Event('load')));
+
+    expect(frame.dataset.mediaState).toBe('loaded');
+    expect(frame.hasAttribute('data-media-instant')).toBe(false);
+  });
+
+  it('still reveals the fallback when a remembered source fails', () => {
+    const first = mountImage();
+    act(() => first.container.querySelector('img')!.dispatchEvent(new Event('load')));
+
+    const again = mountImage();
+    act(() => again.container.querySelector('img')!.dispatchEvent(new Event('error')));
+
+    const frame = again.container.querySelector<HTMLElement>('[data-media-state]')!;
+    expect(frame.dataset.mediaState).toBe('failed');
+    expect(frame.hasAttribute('data-media-instant')).toBe(false);
+    expect(frame.textContent).toContain('BK');
   });
 });
