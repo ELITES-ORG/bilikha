@@ -19,8 +19,8 @@
 
   html {
     scroll-behavior: smooth;
-    /* Offset for the sticky header when jumping to an anchor. */
-    scroll-padding-top: 5rem;
+    /* Offset for the sticky header (and staging banner) when jumping to an anchor. */
+    scroll-padding-top: calc(5rem + var(--staging-banner-h));
     text-size-adjust: 100%;
   }
 
@@ -130,6 +130,12 @@
       scrollbar-color: var(--color-clay-300) transparent;
     }
   }
+}
+
+/* A screen that fills the viewport. Use instead of `min-h-dvh`, which would
+   make every full-height screen scroll by the staging banner's height. */
+@utility min-h-page {
+  min-height: calc(100dvh - var(--staging-banner-h));
 }
 
 @layer components {

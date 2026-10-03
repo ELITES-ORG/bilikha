@@ -59,7 +59,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
   return (
     <header
       className={cn(
-        'sticky top-0 z-40',
+        'sticky top-(--staging-banner-h) z-40',
         // On navy the navy focus ring would vanish; re-point the token to white
         // for everything inside the bar.
         brand

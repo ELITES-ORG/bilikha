@@ -96,7 +96,7 @@ export function ProfileSetupPage() {
 
   if (existing.isPending) {
     return (
-      <div className="min-h-dvh bg-paper">
+      <div className="min-h-page bg-paper">
         <Container width="narrow" className="py-(--section-gap)">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="mt-6 h-64 w-full" />
@@ -110,7 +110,7 @@ export function ProfileSetupPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-paper">
+    <div className="min-h-page bg-paper">
       <header className="border-b border-hairline">
         <Container width="narrow" className="flex h-16 items-center">
           <Link to="/" className="u-display text-xl font-semibold text-ink">

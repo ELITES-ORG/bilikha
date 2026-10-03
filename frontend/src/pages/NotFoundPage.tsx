@@ -10,7 +10,7 @@ export function NotFoundPage() {
     <main>
       <Container
         width="narrow"
-        className={cn('flex min-h-svh flex-col justify-center py-24', pbBottomNav)}
+        className={cn('flex min-h-[calc(100svh-var(--staging-banner-h))] flex-col justify-center py-24', pbBottomNav)}
       >
         <Eyebrow className="anim-fade-in">Error 404</Eyebrow>
 

@@ -19,7 +19,7 @@ export interface AuthShellProps {
  */
 export function AuthShell({ action, banner, children }: AuthShellProps) {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-paper">
+    <div className="relative min-h-page overflow-hidden bg-paper">
       <CornerBlob placement="top-right" className="opacity-95" />
       {/* Only where the page margin is wide enough to hold it clear of the form. */}
       <CornerBlob placement="bottom-left" className="hidden opacity-95 xl:block" />
