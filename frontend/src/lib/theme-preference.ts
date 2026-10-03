@@ -16,8 +16,8 @@ export const THEME_STORAGE_KEY = 'bilikha-theme';
  * already in index.html for the light and dark media metas.
  */
 export const THEME_COLOR_PAPER = {
-  light: '#fcfbf8',
-  dark: '#14110e',
+  light: '#ffffff',
+  dark: '#0c121a',
 } as const;
 
 export function parseThemePreference(raw: string | null | undefined): ThemePreference {

@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Button, ButtonLink, Container, Input,
-  Select, Skeleton, useToast } from '@/components/ui';
+import {
+  Button,
+  ButtonLink,
+  Card,
+  Container,
+  Eyebrow,
+  Input,
+  Select,
+  Skeleton,
+  Textarea,
+  useToast,
+} from '@/components/ui';
+import { Info } from 'lucide-react';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { PesoInput } from '@/features/offers/PesoInput';
 import {
@@ -126,104 +137,108 @@ export function PostingComposePage() {
       <RegistrationStatusBanner />
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">{isEdit ? 'Edit posting' : 'Post work'}</p>
-          <h1 className="u-display mt-3 text-3xl text-ink">
+          <Eyebrow>{isEdit ? 'Edit posting' : 'Post work'}</Eyebrow>
+          <h1 className="u-display mt-4 text-3xl text-ink md:text-4xl">
             {isEdit ? 'Update your posting' : 'Describe the work you need'}
           </h1>
-          <p className="mt-3 max-w-xl text-md text-ink-muted">
+          <p className="mt-4 flex max-w-xl items-start gap-2.5 rounded-sm bg-primary-soft px-4 py-3 text-sm text-lawa-800">
+            <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             Creatives whose sub-domains match will see this on their Home feed.
           </p>
 
           {loadingForm && <Skeleton className="mt-10 h-96 w-full" />}
 
           {!loadingForm && (
-            <form onSubmit={(e) => void onSubmit(e)} className="mt-10 space-y-6" noValidate>
-              <Input
-                label="Title"
-                required
-                minLength={3}
-                maxLength={80}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+            <Card as="section" className="mt-8 p-5 sm:p-8">
+              <form onSubmit={(e) => void onSubmit(e)} className="space-y-6" noValidate>
+                <Input
+                  label="Title"
+                  required
+                  minLength={3}
+                  maxLength={80}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
 
-              <Select
-                label="Domain"
-                required
-                value={domainSlug}
-                placeholder="Choose a domain"
-                onValueChange={(next) => {
-                  setDomainSlug(next);
-                  setSubdomainSlug('');
-                }}
-                options={(domains.data ?? []).map((d) => ({ value: d.slug, label: d.name }))}
-              />
+                <Select
+                  label="Domain"
+                  required
+                  value={domainSlug}
+                  placeholder="Choose a domain"
+                  onValueChange={(next) => {
+                    setDomainSlug(next);
+                    setSubdomainSlug('');
+                  }}
+                  options={(domains.data ?? []).map((d) => ({ value: d.slug, label: d.name }))}
+                />
 
-              <Select
-                label="Sub-domain"
-                required
-                value={subdomainSlug}
-                placeholder="Choose a sub-domain"
-                disabled={!selectedDomain}
-                onValueChange={setSubdomainSlug}
-                options={(selectedDomain?.subdomains ?? []).map((sd) => ({
-                  value: sd.slug,
-                  label: sd.name,
-                }))}
-              />
+                <Select
+                  label="Sub-domain"
+                  required
+                  value={subdomainSlug}
+                  placeholder="Choose a sub-domain"
+                  disabled={!selectedDomain}
+                  onValueChange={setSubdomainSlug}
+                  options={(selectedDomain?.subdomains ?? []).map((sd) => ({
+                    value: sd.slug,
+                    label: sd.name,
+                  }))}
+                />
 
-              <Select
-                label="Municipality (where the work is)"
-                required
-                value={municipalitySlug}
-                placeholder="Choose a municipality"
-                onValueChange={setMunicipalitySlug}
-                options={(municipalities.data ?? []).map((m) => ({
-                  value: m.slug,
-                  label: m.name,
-                }))}
-              />
+                <Select
+                  label="Municipality (where the work is)"
+                  required
+                  value={municipalitySlug}
+                  placeholder="Choose a municipality"
+                  onValueChange={setMunicipalitySlug}
+                  options={(municipalities.data ?? []).map((m) => ({
+                    value: m.slug,
+                    label: m.name,
+                  }))}
+                />
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
-                Description
-                <textarea
+                <Textarea
+                  label="Description"
                   maxLength={2000}
                   rows={5}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink"
                 />
-              </label>
 
-              <fieldset className="grid gap-3">
-                <legend className="text-sm font-medium text-ink">Budget (optional)</legend>
-                <div className="grid grid-cols-2 gap-3">
-                  <PesoInput label="Minimum" value={budgetMin} onValueChange={setBudgetMin} />
-                  <PesoInput label="Maximum" value={budgetMax} onValueChange={setBudgetMax} />
+                <fieldset className="grid gap-3">
+                  <legend className="text-sm font-semibold text-ink">Budget (optional)</legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    <PesoInput label="Minimum" value={budgetMin} onValueChange={setBudgetMin} />
+                    <PesoInput label="Maximum" value={budgetMax} onValueChange={setBudgetMax} />
+                  </div>
+                </fieldset>
+
+                {!isEdit && (
+                  <Input
+                    label="How long to run (days)"
+                    type="number"
+                    min={1}
+                    max={60}
+                    required
+                    value={expiresInDays}
+                    onChange={(e) => setExpiresInDays(e.target.value)}
+                  />
+                )}
+
+                <div className="flex flex-col-reverse gap-3 border-t border-hairline pt-6 sm:flex-row sm:justify-end">
+                  <ButtonLink
+                    to={isEdit && id ? `/postings/${id}` : '/postings/mine'}
+                    variant="secondary"
+                    size="lg"
+                  >
+                    Cancel
+                  </ButtonLink>
+                  <Button type="submit" variant="accent" size="lg" loading={pending}>
+                    {isEdit ? 'Save changes' : 'Publish posting'}
+                  </Button>
                 </div>
-              </fieldset>
-
-              {!isEdit && (
-                <Input
-                  label="How long to run (days)"
-                  type="number"
-                  min={1}
-                  max={60}
-                  required
-                  value={expiresInDays}
-                  onChange={(e) => setExpiresInDays(e.target.value)}
-                />
-              )}
-
-              <div className="flex flex-wrap gap-3 pt-4">
-                <Button type="submit" loading={pending}>
-                  {isEdit ? 'Save changes' : 'Publish posting'}
-                </Button>
-                <ButtonLink to={isEdit && id ? `/postings/${id}` : '/postings/mine'} variant="secondary">
-                  Cancel
-                </ButtonLink>
-              </div>
-            </form>
+              </form>
+            </Card>
           )}
 
           <p className="mt-8 text-sm text-ink-muted">

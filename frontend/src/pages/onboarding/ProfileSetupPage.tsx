@@ -8,7 +8,7 @@ import {
   type ProfileCraftFormState,
 } from '@/features/me/ProfileCraftFields';
 import type { CreateProfilePayload } from '@/features/me/types';
-import { Button, Container, Skeleton } from '@/components/ui';
+import { Button, Container, Eyebrow, Skeleton } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
@@ -121,7 +121,7 @@ export function ProfileSetupPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">{fromAccount ? 'Add a creative profile' : 'Step 2 of 2'}</p>
+          <Eyebrow>{fromAccount ? 'Add a creative profile' : 'Step 2 of 2'}</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             {fromAccount ? 'Offer your creative work' : 'Set up your creative profile'}
           </h1>

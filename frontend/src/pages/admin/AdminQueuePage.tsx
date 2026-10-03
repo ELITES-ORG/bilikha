@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Inbox } from 'lucide-react';
 import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
 import type { QueueStatus } from '@/features/admin/types';
-import { Badge, Button, Container, EmptyState, Skeleton } from '@/components/ui';
+import { Badge, Button, Container, EmptyState, Eyebrow, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 const TABS: Array<{ status: QueueStatus; label: string }> = [
@@ -36,7 +36,7 @@ export function AdminQueuePage() {
 
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <p className="u-eyebrow">Administration</p>
+      <Eyebrow>Administration</Eyebrow>
       <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Review queue</h1>
       <p className="mt-3 max-w-xl text-md text-ink-muted">
         Oldest registrations first. Approve to publish, or reject with a reason the registrant

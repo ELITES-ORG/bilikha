@@ -3,7 +3,15 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, TriangleAlert } from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ButtonLink, Container, EmptyState, Skeleton } from '@/components/ui';
+import {
+  ButtonLink,
+  Container,
+  EmptyState,
+  Eyebrow,
+  Skeleton,
+  segmentItemClass,
+  segmentTrackClass,
+} from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCurrentUser } from '@/features/auth/api';
 import type { ViewMode } from '@/features/auth/types';
@@ -121,7 +129,7 @@ function AppearanceRow() {
         <div
           role="radiogroup"
           aria-label="Appearance"
-          className="mt-3 flex flex-wrap gap-1"
+          className={cn('mt-3', segmentTrackClass)}
         >
           {APPEARANCE_OPTIONS.map((option) => {
             const selected = preference === option.value;
@@ -129,10 +137,9 @@ function AppearanceRow() {
               <label
                 key={option.value}
                 className={cn(
-                  'inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-3 text-sm',
-                  selected
-                    ? 'bg-clay-100 font-medium text-ink'
-                    : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                  segmentItemClass(selected),
+                  // The radio is visually hidden; its focus shows on the pill.
+                  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
                 )}
               >
                 <input
@@ -183,7 +190,7 @@ function ModeRow() {
         <div
           role="radiogroup"
           aria-label="Mode"
-          className="mt-3 flex flex-wrap gap-1"
+          className={cn('mt-3', segmentTrackClass)}
         >
           {MODE_OPTIONS.map((option) => {
             const selected = mode === option.value;
@@ -191,10 +198,8 @@ function ModeRow() {
               <label
                 key={option.value}
                 className={cn(
-                  'inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-sm px-3 text-sm',
-                  selected
-                    ? 'bg-clay-100 font-medium text-ink'
-                    : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                  segmentItemClass(selected),
+                  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
                   setMode.isPending && 'pointer-events-none opacity-60',
                 )}
               >
@@ -235,7 +240,7 @@ export function AccountPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">Account</p>
+          <Eyebrow>Account</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Your account</h1>
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             Your public profile and offers, how your work is doing, and settings

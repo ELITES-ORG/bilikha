@@ -4,7 +4,16 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { ModeNotice } from '@/components/ModeNotice';
 import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
-import { Avatar, Button, ButtonLink, Container, SectionHeading, Skeleton, useToast } from '@/components/ui';
+import {
+  Avatar,
+  Button,
+  ButtonLink,
+  Container,
+  SectionHeading,
+  Skeleton,
+  Tabs,
+  useToast,
+} from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useAgreements } from '@/features/agreements/api';
@@ -29,31 +38,6 @@ function parseSegment(raw: string | null): HistorySegment {
 
 function isCreativeHistoryItem(row: HistoryItem | CreativeHistoryItem): row is CreativeHistoryItem {
   return 'client' in row && !('creative' in row);
-}
-
-function SegmentTab({
-  label,
-  active,
-  onSelect,
-}: {
-  label: string;
-  active: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      className={cn(
-        'border-b-2 pb-2 text-sm font-medium transition-colors',
-        active ? 'border-lawa-700 text-ink' : 'border-transparent text-ink-muted hover:text-ink',
-      )}
-      onClick={onSelect}
-    >
-      {label}
-    </button>
-  );
 }
 
 export function HistoryPage() {
@@ -134,29 +118,17 @@ export function HistoryPage() {
             <ModeNotice />
           </div>
 
-          <div
-            role="tablist"
-            aria-label="History segments"
-            className="mt-8 flex gap-6 border-b border-hairline"
-          >
-            <SegmentTab
-              label={creativeMode ? 'Replied' : 'Inquired'}
-              active={segment === 'inquired'}
-              onSelect={() => setSegment('inquired')}
-            />
-            {!creativeMode && (
-              <SegmentTab
-                label="Saved"
-                active={segment === 'saved'}
-                onSelect={() => setSegment('saved')}
-              />
-            )}
-            <SegmentTab
-              label="Agreements"
-              active={segment === 'agreements'}
-              onSelect={() => setSegment('agreements')}
-            />
-          </div>
+          <Tabs
+            label="History segments"
+            className="mt-8"
+            value={segment}
+            onChange={setSegment}
+            items={[
+              { value: 'inquired' as const, label: creativeMode ? 'Replied' : 'Inquired' },
+              ...(creativeMode ? [] : [{ value: 'saved' as const, label: 'Saved' }]),
+              { value: 'agreements' as const, label: 'Agreements' },
+            ]}
+          />
 
           <div className="mt-8">
             {segment === 'inquired' && creativeMode && (

@@ -89,7 +89,7 @@ export function ProfileCraftFields({
             'placeholder:text-ink-subtle focus:outline-none focus-visible:outline-none',
             fieldErrors.bio
               ? 'border-danger-500 focus:border-danger-600 focus:ring-2 focus:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100',
+              : 'border-hairline-strong hover:border-clay-400 focus:border-ring focus:ring-4 focus:ring-lawa-100',
           )}
         />
         {fieldErrors.bio && (
@@ -188,7 +188,7 @@ export function ProfileCraftFields({
               value={preference}
               checked={form.contactPreference === preference}
               onChange={() => onUpdate('contactPreference', preference)}
-              className="size-4 accent-[var(--color-lawa-600)]"
+              className="size-4 accent-primary"
             />
             {preference === 'phone' ? `Phone (${phone})` : `Email (${email})`}
           </label>

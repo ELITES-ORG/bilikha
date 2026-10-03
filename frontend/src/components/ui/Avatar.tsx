@@ -2,12 +2,13 @@ import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 import { ProgressiveImage } from './ProgressiveImage';
 
-type AvatarSize = 'sm' | 'md' | 'lg';
+type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 const SIZES: Record<AvatarSize, { box: string; text: string; px: number }> = {
   sm: { box: 'size-8', text: 'text-xs', px: 32 },
   md: { box: 'size-12', text: 'text-sm', px: 48 },
   lg: { box: 'size-20', text: 'text-xl', px: 80 },
+  xl: { box: 'size-28', text: 'text-2xl', px: 112 },
 };
 
 function initialsFromName(name: string): string {
@@ -49,11 +50,11 @@ export function Avatar({ src, name, size = 'md', className, ...props }: AvatarPr
           className="size-full rounded-full bg-lawa-100"
           imageClassName="object-cover"
           fallback={
-            <span className={cn('font-medium tabular-nums', dims.text)}>{initials}</span>
+            <span className={cn('font-semibold tabular-nums', dims.text)}>{initials}</span>
           }
         />
       ) : (
-        <span className={cn('font-medium tabular-nums', dims.text)}>{initials}</span>
+        <span className={cn('font-semibold tabular-nums', dims.text)}>{initials}</span>
       )}
     </span>
   );

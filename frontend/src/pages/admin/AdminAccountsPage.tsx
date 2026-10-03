@@ -8,6 +8,7 @@ import {
   CardBody,
   Container,
   EmptyState,
+  Eyebrow,
   Input,
   Skeleton,
   useToast,
@@ -123,7 +124,7 @@ export function AdminAccountsPage() {
 
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <p className="u-eyebrow">Administration</p>
+      <Eyebrow>Administration</Eyebrow>
       <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Accounts</h1>
       <p className="mt-3 max-w-xl text-md text-ink-muted">
         Suspending an account ends its session and takes its profile, offers and

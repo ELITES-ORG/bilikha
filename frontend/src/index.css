@@ -1,10 +1,11 @@
-/* Variable fonts, weight axis only, self-hosted.
+/* Variable fonts, weight axis only, self-hosted. Plus Jakarta Sans for UI and
+   body, Fraunces for the hero serif (ADR 0044).
    Fontsource splits by unicode-range, so a browser rendering Latin text pulls
    roughly 35KB per family and ignores the rest. Self-hosting beats a font CDN
    here: one less DNS lookup and TLS handshake on connections where that is the
    dominant cost. */
 @import '@fontsource-variable/fraunces/opsz.css';
-@import '@fontsource-variable/archivo/wght.css';
+@import '@fontsource-variable/plus-jakarta-sans/wght.css';
 
 @import 'tailwindcss';
 

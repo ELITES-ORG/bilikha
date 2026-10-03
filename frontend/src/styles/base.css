@@ -8,7 +8,7 @@
   :root {
     color-scheme: light dark;
     /* Opsz is Fraunces' optical-size axis. Left at a text value here and
-       raised per display size in the .u-display utility. */
+       raised in the .u-serif utility. */
     font-variant-ligatures: common-ligatures contextual;
     -webkit-tap-highlight-color: transparent;
   }
@@ -39,8 +39,8 @@
   /* Headings inherit the display face but never a size — size is always an
      explicit decision at the call site, so nothing gets styled by accident. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-weight: 700;
     color: var(--color-ink);
     text-wrap: balance;
   }
@@ -52,7 +52,7 @@
   /* One visible focus treatment everywhere. Two-tone so it stays legible on
      both paper and saturated fills. */
   :focus-visible {
-    outline: 2px solid var(--color-lawa-600);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
     border-radius: var(--radius-xs);
   }
@@ -62,7 +62,7 @@
   }
 
   ::selection {
-    background-color: var(--color-lawa-100);
+    background-color: var(--color-primary-soft);
     color: var(--color-lawa-900);
   }
 
@@ -123,7 +123,7 @@
     box-shadow: 0 0 0 1000px var(--color-surface) inset;
   }
 
-  /* Slimmer, warm-toned scrollbars on the platforms that allow it. */
+  /* Slimmer, slate-toned scrollbars on the platforms that allow it. */
   @supports (scrollbar-width: thin) {
     * {
       scrollbar-width: thin;
@@ -133,11 +133,19 @@
 }
 
 @layer components {
-  /* Display type. Pushes Fraunces' optical-size axis above what the rendered
-     size would select automatically, which sharpens stroke contrast and
-     tightens the serifs — the reason to carry a display face at all. */
+  /* Display type: the heading face at a heavier weight. 59 call sites use
+     this, so it stays the single place that decides what "display" means. */
   .u-display {
-    font-family: var(--font-display);
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  /* The serif, for the landing hero headline only. Pushes Fraunces'
+     optical-size axis above what the rendered size would select, which
+     sharpens stroke contrast and tightens the serifs. */
+  .u-serif {
+    font-family: var(--font-serif);
+    font-weight: 600;
     font-variation-settings: 'opsz' 48;
   }
 
@@ -145,10 +153,10 @@
   .u-eyebrow {
     font-family: var(--font-sans);
     font-size: var(--text-2xs);
-    font-weight: 600;
-    letter-spacing: 0.046em;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-ink-subtle);
+    color: var(--color-lawa-700);
   }
 
   /* Hairline rule that fades out — used instead of a hard full-width border

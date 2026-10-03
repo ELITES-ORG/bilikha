@@ -586,7 +586,7 @@ export function OfferEditor() {
               maxLength={2000}
               value={form.description}
               onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))}
-              className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
+              className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
             />
           </div>
 

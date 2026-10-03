@@ -657,7 +657,7 @@ export function ConversationPage() {
                       className={cn(
                         'min-h-10 max-h-28 min-w-0 flex-1 resize-none rounded-sm border border-hairline-strong bg-surface',
                         'px-3 py-2 text-base leading-5 text-ink',
-                        'focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none',
+                        'focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none',
                       )}
                       onInput={(e) => {
                         const el = e.currentTarget;

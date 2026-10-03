@@ -68,7 +68,7 @@ export function MoneyLifecycleBar({ money }: { money: WorkSummary['money'] }) {
                   <span
                     className={cn(
                       'mx-1 hidden truncate rounded-xs px-1.5 py-0.5 sm:inline-block',
-                      'text-[11px] font-medium leading-none',
+                      'text-2xs font-medium leading-none',
                       'bg-paper/85 text-ink',
                     )}
                   >

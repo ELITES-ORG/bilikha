@@ -5,15 +5,35 @@ import { useUnreadCount } from '@/features/conversations/api';
 import { useNotificationCount } from '@/features/notifications/api';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { Wordmark } from './Wordmark';
 
-function navClass(active: boolean) {
+type HeaderTone = 'default' | 'brand';
+
+/** Link colour by state, for a white bar or the navy one. */
+function linkTone(tone: HeaderTone, active: boolean) {
+  if (tone === 'brand') {
+    return active ? 'font-semibold text-on-primary' : 'text-on-primary-muted hover:text-on-primary';
+  }
+  return active ? 'font-semibold text-ink' : 'text-ink-muted hover:text-ink';
+}
+
+function navClass(tone: HeaderTone, active: boolean) {
   return cn(
     'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
-    active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink',
+    linkTone(tone, active),
   );
 }
 
-export function SiteHeader() {
+export interface SiteHeaderProps {
+  /**
+   * `brand` is the navy bar, used on the landing page only. Everywhere else
+   * the bar stays white so it recedes behind the content people came for.
+   */
+  tone?: HeaderTone;
+}
+
+export function SiteHeader({ tone = 'default' }: SiteHeaderProps = {}) {
+  const brand = tone === 'brand';
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const unreadQuery = useUnreadCount(Boolean(user));
@@ -35,11 +55,19 @@ export function SiteHeader() {
     pathname === prefix || pathname.startsWith(`${prefix}/`);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-hairline bg-paper/90 backdrop-blur-sm">
+    <header
+      className={cn(
+        'sticky top-0 z-40',
+        // On navy the navy focus ring would vanish; re-point the token to white
+        // for everything inside the bar.
+        brand
+          ? 'bg-primary [--color-ring:var(--color-on-primary)]'
+          : 'border-b border-hairline bg-paper/90 backdrop-blur-sm',
+      )}
+    >
       <Container width="wide" className="flex h-16 items-center justify-between gap-6">
-        <Link to="/" className="group flex items-baseline gap-2.5">
-          <span className="u-display text-xl font-semibold tracking-tight text-ink">Bilikha</span>
-          <span className="hidden text-2xs text-ink-subtle sm:inline">BILIRAN</span>
+        <Link to="/" className="group flex items-center">
+          <Wordmark tone={brand ? 'inverse' : 'default'} />
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
@@ -53,10 +81,8 @@ export function SiteHeader() {
                   : 'Notifications'
               }
               className={cn(
-                'relative inline-flex items-center rounded-md p-1.5 transition-colors',
-                isCurrent('/notifications')
-                  ? 'text-ink'
-                  : 'text-ink-muted hover:text-ink',
+                'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
+                linkTone(tone, isCurrent('/notifications')),
               )}
             >
               <Bell className="size-5" />
@@ -66,8 +92,9 @@ export function SiteHeader() {
                 // raw colours — plan 0014 rule 1.
                 <Badge
                   tone="accent"
+                  variant="solid"
                   aria-hidden="true"
-                  className="absolute -top-1 -right-1 tabular-nums"
+                  className="absolute top-0.5 right-0.5 min-w-5 justify-center px-1.5 tabular-nums"
                 >
                   {notifications > 9 ? '9+' : notifications}
                 </Badge>
@@ -84,9 +111,7 @@ export function SiteHeader() {
               // when signed in, and the landing page's domain and municipality
               // links do when signed out.
               'hidden sm:inline-block',
-              isCurrent('/directory') || isCurrent('/creatives')
-                ? 'font-medium text-ink'
-                : 'text-ink-muted hover:text-ink',
+              linkTone(tone, isCurrent('/directory') || isCurrent('/creatives')),
             )}
           >
             Directory
@@ -98,14 +123,12 @@ export function SiteHeader() {
                 viewTransition
                 className={cn(
                   'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
-                  isCurrent('/messages')
-                    ? 'font-medium text-ink'
-                    : 'text-ink-muted hover:text-ink',
+                  linkTone(tone, isCurrent('/messages')),
                 )}
               >
                 Messages
                 {unread > 0 && (
-                  <Badge tone="accent" className="tabular-nums">
+                  <Badge tone="accent" variant="solid" className="tabular-nums">
                     {unread > 99 ? '99+' : unread}
                   </Badge>
                 )}
@@ -115,9 +138,7 @@ export function SiteHeader() {
                 viewTransition
                 className={cn(
                   'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
-                  isCurrent('/account')
-                    ? 'font-medium text-ink'
-                    : 'text-ink-muted hover:text-ink',
+                  linkTone(tone, isCurrent('/account')),
                 )}
               >
                 Account
@@ -125,7 +146,7 @@ export function SiteHeader() {
             </>
           )}
           {user?.role === 'admin' && (
-            <Link to="/admin" className={navClass(false)}>
+            <Link to="/admin" className={navClass(tone, false)}>
               Admin
             </Link>
           )}
@@ -141,11 +162,13 @@ export function SiteHeader() {
                   name={`${user.firstName} ${user.lastName}`}
                   size="sm"
                 />
-                <span className="text-sm text-ink-muted">{user.username}</span>
+                <span className={cn('text-sm', brand ? 'text-on-primary-muted' : 'text-ink-muted')}>
+                  {user.username}
+                </span>
               </Link>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={brand ? 'inverse' : 'secondary'}
                 className="ml-1 hidden sm:inline-flex"
                 loading={logout.isPending}
                 onClick={() => void logout.mutateAsync()}
@@ -159,16 +182,26 @@ export function SiteHeader() {
                   tap further on, from the sign-in page. */}
               <ButtonLink
                 to="/login"
-                variant="ghost"
+                variant={brand ? 'inverse' : 'ghost'}
                 size="sm"
                 className="ml-1 hidden sm:inline-flex"
               >
                 Sign in
               </ButtonLink>
-              <ButtonLink to="/login" size="sm" className="sm:hidden">
+              <ButtonLink
+                to="/login"
+                size="sm"
+                variant={brand ? 'inverse' : 'primary'}
+                className="sm:hidden"
+              >
                 Sign in
               </ButtonLink>
-              <ButtonLink to="/register" size="sm" className="hidden sm:inline-flex">
+              <ButtonLink
+                to="/register"
+                size="sm"
+                variant={brand ? 'accent' : 'primary'}
+                className="hidden sm:inline-flex"
+              >
                 Register
               </ButtonLink>
             </>

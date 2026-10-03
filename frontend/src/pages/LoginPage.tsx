@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import { AuthShell } from '@/components/AuthShell';
 import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { Button, ButtonLink, Container, Input } from '@/components/ui';
+import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
 export function LoginPage() {
@@ -27,64 +29,61 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <header className="border-b border-hairline">
-        <Container width="narrow" className="flex h-16 items-center justify-between">
-          <Link to="/" className="u-display text-xl font-semibold text-ink">
-            Bilikha
-          </Link>
-          <ButtonLink to={withNextParam('/register', searchParams.get('next'))} variant="ghost" size="sm">
-            Register
-          </ButtonLink>
-        </Container>
-      </header>
-      <RegistrationStatusBanner />
+    <AuthShell
+      action={
+        <ButtonLink to={withNextParam('/register', searchParams.get('next'))} variant="secondary" size="sm">
+          Register
+        </ButtonLink>
+      }
+      banner={<RegistrationStatusBanner />}
+    >
+      <Eyebrow>Welcome back</Eyebrow>
+      <h1 className="u-serif mt-4 text-4xl text-ink md:text-5xl">Sign in</h1>
+      <p className="mt-3 max-w-md text-md text-ink-muted">
+        Use the username and password you chose at registration.
+      </p>
 
-      <main>
-        <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">Welcome back</p>
-          <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Sign in</h1>
-          <p className="mt-3 text-md text-ink-muted">
-            Use the username and password you chose at registration.
+      <form onSubmit={(event) => void onSubmit(event)} className="mt-10 max-w-md space-y-5" noValidate>
+        {error && (
+          <p
+            className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+            role="alert"
+          >
+            {error}
           </p>
+        )}
 
-          <form onSubmit={(event) => void onSubmit(event)} className="mt-10 max-w-md space-y-5" noValidate>
-            {error && (
-              <p
-                className="rounded-md border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
-                role="alert"
-              >
-                {error}
-              </p>
-            )}
+        <Input
+          label="Username"
+          required
+          autoComplete="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <Input
+          label="Password"
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-            <Input
-              label="Username"
-              required
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <Input
-              label="Password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          loading={login.isPending}
+          iconRight={<ArrowRight className="size-4" aria-hidden="true" />}
+        >
+          Sign in
+        </Button>
 
-            <Button type="submit" size="lg" loading={login.isPending}>
-              Sign in
-            </Button>
-
-            <p className="text-sm text-ink-subtle">
-              Forgotten your password? An administrator must reset it — there is no self-service
-              reset in this release.
-            </p>
-          </form>
-        </Container>
-      </main>
-    </div>
+        <p className="text-sm text-ink-subtle">
+          Forgotten your password? An administrator must reset it — there is no self-service
+          reset in this release.
+        </p>
+      </form>
+    </AuthShell>
   );
 }
