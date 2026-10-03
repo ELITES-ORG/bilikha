@@ -80,10 +80,14 @@ for a province of 180,000 people.
 
 ## Live
 
-| | |
-|---|---|
-| Application | <https://bilikha.vercel.app> |
-| API | <https://bilikha.onrender.com> |
+| | Production | Staging |
+|---|---|---|
+| Application | <https://bilikha.vercel.app> | <https://bilikha-staging.vercel.app> |
+| API | <https://bilikha-production.onrender.com> | <https://bilikha.onrender.com> |
+
+`main` deploys to staging; production is released by fast-forwarding the
+`production` branch — see
+[ADR 0042](./docs/decisions/0042-main-is-staging-production-is-a-branch.md).
 
 Configuration and free-tier caveats: [docs/reference/deployments.md](./docs/reference/deployments.md)
 

@@ -3,6 +3,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
+      "has": [{ "type": "host", "value": "bilikha.vercel.app" }],
+      "destination": "https://bilikha-production.onrender.com/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
       "destination": "https://bilikha.onrender.com/api/:path*"
     },
     {
@@ -11,6 +16,16 @@
     }
   ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "missing": [{ "type": "host", "value": "bilikha.vercel.app" }],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [
