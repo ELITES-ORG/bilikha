@@ -1,0 +1,60 @@
+name: Release guard
+
+# Fails loudly when production is moved to a commit that is not on main.
+#
+# Every commit on main passed pr-audit and reyxdz's approval on its way in. The
+# production rulesets make sure only reyxdz releases and only commits CI has
+# passed, but no ruleset can say "and it must already be on main" — so a commit
+# from another branch could be released without ever being audited. The release
+# command, `git push origin origin/main:production`, cannot do that; a slip of
+# the wrong ref can.
+#
+# This cannot block the push: it runs after it. It turns a silent mistake into
+# a red run and an email to the pusher, and the run summary has the recovery
+# steps. See ADR 0043.
+#
+# It runs from the pushed commit's copy of this file, as push workflows do, so
+# a commit that deleted this file would not be checked. Only reyxdz can release,
+# so that is a deliberate act, not a slip.
+
+on:
+  push:
+    branches: [production]
+
+permissions:
+  contents: read
+
+jobs:
+  release-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: The released commit is on main
+        env:
+          RELEASED: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          git fetch --no-tags "https://github.com/$REPO.git" "refs/heads/main:refs/remotes/origin/main"
+
+          if git merge-base --is-ancestor "$RELEASED" origin/main; then
+            echo "Released $(git log --oneline -1 "$RELEASED") — on main."
+            exit 0
+          fi
+
+          echo "::error::production is at ${RELEASED:0:7}, which is not on main, so it was never audited. Roll back in Vercel; the run summary has the recovery steps."
+          {
+            echo "### Production is not on main"
+            echo ""
+            echo "\`production\` was moved to \`${RELEASED:0:7}\`, a commit that \`main\` does not contain — so it never went through \`pr-audit\` or review."
+            echo ""
+            echo "1. Vercel → \`bilikha\` → Deployments → the previous deployment → **Promote to Production**."
+            echo "2. Merge the branch holding \`${RELEASED:0:7}\` into \`main\` through a pull request, with a **merge commit** — not squash or rebase, which would leave this exact commit off \`main\`. If the change should not ship, revert it on \`main\` afterwards."
+            echo "3. Release from main: \`git push origin origin/main:production\`. \`production\` only moves forward, so this works only once \`main\` contains \`${RELEASED:0:7}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
