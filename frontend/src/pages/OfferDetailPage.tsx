@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, ChevronRight, MapPin } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Avatar, Badge, Button, ButtonLink, Container, Skeleton, useToast } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Container, Eyebrow, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RatingScore } from '@/features/ratings/components/RatingScore';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -160,7 +160,7 @@ export function OfferDetailPage() {
 
           {offer.data && (
             <>
-              <p className="u-eyebrow">{offer.data.subdomain.domain}</p>
+              <Eyebrow>{offer.data.subdomain.domain}</Eyebrow>
               <h1 className="u-display mt-3 text-3xl text-ink sm:text-4xl">
                 {offer.data.title}
               </h1>

@@ -33,7 +33,7 @@ Roles, with the size always chosen at the call site: display `text-5xl`/`6xl`
 small `text-base`/`text-sm` · caption `text-xs`.
 
 **Palette — navy and red** ([ADR 0044](../docs/decisions/0044-navy-and-red-identity.md)).
-Neutrals are cool slate on white. `lawa` (navy, `#143469`) is the primary;
+Neutrals are cool slate on white. `lawa` (navy, `#032B61`) is the primary;
 `palayok` (red) is the accent for calls to action and badges. The ramp names
 predate the palette: `clay` is slate, `lawa` is navy, `palayok` is red.
 
@@ -49,7 +49,7 @@ Each is replaced here on purpose.
 
 - Red is for calls to action, badges and rules. `palayok-500` (`#E63946`) is 4.17:1
   on white, so it is for decoration and large text only; filled buttons and
-  badges use `accent-solid` (4.76:1 with white text). Red is never a status
+  badges use `accent-solid` (4.8:1 with white text). Red is never a status
   colour — errors use `danger`, which is deliberately deeper and browner.
 - Status is never colour alone. Pair every status badge with an icon or a word.
 - Text on white uses steps 600–700. Steps 400 and below fail contrast at body
@@ -78,6 +78,28 @@ Each is replaced here on purpose.
 - Prefer a hairline to a shadow. Stop at `shadow-lg` for anything in-page;
   `xl` is for overlays only.
 - Shadows are ink-tinted (navy-slate). Never introduce a neutral-black one.
+
+**Components**
+
+- Buttons: `primary` navy, `accent` red for the one call to action a screen
+  exists for (search the registry, publish), `secondary` white with a navy
+  outline, `inverse` on a navy surface. Every size is 44px on a phone; `sm`
+  drops to 36px from `sm` up.
+- Badges are pills. `variant="solid"` is for counts and flags — red for unread
+  and active filters, navy for new or info. `soft` is for labels.
+- `Tabs` is the segmented control: active tab a navy pill. A radio group that
+  should look the same borrows `segmentTrackClass` / `segmentItemClass` and
+  keeps its radio semantics.
+- `Eyebrow` (red rule + navy uppercase) leads a page title. Plain `.u-eyebrow`
+  is for labels inside a card or nav.
+- `StatItem`: icon, navy figure, muted label. Rows take `divide-x
+  divide-hairline` on the parent; `tone="inverse"` on navy.
+- Decorative shapes come from `components/Decor.tsx` — tokens only,
+  `aria-hidden`, never hit-testable, and kept to page margins so they never sit
+  under text. Check them at every breakpoint; a corner that is clear at `xl`
+  can land on a headline at `sm`.
+- The navy header bar (`<SiteHeader tone="brand" />`) is for the landing page
+  only. Elsewhere the bar stays white so it recedes behind the content.
 
 **Motion**
 

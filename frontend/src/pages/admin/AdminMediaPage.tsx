@@ -5,7 +5,7 @@ import { Inbox } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, toApiError } from '@/lib/api-client';
 import { formatPriceRange } from '@/lib/money';
-import { Badge, Button, Container, EmptyState, Skeleton } from '@/components/ui';
+import { Badge, Button, Container, EmptyState, Eyebrow, Skeleton } from '@/components/ui';
 
 type MediaKind = AdminMediaRow['kind'];
 
@@ -53,7 +53,7 @@ export function AdminMediaPage() {
 
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <p className="u-eyebrow">Administration</p>
+      <Eyebrow>Administration</Eyebrow>
       <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Media review</h1>
       <p className="mt-3 max-w-xl text-md text-ink-muted">
         Images and offers are live as soon as they are uploaded. Approve to

@@ -10,6 +10,7 @@ import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { Link } from 'react-router-dom';
 import { pbBottomNav } from '@/lib/bottom-nav';
+import { cn } from '@/lib/cn';
 
 export function MessagesPage() {
   const [page, setPage] = useState(1);
@@ -48,7 +49,7 @@ export function MessagesPage() {
             {list.isPending && <Skeleton className="h-40 w-full" />}
 
             {list.isError && (
-              <p className="text-danger-700">{list.error.message}</p>
+              <p className="text-danger-700" role="alert">{list.error.message}</p>
             )}
 
             {list.data && list.data.data.length === 0 && (
@@ -65,45 +66,63 @@ export function MessagesPage() {
             )}
 
             {list.data && list.data.data.length > 0 && (
-              <ul className="divide-y divide-hairline border border-hairline">
-                {list.data.data.map((row) => (
-                  <li key={row.id}>
-                    <Link
-                      to={`/messages/${row.id}`}
-                      className="flex items-start justify-between gap-4 px-4 py-4 transition-colors hover:bg-clay-50"
-                    >
-                      <div className="flex min-w-0 items-start gap-3">
+              <ul className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-surface shadow-xs">
+                {list.data.data.map((row) => {
+                  const unread = row.unreadCount > 0;
+                  return (
+                    <li key={row.id}>
+                      <Link
+                        to={`/messages/${row.id}`}
+                        className="flex items-center gap-3.5 px-4 py-4 transition-colors hover:bg-clay-50 sm:px-5"
+                      >
                         <Avatar
                           src={row.otherPartyAvatarUrl}
                           name={row.otherPartyName}
-                          size="sm"
+                          size="md"
                         />
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium text-ink">{row.otherPartyName}</span>
-                            {row.unreadCount > 0 && (
-                              <Badge tone="accent" className="tabular-nums">
-                                {row.unreadCount}
-                              </Badge>
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={cn(
+                              'truncate text-ink',
+                              unread ? 'font-bold' : 'font-semibold',
                             )}
-                          </div>
+                          >
+                            {row.otherPartyName}
+                          </p>
                           {row.lastMessage && (
-                            <p className="mt-1 truncate text-sm text-ink-muted">
+                            <p
+                              className={cn(
+                                'mt-0.5 truncate text-sm',
+                                unread ? 'font-medium text-ink' : 'text-ink-muted',
+                              )}
+                            >
                               {row.lastMessage.fromSelf ? 'You: ' : ''}
                               {row.lastMessage.body}
                             </p>
                           )}
                         </div>
-                      </div>
-                      <time
-                        className="shrink-0 text-xs text-ink-subtle tabular-nums"
-                        dateTime={row.lastMessageAt}
-                      >
-                        {relativeTime(row.lastMessageAt)}
-                      </time>
-                    </Link>
-                  </li>
-                ))}
+                        <div className="flex shrink-0 flex-col items-end gap-1.5 self-start pt-0.5">
+                          <time
+                            className="text-xs text-ink-subtle tabular-nums"
+                            dateTime={row.lastMessageAt}
+                          >
+                            {relativeTime(row.lastMessageAt)}
+                          </time>
+                          {unread && (
+                            <Badge
+                              tone="accent"
+                              variant="solid"
+                              className="min-w-5 justify-center px-1.5 tabular-nums"
+                              aria-label={`${row.unreadCount} unread`}
+                            >
+                              {row.unreadCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
 

@@ -60,16 +60,17 @@ export function BottomNav() {
                 aria-current={active ? 'page' : undefined}
                 className={cn(
                   'flex h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5',
-                  'text-2xs tracking-wide',
-                  active ? 'font-semibold text-ink' : 'font-medium text-ink-muted',
+                  'text-2xs tracking-wide transition-colors',
+                  active ? 'font-bold text-lawa-700' : 'font-medium text-ink-subtle hover:text-ink',
                 )}
               >
                 <span className="relative inline-flex">
-                  <Icon className="size-5" aria-hidden />
+                  <Icon className="size-5" strokeWidth={active ? 2.4 : 2} aria-hidden />
                   {showBadge && (
                     <Badge
                       tone="accent"
-                      className="absolute -top-2 -right-3 min-w-4 justify-center px-1 py-0 text-2xs tabular-nums"
+                      variant="solid"
+                      className="absolute -top-2 -right-3 min-w-4 justify-center px-1 py-0 text-2xs tabular-nums ring-2 ring-paper"
                     >
                       {unread > 99 ? '99+' : unread}
                     </Badge>

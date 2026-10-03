@@ -1,12 +1,13 @@
 import { cn } from '@/lib/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger' | 'inverse';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 /**
  * Variants are separated by *role*, not decoration. Exactly one primary action
  * should be visible in any view; everything else steps down to secondary or
- * ghost. Radius stays small — buttons are not cards.
+ * ghost. `accent` (red) is for the one call to action a screen exists for —
+ * search the registry, publish — and `inverse` sits on a navy surface.
  *
  * Solid fills use --color-primary* / accent-solid / danger-solid so the numbered
  * ramps can invert under prefers-color-scheme without breaking hover darkening.
@@ -19,9 +20,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'disabled:bg-clay-300 disabled:text-clay-500 disabled:shadow-none',
   ),
   secondary: cn(
-    'bg-surface text-ink border border-hairline-strong shadow-xs',
-    'hover:bg-clay-50 hover:border-clay-400',
-    'active:bg-clay-100',
+    'bg-surface text-lawa-700 border border-lawa-700 shadow-xs',
+    'hover:bg-primary-soft',
+    'active:bg-lawa-100',
     'disabled:bg-clay-100 disabled:text-clay-400 disabled:border-hairline disabled:shadow-none',
   ),
   ghost: cn(
@@ -42,14 +43,20 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'active:bg-danger-solid-hover',
     'disabled:bg-clay-300 disabled:text-clay-500 disabled:shadow-none',
   ),
+  inverse: cn(
+    'text-on-primary border border-on-primary-muted',
+    'hover:bg-on-primary hover:text-primary',
+    'disabled:opacity-60',
+  ),
 };
 
-/* Heights land on 32/38/46px — comfortable for a thumb at md and up, compact
-   enough that dense toolbars do not bloat. */
+/* Every size is 44px on a phone — the minimum touch target. `sm` drops to
+   36px from the `sm` breakpoint up, where a pointer is likely and dense
+   toolbars would otherwise bloat. `lg` is the 48px primary call to action. */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-sm gap-1.5 rounded-sm',
-  md: 'h-[2.375rem] px-4 text-base gap-2 rounded-sm',
-  lg: 'h-[2.875rem] px-5 text-md gap-2 rounded-md',
+  sm: 'h-11 sm:h-9 px-4 text-sm gap-1.5 rounded-sm',
+  md: 'h-11 px-5 text-base gap-2 rounded-sm',
+  lg: 'h-12 px-6 text-md gap-2 rounded-sm',
 };
 
 /**
@@ -70,7 +77,7 @@ export function buttonStyles({
 } = {}): string {
   return cn(
     'interactive-press relative inline-flex select-none items-center justify-center',
-    'font-medium whitespace-nowrap',
+    'font-semibold whitespace-nowrap',
     VARIANTS[variant],
     SIZES[size],
     fullWidth && 'w-full',

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { Eyebrow } from './Eyebrow';
 
 export interface SectionHeadingProps {
   /** Small uppercase kicker. Use it to place the section, not to repeat the title. */
@@ -28,12 +29,7 @@ export function SectionHeading({
   return (
     <div className={cn('flex flex-wrap items-end justify-between gap-x-8 gap-y-3', className)}>
       <div className="max-w-2xl">
-        {eyebrow && (
-          <p className="u-eyebrow mb-2 flex items-center gap-2">
-            <span className="inline-block h-px w-5 bg-palayok-500" aria-hidden="true" />
-            {eyebrow}
-          </p>
-        )}
+        {eyebrow && <Eyebrow className="mb-3">{eyebrow}</Eyebrow>}
 
         <Tag className={cn('u-display text-ink', Tag === 'h2' ? 'text-3xl' : 'text-2xl')}>
           {title}

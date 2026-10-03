@@ -31,9 +31,9 @@ state or component behaviour.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Tokens, fonts, literals | 3 / 3 | Done |
-| 2. Primitives | 0 / 1 | Not started |
-| 3. Priority screens | 0 / 1 | Not started |
-| 4. Remaining screens | 0 / 1 | Not started |
+| 2. Primitives | 1 / 1 | Done |
+| 3. Priority screens | 1 / 1 | Done |
+| 4. Remaining screens | 1 / 1 | Done |
 
 ---
 
@@ -60,27 +60,37 @@ state or component behaviour.
 
 ### Step 2.1 — Tabs, Eyebrow, StatItem; button and input sizing
 
-- [ ] **Action.** Awaiting approval of phase 1.
+- [x] **Action.** New `Tabs`, `segment-styles`, `Eyebrow`, `StatItem`, `Textarea`;
+  `Badge` solid variant; 44px controls; navy-outline secondary; `inverse`
+  button; `Wordmark`, `Decor`, `AuthShell` in `frontend/src/components/`.
+- [x] **Verify.** `npm run typecheck` and `npm run lint` pass.
 
 ## Phase 3 — Priority screens
 
 ### Step 3.1 — Landing, sign-up and login, messages, profile, create-post
 
-- [ ] **Action.** Awaiting approval of phase 2.
+- [x] **Action.** Landing follows the navy-bar reference variant; auth pages
+  share `AuthShell`; messages list, profile banner and create-post card.
+- [x] **Verify.** Headless screenshots of `/`, `/login` and `/register` at 390px
+  and 1440px, light and dark. Messages and profile need a signed-in session
+  and were not captured.
 
 ## Phase 4 — Remaining screens
 
 ### Step 4.1 — Apply the same tokens and components everywhere else
 
-- [ ] **Action.** Awaiting approval of phase 3.
+- [x] **Action.** History, Directory and Account toggles use the segmented
+  control; page kickers use `Eyebrow`; arbitrary font sizes tokenised.
+- [x] **Verify.** `grep -rn "text-\[" frontend/src` finds nothing.
 
 ---
 
 ## Acceptance
 
-- [ ] `npm run typecheck`, `npm run lint`, `npm run docs:check` pass.
-- [ ] No raw colours or arbitrary brand values in `frontend/src`.
-- [ ] Both themes are AA on every screen.
+- [x] `npm run typecheck`, `npm run lint`, `npm run docs:check` pass.
+- [x] No raw colours or arbitrary brand values in `frontend/src`.
+- [ ] Both themes are AA on every screen — token pairs verified; signed-in
+  screens not yet seen in a browser.
 
 ## Follow-ups
 

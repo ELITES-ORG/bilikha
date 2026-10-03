@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { ButtonLink, Container } from '@/components/ui';
+import { ButtonLink, Container, Eyebrow } from '@/components/ui';
 import { safeReturnPath } from '@/lib/return-path';
 
 export function ProfileSubmittedPage() {
@@ -20,7 +20,7 @@ export function ProfileSubmittedPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">Submitted</p>
+          <Eyebrow>Submitted</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             Your profile is being reviewed
           </h1>

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { ButtonLink, Container } from '@/components/ui';
+import { ButtonLink, Container, Eyebrow } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
 
@@ -12,7 +12,7 @@ export function NotFoundPage() {
         width="narrow"
         className={cn('flex min-h-svh flex-col justify-center py-24', pbBottomNav)}
       >
-        <p className="u-eyebrow anim-fade-in">Error 404</p>
+        <Eyebrow className="anim-fade-in">Error 404</Eyebrow>
 
         <h1 className="u-display anim-rise-in mt-4 text-4xl">This page does not exist.</h1>
 

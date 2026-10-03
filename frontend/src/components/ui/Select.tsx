@@ -228,7 +228,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={triggerId} className="text-sm font-medium text-ink">
+        <label htmlFor={triggerId} className="text-sm font-semibold text-ink">
           {label}
           {required && (
             <span className="text-danger-600 ms-0.5" aria-hidden="true">
@@ -257,13 +257,13 @@ export function Select({
           onClick={() => (open ? closeList(false) : openList())}
           onKeyDown={onKeyDown}
           className={cn(
-            'flex h-[2.375rem] w-full items-center justify-between gap-2 rounded-sm border',
-            'bg-surface px-3 text-left text-base text-ink',
+            'flex h-11 w-full items-center justify-between gap-2 rounded-sm border',
+            'bg-surface px-3.5 text-left text-base text-ink',
             'transition-[border-color,box-shadow]',
             'focus:outline-none focus-visible:outline-none',
             error
-              ? 'border-danger-500 focus-visible:border-danger-600 focus-visible:ring-2 focus-visible:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus-visible:border-lawa-600 focus-visible:ring-2 focus-visible:ring-lawa-100',
+              ? 'border-danger-500 focus-visible:border-danger-600 focus-visible:ring-4 focus-visible:ring-danger-100'
+              : 'border-hairline-strong hover:border-clay-400 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-lawa-100',
             'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
             className,
           )}
@@ -325,7 +325,7 @@ export function Select({
                           // where this list replaces the OS picker.
                           'min-h-11 sm:min-h-0 sm:py-1.5',
                           option.disabled && 'cursor-not-allowed text-clay-500',
-                          !option.disabled && isActive && 'bg-clay-100',
+                          !option.disabled && isActive && 'bg-primary-soft',
                           !option.disabled && !isActive && 'text-ink',
                         )}
                       >

@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { Container } from '@/components/ui';
+import { Container, Eyebrow } from '@/components/ui';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
 /**
@@ -24,7 +24,7 @@ export function IntentPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <p className="u-eyebrow">Step 1 of 2</p>
+          <Eyebrow>Step 1 of 2</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             What brings you to Bilikha?
           </h1>

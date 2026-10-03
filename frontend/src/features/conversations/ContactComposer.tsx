@@ -139,7 +139,7 @@ export function ContactComposer({
               setMessage(next);
               saveMessageDraft(profileSlug, { message: next });
             }}
-            className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
+            className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
             aria-invalid={fieldErrors.message ? true : undefined}
           />
           <div className="flex justify-between text-xs text-ink-subtle">

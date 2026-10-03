@@ -7,6 +7,7 @@ import {
   CardBody,
   Container,
   EmptyState,
+  Eyebrow,
   Input,
   Skeleton,
   useToast,
@@ -23,7 +24,7 @@ export function AdminRatingsPage() {
 
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <p className="u-eyebrow">Administration</p>
+      <Eyebrow>Administration</Eyebrow>
       <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Reported ratings</h1>
       <p className="mt-3 max-w-xl text-md text-ink-muted">
         Oldest first. An appeal is a creative's only recourse against a rating, so answer it

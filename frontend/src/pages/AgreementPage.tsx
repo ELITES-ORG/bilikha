@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { SiteHeader } from '@/components/SiteHeader';
-import { Container, Skeleton } from '@/components/ui';
+import { Container, Eyebrow, Skeleton } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { AgreementNotFoundError, useAgreement } from '@/features/agreements/api';
 import { AgreementStateChip } from '@/features/agreements/AgreementCard';
@@ -135,7 +135,7 @@ export function AgreementPage() {
                 Back to the conversation
               </Link>
 
-              <p className="u-eyebrow mt-6">Work agreement · version {data.version}</p>
+              <Eyebrow className="mt-6">Work agreement · version {data.version}</Eyebrow>
               <h1 className="u-display mt-3 text-4xl text-ink text-pretty">
                 {data.packageTitle}
               </h1>

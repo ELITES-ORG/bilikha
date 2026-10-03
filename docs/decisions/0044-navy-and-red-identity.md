@@ -32,11 +32,11 @@ slate, `lawa` is navy, `palayok` is red. Components reference tokens, so every
 screen restyles with no markup change. Renaming the ramps is a mechanical
 follow-up and was left out to keep this diff reviewable.
 
-**Navy `#143469`** (OKLCH 0.335 0.10 260) is `lawa-700` and `--color-primary`. It
-is a little deeper and more indigo than the brief's `#123B6D`.
+**Navy `#032B61`** (OKLCH 0.30 0.105 258) is `lawa-700` and `--color-primary`. It
+is sampled from the landing reference images; deeper than the labelled `#123B6D`.
 
 **Red has two roles.** `palayok-500` (`#E63946`) is for decoration and large
-text only (3:1 applies). `--color-accent-solid` (`#D62839`, 4.76:1 with white)
+text only (3:1 applies). `--color-accent-solid` (`#DB2334`, 4.8:1 with white)
 carries button labels and badge fills. The brief's exact red is kept where it
 passes.
 

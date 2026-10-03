@@ -15,6 +15,9 @@ import {
   SectionHeading,
   Select,
   Skeleton,
+  Tabs,
+  segmentItemClass,
+  segmentTrackClass,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { usePostingsFeed } from '@/features/postings/api';
@@ -227,48 +230,29 @@ export function DirectoryPage() {
           )}
 
           <div className="relative mt-8">
-            <div className="flex items-center justify-between gap-3 border-b border-hairline">
+            <div className="flex items-center justify-between gap-3 border-b border-hairline pb-4">
               {!creativeHome && (
-                <div role="tablist" aria-label="Directory sections" className="flex gap-6">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={view === 'offers'}
-                    className={cn(
-                      '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
-                      view === 'offers'
-                        ? 'border-lawa-700 text-ink'
-                        : 'border-transparent text-ink-muted hover:text-ink',
-                    )}
-                    onClick={() => setView('offers')}
-                  >
-                    Offers
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={view === 'creatives'}
-                    className={cn(
-                      '-mb-px border-b-2 pb-2 text-sm font-medium transition-colors',
-                      view === 'creatives'
-                        ? 'border-lawa-700 text-ink'
-                        : 'border-transparent text-ink-muted hover:text-ink',
-                    )}
-                    onClick={() => setView('creatives')}
-                  >
-                    Creatives
-                  </button>
-                </div>
+                <Tabs
+                  label="Directory sections"
+                  value={view}
+                  onChange={setView}
+                  items={[
+                    { value: 'offers', label: 'Offers' },
+                    { value: 'creatives', label: 'Creatives' },
+                  ]}
+                />
               )}
               {creativeHome && (
-                <p className="-mb-px border-b-2 border-lawa-700 pb-2 text-sm font-medium text-ink">
-                  Postings
+                // One section only, so a label in the tab's clothes rather than
+                // a tab list of one.
+                <p className={segmentTrackClass}>
+                  <span className={segmentItemClass(true)}>Postings</span>
                 </p>
               )}
 
               <button
                 type="button"
-                className="relative mb-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink"
+                className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-hairline-strong bg-surface text-ink-muted transition-colors hover:border-lawa-700 hover:text-lawa-700"
                 aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"
@@ -278,7 +262,8 @@ export function DirectoryPage() {
                 {activeFilterCount > 0 && (
                   <Badge
                     tone="accent"
-                    className="absolute -right-1 -top-1 min-w-4 justify-center px-1 tabular-nums"
+                    variant="solid"
+                    className="absolute -right-1 -top-1 min-w-5 justify-center px-1 tabular-nums"
                   >
                     {activeFilterCount}
                   </Badge>
@@ -381,7 +366,7 @@ export function DirectoryPage() {
                             value={draftBudgetMin}
                             onChange={(e) => setDraftBudgetMin(e.target.value)}
                             onBlur={applyBudget}
-                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
                           />
                         </label>
                         <label className="flex flex-col gap-1.5 text-sm text-ink">
@@ -395,7 +380,7 @@ export function DirectoryPage() {
                             value={draftBudgetMax}
                             onChange={(e) => setDraftBudgetMax(e.target.value)}
                             onBlur={applyBudget}
-                            className="h-[2.375rem] rounded-sm border border-hairline-strong bg-surface px-3 text-base tabular-nums"
+                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
                           />
                         </label>
                       </div>

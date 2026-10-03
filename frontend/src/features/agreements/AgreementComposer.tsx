@@ -318,7 +318,7 @@ export function AgreementComposer({
           maxLength={2000}
           value={form.notes}
           onChange={(event) => update('notes', event.target.value)}
-          className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100 focus:outline-none"
+          className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
         />
         <p className="text-xs text-ink-subtle">
           Anything the services do not say — what you need from the client, what is not included.

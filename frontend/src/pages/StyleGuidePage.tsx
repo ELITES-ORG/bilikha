@@ -476,7 +476,7 @@ function ColourRamps() {
               style={{ backgroundColor: `var(--color-${token})` }}
               title={token}
             />
-            <p className="bg-surface px-2 py-1 text-[0.625rem] text-ink-subtle">{label}</p>
+            <p className="bg-surface px-2 py-1 text-2xs text-ink-subtle">{label}</p>
           </div>
         ))}
       </div>
@@ -574,7 +574,7 @@ function Ramp({
               className={compact ? 'h-10' : 'h-14'}
               style={{ backgroundColor: `var(--color-${prefix}-${step})` }}
             />
-            <div className="bg-surface py-1 text-center text-[0.625rem] text-ink-subtle tabular-nums">
+            <div className="bg-surface py-1 text-center text-2xs text-ink-subtle tabular-nums">
               {step}
             </div>
           </div>

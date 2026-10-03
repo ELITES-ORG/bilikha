@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+export interface CardProps extends HTMLAttributes<HTMLElement> {
   /** Adds hover lift and a border shift. Only for cards that are themselves links. */
   interactive?: boolean;
   /**
@@ -10,6 +10,8 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
    * what makes a page look like a pile of floating boxes.
    */
   elevation?: 'flat' | 'base' | 'raised';
+  /** Element to render — `li` when the card is a list item. */
+  as?: 'div' | 'li' | 'article' | 'section';
 }
 
 const ELEVATIONS = {
@@ -21,12 +23,13 @@ const ELEVATIONS = {
 export function Card({
   interactive = false,
   elevation = 'base',
+  as: Tag = 'div',
   className,
   children,
   ...props
 }: CardProps) {
   return (
-    <div
+    <Tag
       className={cn(
         'rounded-md border border-hairline bg-surface',
         ELEVATIONS[elevation],
@@ -36,7 +39,7 @@ export function Card({
       {...props}
     >
       {children}
-    </div>
+    </Tag>
   );
 }
 

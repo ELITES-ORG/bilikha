@@ -7,10 +7,15 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   hint?: string;
   error?: string;
   iconLeft?: ReactNode;
+  /**
+   * Interactive control inside the field's right edge — an inline submit, a
+   * reveal toggle. Unlike `iconLeft` it receives pointer events.
+   */
+  trailing?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, hint, error, iconLeft, className, id, required, ...props },
+  { label, hint, error, iconLeft, trailing, className, id, required, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -21,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-ink">
+        <label htmlFor={inputId} className="text-sm font-semibold text-ink">
           {label}
           {required && (
             <span className="text-danger-600 ms-0.5" aria-hidden="true">
@@ -34,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       <div className="relative">
         {iconLeft && (
           <span
-            className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-ink-subtle"
+            className="pointer-events-none absolute inset-y-0 left-3.5 grid place-items-center text-ink-subtle"
             aria-hidden="true"
           >
             {iconLeft}
@@ -48,19 +53,24 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-invalid={error ? true : undefined}
           aria-describedby={message ? messageId : undefined}
           className={cn(
-            'h-[2.375rem] w-full rounded-sm border bg-surface px-3 text-base text-ink',
+            'h-11 w-full rounded-sm border bg-surface px-3.5 text-base text-ink',
             'transition-[border-color,box-shadow] placeholder:text-ink-subtle',
             'focus:outline-none focus-visible:outline-none',
-            iconLeft && 'pl-9',
+            iconLeft && 'pl-10',
+            trailing && 'pr-14',
             error
-              ? 'border-danger-500 focus:border-danger-600 focus:ring-2 focus:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus:border-lawa-600 focus:ring-2 focus:ring-lawa-100',
+              ? 'border-danger-500 focus:border-danger-600 focus:ring-4 focus:ring-danger-100'
+              : 'border-hairline-strong hover:border-clay-400 focus:border-ring focus:ring-4 focus:ring-lawa-100',
             'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
             className,
           )}
           style={{ transitionDuration: 'var(--duration-fast)' }}
           {...props}
         />
+
+        {trailing && (
+          <span className="absolute inset-y-0 right-1.5 grid place-items-center">{trailing}</span>
+        )}
       </div>
 
       {message && (

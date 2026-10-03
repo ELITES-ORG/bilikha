@@ -153,10 +153,10 @@
   .u-eyebrow {
     font-family: var(--font-sans);
     font-size: var(--text-2xs);
-    font-weight: 600;
-    letter-spacing: 0.046em;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-ink-subtle);
+    color: var(--color-lawa-700);
   }
 
   /* Hairline rule that fades out — used instead of a hard full-width border

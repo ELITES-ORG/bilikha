@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminProfile, useModerateProfile } from '@/features/admin/api';
-import { Badge, Button, ButtonLink, Container, EmptyState, Input, Skeleton } from '@/components/ui';
+import { Badge, Button, ButtonLink, Container, EmptyState, Eyebrow, Input, Skeleton } from '@/components/ui';
 import { TriangleAlert } from 'lucide-react';
 
 export function AdminProfilePage() {
@@ -54,7 +54,7 @@ export function AdminProfilePage() {
 
       {profile.data && (
         <>
-          <p className="u-eyebrow mt-6">Registration</p>
+          <Eyebrow className="mt-6">Registration</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             {profile.data.firstName}
             {profile.data.middleName ? ` ${profile.data.middleName}` : ''}{' '}
