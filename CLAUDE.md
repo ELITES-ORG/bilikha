@@ -130,3 +130,7 @@ rejects a reasonable alternative, gets an entry in
 **Verify before reporting done.** Run `npm run typecheck`, `npm run lint`, and
 `npm run docs:check`. Do not report work complete on the basis that it looks
 right.
+
+**Every pull request into `main` is audited before it merges.** Fill in the
+template GitHub pre-fills; what each part is for, and what the audit checks, is
+in [`docs/guides/open-a-pull-request.md`](./docs/guides/open-a-pull-request.md).
