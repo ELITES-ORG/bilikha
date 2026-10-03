@@ -78,3 +78,4 @@ Number sequentially. Never renumber.
 | [0039](./0039-the-creative-dashboard-answers-what-to-do-next.md) | A creative's dashboard answers what to do next | Accepted |
 | [0040](./0040-a-deploy-must-not-break-an-open-tab.md) | A deploy must not break an open tab | Accepted |
 | [0041](./0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md) | AI attribution is blocked by a check, not by a rule | Accepted |
+| [0042](./0042-main-is-staging-production-is-a-branch.md) | `main` deploys to staging; production is a branch it is promoted to | Accepted |

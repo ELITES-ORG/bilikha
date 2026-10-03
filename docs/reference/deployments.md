@@ -5,19 +5,39 @@ Live environments and the settings that are not obvious from the code.
 **No secret values appear here.** This records variable *names* and where they
 live, never their contents. Secrets exist only in each host's dashboard.
 
-Set up by following [plan 0002](../plans/0002-deployment.md).
+Set up by following [plan 0002](../plans/0002-deployment.md), then split into
+staging and production by [plan 0039](../plans/0039-staging-and-production.md).
 
 ---
 
 ## Live URLs
 
-| | |
-|---|---|
-| Application | <https://bilikha.vercel.app> |
-| API | <https://bilikha.onrender.com> |
-| Repository | <https://github.com/ELITES-ORG/bilikha> (public) |
+| | Production | Staging |
+|---|---|---|
+| Application | <https://bilikha.vercel.app> | <https://bilikha-staging.vercel.app> |
+| API | <https://bilikha-production.onrender.com> | <https://bilikha.onrender.com> |
+| Branch | `production` | `main` |
+| Database | Supabase `bilikha-production` | Supabase `BILIKHA` (the original project) |
 
-There is one environment. No staging yet.
+Repository: <https://github.com/ELITES-ORG/bilikha> (public).
+
+Two complete stacks, nothing shared between them — see
+[ADR 0042](../decisions/0042-main-is-staging-production-is-a-branch.md). The
+original deployment became staging and kept its data; production started from
+an empty database.
+
+### Releasing
+
+Every merge to `main` deploys to staging. Production changes only by
+fast-forwarding the `production` branch to a commit already on `main`:
+
+```bash
+git fetch origin
+git push origin origin/main:production
+```
+
+Never `--force`, never commit to `production` directly, never merge from it. A
+ruleset on GitHub blocks force-pushes and deletion.
 
 ---
 
@@ -27,15 +47,18 @@ There is one environment. No staging yet.
 browser
    │
    ▼
-bilikha.vercel.app          Vercel — static SPA
+bilikha.vercel.app                  Vercel — static SPA
    │  /api/*  rewritten by frontend/vercel.json
    ▼
-bilikha.onrender.com        Render — Express API (Singapore)
+bilikha-production.onrender.com     Render — Express API (Singapore)
    │
    ▼
-aws-0-ap-southeast-1        Supabase — Postgres 17 (Singapore)
+aws-0-ap-southeast-1                Supabase — Postgres 17 (Singapore)
    .pooler.supabase.com
 ```
+
+Staging is the same shape: `bilikha-staging.vercel.app` →
+`bilikha.onrender.com` → the original Supabase project.
 
 **The `/api` rewrite is load-bearing. Do not remove it.**
 
@@ -48,13 +71,33 @@ works and auth behaves the same in every browser.
 Consequence: `VITE_API_BASE_URL` must stay **relative** (`/api/v1`). Setting it
 to the Render URL silently defeats this.
 
+### Which API the rewrite goes to
+
+`vercel.json` rewrites cannot read environment variables, so the target is
+chosen by **hostname**. A request whose host is `bilikha.vercel.app` goes to the
+production API. Every other host — the staging domain, and every preview URL of
+either project — falls through to the staging API.
+
+That default is deliberate: a preview can never write to the production
+database. The cost is that **a new production domain must be added to
+`frontend/vercel.json` before it goes live**, or its traffic quietly reaches
+staging. The same hostname rule adds `X-Robots-Tag: noindex` to every
+non-production host.
+
 ---
 
 ## Vercel — frontend
 
+| Setting | Production | Staging |
+|---|---|---|
+| Project | `bilikha` | `bilikha-staging` |
+| Production branch | `production` | `main` |
+| Ignored Build Step | `[ "$VERCEL_GIT_COMMIT_REF" != "production" ]` | none — builds previews for every branch |
+
+Shared by both:
+
 | Setting | Value |
 |---|---|
-| Project | `bilikha` |
 | Team | `reyxdz's projects` (Hobby) |
 | Root Directory | `frontend` |
 | Framework | Vite |
@@ -76,9 +119,16 @@ the frontend moves host — see the alternatives in
 
 ## Render — API
 
+| Setting | Production | Staging |
+|---|---|---|
+| Workspace | Bilikha | My Workspace |
+| Service | `bilikha-production` | `bilikha` |
+| Branch | `production` | `main` |
+
+Shared by both:
+
 | Setting | Value |
 |---|---|
-| Service | `bilikha` |
 | Region | **Singapore** — must match the database region |
 | Instance | Free |
 | Root Directory | `backend` |
@@ -87,15 +137,17 @@ the frontend moves host — see the alternatives in
 | Health Check Path | `/api/v1/health` |
 | Node version | 22, from `backend/.node-version` |
 
-Environment variables (values in the Render dashboard only):
+Environment variables (values in the Render dashboard only). Each service has
+its own value for every one of these — **no secret is shared between
+environments**:
 
 | Name | Notes |
 |---|---|
 | `NODE_ENV` | `production`. Also what sets `cookie.secure` |
 | `DATABASE_URL` | Supabase **session pooler**, with `?sslmode=require` |
 | `LOG_LEVEL` | `info` |
-| `CORS_ORIGINS` | The Vercel origin. Plural — the code reads `CORS_ORIGINS` |
-| `SESSION_SECRET` | Unused until auth ships |
+| `CORS_ORIGINS` | That environment's Vercel origin. Plural — the code reads `CORS_ORIGINS` |
+| `SESSION_SECRET` | Different per environment |
 | `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`). Optional: if absent the API still boots and images are simply disabled |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
@@ -121,11 +173,10 @@ a deploy. Acceptable while there is no real user data; revisit before there is.
 
 | Setting | Value |
 |---|---|
-| Organisation | ELITES |
-| Project | BILIKHA |
+| Projects | `bilikha-production` in organisation **Bilikha** (production); `BILIKHA` in organisation **ELITES** (staging) |
 | Region | Southeast Asia (Singapore), `ap-southeast-1` |
 | Connection | **Session pooler**, port 5432 |
-| Data API | **Disabled** |
+| Data API | **Disabled**, on both |
 | GitHub integration | Not connected |
 
 ### Session pooler, specifically
@@ -157,8 +208,15 @@ do not wire up Supabase Auth — see
 | Supabase pauses after ~7 days idle | Database unreachable until resumed manually |
 | Render free hours | 750/month. One service pinged continuously uses ~744 |
 
-An uptime monitor hitting `/api/v1/health/ready` every 5 minutes prevents both:
-it keeps Render awake and puts a query through to Postgres.
+`.github/workflows/keep-awake.yml` hits production's `/api/v1/health/ready`
+every 10 minutes during Philippine waking hours, which keeps Render awake and
+puts a query through to Postgres. **Staging is pinged once a day only.** Its
+Render service is in a separate workspace with its own 750 hours, but nobody is
+waiting on staging, so it sleeps and its first request after idle takes about a
+minute. The daily ping is there to stop the staging database pausing.
+
+Supabase's free plan caps active projects (two at the time of writing), and
+production and staging each count as one.
 
 **Budget ~$7/month for Render's starter instance before any stakeholder demo.**
 A link that hangs for a minute is the whole first impression.
@@ -167,8 +225,9 @@ A link that hangs for a minute is the whole first impression.
 
 ## Deploying
 
-Both hosts deploy automatically on push to `main`. Vercel only rebuilds when
-`frontend/` changes; Render only when `backend/` changes.
+Pushes to `main` deploy staging; pushes to `production` deploy production
+(see [Releasing](#releasing)). Vercel only rebuilds when `frontend/` changes;
+Render only when `backend/` changes.
 
 To roll back: Render → Deploys → *Rollback* on a previous deploy. Vercel →
 Deployments → *Promote to Production* on a previous one.
@@ -181,6 +240,5 @@ Deployments → *Promote to Production* on a previous one.
 |---|---|
 | Database backups | Supabase free retains very little. Needed before real accounts |
 | Error tracking | Nothing reports runtime errors users hit |
-| Staging environment | Every deploy goes straight to production |
 | Custom domain | Cosmetic; the proxy means it is not structural |
 | `render.yaml` blueprint | Render config is dashboard-only and not reproducible |

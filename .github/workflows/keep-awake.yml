@@ -19,12 +19,26 @@ name: Keep the API awake
 #
 # PHT is UTC+8 with no daylight saving, so 06:00–22:50 PHT is 22:00–14:50 UTC,
 # which wraps midnight and therefore needs two entries.
+#
+# STAGING IS PINGED ONCE A DAY, NOT KEPT AWAKE. Its Render service lives in a
+# different workspace, so it has its own 750 hours — but nobody is waiting on
+# staging, so the minute-long cold start costs nothing. The single daily
+# request exists for the database, not the API: Supabase pauses a free project
+# after about seven idle days, and the readiness check puts a query through.
+# See ADR 0042.
 
 on:
   schedule:
-    - cron: '*/10 22,23 * * *' # 06:00–07:50 PHT
-    - cron: '*/10 0-14 * * *' #  08:00–22:50 PHT
+    - cron: '*/10 22,23 * * *' # 06:00–07:50 PHT, production
+    - cron: '*/10 0-14 * * *' #  08:00–22:50 PHT, production
+    - cron: '5 1 * * *' #        09:05 PHT, staging
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Which API to ping
+        type: choice
+        options: [production, staging]
+        default: production
 
 # Two runs pinging at once would achieve nothing but noise.
 concurrency:
@@ -38,18 +52,25 @@ jobs:
 
     steps:
       - name: Wake the API
+        env:
+          TARGET: ${{ (github.event.schedule == '5 1 * * *' || inputs.environment == 'staging') && 'staging' || 'production' }}
         run: |
+          case "$TARGET" in
+            staging) url=https://bilikha.onrender.com ;;
+            *) url=https://bilikha-production.onrender.com ;;
+          esac
+
           # --max-time 90 because a cold start is about a minute: the request
           # that does the waking is the slow one, and giving up on it would
           # leave the service asleep for the next ten minutes.
           code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 90 \
-            https://bilikha.onrender.com/api/v1/health/ready || echo 000)
+            "$url/api/v1/health/ready" || echo 000)
 
-          echo "readiness returned $code"
+          echo "$TARGET readiness returned $code"
 
           # A ping that cannot reach the API is worth failing on: this workflow
           # is also the only thing watching whether the API is up at all.
           if [ "$code" != "200" ]; then
-            echo "::error::API did not report ready (got $code)"
+            echo "::error::$TARGET API did not report ready (got $code)"
             exit 1
           fi
