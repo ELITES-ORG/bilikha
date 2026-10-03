@@ -78,6 +78,18 @@ therefore takes effect only once merged. CI (`check`) cannot be hardened the
 same way, because testing a pull request means running it; a pull request that
 touches `.github/` or `scripts/` gets a closer look in the audit.
 
+**Rules added after the audit of #11.** That pull request passed every gate
+while carrying a local tool's hooks and agent config, a lockfile stripped of
+its `libc` fields, ticked boxes whose notes said the work was not done, and a
+22% larger stylesheet. The audit caught all of it; the mechanical parts should
+not depend on the audit, so `pr-audit` now also fails a pull request that
+changes the repository's own tooling alongside the product (unless
+`Tooling change: <why>`), drops platform fields from a lockfile, or ticks a box
+its own note contradicts — and CI fails when the first page load grows past
+`frontend/bundle-budget.json`, whose increases `pr-audit` asks a reason for
+(`Budget raised: <why>`). Visual consistency and keyboard behaviour stay with
+the audit: they are judgement, not mechanics.
+
 **A `pre-push` hook** runs typecheck, lint and the docs checks locally. It is
 the same answer sooner, not a gate.
 

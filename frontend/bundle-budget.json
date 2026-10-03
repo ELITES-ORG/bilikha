@@ -1,0 +1,5 @@
+{
+  "$comment": "Gzip bytes the first page load may fetch: the entry script, its modulepreloaded chunks, and the stylesheet that index.html loads. Measured by scripts/check-bundle-size.mjs in CI. Set on 2026-10-04 from main after the navy-and-red restyle (#11): 152439 JS and 16021 CSS, plus about 1 kB and 0.3 kB of headroom. Issue #12 brings the size back to its pre-restyle level and should lower these with it. Raising them needs a 'Budget raised: <why>' line in the pull request.",
+  "initialJsGzipBytes": 153500,
+  "initialCssGzipBytes": 16300
+}

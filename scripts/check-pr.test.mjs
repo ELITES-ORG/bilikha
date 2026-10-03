@@ -164,3 +164,108 @@ test('template comments do not count as content', () => {
   const body = COMPLETE.replace('None.', '<!-- nothing to say -->');
   assert.ok(has(auditPullRequest({ body, files: [] }), '"Known gaps and risks" section is empty'));
 });
+
+// --- rules added after the audit of #11 -------------------------------------
+
+test('tooling changed alongside the product fails, unless an exception gives a reason', () => {
+  const mixed = files('.claude/settings.json', '.mcp.json', 'backend/src/modules/offers/offers.service.ts', 'backend/src/modules/offers/offers.test.ts');
+  assert.ok(has(auditPullRequest({ body: COMPLETE, files: mixed }), "the repository's own tooling"));
+  assert.deepEqual(
+    auditPullRequest({ body: `${COMPLETE}\nTooling change: the hook must ship with the API it guards\n`, files: mixed }),
+    [],
+  );
+});
+
+test('a tooling-only pull request passes', () => {
+  assert.deepEqual(
+    auditPullRequest({ body: COMPLETE, files: files('.github/workflows/ci.yml', 'scripts/check-pr.mjs', 'scripts/check-pr.test.mjs') }),
+    [],
+  );
+});
+
+test('CLAUDE.md and the git hooks count as tooling', () => {
+  for (const path of ['CLAUDE.md', '.githooks/pre-commit', 'package.json']) {
+    const problems = auditPullRequest({ body: COMPLETE, files: files(path, 'backend/src/x.ts', 'backend/src/x.test.ts') });
+    assert.ok(has(problems, "the repository's own tooling"), path);
+  }
+});
+
+test('a ticked box whose note says it was not done fails', () => {
+  for (const note of ['signed in not yet checked in a browser', 'admin pages not opened in a browser', 'still needs a pass', 'TODO']) {
+    const body = COMPLETE.replace('- [x] Checks pass locally', `- [x] Checks pass locally — ${note}`);
+    assert.ok(has(auditPullRequest({ body, files: [] }), 'ticks a box its own note says was not done'), note);
+  }
+});
+
+test('ordinary notes on ticked boxes pass', () => {
+  for (const note of ['checked in review', 'n/a — nothing to migrate', 'nothing the running code still reads is dropped']) {
+    const body = COMPLETE.replace('- [x] Checks pass locally', `- [x] Checks pass locally — ${note}`);
+    assert.deepEqual(auditPullRequest({ body, files: [] }), [], note);
+  }
+});
+
+const lock = (packages) => JSON.stringify({ lockfileVersion: 3, packages });
+const LOCK_BEFORE = lock({
+  '': { dependencies: { a: '1' } },
+  'node_modules/@rollup/rollup-linux-x64-musl': { version: '4.0.0', os: ['linux'], cpu: ['x64'], libc: ['musl'] },
+  'node_modules/removed-pkg': { version: '1.0.0', libc: ['glibc'] },
+});
+
+test('a lockfile that loses platform fields from installed packages fails', () => {
+  const after = lock({
+    '': { dependencies: { a: '1' } },
+    'node_modules/@rollup/rollup-linux-x64-musl': { version: '4.0.0', os: ['linux'], cpu: ['x64'] },
+  });
+  const problems = auditPullRequest({
+    body: COMPLETE,
+    files: files('frontend/package-lock.json', 'frontend/package.json'),
+    contents: { 'frontend/package-lock.json': { before: LOCK_BEFORE, after } },
+  });
+  assert.ok(has(problems, 'drops platform fields from 1 package(s)'));
+  assert.ok(has(problems, 'rollup-linux-x64-musl (libc)'));
+});
+
+test('removing a package entirely, or keeping its fields, passes', () => {
+  const after = lock({
+    '': { dependencies: { a: '1' } },
+    'node_modules/@rollup/rollup-linux-x64-musl': { version: '4.0.0', os: ['linux'], cpu: ['x64'], libc: ['musl'] },
+  });
+  assert.deepEqual(
+    auditPullRequest({
+      body: COMPLETE,
+      files: files('frontend/package-lock.json', 'frontend/package.json'),
+      contents: { 'frontend/package-lock.json': { before: LOCK_BEFORE, after } },
+    }),
+    [],
+  );
+});
+
+const budget = (js, css) => JSON.stringify({ initialJsGzipBytes: js, initialCssGzipBytes: css });
+
+test('raising the bundle budget needs a reason', () => {
+  const contents = { 'frontend/bundle-budget.json': { before: budget(1000, 500), after: budget(1200, 500) } };
+  const changed = files('frontend/bundle-budget.json');
+  assert.ok(has(auditPullRequest({ body: COMPLETE, files: changed, contents }), 'raises initialJsGzipBytes'));
+  assert.deepEqual(
+    auditPullRequest({ body: `${COMPLETE}\nBudget raised: the map view needs its tile renderer on first load\n`, files: changed, contents }),
+    [],
+  );
+});
+
+test('lowering or creating the budget passes; deleting it fails', () => {
+  const changed = files('frontend/bundle-budget.json');
+  assert.deepEqual(
+    auditPullRequest({ body: COMPLETE, files: changed, contents: { 'frontend/bundle-budget.json': { before: budget(1000, 500), after: budget(900, 450) } } }),
+    [],
+  );
+  assert.deepEqual(
+    auditPullRequest({ body: COMPLETE, files: changed, contents: { 'frontend/bundle-budget.json': { before: undefined, after: budget(1000, 500) } } }),
+    [],
+  );
+  assert.ok(
+    has(
+      auditPullRequest({ body: COMPLETE, files: [{ status: 'D', path: 'frontend/bundle-budget.json' }], contents: { 'frontend/bundle-budget.json': { before: budget(1000, 500), after: undefined } } }),
+      'is deleted',
+    ),
+  );
+});

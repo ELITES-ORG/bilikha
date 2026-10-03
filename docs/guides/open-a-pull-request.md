@@ -44,7 +44,10 @@ does not change how that pull request is checked. It applies after merging.
 blank; at least one checkable acceptance criterion; no blank layer under "What
 changed"; no unticked box under Rollout or Checklist. When the UI changes,
 "States checked" has every state ticked or marked `n/a`, and "Screenshots" has
-an image.
+an image. **A ticked box must not contradict its own note** — a ticked line in
+Acceptance criteria, States checked, Rollout or Checklist that also says "not
+yet checked", "not opened", "still needs", "TODO" and the like fails. Untick it,
+or do it.
 
 **The diff:**
 
@@ -54,12 +57,32 @@ an image.
 | changes route files | change `docs/reference/api.md` | `No API docs: <why>` |
 | changes `backend/src/config/env.ts` | change `backend/.env.example` and `docs/reference/environment.md` | `No env docs: <why>` |
 | changes a `package-lock.json` | change the `package.json` beside it | `Lockfile only: <why>` |
+| changes a `package-lock.json` | keep every `libc`, `os` and `cpu` field on packages still installed | nothing: restore the lockfile from `main` and apply only your dependency change |
 | changes application code | change a test | `No tests: <why>` |
+| changes the repo's own tooling — `.claude/`, `.mcp.json`, `.githooks/`, `.github/`, `scripts/`, `CLAUDE.md`, root `package.json` — **and** the product | split them into separate pull requests | `Tooling change: <why it belongs here>` |
+| raises a number in `frontend/bundle-budget.json` | — | `Budget raised: <why>` |
 | adds `.env`, `tmp/`, `tmp-*` or cookie files | — | nothing: remove them |
 
 An exception is one line, anywhere outside a comment, with a reason of at least
 ten characters. The check accepts the line; the audit decides whether the
 reason holds.
+
+### The bundle budget
+
+CI fails when the first page load — the entry script, the chunks it preloads,
+and the stylesheet — grows past
+[`frontend/bundle-budget.json`](../../frontend/bundle-budget.json), measured in
+gzip bytes. Most users are on budget Android over prepaid data
+([constraints](../explanation/constraints.md)), so this is a product limit, not a
+nicety. Check it before pushing:
+
+```bash
+npm run build && npm run check:bundle
+```
+
+Over budget: make the page lighter — lazy-load what is not needed on first
+paint, drop unused styles. If the growth is worth it, raise the budget in the
+same pull request and say why with `Budget raised: <why>`.
 
 ---
 
