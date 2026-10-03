@@ -1,0 +1,45 @@
+name: PR audit
+
+# Marks a pull request failed until it is ready to be audited: every section of
+# the template filled in, and nothing in the diff a ticked box cannot vouch for
+# (a schema change with no migration, a lockfile that changed on its own, a
+# .env file). The `main` ruleset requires this job, so a failing pull request
+# cannot be merged. See ADR 0043 and scripts/check-pr.mjs.
+#
+# `edited` is what re-runs it after the description is fixed, without a push.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: pr-audit-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pr-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The diff is taken from the merge base, which needs history.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      # The description reaches the script through the environment, never
+      # interpolated into the command: it is text anyone opening a pull
+      # request controls.
+      - name: Check the pull request is ready for audit
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-pr.mjs --base "$BASE" --head "$HEAD"

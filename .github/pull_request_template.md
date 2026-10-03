@@ -3,9 +3,12 @@ Every PR into main is audited before it is merged. This template is what the
 audit reads first. The reasoning behind each section, and what the audit checks:
 https://github.com/ELITES-ORG/bilikha/blob/main/docs/guides/open-a-pull-request.md
 
-Delete a section only if it genuinely does not apply, and say so in one line
-rather than leaving it blank. No AI attribution anywhere — not in commits, not
-in this description.
+The `pr-audit` check fails this pull request until every section is filled
+in, and merging is blocked until it passes. Check before opening, with this
+description saved to a file:  npm run check:pr -- --body-file pr.md
+
+States checked and Screenshots are required when the UI changes. No AI
+attribution anywhere — not in commits, not in this description.
 -->
 
 ## What and why
@@ -56,6 +59,19 @@ takes them — see docs/guides/check-a-screen-in-a-browser.md. -->
 - [ ] No migration — or the migration is safe on live data (additive; nothing the running code still reads is renamed or dropped; new required columns have a default or a backfill)
 - [ ] No new environment variable — or it is in `.env.example`, `env.ts` and `environment.md`, and listed above for both Render services
 - [ ] No one-off script — or it is named above, with when to run it
+
+## Exceptions
+
+<!-- Only if a rule in the PR audit genuinely does not apply. One line each, with
+a real reason — the audit judges it:
+
+No tests: <why>
+No API docs: <why>
+No migration: <why>
+No env docs: <why>
+Lockfile only: <why>
+
+Delete this section if there are none. -->
 
 ## Known gaps and risks
 

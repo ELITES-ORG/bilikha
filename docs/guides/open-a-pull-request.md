@@ -10,6 +10,53 @@ GitHub pre-fills every pull request from
 [`.github/pull_request_template.md`](../../.github/pull_request_template.md).
 Fill it in; this page explains why each part is there.
 
+## How it is enforced
+
+Nothing here is on trust ([ADR 0043](../decisions/0043-only-reyxdz-merges-and-releases.md)):
+
+| Gate | When | Blocks |
+|---|---|---|
+| `pre-push` hook | Every `git push` | The push, if typecheck, lint or the docs checks fail. Skippable — it is early warning, not the gate |
+| `check` (CI) | Every push | The merge, if typecheck, lint, tests, build, docs or commit messages fail |
+| `pr-audit` | Opening, editing or pushing to a pull request | The merge, if the description is incomplete or the diff breaks a rule below |
+| Code owner | — | The merge, until reyxdz approves. A push after approval dismisses it |
+| `main` rulesets | — | Anyone but reyxdz merging, and anyone merging past a red check |
+
+A failing pull request can still be opened and discussed. It cannot be merged.
+
+### Check before opening
+
+Save the description you are about to paste into a file, then:
+
+```bash
+npm run check:pr -- --body-file pr.md
+```
+
+It runs exactly what the `pr-audit` check runs, against `origin/main...HEAD`.
+
+### What `pr-audit` checks
+
+**The description:** every template section filled in; `Plan / issue:` not
+blank; at least one checkable acceptance criterion; no blank layer under "What
+changed"; no unticked box under Rollout or Checklist. When the UI changes,
+"States checked" has every state ticked or marked `n/a`, and "Screenshots" has
+an image.
+
+**The diff:**
+
+| If the diff… | …it must also | Unless the description says |
+|---|---|---|
+| changes `backend/src/db/schema/` | add a migration in `backend/drizzle/` | `No migration: <why>` |
+| changes route files | change `docs/reference/api.md` | `No API docs: <why>` |
+| changes `backend/src/config/env.ts` | change `backend/.env.example` and `docs/reference/environment.md` | `No env docs: <why>` |
+| changes a `package-lock.json` | change the `package.json` beside it | `Lockfile only: <why>` |
+| changes application code | change a test | `No tests: <why>` |
+| adds `.env`, `tmp/`, `tmp-*` or cookie files | — | nothing: remove them |
+
+An exception is one line, anywhere outside a comment, with a reason of at least
+ten characters. The check accepts the line; the audit decides whether the
+reason holds.
+
 ---
 
 ## Before writing code

@@ -36,8 +36,10 @@ git fetch origin
 git push origin origin/main:production
 ```
 
-Never `--force`, never commit to `production` directly, never merge from it. A
-ruleset on GitHub blocks force-pushes and deletion.
+Never `--force`, never commit to `production` directly, never merge from it.
+Rulesets on GitHub block force-pushes and deletion, accept only commits CI has
+already passed, and let only reyxdz update the branch
+([ADR 0043](../decisions/0043-only-reyxdz-merges-and-releases.md)).
 
 ---
 
