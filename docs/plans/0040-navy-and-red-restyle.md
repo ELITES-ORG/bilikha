@@ -33,7 +33,7 @@ state or component behaviour.
 | 1. Tokens, fonts, literals | 3 / 3 | Done |
 | 2. Primitives | 1 / 1 | Done |
 | 3. Priority screens | 1 / 1 | Done |
-| 4. Remaining screens | 1 / 1 | Done |
+| 4. Remaining screens | 1 / 2 | Partial — the admin layout keeps the old header and tabs |
 
 ---
 
@@ -52,7 +52,9 @@ state or component behaviour.
 ### Step 1.3 — Update the literals that mirror paper
 
 - [x] **Action.** `index.html`, `theme-preference.ts`, `manifest.webmanifest`, four `accent-` classes.
-- [x] **Verify.** `grep -rn "fcfbf8\|14110e" frontend/src frontend/index.html frontend/public` finds nothing.
+- [x] **Verify.** `grep -rn "fcfbf8\|14110e" frontend/src frontend/index.html frontend/public` finds only
+  the dark-mode bug note in `theme-preference.ts`, which keeps the old colour on purpose — it describes
+  what happened then.
 
 ---
 
@@ -73,7 +75,10 @@ state or component behaviour.
   share `AuthShell`; messages list, profile banner and create-post card.
 - [x] **Verify.** Headless screenshots of `/`, `/login` and `/register` at 390px
   and 1440px, light and dark. Messages and profile need a signed-in session
-  and were not captured.
+  and were not captured here; they were checked in review on 2026-10-04 —
+  directory, messages, history, account, create-post, notifications, work,
+  admin and a creative profile at 375px light and dark and 1280px, plus a
+  signed-out visit to `/messages` and a non-admin visit to `/admin`.
 
 ## Phase 4 — Remaining screens
 
@@ -83,15 +88,28 @@ state or component behaviour.
   control; page kickers use `Eyebrow`; arbitrary font sizes tokenised.
 - [x] **Verify.** `grep -rn "text-\[" frontend/src` finds nothing.
 
+### Step 4.2 — The admin layout
+
+- [ ] **Action.** `AdminLayout` still shows the plain-text "Bilikha" header,
+  and the review queue's tabs keep the old underline style. Restyle both to
+  match — found in review, left for the next pull request.
+
 ---
 
 ## Acceptance
 
 - [x] `npm run typecheck`, `npm run lint`, `npm run docs:check` pass.
 - [x] No raw colours or arbitrary brand values in `frontend/src`.
-- [ ] Both themes are AA on every screen — token pairs verified; signed-in
-  screens not yet seen in a browser.
+- [ ] Both themes are AA on every screen — token pairs verified; every
+  screen seen in a browser in review (see Step 3.1), but contrast not measured
+  per screen.
 
 ## Follow-ups
 
-Ramp rename; a real favicon.
+- Ramp rename (`clay` is slate, `lawa` navy, `palayok` red).
+- A real favicon.
+- The admin layout (Step 4.2).
+- `Tabs` uses `role="tab"` without arrow-key navigation or panel links: add
+  both, or render it as `aria-pressed` buttons, as a segmented control.
+- Bundle growth from this restyle: initial JS 91.61 → 93.54 kB gzip (+2.1%),
+  CSS 13.30 → 16.21 kB gzip (+22%). Issue #10 asks for no growth by the end.
