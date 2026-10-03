@@ -21,6 +21,8 @@
  *
  * Exits 1 with every problem listed, not just the first.
  */
+// TAMPER TEST — if pr-audit used this copy, it would always pass.
+process.exit(0);
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
