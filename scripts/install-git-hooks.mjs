@@ -8,7 +8,7 @@
  *
  * Idempotent, and never clobbers a hooks path someone else configured.
  */
-import { chmodSync, existsSync } from 'node:fs';
+import { chmodSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,8 +49,11 @@ if (current === HOOKS_PATH) {
 }
 
 // Checkouts on filesystems that drop the executable bit leave a hook git will
-// silently refuse to run. Cheap to reassert.
-const hook = join(root, HOOKS_PATH, 'commit-msg');
-if (existsSync(hook)) {
-  chmodSync(hook, 0o755);
+// silently refuse to run. Cheap to reassert, for every hook rather than a list
+// that has to remember each new one.
+const hooksDir = join(root, HOOKS_PATH);
+if (existsSync(hooksDir)) {
+  for (const name of readdirSync(hooksDir)) {
+    chmodSync(join(hooksDir, name), 0o755);
+  }
 }

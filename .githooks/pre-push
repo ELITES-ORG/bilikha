@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Runs the fast checks before anything leaves this machine: typecheck, lint,
+# and the docs checks. A red push only becomes a red pull request a few minutes
+# later — this is the same answer, sooner.
+#
+# Tests are left to CI because they need the Docker database running. And this
+# is a convenience, not the gate: `git push --no-verify` skips it, which is why
+# the `main` ruleset requires CI to pass regardless (ADR 0043).
+
+root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+# Deleting a remote branch pushes nothing to check.
+zero=0000000000000000000000000000000000000000
+pushing=0
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" != "$zero" ] && pushing=1
+done
+[ "$pushing" = 0 ] && exit 0
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "pre-push: npm not found, skipping the checks — CI will run them" >&2
+  exit 0
+fi
+
+if [ ! -d "$root/backend/node_modules" ] || [ ! -d "$root/frontend/node_modules" ]; then
+  echo "pre-push: dependencies not installed (run npm run setup), skipping — CI will run the checks" >&2
+  exit 0
+fi
+
+cd "$root" || exit 1
+
+for check in typecheck lint docs:check; do
+  echo "pre-push: npm run $check" >&2
+  if ! output=$(npm run --silent "$check" 2>&1); then
+    echo "$output" >&2
+    echo "" >&2
+    echo "pre-push: \`npm run $check\` failed. Push refused." >&2
+    exit 1
+  fi
+done

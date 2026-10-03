@@ -131,6 +131,7 @@ rejects a reasonable alternative, gets an entry in
 `npm run docs:check`. Do not report work complete on the basis that it looks
 right.
 
-**Every pull request into `main` is audited before it merges.** Fill in the
-template GitHub pre-fills; what each part is for, and what the audit checks, is
-in [`docs/guides/open-a-pull-request.md`](./docs/guides/open-a-pull-request.md).
+**Every pull request into `main` is audited before it merges, and only reyxdz
+merges.** Fill in the template GitHub pre-fills; the `pr-audit` check fails the
+pull request until it is complete. What each part is for, and what the audit
+checks, is in [`docs/guides/open-a-pull-request.md`](./docs/guides/open-a-pull-request.md).

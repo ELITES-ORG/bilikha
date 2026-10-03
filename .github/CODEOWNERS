@@ -1,0 +1,3 @@
+# Every change into main needs reyxdz's approval, and only reyxdz merges.
+# The `main` rulesets enforce it; see ADR 0043.
+* @reyxdz
