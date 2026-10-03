@@ -62,6 +62,15 @@ Each diff rule has a written escape — `No tests: <why>` and the like. Without
 one, a strict rule is satisfied with an empty test, which is worse than an
 honest exception. The audit judges the reason.
 
+`pr-audit` runs on `pull_request_target`, so it always uses `main`'s copy of
+the workflow and of `check-pr.mjs`. Under `pull_request` a pull request runs its
+own copy and could edit either to pass itself. The job never executes the pull
+request's code — it fetches its commits as objects to list the changed files —
+which is what makes `pull_request_target` safe here. A change to the check
+therefore takes effect only once merged. CI (`check`) cannot be hardened the
+same way, because testing a pull request means running it; a pull request that
+touches `.github/` or `scripts/` gets a closer look in the audit.
+
 **A `pre-push` hook** runs typecheck, lint and the docs checks locally. It is
 the same answer sooner, not a gate.
 
