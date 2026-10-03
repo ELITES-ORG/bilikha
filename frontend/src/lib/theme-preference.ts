@@ -58,7 +58,7 @@ function syncThemeColorMeta(preference: ThemePreference): void {
  * The blocking script in index.html paints `<html>` inline so the boot mark
  * sits on the right paper before the stylesheet arrives (plan 0030). Being
  * inline, it outranks every rule — and it was never updated afterwards, so
- * choosing Dark left `<html>` painted `#ffffff` under `data-theme="dark"`.
+ * choosing Dark left `<html>` painted `#fcfbf8` under `data-theme="dark"`.
  * That shows wherever the page does not cover the canvas: the overscroll
  * bounce, and through a translucent modal scrim.
  *
