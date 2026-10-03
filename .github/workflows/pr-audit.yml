@@ -6,16 +6,34 @@ name: PR audit
 # .env file). The `main` ruleset requires this job, so a failing pull request
 # cannot be merged. See ADR 0043 and scripts/check-pr.mjs.
 #
+# WHY pull_request_target. Under `pull_request`, a pull request runs its own
+# copy of this file and of the script — so it could edit either to pass itself.
+# `pull_request_target` always runs main's copy. That is safe here only because
+# nothing from the pull request is executed: its commits are fetched as git
+# objects to list the changed files, and its description is read as text. Never
+# add a step that installs, builds or runs the pull request's code to this job.
+#
+# The consequence: a change to this file or to check-pr.mjs takes effect only
+# once it is merged. A pull request cannot change how it is itself audited.
+#
 # `edited` is what re-runs it after the description is fixed, without a push.
 
 on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  # TRANSITIONAL — delete in the next pull request. Until main has the
+  # pull_request_target trigger, the pull request adding it can only be checked
+  # by its own copy, and pr-audit is a required check nobody may skip. Once this
+  # is on main, the pull request removing this trigger is checked by main's copy.
   pull_request:
     types: [opened, edited, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: pr-audit-${{ github.event.pull_request.number }}
+  group: pr-audit-${{ github.event_name }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# Read-only. pull_request_target would otherwise hand this job a token that can
+# write to the repository.
 permissions:
   contents: read
 
@@ -25,10 +43,23 @@ jobs:
     timeout-minutes: 5
 
     steps:
+      # The base branch: main's script, not the pull request's. History, because
+      # the diff is taken from the merge base.
       - uses: actions/checkout@v5
         with:
-          # The diff is taken from the merge base, which needs history.
           fetch-depth: 0
+          persist-credentials: false
+
+      # The pull request's commits, as objects only — nothing is checked out.
+      # Works for branches in this repository and for forks alike. Anonymous,
+      # because the repository is public (Vercel's Hobby plan requires it); if
+      # it ever goes private this step fails, and so blocks merging, until it
+      # is given a token.
+      - name: Fetch the pull request's commits
+        env:
+          NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: git fetch --no-tags "https://github.com/$REPO.git" "refs/pull/$NUMBER/head"
 
       - uses: actions/setup-node@v5
         with:

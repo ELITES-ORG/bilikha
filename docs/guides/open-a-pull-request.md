@@ -34,6 +34,10 @@ npm run check:pr -- --body-file pr.md
 
 It runs exactly what the `pr-audit` check runs, against `origin/main...HEAD`.
 
+On GitHub, `pr-audit` always runs `main`'s copy of the check, never the pull
+request's — so changing `scripts/check-pr.mjs` or the workflow in a pull request
+does not change how that pull request is checked. It applies after merging.
+
 ### What `pr-audit` checks
 
 **The description:** every template section filled in; `Plan / issue:` not
