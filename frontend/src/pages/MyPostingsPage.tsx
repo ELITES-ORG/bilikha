@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { CircleAlert, Clock } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import {
   Badge,
   Button,
@@ -55,7 +54,6 @@ export function MyPostingsPage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">

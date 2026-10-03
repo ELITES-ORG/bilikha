@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { SiteHeader } from '@/components/SiteHeader';
 import {
   Button,
   ButtonLink,
@@ -133,7 +132,6 @@ export function PostingComposePage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">

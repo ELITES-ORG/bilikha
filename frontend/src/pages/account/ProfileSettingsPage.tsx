@@ -1,5 +1,4 @@
 import { TriangleAlert } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { ButtonLink, Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -14,8 +13,7 @@ export function ProfileSettingsPage() {
   const { data: user } = useCurrentUser();
 
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

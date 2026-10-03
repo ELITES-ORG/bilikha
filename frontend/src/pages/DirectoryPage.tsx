@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { ModeNotice } from '@/components/ModeNotice';
 import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
@@ -200,7 +199,6 @@ export function DirectoryPage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { CornerBlob } from '@/components/Decor';
-import { SiteHeader } from '@/components/SiteHeader';
 import {
   Avatar,
   Badge,
@@ -78,7 +77,6 @@ export function CreativeProfilePage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Bookmark, BookmarkCheck, ChevronRight, MapPin } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Badge, Button, ButtonLink, Container, Eyebrow, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RatingScore } from '@/features/ratings/components/RatingScore';
@@ -147,7 +146,6 @@ export function OfferDetailPage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
 
       <main className={offer.data ? mainPad : pbBottomNav}>

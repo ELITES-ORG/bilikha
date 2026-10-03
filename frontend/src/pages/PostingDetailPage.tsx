@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Avatar, Badge, Button, ButtonLink, Container, Eyebrow, Skeleton, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -51,7 +50,6 @@ export function PostingDetailPage() {
 
   return (
     <>
-      <SiteHeader />
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>

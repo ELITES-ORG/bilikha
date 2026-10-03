@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { SiteHeader } from '@/components/SiteHeader';
 import { Container } from '@/components/ui';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { LEGAL_CONTACT, LEGAL_LAST_UPDATED } from '@/lib/legal';
@@ -27,8 +26,7 @@ export function LegalLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh bg-paper">
-      <SiteHeader />
+    <div className="bg-paper">
       <main className={pbBottomNav}>
         <Container width="prose" className="py-(--section-gap)">
           <h1 className="u-display text-3xl text-ink">{title}</h1>
