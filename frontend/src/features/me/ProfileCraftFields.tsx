@@ -188,7 +188,7 @@ export function ProfileCraftFields({
               value={preference}
               checked={form.contactPreference === preference}
               onChange={() => onUpdate('contactPreference', preference)}
-              className="size-4 accent-[var(--color-lawa-600)]"
+              className="size-4 accent-primary"
             />
             {preference === 'phone' ? `Phone (${phone})` : `Email (${email})`}
           </label>

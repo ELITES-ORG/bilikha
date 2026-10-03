@@ -23,17 +23,23 @@ inline styles and the style guide. Dropping `static` silently breaks those.
 
 ## Identity
 
-**Type.** Fraunces for display, Archivo for everything else. Fraunces is loaded
-with its optical-size axis and applied through `.u-display` — never to body
-copy, and never below `text-xl`. Archivo carries all UI and reading text.
+**Type.** Plus Jakarta Sans for headings, UI and reading text; Fraunces only for
+the landing hero headline, through `.u-serif`, never below `text-3xl`.
+`.u-display` is the heading face at weight 700. Two families is the budget
+([ADR 0011](../docs/decisions/0011-self-hosted-variable-fonts.md)).
 
-**Palette — "Abaca".** Neutrals are warm clay rather than blue-grey, so screens
-read as paper. `lawa` (deep marine teal) is the primary; `palayok` (fired
-earthenware) is the single decorative accent.
+Roles, with the size always chosen at the call site: display `text-5xl`/`6xl`
+(serif) · h1 `text-4xl` · h2 `text-3xl` · h3 `text-xl`/`2xl` · body `text-md` ·
+small `text-base`/`text-sm` · caption `text-xs`.
 
-**Why not the obvious defaults.** Saturated indigo primaries, neutral-black
-shadows, and one radius applied to everything are what a framework gives you
-before anyone has made a decision. Each is replaced here on purpose.
+**Palette — navy and red** ([ADR 0044](../docs/decisions/0044-navy-and-red-identity.md)).
+Neutrals are cool slate on white. `lawa` (navy, `#143469`) is the primary;
+`palayok` (red) is the accent for calls to action and badges. The ramp names
+predate the palette: `clay` is slate, `lawa` is navy, `palayok` is red.
+
+**Why not the obvious defaults.** Neutral-black shadows and one radius applied
+to everything are what a framework gives you before anyone has made a decision.
+Each is replaced here on purpose.
 
 ---
 
@@ -41,10 +47,12 @@ before anyone has made a decision. Each is replaced here on purpose.
 
 **Colour**
 
-- `palayok` is decorative only — domain markers, active indicators, rules. It is
-  never a status colour.
+- Red is for calls to action, badges and rules. `palayok-500` (`#E63946`) is 4.17:1
+  on white, so it is for decoration and large text only; filled buttons and
+  badges use `accent-solid` (4.76:1 with white text). Red is never a status
+  colour — errors use `danger`, which is deliberately deeper and browner.
 - Status is never colour alone. Pair every status badge with an icon or a word.
-- Text on paper uses steps 600–700. Steps 400 and below fail contrast at body
+- Text on white uses steps 600–700. Steps 400 and below fail contrast at body
   sizes.
 
 **Type**
@@ -65,12 +73,11 @@ before anyone has made a decision. Each is replaced here on purpose.
 
 **Radius and elevation**
 
-- Radius is graded: `xs` chips, `sm` buttons and inputs, `md` cards, `lg` panels
-  and modals. Uniform rounding flattens hierarchy.
+- Radius is graded: `xs` chips, `sm` (12px) buttons and inputs, `md` (16px)
+  cards, `lg` (20px) panels and modals. Uniform rounding flattens hierarchy.
 - Prefer a hairline to a shadow. Stop at `shadow-lg` for anything in-page;
   `xl` is for overlays only.
-- Shadows are ink-tinted. Never introduce a neutral-black one — it greys out
-  over warm paper and reads cheap.
+- Shadows are ink-tinted (navy-slate). Never introduce a neutral-black one.
 
 **Motion**
 

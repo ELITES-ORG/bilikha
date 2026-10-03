@@ -344,7 +344,7 @@ export function RegisterPage() {
                   type="checkbox"
                   checked={form.privacyConsent}
                   onChange={(e) => update('privacyConsent', e.target.checked)}
-                  className="mt-0.5 size-4 rounded-xs accent-[var(--color-lawa-600)]"
+                  className="mt-0.5 size-4 rounded-xs accent-primary"
                 />
                 <span>
                   I have read and accept the{' '}
@@ -363,7 +363,7 @@ export function RegisterPage() {
                   type="checkbox"
                   checked={form.termsAccepted}
                   onChange={(e) => update('termsAccepted', e.target.checked)}
-                  className="mt-0.5 size-4 rounded-xs accent-[var(--color-lawa-600)]"
+                  className="mt-0.5 size-4 rounded-xs accent-primary"
                 />
                 <span>
                   I accept the{' '}

@@ -16,8 +16,8 @@ export const THEME_STORAGE_KEY = 'bilikha-theme';
  * already in index.html for the light and dark media metas.
  */
 export const THEME_COLOR_PAPER = {
-  light: '#fcfbf8',
-  dark: '#14110e',
+  light: '#ffffff',
+  dark: '#0c121a',
 } as const;
 
 export function parseThemePreference(raw: string | null | undefined): ThemePreference {
@@ -58,7 +58,7 @@ function syncThemeColorMeta(preference: ThemePreference): void {
  * The blocking script in index.html paints `<html>` inline so the boot mark
  * sits on the right paper before the stylesheet arrives (plan 0030). Being
  * inline, it outranks every rule — and it was never updated afterwards, so
- * choosing Dark left `<html>` painted `#fcfbf8` under `data-theme="dark"`.
+ * choosing Dark left `<html>` painted `#ffffff` under `data-theme="dark"`.
  * That shows wherever the page does not cover the canvas: the overscroll
  * bounce, and through a translucent modal scrim.
  *

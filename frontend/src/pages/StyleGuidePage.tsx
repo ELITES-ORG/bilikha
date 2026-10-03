@@ -65,7 +65,7 @@ export function StyleGuidePage() {
 
         <Section
           title="Typography"
-          note="Fraunces for display, Archivo for everything else. Tracking tightens as size grows."
+          note="Plus Jakarta Sans for headings and UI, Fraunces for the landing hero. Tracking tightens as size grows."
         >
           <div className="space-y-6 border-t border-hairline pt-6">
             {DISPLAY_SIZES.map(([size, use]) => (
@@ -87,7 +87,7 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section title="Weight" note="Archivo 400/500/600. 700 is reserved for rare emphasis.">
+        <Section title="Weight" note="Plus Jakarta Sans 400/500/600. 700 is reserved for rare emphasis.">
           <div className="flex flex-wrap gap-x-10 gap-y-3 border-t border-hairline pt-6">
             {([400, 500, 600, 700] as const).map((weight) => (
               <div key={weight}>

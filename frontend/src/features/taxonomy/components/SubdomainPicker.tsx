@@ -118,7 +118,7 @@ export function SubdomainPicker({ selected, primary, onChange, error }: Subdomai
                               checked={checked}
                               disabled={disabled}
                               onChange={() => toggleSubdomain(sub.slug)}
-                              className="size-4 rounded-xs border-hairline-strong accent-[var(--color-lawa-600)]"
+                              className="size-4 rounded-xs border-hairline-strong accent-primary"
                             />
                             {sub.name}
                           </label>
@@ -154,7 +154,7 @@ export function SubdomainPicker({ selected, primary, onChange, error }: Subdomai
                       name="primarySubdomain"
                       checked={primary === slug}
                       onChange={() => setPrimary(slug)}
-                      className="size-4 accent-[var(--color-lawa-600)]"
+                      className="size-4 accent-primary"
                     />
                     {label}
                   </label>
