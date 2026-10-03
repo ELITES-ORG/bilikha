@@ -29,3 +29,5 @@ cookies.txt
 
 # Local Supabase CLI scratch
 supabase/.temp/
+# Added by code-review-graph
+.code-review-graph/
