@@ -1,9 +1,11 @@
-import { useReducer, type CSSProperties, type ImgHTMLAttributes, type ReactNode } from 'react';
+import { useReducer, useState, type CSSProperties, type ImgHTMLAttributes, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import {
   INITIAL_PROGRESSIVE_IMAGE_STATE,
   progressiveImageReducer,
   progressiveImageStatus,
+  rememberLoaded,
+  wasLoadedBefore,
 } from './progressive-image-state';
 
 export interface ProgressiveImageProps
@@ -33,7 +35,12 @@ export function ProgressiveImage({
   ...imageProps
 }: ProgressiveImageProps) {
   const [state, dispatch] = useReducer(progressiveImageReducer, INITIAL_PROGRESSIVE_IMAGE_STATE);
-  const status = progressiveImageStatus(state, src);
+  // Decided once per source when it first renders here, so a fade that starts
+  // on this mount is not cut short when its own onLoad remembers the source.
+  const [seen, setSeen] = useState(() => ({ src, before: wasLoadedBefore(src) }));
+  if (seen.src !== src) setSeen({ src, before: wasLoadedBefore(src) });
+  const instant = seen.src === src && seen.before && state.failedSrc !== src;
+  const status = instant ? 'loaded' : progressiveImageStatus(state, src);
   const frameStyle = {
     '--progressive-media-width': `${width}px`,
     '--progressive-media-height': `${height}px`,
@@ -44,6 +51,7 @@ export function ProgressiveImage({
       className={cn('progressive-media', status === 'loading' && 'skeleton', className)}
       style={frameStyle}
       data-media-state={status}
+      data-media-instant={instant ? '' : undefined}
       aria-busy={status === 'loading' ? true : undefined}
     >
       {fallback && (
@@ -60,6 +68,7 @@ export function ProgressiveImage({
         decoding={decoding}
         className={cn('progressive-media__image', imageClassName)}
         onLoad={(event) => {
+          rememberLoaded(src);
           dispatch({ type: 'loaded', src });
           onLoad?.(event);
         }}

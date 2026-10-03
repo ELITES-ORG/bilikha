@@ -209,6 +209,12 @@
     transform: scale3d(1, 1, 1);
   }
 
+  /* Already loaded earlier in this tab: appear at once. The fade is for images
+     arriving over the network, not for the header avatar on every navigation. */
+  .progressive-media[data-media-instant] > .progressive-media__image {
+    transition: none;
+  }
+
   .progressive-media[data-media-state='failed'] > .progressive-media__fallback {
     opacity: 1;
   }
