@@ -50,6 +50,13 @@ blocks force-pushes and deletion and now also requires `check` to have passed
 on the commit being released. A second lets only the organisation admin update
 the branch at all.
 
+Neither can require the released commit to be on `main` already — rulesets have
+no such rule — so a commit from another branch could be released without ever
+being audited. A **Release guard** workflow checks it after every push to
+`production` and fails loudly when it is not. It runs after the push, so it
+alerts rather than blocks; only reyxdz can release, so what it catches is a
+slip, not a bypass.
+
 **A `pr-audit` check.** `scripts/check-pr.mjs` fails a pull request whose
 description leaves a template section empty or a box unticked, and whose diff
 contains what a ticked box cannot vouch for: a schema change with no migration,

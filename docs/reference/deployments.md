@@ -41,6 +41,13 @@ Rulesets on GitHub block force-pushes and deletion, accept only commits CI has
 already passed, and let only reyxdz update the branch
 ([ADR 0043](../decisions/0043-only-reyxdz-merges-and-releases.md)).
 
+No ruleset can require the released commit to be on `main` already, so the
+**Release guard** workflow checks it after every push to `production` and fails
+— with an email to whoever pushed — if it is not. The command above can never
+trip it; it catches the wrong ref pushed by mistake. Its run summary has the
+recovery: roll back in Vercel, get that exact commit onto `main` with a merge
+commit (reverting it there if it should not ship), then release from `main`.
+
 ---
 
 ## The arrangement
