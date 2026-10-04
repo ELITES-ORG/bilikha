@@ -81,3 +81,4 @@ Number sequentially. Never renumber.
 | [0042](./0042-main-is-staging-production-is-a-branch.md) | `main` deploys to staging; production is a branch it is promoted to | Accepted |
 | [0043](./0043-only-reyxdz-merges-and-releases.md) | Only reyxdz merges and releases, and a pull request must be ready first | Accepted |
 | [0044](./0044-navy-and-red-identity.md) | Navy and red identity, with Plus Jakarta Sans | Accepted |
+| [0045](./0045-headings-stay-in-fraunces.md) | Set headings in Fraunces; keep Plus Jakarta Sans for UI and body | Accepted |

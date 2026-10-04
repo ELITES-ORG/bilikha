@@ -8,7 +8,7 @@
   :root {
     color-scheme: light dark;
     /* Opsz is Fraunces' optical-size axis. Left at a text value here and
-       raised in the .u-serif utility. */
+       raised in the .u-display and .u-serif utilities. */
     font-variant-ligatures: common-ligatures contextual;
     -webkit-tap-highlight-color: transparent;
   }
@@ -40,7 +40,7 @@
      explicit decision at the call site, so nothing gets styled by accident. */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--color-ink);
     text-wrap: balance;
   }
@@ -139,16 +139,18 @@
 }
 
 @layer components {
-  /* Display type: the heading face at a heavier weight. 59 call sites use
-     this, so it stays the single place that decides what "display" means. */
+  /* Display type: the Fraunces heading face with its optical-size axis pushed
+     above what the rendered size would select, which sharpens stroke contrast
+     and tightens the serifs. 59 call sites use this, so it stays the single
+     place that decides what "display" means. */
   .u-display {
-    font-family: var(--font-heading);
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variation-settings: 'opsz' 48;
   }
 
-  /* The serif, for the landing hero headline only. Pushes Fraunces'
-     optical-size axis above what the rendered size would select, which
-     sharpens stroke contrast and tightens the serifs. */
+  /* The serif, named explicitly, for the landing and sign-in headlines. Kept
+     separate from .u-display so those stay serif if headings ever change. */
   .u-serif {
     font-family: var(--font-serif);
     font-weight: 600;

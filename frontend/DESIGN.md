@@ -23,9 +23,11 @@ inline styles and the style guide. Dropping `static` silently breaks those.
 
 ## Identity
 
-**Type.** Plus Jakarta Sans for headings, UI and reading text; Fraunces only for
-the landing hero headline, through `.u-serif`, never below `text-3xl`.
-`.u-display` is the heading face at weight 700. Two families is the budget
+**Type.** Fraunces for headings and the wordmark; Plus Jakarta Sans for UI and
+reading text ([ADR 0045](../docs/decisions/0045-headings-stay-in-fraunces.md)).
+`.u-display` is Fraunces at weight 600 with optical size raised; `.u-serif` is
+the same face, named explicitly for the landing and sign-in headlines. Two
+families is the budget
 ([ADR 0011](../docs/decisions/0011-self-hosted-variable-fonts.md)).
 
 Roles, with the size always chosen at the call site: display `text-5xl`/`6xl`
