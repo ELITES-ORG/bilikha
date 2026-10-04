@@ -1,6 +1,6 @@
 # 0044. Navy and red identity, with Plus Jakarta Sans
 
-- **Status:** Accepted
+- **Status:** Accepted. Headings and `.u-display` returned to Fraunces in [0045](./0045-headings-stay-in-fraunces.md).
 - **Date:** 2026-10-03
 - **Related:** [0010](./0010-theme-static-tokens.md) ·
   [0011](./0011-self-hosted-variable-fonts.md) ·

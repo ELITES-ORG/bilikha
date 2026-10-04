@@ -65,7 +65,7 @@ export function StyleGuidePage() {
 
         <Section
           title="Typography"
-          note="Plus Jakarta Sans for headings and UI, Fraunces for the landing hero. Tracking tightens as size grows."
+          note="Fraunces for headings and display, Plus Jakarta Sans for UI and body. Tracking tightens as size grows."
         >
           <div className="space-y-6 border-t border-hairline pt-6">
             {DISPLAY_SIZES.map(([size, use]) => (

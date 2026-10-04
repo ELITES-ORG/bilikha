@@ -23,7 +23,7 @@ export function Wordmark({ tone = 'default', size = 'md', className }: WordmarkP
       </svg>
       <span
         className={cn(
-          'font-sans font-extrabold tracking-tight',
+          'u-display font-semibold tracking-tight',
           size === 'lg' ? 'text-3xl' : 'text-2xl',
           tone === 'inverse' ? 'text-on-primary' : 'text-lawa-700',
         )}

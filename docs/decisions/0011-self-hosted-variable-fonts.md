@@ -1,6 +1,6 @@
 # 0011. Self-hosted variable fonts
 
-- **Status:** Accepted. Archivo replaced by Plus Jakarta Sans in [0044](./0044-navy-and-red-identity.md); the two-family budget still holds.
+- **Status:** Accepted. Archivo replaced by Plus Jakarta Sans in [0044](./0044-navy-and-red-identity.md); the two-family budget still holds. Fraunces carries headings per [0045](./0045-headings-stay-in-fraunces.md).
 - **Date:** 2026-09-15
 
 ## Context
