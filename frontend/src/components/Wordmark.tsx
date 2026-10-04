@@ -25,7 +25,7 @@ export function Wordmark({ tone = 'default', size = 'md', className }: WordmarkP
         className={cn(
           'u-display font-semibold tracking-tight',
           size === 'lg' ? 'text-3xl' : 'text-2xl',
-          tone === 'inverse' ? 'text-on-primary' : 'text-lawa-700',
+          tone === 'inverse' ? 'text-on-primary' : 'text-wordmark',
         )}
       >
         Bilikha
