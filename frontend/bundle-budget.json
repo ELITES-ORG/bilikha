@@ -1,5 +1,5 @@
 {
-  "$comment": "Gzip bytes the first page load may fetch: the entry script, its modulepreloaded chunks, and the stylesheet that index.html loads. Measured by scripts/check-bundle-size.mjs in CI. Set on 2026-10-04 from main after the navy-and-red restyle (#11): 152439 JS and 16021 CSS, plus about 1 kB and 0.3 kB of headroom. Issue #12 brings the size back to its pre-restyle level and should lower these with it. Raising them needs a 'Budget raised: <why>' line in the pull request.",
-  "initialJsGzipBytes": 153500,
-  "initialCssGzipBytes": 16300
+  "$comment": "Gzip bytes the first page load may fetch: the entry script, its modulepreloaded chunks, and the stylesheet that index.html loads. Measured by scripts/check-bundle-size.mjs in CI. Raised on 2026-10-04 for the offer card and offer page redesign (plan 0041): measured 155820 JS and 16860 CSS, plus about 1 kB and 0.3 kB of headroom. The offer page stays eager on purpose (plan 0031 rule 3): shared links land on it. Previously set from main after the navy-and-red restyle (#11) at 153500 / 16300. Issue #12 brings the size back down and should lower these with it. Raising them needs a 'Budget raised: <why>' line in the pull request.",
+  "initialJsGzipBytes": 156800,
+  "initialCssGzipBytes": 17200
 }

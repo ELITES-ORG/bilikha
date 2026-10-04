@@ -70,8 +70,12 @@ describe('formatPriceRange', () => {
     expect(formatPriceRange(null, null)).toBe('Price on request');
   });
 
-  it('says "from" when only a minimum is set', () => {
-    expect(formatPriceRange(1_500_000, null)).toBe('from ₱15,000');
+  it('says "From" when only a minimum is set', () => {
+    expect(formatPriceRange(1_500_000, null)).toBe('From ₱15,000');
+  });
+
+  it('renders equal ends as one price', () => {
+    expect(formatPriceRange(500_000, 500_000)).toBe('₱5,000');
   });
 
   it('renders a full range', () => {

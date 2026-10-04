@@ -100,6 +100,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0038](./0038-the-offer-card-shows-a-rating-once-there-is-one.md) | The offer card shows a rating once there is one | Complete |
 | [0039](./0039-staging-and-production.md) | Staging and production — the current deployment becomes staging | Complete except two browser checks |
 | [0040](./0040-navy-and-red-restyle.md) | Navy and red restyle | In progress |
+| [0041](./0041-offers-as-a-catalog.md) | Offers as a catalog, and the offer page | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

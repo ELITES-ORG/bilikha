@@ -10,7 +10,6 @@ import {
   Button,
   Container,
   EmptyState,
-  ProgressiveImage,
   SectionHeading,
   Select,
   Skeleton,
@@ -21,7 +20,9 @@ import {
 import { useCurrentUser } from '@/features/auth/api';
 import { usePostingsFeed } from '@/features/postings/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
+import { useOfferSaving } from '@/features/me/use-offer-saving';
 import { usePublishedOffers } from '@/features/offers/api';
+import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -40,13 +41,6 @@ function parseBudget(raw: string | null): number | undefined {
 
 function parseView(raw: string | null): DirectoryView {
   return raw === 'creatives' ? 'creatives' : 'offers';
-}
-
-function initialsFrom(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`.toUpperCase();
 }
 
 export function DirectoryPage() {
@@ -99,6 +93,8 @@ export function DirectoryPage() {
   );
 
   const list = creativeHome ? postings : view === 'offers' ? offers : creatives;
+  // Saving is a hiring-side action, for signed-in viewers browsing offers.
+  const saving = useOfferSaving(Boolean(user) && !creativeHome && view === 'offers');
 
   const selectedDomain = useMemo(
     () => domains.data?.find((d) => d.slug === domain),
@@ -405,6 +401,36 @@ export function DirectoryPage() {
             )}
           </div>
 
+          {!creativeHome && domains.data && (
+            // Writes the same `domain` param as the Domain select in the filter
+            // panel, so the two always agree. One scrolling row on a phone so the
+            // chips never take over the screen; wraps from `sm`.
+            <div
+              role="group"
+              aria-label="Filter by domain"
+              className="u-no-scrollbar -mx-(--gutter) mt-5 flex snap-x scroll-px-(--gutter) gap-2 overflow-x-auto px-(--gutter) sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+            >
+              {[{ slug: '', name: 'All' }, ...domains.data].map((d) => {
+                const active = (domain ?? '') === d.slug;
+                return (
+                  <button
+                    key={d.slug || 'all'}
+                    type="button"
+                    aria-pressed={active}
+                    className={cn(
+                      segmentItemClass(active),
+                      'min-h-11 shrink-0 snap-start sm:min-h-10',
+                      !active && 'border border-hairline-strong bg-surface',
+                    )}
+                    onClick={() => setFilter({ domain: d.slug || undefined, subdomain: undefined })}
+                  >
+                    {d.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="mt-10">
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
@@ -419,13 +445,20 @@ export function DirectoryPage() {
               </p>
             )}
 
-            {list.isPending && (
-              <div className="space-y-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-28 w-full" />
-                ))}
-              </div>
-            )}
+            {list.isPending &&
+              (!creativeHome && view === 'offers' ? (
+                <ul className={offerGridClass} aria-label="Loading offers">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <OfferCardSkeleton key={i} />
+                  ))}
+                </ul>
+              ) : (
+                <div className="space-y-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-28 w-full" />
+                  ))}
+                </div>
+              ))}
 
             {list.isError && (
               <EmptyState
@@ -545,86 +578,42 @@ export function DirectoryPage() {
             )}
 
             {!creativeHome && view === 'offers' && offers.data && offers.data.data.length > 0 && (
-              <ul className="divide-y divide-hairline border-t border-hairline">
+              <ul className={offerGridClass}>
                 {offers.data.data.map((offer) => {
                   const creativeName = offer.creative.displayName ?? offer.creative.slug;
-                  // Same craft on every row when that filter is already on.
+                  // Same craft on every card when that filter is already on.
                   const showSubdomain = !subdomain;
                   // The "your town first" line already explains proximity.
                   const showNearby =
                     Boolean(offer.creative.isNearby) &&
                     !(nearbyMunicipalityName && !municipality);
-                  const thumbClass =
-                    'size-20 shrink-0 overflow-hidden rounded-xs sm:size-[120px]';
-                  const thumbnailSrc = offer.image?.thumbUrl ?? offer.creative.avatarUrl;
 
                   return (
-                    <li key={offer.id}>
-                      <Link
-                        to={`/offers/${offer.id}`}
-                        className="group flex flex-row items-start gap-3 py-5 transition-colors hover:bg-clay-50/60 sm:gap-6 sm:py-6"
-                      >
-                        {thumbnailSrc ? (
-                          <ProgressiveImage
-                            key={thumbnailSrc}
-                            src={thumbnailSrc}
-                            alt=""
-                            width={120}
-                            height={120}
-                            className={thumbClass}
-                            imageClassName="object-cover"
-                            fallback={
-                              <span className="text-sm font-medium tabular-nums text-lawa-800 sm:text-base">
-                                {initialsFrom(creativeName)}
-                              </span>
+                    <OfferCard
+                      key={offer.id}
+                      href={`/offers/${offer.id}`}
+                      image={offer.image}
+                      title={offer.title}
+                      description={offer.description}
+                      eyebrow={offer.subdomain.domain}
+                      category={showSubdomain ? offer.subdomain.name : undefined}
+                      price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                      provider={{
+                        name: creativeName,
+                        avatarUrl: offer.creative.avatarUrl,
+                        municipality: offer.creative.municipality,
+                        nearby: showNearby,
+                      }}
+                      save={
+                        saving.enabled && offer.creative.slug !== user?.profileSlug
+                          ? {
+                              saved: saving.isSaved(offer.id),
+                              pending: saving.isPending(offer.id),
+                              onToggle: () => saving.toggle(offer.id),
                             }
-                          />
-                        ) : (
-                          <div
-                            className={cn(
-                              thumbClass,
-                              'flex items-center justify-center bg-lawa-100 text-lawa-800',
-                            )}
-                            aria-hidden
-                          >
-                            <span className="text-sm font-medium tabular-nums sm:text-base">
-                              {initialsFrom(creativeName)}
-                            </span>
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <h2
-                            className="u-display -mt-[0.2em] line-clamp-2 text-xl leading-[1.2] text-ink text-pretty group-hover:text-lawa-700"
-                            title={offer.title}
-                          >
-                            {offer.title}
-                          </h2>
-                          {showSubdomain && (
-                            <p className="mt-1 text-xs tracking-wide text-ink-muted">
-                              {offer.subdomain.name}
-                            </p>
-                          )}
-                          <p className="mt-1 text-sm font-medium text-ink">
-                            {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
-                          </p>
-                          <div className="mt-3 flex items-center gap-3">
-                            <Avatar
-                              src={offer.creative.avatarUrl}
-                              name={creativeName}
-                              size="sm"
-                            />
-                            <div className="min-w-0">
-                              <p className="truncate text-sm text-ink">{creativeName}</p>
-                              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-                                <MapPin className="size-3" aria-hidden />
-                                <span>{offer.creative.municipality}</span>
-                                {showNearby && <span>· Nearby</span>}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    </li>
+                          : undefined
+                      }
+                    />
                   );
                 })}
               </ul>

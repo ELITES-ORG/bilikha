@@ -1,9 +1,11 @@
 import { Navigate } from 'react-router-dom';
 import { TriangleAlert } from 'lucide-react';
-import { Card, CardBody, Container, EmptyState, Skeleton } from '@/components/ui';
+import { Container, EmptyState } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useOwnProfile } from '@/features/me/api';
+import { OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
 import { OfferEditor } from '@/features/offers/OfferEditor';
+import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { AccountPageHeading } from './AccountPageHeading';
 
@@ -15,12 +17,13 @@ export function OffersSettingsPage() {
       <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
-          <Container width="narrow" className="py-(--section-gap)">
+          <Container width="wide" className="py-(--section-gap)">
             <AccountPageHeading title="Offers" />
-            <div className="mt-10 space-y-4">
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-56 w-full" />
-            </div>
+            <ul className={cn('mt-10', offerGridClass)} aria-label="Loading offers">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <OfferCardSkeleton key={i} />
+              ))}
+            </ul>
           </Container>
         </main>
       </div>
@@ -32,7 +35,7 @@ export function OffersSettingsPage() {
       <div className="bg-paper">
         <RegistrationStatusBanner />
         <main className={pbBottomNav}>
-          <Container width="narrow" className="py-(--section-gap)">
+          <Container width="wide" className="py-(--section-gap)">
             <AccountPageHeading title="Offers" />
             <div className="mt-10">
               <EmptyState
@@ -56,17 +59,15 @@ export function OffersSettingsPage() {
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>
-        <Container width="narrow" className="py-(--section-gap)">
+        <Container width="wide" className="py-(--section-gap)">
           <AccountPageHeading title="Offers" />
           <p className="mt-3 max-w-xl text-md text-ink-muted">
             What you are available to be hired for. These are what clients browse.
           </p>
 
-          <Card elevation="flat" className="mt-10">
-            <CardBody>
-              <OfferEditor />
-            </CardBody>
-          </Card>
+          <div className="mt-10">
+            <OfferEditor />
+          </div>
         </Container>
       </main>
     </div>
