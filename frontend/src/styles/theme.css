@@ -244,6 +244,11 @@
      and the safe-area inset. The bar sets this as its height and the
      conversation composer positions against it, so the two cannot drift. */
   --bottom-nav-h: 3.25rem;
+  /* Height of the sticky staging banner, measured and set by StagingBanner.
+     Zero on production, where the banner does not render. Anything stuck or
+     fixed to the top of the viewport, and every full-height screen, offsets by
+     it so the banner never covers the header or makes a screen scroll. */
+  --staging-banner-h: 0px;
   --gutter: 1.25rem;
   --section-gap: 2.5rem;
   --stack-gap: 1.5rem;

@@ -274,7 +274,7 @@ export function ConversationPage() {
       <RegistrationStatusBanner />
 
       {/* Phone chat header: back + avatar + name | ⋮ */}
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
+      <header className="sticky top-(--staging-banner-h) z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
         <Link
           to="/messages"
           viewTransition

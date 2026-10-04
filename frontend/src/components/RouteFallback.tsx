@@ -38,7 +38,7 @@ export function RouteFallback({
   }, [slowAfterMs]);
 
   return (
-    <div className="min-h-dvh bg-paper">
+    <div className="min-h-page bg-paper">
       {chrome && <SiteHeader />}
       <div
         className={cn(pbBottomNav, 'flex min-h-[50dvh] flex-col items-center justify-center gap-4')}

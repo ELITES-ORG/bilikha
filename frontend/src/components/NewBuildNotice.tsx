@@ -34,7 +34,7 @@ export function NewBuildNotice() {
         never overlaps anyway, and under toasts (z-50): a toast is transient and
         answers something you just did, so it wins the rare collision.
       */
-      className="pointer-events-none fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)] z-30 flex justify-center px-4"
+      className="pointer-events-none fixed inset-x-0 top-[calc(var(--staging-banner-h)+4rem+env(safe-area-inset-top,0px)+0.75rem)] z-30 flex justify-center px-4"
     >
       {/* The wrapper is click-through so it never blocks the page behind it;
           the card itself takes clicks back. */}

@@ -144,14 +144,15 @@ function Toaster({
      * message near where the eye already is after pressing a button part-way
      * down a form, rather than in a corner.
      *
-     * Offset below the sticky header so it never covers the logo or the nav,
-     * plus the safe-area inset for a notch. pointer-events-none on the stack so
-     * the empty area either side never blocks the page.
+     * Offset below the sticky header (and the staging banner, where there is
+     * one) so it never covers the logo or the nav, plus the safe-area inset
+     * for a notch. pointer-events-none on the stack so the empty area either
+     * side never blocks the page.
      */
     <div
       className={cn(
         'pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4',
-        'top-[calc(4rem+env(safe-area-inset-top,0px)+0.75rem)]',
+        'top-[calc(var(--staging-banner-h)+4rem+env(safe-area-inset-top,0px)+0.75rem)]',
       )}
       aria-live="polite"
     >

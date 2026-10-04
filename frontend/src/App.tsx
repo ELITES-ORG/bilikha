@@ -5,6 +5,7 @@ import { BottomNav } from '@/components/BottomNav';
 import { NewBuildNotice } from '@/components/NewBuildNotice';
 import { RouteFallback } from '@/components/RouteFallback';
 import { SiteLayout } from '@/components/SiteLayout';
+import { StagingBanner } from '@/components/StagingBanner';
 import { ToastProvider } from '@/components/ui';
 import { queryClient } from '@/lib/query-client';
 import { useRememberSession } from '@/features/auth/api';
@@ -127,6 +128,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrowserRouter>
+          <StagingBanner />
           {/*
             One Suspense high up for the routes outside SiteLayout. BottomNav
             sits outside the routes and SiteHeader inside SiteLayout, so neither

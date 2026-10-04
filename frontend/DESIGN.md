@@ -70,6 +70,11 @@ Each is replaced here on purpose.
 - Page gutters come from `--gutter` via `<Container>`, never per-page padding
   classes. Section rhythm comes from `--section-gap`. Both step up at `md` and
   `xl`.
+- Off production a sticky staging banner sits above everything, and its height
+  is `--staging-banner-h` (zero on production). A full-height screen uses
+  `min-h-page`, not `min-h-dvh`. Anything stuck or fixed to the top offsets by
+  the variable: `sticky top-(--staging-banner-h)`, never `top-0`.
+  `staging-banner.test.ts` enforces both.
 
 **Radius and elevation**
 

@@ -95,6 +95,10 @@ database. The cost is that **a new production domain must be added to
 staging. The same hostname rule adds `X-Robots-Tag: noindex` to every
 non-production host.
 
+The app applies the rule too: every non-production host shows a "Staging" banner
+above each page, decided in the browser by `frontend/src/lib/site-host.ts`. A
+new production domain goes there as well, or production shows the banner.
+
 ---
 
 ## Vercel — frontend

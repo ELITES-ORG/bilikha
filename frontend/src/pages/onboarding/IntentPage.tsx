@@ -13,7 +13,7 @@ export function IntentPage() {
   const offerTo = withNextParam('/welcome/profile', next || null);
 
   return (
-    <div className="min-h-dvh bg-paper">
+    <div className="min-h-page bg-paper">
       <header className="border-b border-hairline">
         <Container width="narrow" className="flex h-16 items-center">
           <Link to="/" className="u-display text-xl font-semibold text-ink">
