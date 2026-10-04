@@ -188,7 +188,7 @@ a deploy. Acceptable while there is no real user data; revisit before there is.
 
 | Setting | Value |
 |---|---|
-| Projects | `bilikha-production` in organisation **Bilikha** (production); `BILIKHA` in organisation **ELITES** (staging) |
+| Projects | `bilikha-production` in organisation **Bilikha** (production); `BILIKHA` in organisation **Bilikha** (staging; moved from ELITES, confirmed in [#29](https://github.com/ELITES-ORG/bilikha/issues/29)) |
 | Region | Southeast Asia (Singapore), `ap-southeast-1` |
 | Connection | **Session pooler**, port 5432 |
 | Data API | **Disabled**, on both |
@@ -223,12 +223,22 @@ do not wire up Supabase Auth — see
 | Supabase pauses after ~7 days idle | Database unreachable until resumed manually |
 | Render free hours | 750/month. One service pinged continuously uses ~744 |
 
-`.github/workflows/keep-awake.yml` hits production's `/api/v1/health/ready`
-every 10 minutes during Philippine waking hours, which keeps Render awake and
-puts a query through to Postgres. **Staging is pinged once a day only.** Its
-Render service is in a separate workspace with its own 750 hours, but nobody is
-waiting on staging, so it sleeps and its first request after idle takes about a
-minute. The daily ping is there to stop the staging database pausing.
+`.github/workflows/keep-awake.yml` is **scheduled** to hit production's
+`/api/v1/health/ready` every 10 minutes during Philippine waking hours, which
+would keep Render awake and put a query through to Postgres. **It does not keep
+production awake in practice.** GitHub runs scheduled workflows best-effort:
+from 23 September to 4 October 2026 it ran 4 or 5 times a day in total, hours
+apart, against about 103 scheduled runs a day. Production sleeps between them,
+and visitors see the cold-start screen. What replaces it — Render Starter or an
+external pinger — is undecided; see
+[#21](https://github.com/ELITES-ORG/bilikha/issues/21). The workflow still fails
+loudly when the API is down, so it stays as a monitor.
+
+**Staging is scheduled once a day only.** Its Render service is in a separate
+workspace with its own 750 hours, but nobody is waiting on staging, so it sleeps
+and its first request after idle takes about a minute. The daily ping is there
+to stop the staging database pausing; it is subject to the same best-effort
+scheduling, so it may not fire every day.
 
 Supabase's free plan caps active projects (two at the time of writing), and
 production and staging each count as one.
