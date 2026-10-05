@@ -37,6 +37,8 @@ export interface OfferCardProps {
   footer?: ReactNode;
   /** Similar-offers strip: no description, tighter type. */
   compact?: boolean;
+  /** Whose initials fill the no-photo panel when there is no `provider`. */
+  fallbackName?: string;
   className?: string;
 }
 
@@ -102,9 +104,10 @@ export function OfferCard({
   save,
   footer,
   compact = false,
+  fallbackName,
   className,
 }: OfferCardProps) {
-  const fallbackText = provider?.name ?? title;
+  const fallbackText = provider?.name ?? fallbackName ?? title;
 
   return (
     <Card

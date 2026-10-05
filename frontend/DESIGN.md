@@ -94,6 +94,9 @@ Each is replaced here on purpose.
   drops to 36px from `sm` up.
 - Badges are pills. `variant="solid"` is for counts and flags — red for unread
   and active filters, navy for new or info. `soft` is for labels.
+- `Tabs` comes in two looks. `pill` (default) is the segmented control for
+  filters and modes. `underline` is for the sections of a page — a profile's
+  Services, Portfolio, Reviews — where pills would shout over the content.
 - `Tabs` is the segmented control: active tab a navy pill. A radio group that
   should look the same borrows `segmentTrackClass` / `segmentItemClass` and
   keeps its radio semantics.

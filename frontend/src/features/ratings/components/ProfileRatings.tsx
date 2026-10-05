@@ -29,9 +29,9 @@ export function ProfileRatings({ slug, isOwner }: ProfileRatingsProps) {
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <section className="mt-10" aria-labelledby="ratings-heading">
-      <h2 id="ratings-heading" className="u-display text-2xl text-ink">
-        Ratings
+    <section aria-labelledby="ratings-heading">
+      <h2 id="ratings-heading" className="text-2xl text-ink">
+        Reviews
       </h2>
 
       <div className="mt-4">
