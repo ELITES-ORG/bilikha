@@ -1,4 +1,4 @@
-# 0045. Responsive on every screen
+# 0046. Responsive on every screen
 
 - **Status:** In progress
 - **Owner:** emanuel
@@ -56,6 +56,8 @@ overflow, controls under 44px, and headings.
   - `short:` variant (height ≤ 30rem): header and staging banner scroll
     away, sticky sub-headers pin to the top, the offer hero caps at 10rem, the
     profile cover lowers.
+    Toasts and the new-build notice sit at the top there, since the header
+    they used to clear has scrolled away.
   - Compact sizes are mouse-only (`pointer-fine:`), not width-based.
   - `.u-tap` gives small links a 44px touch target without changing them.
   - 40px controls raised to 44px; `h1` on Directory, History, Notifications.
