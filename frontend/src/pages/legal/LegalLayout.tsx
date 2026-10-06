@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { transitionTo } from '@/components/page-transition/transition-to';
 import { Container } from '@/components/ui';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { LEGAL_CONTACT, LEGAL_LAST_UPDATED } from '@/lib/legal';
@@ -46,7 +47,11 @@ export function LegalLayout({
           )}
 
           <p className="mt-12 border-t border-hairline pt-6 text-sm">
-            <Link to={other.to} className="link-underline text-lawa-700">
+            <Link
+              to={other.to}
+              className="link-underline text-lawa-700"
+              onClick={transitionTo('wave')}
+            >
               {other.label}
             </Link>
           </p>

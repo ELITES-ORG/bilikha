@@ -5,6 +5,7 @@ import { toFieldErrors } from '@/features/auth/field-errors';
 import { useBarangays, useMunicipalities } from '@/features/taxonomy/api';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { transitionTo } from '@/components/page-transition/transition-to';
 import { Button, ButtonLink, Eyebrow, Input, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { withNextParam } from '@/lib/return-path';
@@ -344,7 +345,11 @@ export function RegisterPage() {
             />
             <span>
               I have read and accept the{' '}
-              <Link to="/privacy" className="link-underline text-lawa-700">
+              <Link
+                to="/privacy"
+                className="link-underline text-lawa-700"
+                onClick={transitionTo('wave')}
+              >
                 privacy notice
               </Link>
               .
@@ -363,7 +368,11 @@ export function RegisterPage() {
             />
             <span>
               I accept the{' '}
-              <Link to="/terms" className="link-underline text-lawa-700">
+              <Link
+                to="/terms"
+                className="link-underline text-lawa-700"
+                onClick={transitionTo('wave')}
+              >
                 terms of use
               </Link>
               .

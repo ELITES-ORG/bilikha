@@ -68,7 +68,7 @@ export function SaveHeart({ save, className }: { save: OfferCardSave; className?
       disabled={save.pending}
       onClick={save.onToggle}
       className={cn(
-        'interactive-press grid size-11 place-items-center rounded-full bg-surface text-ink shadow-sm',
+        'interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm',
         'hover:text-lawa-700 disabled:opacity-60',
         className,
       )}

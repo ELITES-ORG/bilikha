@@ -394,11 +394,11 @@ export function CreativeProfilePage() {
                       sections, on smaller screens. */}
                   <aside aria-label={`About ${firstName}`} className="min-w-0">
                     <Card className="divide-y divide-hairline lg:sticky lg:top-24">
-                      <div className="grid grid-cols-3 divide-x divide-hairline px-2 py-5">
+                      <dl className="grid grid-cols-3 divide-x divide-hairline px-2 py-5">
                         <StatItem className="items-center px-2 first:pl-2" value={offers.length} label={offers.length === 1 ? 'Offer' : 'Offers'} />
                         <StatItem className="items-center px-2" value={data.subdomains.length} label={data.subdomains.length === 1 ? 'Craft' : 'Crafts'} />
                         <StatItem className="items-center px-2" value={new Date(data.memberSince).getFullYear()} label="Joined" />
-                      </div>
+                      </dl>
 
                       <SidebarBlock title="Quick info">
                         <ul className="space-y-3 text-sm">

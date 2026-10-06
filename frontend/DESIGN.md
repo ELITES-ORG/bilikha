@@ -39,9 +39,10 @@ Neutrals are cool slate on white. `lawa` (navy, `#032B61`) is the primary;
 `palayok` (red) is the accent for calls to action and badges. The ramp names
 predate the palette: `clay` is slate, `lawa` is navy, `palayok` is red.
 
-**Why not the obvious defaults.** Neutral-black shadows and one radius applied
-to everything are what a framework gives you before anyone has made a decision.
-Each is replaced here on purpose.
+**Why not the obvious defaults.** Neutral-black shadows are what a framework
+gives you before anyone has made a decision, and are replaced here on purpose.
+The single radius is a decision, not a default
+([ADR 0048](../docs/decisions/0048-one-radius-for-every-box.md)).
 
 ---
 
@@ -80,8 +81,11 @@ Each is replaced here on purpose.
 
 **Radius and elevation**
 
-- Radius is graded: `xs` chips, `sm` (12px) buttons and inputs, `md` (16px)
-  cards, `lg` (20px) panels and modals. Uniform rounding flattens hierarchy.
+- One radius, 8px, on every chip, button, input, card, panel and dialog
+  ([ADR 0048](../docs/decisions/0048-one-radius-for-every-box.md)). The
+  `rounded-xs` … `rounded-2xl` names all resolve to it. `rounded-full` is only
+  for things round by nature: avatars, dots, spinners, the map's pins — never a
+  button, chip, badge or icon button.
 - Prefer a hairline to a shadow. Stop at `shadow-lg` for anything in-page;
   `xl` is for overlays only.
 - Shadows are ink-tinted (navy-slate). Never introduce a neutral-black one.
@@ -102,8 +106,13 @@ Each is replaced here on purpose.
   keeps its radio semantics.
 - `Eyebrow` (red rule + navy uppercase) leads a page title. Plain `.u-eyebrow`
   is for labels inside a card or nav.
-- `StatItem`: icon, navy figure, muted label. Rows take `divide-x
-  divide-hairline` on the parent; `tone="inverse"` on navy.
+- `StatItem`: icon, navy figure, muted label, as a term and description — the
+  parent is a `<dl>`. Rows take `divide-x divide-hairline` on the parent;
+  `tone="inverse"` on navy, with `divide-on-primary/20` between items and
+  `text-on-primary-muted` icons. `href` makes the whole item one link, marked
+  with a chevron because touch screens have no hover. `shortLabel` replaces the
+  label below `sm`, where a row of three cannot fit two-word labels. Count a
+  figure from data the page already has rather than typing it in.
 - Decorative shapes come from `components/Decor.tsx` — tokens only,
   `aria-hidden`, never hit-testable, and kept to page margins so they never sit
   under text. Check them at every breakpoint; a corner that is clear at `xl`
@@ -139,6 +148,27 @@ Each is replaced here on purpose.
   links. Buttons use `interactive-press`.
 - List entrances stagger via `style={{ '--i': index }}`, capped at 360ms so the
   last row never waits.
+- Below the fold, an entrance waits until it is reached: put `data-reveal` on
+  the animated element or a wrapper, and call `useRevealOnScroll` on the page's
+  root. `data-reveal="stagger"` on list rows staggers only the rows that arrive
+  together. An entrance that plays on load below the fold has finished before
+  anyone sees it.
+- Animated icons live in `components/animated-icons/` (adapted from
+  lucide-animated, MIT — keep its `LICENSE` beside them). They pull in `motion`,
+  so they are only ever loaded with `lazy()` behind a Suspense fallback of the
+  static Lucide icon at the same size; the first page load must not carry them
+  ([ADR 0047](../docs/decisions/0047-animated-icons-load-lazily-with-motion.md)).
+  They loop only while on screen, take turns rather than move together, and
+  stay still under reduced motion. Decorative icons only — never on controls.
+- Changes of page get the tide line and the new `main` sliding in
+  (`PageTransitions`). A slow first load shows the navy opening curtain, which
+  lifts with the wave (`BootCurtain`); never add a spinner of your own to the
+  boot path. The branded overlays
+  (`transitionTo('wave' | 'bloom' | 'panel')`) are the one exception to the
+  200ms rule and belong only on the few links listed in the
+  [ADR 0034 amendments](../docs/decisions/0034-navigation-transitions.md), plus
+  the browser's back and forward buttons — never on tabs, filters, in-app back
+  links or the phone tab bar.
 - Everything collapses under `prefers-reduced-motion`: movement is removed,
   opacity survives so state stays legible.
 

@@ -79,7 +79,7 @@ function ConversationMenu({
     <div className="relative shrink-0">
       <button
         type="button"
-        className="inline-flex size-11 items-center justify-center rounded-full text-ink-muted hover:bg-clay-100 hover:text-ink"
+        className="inline-flex size-11 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
         aria-label="Conversation options"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -310,7 +310,7 @@ export function ConversationPage() {
           to="/messages"
           viewTransition
           aria-label="Back to messages"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink hover:bg-clay-100"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-clay-100"
         >
           <ArrowLeft className="size-5" aria-hidden />
         </Link>
@@ -350,7 +350,7 @@ export function ConversationPage() {
                 to="/messages"
                 viewTransition
                 aria-label="Back to messages"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-clay-100 hover:text-ink lg:hidden"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink lg:hidden"
               >
                 <ArrowLeft className="size-5" aria-hidden />
               </Link>
@@ -502,10 +502,10 @@ export function ConversationPage() {
                   )}
                   <div
                     className={cn(
-                      'max-w-[min(85%,36rem)] rounded-2xl px-3.5 py-2.5 text-base',
+                      'max-w-[min(85%,36rem)] rounded-md px-3.5 py-2.5 text-base',
                       msg.fromSelf
-                        ? 'rounded-br-sm bg-primary text-on-primary'
-                        : 'rounded-bl-sm border border-hairline bg-surface text-ink',
+                        ? 'rounded-br-none bg-primary text-on-primary'
+                        : 'rounded-bl-none border border-hairline bg-surface text-ink',
                     )}
                   >
                     <MessageOfferBlock
@@ -710,7 +710,7 @@ export function ConversationPage() {
                   )}
                   {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
                   {/* One field: the textarea and the send button share a border. */}
-                  <div className="flex flex-row items-end gap-2 rounded-xl border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-lawa-100">
+                  <div className="flex flex-row items-end gap-2 rounded-md border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-lawa-100">
                     <label htmlFor="reply-body" className="sr-only">
                       Reply
                     </label>

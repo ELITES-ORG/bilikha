@@ -5,7 +5,7 @@ import { canGoBackInApp } from '@/lib/history';
 
 /** White pill over a photo or the navy cover band. */
 const pillClass =
-  'interactive-press inline-flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-sm';
+  'interactive-press inline-flex h-11 items-center gap-1.5 rounded-sm bg-surface px-4 text-sm font-semibold text-ink shadow-sm';
 
 /**
  * Back from a page people often open from a shared link. With in-app history
@@ -59,7 +59,7 @@ export function ShareButton({ title, label }: { title: string; label: string }) 
     <button
       type="button"
       aria-label={label}
-      className="interactive-press grid size-11 place-items-center rounded-full bg-surface text-ink shadow-sm hover:text-lawa-700"
+      className="interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm hover:text-lawa-700"
       onClick={() => void share()}
     >
       <Share2 className="size-5" aria-hidden="true" />
