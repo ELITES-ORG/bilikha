@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
+import { initialsFromName } from '@/lib/initials';
 import { ProgressiveImage } from './ProgressiveImage';
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -10,13 +11,6 @@ const SIZES: Record<AvatarSize, { box: string; text: string; px: number }> = {
   lg: { box: 'size-20', text: 'text-xl', px: 80 },
   xl: { box: 'size-28', text: 'text-2xl', px: 112 },
 };
-
-function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`.toUpperCase();
-}
 
 export interface AvatarProps extends HTMLAttributes<HTMLSpanElement> {
   /** Undefined as well as null: an older API payload may omit the field. */

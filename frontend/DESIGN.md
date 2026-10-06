@@ -94,6 +94,9 @@ Each is replaced here on purpose.
   drops to 36px from `sm` up.
 - Badges are pills. `variant="solid"` is for counts and flags — red for unread
   and active filters, navy for new or info. `soft` is for labels.
+- `Tabs` comes in two looks. `pill` (default) is the segmented control for
+  filters and modes. `underline` is for the sections of a page — a profile's
+  Services, Portfolio, Reviews — where pills would shout over the content.
 - `Tabs` is the segmented control: active tab a navy pill. A radio group that
   should look the same borrows `segmentTrackClass` / `segmentItemClass` and
   keeps its radio semantics.
@@ -105,6 +108,23 @@ Each is replaced here on purpose.
   `aria-hidden`, never hit-testable, and kept to page margins so they never sit
   under text. Check them at every breakpoint; a corner that is clear at `xl`
   can land on a headline at `sm`.
+- Prices are always `text-ink`, bold — never red, never a raw black. They flip
+  with the theme like any other text.
+- Red is for accents only: the eyebrow rule, badges and counts, and a save heart
+  once it is saved. Not for prices, not for hover.
+- A card that is a link uses one stretched link (`after:absolute after:inset-0`
+  on its "View offer" link, the card `relative`). Any other control on the card
+  — the save heart — is a sibling above that layer, never nested in the link.
+- `OfferCard` (`features/offers/`) is the one way an offer is shown in a grid:
+  4:3 image, the craft as a badge over its corner, price pinned to the bottom so
+  a row lines up. Hover is a border shift and a 3% image zoom — no lift, no
+  stacked shadow. Grid: `offerGridClass`.
+- A form that reports through toasts opens in `OfferFormDialog`'s pattern, not a
+  modal `<dialog>` — the top layer would hide the toasts. Full-screen sheet on a
+  phone, centred panel from `sm`.
+- A list-and-detail surface (messaging) is one screen at a time below `lg` and
+  a split view from it: the list stays mounted on the left, the detail changes
+  on the right. The URL is the only state — no selected-item store.
 - The navy header bar (`<SiteHeader tone="brand" />`) is for the landing page
   only. Elsewhere the bar stays white so it recedes behind the content.
 

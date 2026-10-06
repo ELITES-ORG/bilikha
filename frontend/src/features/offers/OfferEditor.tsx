@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { ChevronRight, EllipsisVertical } from 'lucide-react';
-import { Button, Input, Select, useToast } from '@/components/ui';
+import { EllipsisVertical, ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Button, EmptyState, Input, Select, Textarea, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
   abandonUpload,
@@ -18,6 +18,8 @@ import {
   type OwnOffer,
 } from '@/features/offers/api';
 import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from '@/features/offers/limits';
+import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
+import { OfferFormDialog } from '@/features/offers/OfferFormDialog';
 import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
 import { toApiError } from '@/lib/api-client';
@@ -350,7 +352,13 @@ export function OfferEditor() {
   }
 
   if (loading) {
-    return <p className="text-sm text-ink-muted">Loading offers…</p>;
+    return (
+      <ul className={offerGridClass} aria-label="Loading offers">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <OfferCardSkeleton key={i} />
+        ))}
+      </ul>
+    );
   }
 
   const atLimit = offers.length >= OFFER_LIMIT;
@@ -359,9 +367,9 @@ export function OfferEditor() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-sm text-ink-muted">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="text-sm text-ink-muted" data-numeric>
             {offers.length} of {OFFER_LIMIT} used
           </p>
           {offers.length > 1 && (
@@ -381,8 +389,9 @@ export function OfferEditor() {
         </div>
         <Button
           type="button"
-          size="sm"
-          variant="secondary"
+          size="md"
+          className="w-full sm:w-auto"
+          iconLeft={<Plus className="size-4" aria-hidden="true" />}
           disabled={!canAdd}
           onClick={startCreate}
         >
@@ -396,281 +405,298 @@ export function OfferEditor() {
         </p>
       )}
 
-      {error && <p className="text-sm text-danger-700">{error}</p>}
+      {error && !showForm && (
+        <p className="text-sm text-danger-700" role="alert">
+          {error}
+        </p>
+      )}
 
       {offers.length === 0 && !creating ? (
-        <p className="text-sm text-ink-muted">
-          Clients cannot hire what they cannot see priced.
-        </p>
-      ) : (
-        <ul className="divide-y divide-hairline border-t border-hairline">
+        <EmptyState
+          title="No offers yet"
+          description="Clients cannot hire what they cannot see priced."
+          action={
+            <Button
+              type="button"
+              size="sm"
+              iconLeft={<Plus className="size-4" aria-hidden="true" />}
+              disabled={!canAdd}
+              onClick={startCreate}
+            >
+              Add offer
+            </Button>
+          }
+        />
+      ) : reordering ? (
+        // Ordering is a list task: compact rows with Up and Down, not cards.
+        <ul className="divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-surface">
           {offers.map((offer, index) => {
             const thumb = offer.images[0]?.thumbUrl;
             return (
-              <li key={offer.id} className="flex items-start gap-3 py-3">
-                {reordering ? (
-                  <>
-                    {thumb ? (
-                      <img
-                        src={thumb}
-                        alt=""
-                        width={56}
-                        height={56}
-                        className="size-14 shrink-0 object-cover"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : (
-                      <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-ink">{offer.title}</p>
-                      <p className="mt-0.5 text-xs text-ink-muted">
-                        {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        disabled={index === 0 || busy}
-                        onClick={() => void move(offer.id, -1)}
-                      >
-                        Up
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        disabled={index === offers.length - 1 || busy}
-                        onClick={() => void move(offer.id, 1)}
-                      >
-                        Down
-                      </Button>
-                    </div>
-                  </>
+              <li key={offer.id} className="flex items-center gap-3 px-4 py-3">
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt=""
+                    width={56}
+                    height={42}
+                    className="aspect-4/3 w-14 shrink-0 rounded-xs object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 ) : (
-                  <>
-                    <button
-                      type="button"
-                      className={cn(
-                        'flex min-w-0 flex-1 items-center gap-3 text-left',
-                        'transition-opacity',
-                        busy && 'pointer-events-none opacity-60',
-                      )}
-                      disabled={busy}
-                      onClick={() => {
-                        setMenuOpenId(null);
-                        startEdit(offer);
-                      }}
-                    >
-                      {thumb ? (
-                        <img
-                          src={thumb}
-                          alt=""
-                          width={56}
-                          height={56}
-                          className="size-14 shrink-0 object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-ink">
-                          {offer.title}
-                        </span>
-                        <span className="mt-0.5 block text-xs text-ink-muted">
-                          {offer.subdomainName}
-                        </span>
-                        <span className="mt-0.5 block text-sm font-medium text-ink">
-                          {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
-                        </span>
-                      </span>
-                      <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
-                    </button>
-                    <div className="relative shrink-0">
-                      <button
-                        ref={menuOpenId === offer.id ? menuTriggerRef : undefined}
-                        type="button"
-                        className={cn(
-                          'inline-flex size-9 items-center justify-center rounded-sm text-ink-muted',
-                          'hover:bg-clay-100 hover:text-ink',
-                        )}
-                        aria-label={`More actions for ${offer.title}`}
-                        aria-expanded={menuOpenId === offer.id}
-                        aria-haspopup="menu"
-                        aria-controls={
-                          menuOpenId === offer.id ? `offer-overflow-${offer.id}` : undefined
-                        }
-                        disabled={busy}
-                        onClick={() =>
-                          setMenuOpenId((current) => (current === offer.id ? null : offer.id))
-                        }
-                      >
-                        <EllipsisVertical className="size-4" aria-hidden />
-                      </button>
-                      {menuOpenId === offer.id && (
-                        <div
-                          ref={menuPanelRef}
-                          id={`offer-overflow-${offer.id}`}
-                          role="menu"
-                          className="absolute right-0 z-10 mt-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-sm"
-                        >
-                          <button
-                            ref={menuItemRef}
-                            type="button"
-                            role="menuitem"
-                            className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
-                            disabled={busy}
-                            onClick={() => {
-                              setMenuOpenId(null);
-                              void onRemoveOffer(offer.id);
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </>
+                  <div className="aspect-4/3 w-14 shrink-0 rounded-xs bg-primary-soft" aria-hidden />
                 )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink">{offer.title}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    {formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={index === 0 || busy}
+                    onClick={() => void move(offer.id, -1)}
+                  >
+                    Up
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={index === offers.length - 1 || busy}
+                    onClick={() => void move(offer.id, 1)}
+                  >
+                    Down
+                  </Button>
+                </div>
               </li>
             );
           })}
         </ul>
+      ) : (
+        <ul className={offerGridClass}>
+          {offers.map((offer) => (
+            <OfferCard
+              key={offer.id}
+              image={offer.images[0] ?? null}
+              title={offer.title}
+              description={offer.description}
+              category={offer.subdomainName}
+              price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+              footer={
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    iconLeft={<Pencil className="size-4" aria-hidden="true" />}
+                    disabled={busy}
+                    onClick={() => {
+                      setMenuOpenId(null);
+                      startEdit(offer);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <div className="relative shrink-0">
+                    <button
+                      ref={menuOpenId === offer.id ? menuTriggerRef : undefined}
+                      type="button"
+                      className={cn(
+                        'inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors sm:size-9',
+                        'hover:bg-clay-100 hover:text-ink',
+                      )}
+                      aria-label={`More actions for ${offer.title}`}
+                      aria-expanded={menuOpenId === offer.id}
+                      aria-haspopup="menu"
+                      aria-controls={
+                        menuOpenId === offer.id ? `offer-overflow-${offer.id}` : undefined
+                      }
+                      disabled={busy}
+                      onClick={() =>
+                        setMenuOpenId((current) => (current === offer.id ? null : offer.id))
+                      }
+                    >
+                      <EllipsisVertical className="size-4" aria-hidden />
+                    </button>
+                    {menuOpenId === offer.id && (
+                      <div
+                        ref={menuPanelRef}
+                        id={`offer-overflow-${offer.id}`}
+                        role="menu"
+                        className="absolute right-0 bottom-full z-10 mb-1 w-40 rounded-sm border border-hairline bg-surface py-1 shadow-md"
+                      >
+                        <button
+                          ref={menuItemRef}
+                          type="button"
+                          role="menuitem"
+                          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-medium text-danger-700 hover:bg-danger-50 sm:min-h-9"
+                          disabled={busy}
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            void onRemoveOffer(offer.id);
+                          }}
+                        >
+                          <Trash2 className="size-4" aria-hidden="true" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              }
+            />
+          ))}
+        </ul>
       )}
 
-      {showForm && (
+      <OfferFormDialog
+        open={showForm}
+        title={creating ? 'New offer' : 'Edit offer'}
+        busy={busy}
+        onClose={cancelForm}
+      >
         <form
           onSubmit={(event) => void onSubmit(event)}
-          className="space-y-4 border border-hairline bg-surface p-4"
+          className="flex min-h-0 flex-1 flex-col"
           noValidate
         >
-          <h4 className="text-base font-medium text-ink">
-            {creating ? 'New offer' : 'Edit offer'}
-          </h4>
+          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+            {error && (
+              <p
+                className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
 
-          <Input
-            label="Title"
-            required
-            maxLength={80}
-            value={form.title}
-            onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
-          />
+            <Input
+              label="Title"
+              required
+              maxLength={80}
+              value={form.title}
+              onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))}
+            />
 
-          <Select
-            label="Sub-domain"
-            required
-            value={form.subdomainSlug}
-            placeholder="Choose one"
-            onValueChange={(subdomainSlug) => setForm((c) => ({ ...c, subdomainSlug }))}
-            groups={subdomainGroups.map((group) => ({
-              label: group.name,
-              options: group.options.map((option) => ({
-                value: option.slug,
-                label: option.name,
-              })),
-            }))}
-          />
+            <Select
+              label="Sub-domain"
+              required
+              value={form.subdomainSlug}
+              placeholder="Choose one"
+              onValueChange={(subdomainSlug) => setForm((c) => ({ ...c, subdomainSlug }))}
+              groups={subdomainGroups.map((group) => ({
+                label: group.name,
+                options: group.options.map((option) => ({
+                  value: option.slug,
+                  label: option.name,
+                })),
+              }))}
+            />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="offer-description" className="text-sm font-medium text-ink">
-              Description
-            </label>
-            <textarea
+            <Textarea
               id="offer-description"
+              label="Description"
               rows={4}
               maxLength={2000}
               value={form.description}
               onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))}
-              className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
             />
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PesoInput
-              label="From (₱)"
-              value={form.priceFrom}
-              onValueChange={(priceFrom) => setForm((c) => ({ ...c, priceFrom }))}
-            />
-            <PesoInput
-              label="To (₱)"
-              value={form.priceTo}
-              onValueChange={(priceTo) => setForm((c) => ({ ...c, priceTo }))}
-            />
-          </div>
-          <p className="text-xs text-ink-subtle">Leave both blank for Price on request</p>
-
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" size="sm" loading={busy} disabled={busy}>
-              {creating ? 'Create offer' : 'Save changes'}
-            </Button>
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={cancelForm}>
-              Cancel
-            </Button>
-          </div>
-
-          {activeOffer && (
-            <div className="space-y-3 border-t border-hairline pt-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm text-ink-muted">
-                  {activeOffer.images.length} of {OFFER_IMAGE_LIMIT} images used
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy || activeOffer.images.length >= OFFER_IMAGE_LIMIT}
-                  onClick={() => inputRef.current?.click()}
-                >
-                  {busy ? 'Uploading…' : 'Add image'}
-                </Button>
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-                  className="sr-only"
-                  onChange={(event) => void onAddImage(event)}
+            <div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <PesoInput
+                  label="From (₱)"
+                  value={form.priceFrom}
+                  onValueChange={(priceFrom) => setForm((c) => ({ ...c, priceFrom }))}
+                />
+                <PesoInput
+                  label="To (₱)"
+                  value={form.priceTo}
+                  onValueChange={(priceTo) => setForm((c) => ({ ...c, priceTo }))}
                 />
               </div>
-              {activeOffer.images.length >= OFFER_IMAGE_LIMIT && (
-                <p className="text-sm text-ink-muted">
-                  An offer can have at most {OFFER_IMAGE_LIMIT} images.
-                </p>
-              )}
-              {activeOffer.images.length > 0 && (
-                <ul className="flex flex-wrap gap-3">
-                  {activeOffer.images.map((image) => (
-                    <li key={image.id} className="space-y-2">
-                      <img
-                        src={image.thumbUrl}
-                        alt=""
-                        width={120}
-                        height={120}
-                        className="size-28 object-cover"
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => void onRemoveImage(image.id)}
-                      >
-                        Remove
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <p className="mt-2 text-xs text-ink-subtle">Leave both blank for Price on request</p>
             </div>
-          )}
+
+            {activeOffer && (
+              <section className="space-y-3 border-t border-hairline pt-5" aria-label="Images">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Images</p>
+                    <p className="text-xs text-ink-muted" data-numeric>
+                      {activeOffer.images.length} of {OFFER_IMAGE_LIMIT} images used
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    iconLeft={<ImagePlus className="size-4" aria-hidden="true" />}
+                    disabled={busy || activeOffer.images.length >= OFFER_IMAGE_LIMIT}
+                    onClick={() => inputRef.current?.click()}
+                  >
+                    {busy ? 'Uploading…' : 'Add image'}
+                  </Button>
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+                    className="sr-only"
+                    onChange={(event) => void onAddImage(event)}
+                  />
+                </div>
+                {activeOffer.images.length >= OFFER_IMAGE_LIMIT && (
+                  <p className="text-sm text-ink-muted">
+                    An offer can have at most {OFFER_IMAGE_LIMIT} images.
+                  </p>
+                )}
+                {activeOffer.images.length > 0 && (
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {activeOffer.images.map((image, index) => (
+                      <li key={image.id} className="space-y-1.5">
+                        <img
+                          src={image.thumbUrl}
+                          alt={`${activeOffer.title}, image ${index + 1}`}
+                          width={160}
+                          height={120}
+                          className="aspect-4/3 w-full rounded-sm object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="w-full"
+                          disabled={busy}
+                          onClick={() => void onRemoveImage(image.id)}
+                        >
+                          Remove
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-hairline px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-6 sm:pb-4">
+            <Button type="button" variant="secondary" disabled={busy} onClick={cancelForm}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={busy} disabled={busy}>
+              {creating ? 'Create offer' : 'Save changes'}
+            </Button>
+          </div>
         </form>
-      )}
+      </OfferFormDialog>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { installHint, isRunningInstalled, type InstallHint } from '@/lib/install';
 import { useInstallPrompt } from '@/lib/use-install-prompt';
@@ -56,44 +57,56 @@ export function InstallGuide() {
   const copy = COPY[hint];
 
   return (
-    <li className="border-b border-hairline px-1 py-3">
-      <p className="text-sm font-medium text-ink">Install Bilikha</p>
-      <p className="mt-0.5 text-sm text-ink-muted">
-        Open it from your {copy.noun} like any other app, without the browser around
-        it. It still needs internet.
-      </p>
+      <li className="px-5 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <span
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-lawa-700"
+              aria-hidden="true"
+            >
+              <Download className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">Install Bilikha</p>
+              <p className="mt-0.5 text-sm text-ink-muted">
+                Open it from your {copy.noun} like any other app, without the browser around
+                it. It still needs internet.
+              </p>
+            </div>
+          </div>
 
-      {canInstall ? (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3"
-          onClick={() => void install()}
-        >
-          Install
-        </Button>
-      ) : (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3"
-          aria-expanded={open}
-          aria-controls={stepsId}
-          onClick={() => setOpen((current) => !current)}
-        >
-          {open ? 'Hide' : 'How to install'}
-        </Button>
-      )}
+          <div className="pl-13 sm:shrink-0 sm:pl-0">
+            {canInstall ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void install()}
+              >
+                Install
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                aria-expanded={open}
+                aria-controls={stepsId}
+                onClick={() => setOpen((current) => !current)}
+              >
+                {open ? 'Hide' : 'How to install'}
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* `declined` clears itself when the browser offers again, so the
-          button and this fallback are never both on screen. */}
-      {(open || (declined && !canInstall)) && (
-        <p id={stepsId} className="mt-3 max-w-prose text-sm text-ink-muted">
-          {copy.steps}
-        </p>
-      )}
-    </li>
+        {/* `declined` clears itself when the browser offers again, so the
+             button and this fallback are never both on screen. */}
+        {(open || (declined && !canInstall)) && (
+          <p id={stepsId} className="mt-3 max-w-prose pl-13 text-sm text-ink-muted">
+            {copy.steps}
+          </p>
+        )}
+      </li>
   );
 }

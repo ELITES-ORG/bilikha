@@ -179,6 +179,16 @@
     );
   }
 
+  /* A row that scrolls sideways by swipe, like a chips row. The bar would sit
+     under the chips as a second, meaningless rule. */
+  .u-no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .u-no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Skip link, visible only once focused. */
   .u-skip-link {
     position: absolute;

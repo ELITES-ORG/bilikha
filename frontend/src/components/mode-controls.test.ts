@@ -93,8 +93,14 @@ describe('the mode notice never becomes a control (ADR 0038, rule 2)', () => {
   });
 });
 
+const inboxSource = import.meta.glob('../features/conversations/ConversationList.tsx', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
 describe('the page headers stay free of the mode action (ADR 0038)', () => {
-  it.each(['DirectoryPage.tsx', 'MessagesPage.tsx', 'HistoryPage.tsx'])(
+  it.each(['DirectoryPage.tsx', 'MessagesLayout.tsx', 'HistoryPage.tsx'])(
     '%s does not mount SwitchModeAction itself',
     (page) => {
       // The action belongs in ModeAwareEmptyState only — pages must not mount
@@ -102,4 +108,10 @@ describe('the page headers stay free of the mode action (ADR 0038)', () => {
       expect(source(pageSource, page)).not.toMatch(/<SwitchModeAction\b/);
     },
   );
+
+  // The inbox moved out of MessagesPage into the split view's left pane; the
+  // rule follows it there.
+  it('the inbox list does not mount SwitchModeAction itself', () => {
+    expect(source(inboxSource, 'ConversationList.tsx')).not.toMatch(/<SwitchModeAction\b/);
+  });
 });

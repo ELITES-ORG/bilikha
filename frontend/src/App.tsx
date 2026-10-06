@@ -31,7 +31,7 @@ import { CreativeProfilePage } from '@/pages/CreativeProfilePage';
 import { OfferDetailPage } from '@/pages/OfferDetailPage';
 import { PostingDetailPage } from '@/pages/PostingDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
-import { MessagesPage } from '@/pages/MessagesPage';
+import { MessagesEmptyPane, MessagesLayout } from '@/pages/MessagesLayout';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -175,22 +175,22 @@ export default function App() {
                     </RequireAuth>
                   }
                 />
+                {/*
+                  One frame for the inbox and a thread: a split view from lg,
+                  one screen at a time below it. The child keeps its absolute
+                  path — React Router allows it under a matching parent.
+                */}
                 <Route
                   path="/messages"
                   element={
                     <RequireAuth>
-                      <MessagesPage />
+                      <MessagesLayout />
                     </RequireAuth>
                   }
-                />
-                <Route
-                  path="/messages/:id"
-                  element={
-                    <RequireAuth>
-                      <ConversationPage />
-                    </RequireAuth>
-                  }
-                />
+                >
+                  <Route index element={<MessagesEmptyPane />} />
+                  <Route path="/messages/:id" element={<ConversationPage />} />
+                </Route>
                 <Route
                   path="/agreements/:id"
                   element={
