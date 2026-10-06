@@ -191,7 +191,7 @@ export function OfferDetailPage() {
             <>
               {/* Hero. The cover is the LCP image: eager, high priority, and
                   a width-described srcset so a phone takes the thumb. */}
-              <div className="relative aspect-video overflow-hidden rounded-lg bg-primary lg:aspect-21/9">
+              <div className="relative aspect-video overflow-hidden rounded-lg bg-primary short:aspect-auto short:h-40 lg:aspect-21/9">
                 {cover ? (
                   <button
                     type="button"
@@ -283,24 +283,32 @@ export function OfferDetailPage() {
                 </aside>
 
                 <div className="min-w-0 space-y-10">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-hairline py-4">
-                    <Avatar src={data.creative.avatarUrl} name={creativeName} size="md" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-ink">{creativeName}</p>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
-                        <MapPin className="size-3.5 shrink-0" aria-hidden />
-                        {data.creative.municipality}
-                        {data.creative.isNearby && <Badge tone="accent">Nearby</Badge>}
-                      </p>
+                  {/* The person on the left, View profile on the right; on a
+                      narrow phone the link drops under them rather than
+                      squeezing the name. The rating sits under the name, never
+                      beside it, so it can never cut the name short. */}
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-y border-hairline py-4">
+                    <div className="flex min-w-0 flex-1 basis-56 items-center gap-4">
+                      <Avatar src={data.creative.avatarUrl} name={creativeName} size="md" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold break-words text-ink">{creativeName}</p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
+                          <MapPin className="size-3.5 shrink-0" aria-hidden />
+                          {data.creative.municipality}
+                          {data.creative.isNearby && <Badge tone="accent">Nearby</Badge>}
+                        </p>
+                        {/*
+                          Only when there is one (plan 0038 rule 2): "No ratings
+                          yet" under every creative would make unrated the loudest
+                          fact about them.
+                        */}
+                        {data.creative.rating.count > 0 && (
+                          <div className="mt-1">
+                            <RatingScore summary={data.creative.rating} size="sm" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {/*
-                      Only when there is one (plan 0038 rule 2): "No ratings
-                      yet" under every creative would make unrated the loudest
-                      fact about them.
-                    */}
-                    {data.creative.rating.count > 0 && (
-                      <RatingScore summary={data.creative.rating} size="sm" />
-                    )}
                     <Link
                       to={profilePath}
                       className="link-underline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-lawa-700"

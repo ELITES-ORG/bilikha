@@ -156,6 +156,9 @@ function Toaster({
       className={cn(
         'pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-4',
         'top-[calc(var(--staging-banner-h)+4rem+env(safe-area-inset-top,0px)+0.75rem)]',
+        // Landscape phones: the header and banner scroll away (`short:static`),
+        // so there is nothing to clear — sit at the top, not a third of the way down.
+        'short:top-[calc(env(safe-area-inset-top,0px)+0.75rem)]',
       )}
       aria-live="polite"
     >

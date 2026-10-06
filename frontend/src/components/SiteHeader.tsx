@@ -9,6 +9,9 @@ import { Wordmark } from './Wordmark';
 
 type HeaderTone = 'default' | 'brand';
 
+/** Nav links are 32px of text, and phones in landscape get this desktop row. */
+const tapArea = 'u-tap';
+
 /** Link colour by state, for a white bar or the navy one. */
 function linkTone(tone: HeaderTone, active: boolean) {
   if (tone === 'brand') {
@@ -19,7 +22,7 @@ function linkTone(tone: HeaderTone, active: boolean) {
 
 function navClass(tone: HeaderTone, active: boolean) {
   return cn(
-    'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
+    'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block', tapArea,
     linkTone(tone, active),
   );
 }
@@ -59,7 +62,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
   return (
     <header
       className={cn(
-        'sticky top-(--staging-banner-h) z-40',
+        'sticky top-(--staging-banner-h) z-40 short:static',
         // On navy the navy focus ring would vanish; re-point the token to white
         // for everything inside the bar.
         brand
@@ -69,7 +72,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
       )}
     >
       <Container width="wide" className="flex h-16 items-center justify-between gap-6">
-        <Link to="/" className="group flex items-center">
+        <Link to="/" className="group flex min-h-11 items-center">
           <Wordmark tone={brand ? 'inverse' : 'default'} />
         </Link>
 
@@ -110,6 +113,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
             viewTransition
             className={cn(
               'link-underline px-2 py-1 text-base transition-colors',
+              tapArea,
               // Phones get a deliberately bare header: the tab bar owns this
               // when signed in, and the landing page's domain and municipality
               // links do when signed out.
@@ -126,6 +130,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 viewTransition
                 className={cn(
                   'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
+                  tapArea,
                   linkTone(tone, isCurrent('/messages')),
                 )}
               >
@@ -140,7 +145,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 to="/account"
                 viewTransition
                 className={cn(
-                  'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block',
+                  'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block', tapArea,
                   linkTone(tone, isCurrent('/account')),
                 )}
               >
@@ -157,7 +162,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
             <>
               <Link
                 to="/account"
-                className="ml-1 hidden items-center gap-2 sm:inline-flex"
+                className="u-tap ml-1 hidden items-center gap-2 sm:inline-flex"
                 aria-label="Your account"
               >
                 <Avatar

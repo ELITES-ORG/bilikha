@@ -59,7 +59,7 @@ export function StarRadioGroup({
               onChange={() => onChange(choice.stars)}
               className="peer sr-only"
             />
-            <span className="grid size-10 place-items-center rounded-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-lawa-700">
+            <span className="grid size-11 place-items-center rounded-sm peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-lawa-700">
               <Star
                 aria-hidden
                 className={cn(

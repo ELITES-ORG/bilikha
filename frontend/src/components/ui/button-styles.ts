@@ -50,11 +50,12 @@ const VARIANTS: Record<ButtonVariant, string> = {
   ),
 };
 
-/* Every size is 44px on a phone — the minimum touch target. `sm` drops to
-   36px from the `sm` breakpoint up, where a pointer is likely and dense
-   toolbars would otherwise bloat. `lg` is the 48px primary call to action. */
+/* Every size is 44px on a touch screen — the minimum touch target, in any
+   orientation. `sm` drops to 36px only with a mouse or trackpad
+   (`pointer-fine`), so a phone held in landscape keeps 44px even though it is
+   wider than the `sm` breakpoint. `lg` is the 48px primary call to action. */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-11 sm:h-9 px-4 text-sm gap-1.5 rounded-sm',
+  sm: 'h-11 pointer-fine:h-9 px-4 text-sm gap-1.5 rounded-sm',
   md: 'h-11 px-5 text-base gap-2 rounded-sm',
   lg: 'h-12 px-6 text-md gap-2 rounded-sm',
 };

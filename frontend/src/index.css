@@ -9,6 +9,11 @@
 
 @import 'tailwindcss';
 
+/* Short screens: every phone held in landscape (320–430px tall), never a
+   tablet. Where height is this scarce, pinned chrome and tall media give way
+   to the content. Use as `short:…`. */
+@custom-variant short (@media (max-height: 30rem));
+
 @import './styles/theme.css';
 @import './styles/base.css';
 @import './styles/motion.css';

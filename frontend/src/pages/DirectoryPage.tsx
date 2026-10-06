@@ -200,6 +200,7 @@ export function DirectoryPage() {
       <main className={pbBottomNav}>
         <Container width="wide" className="py-(--section-gap)">
           <SectionHeading
+            as="h1"
             eyebrow={creativeHome ? 'Creative work' : 'Find work or people'}
             title={creativeHome ? 'Client postings' : 'Directory'}
             description={

@@ -9,7 +9,8 @@ export interface SectionHeadingProps {
   description?: string;
   /** Trailing control — a link, filter, or button — baselined with the title. */
   action?: ReactNode;
-  as?: 'h2' | 'h3';
+  /** `h1` when the section heading is the page's title. */
+  as?: 'h1' | 'h2' | 'h3';
   className?: string;
 }
 
@@ -31,7 +32,7 @@ export function SectionHeading({
       <div className="max-w-2xl">
         {eyebrow && <Eyebrow className="mb-3">{eyebrow}</Eyebrow>}
 
-        <Tag className={cn('u-display text-ink', Tag === 'h2' ? 'text-3xl' : 'text-2xl')}>
+        <Tag className={cn('u-display text-ink', Tag === 'h3' ? 'text-2xl' : 'text-3xl')}>
           {title}
         </Tag>
 

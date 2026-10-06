@@ -142,6 +142,18 @@ Each is replaced here on purpose.
 - Everything collapses under `prefers-reduced-motion`: movement is removed,
   opacity survives so state stays legible.
 
+**Screens**
+
+- Design down to 320px wide, and for phones held in landscape (320–430px
+  tall). A control that does not fit tightens or stacks — it never wraps into
+  a second line inside one pill.
+- `short:` (height ≤ 30rem) is for landscape phones: let pinned chrome scroll
+  away and cap tall media there. Sticky sub-headers use `short:top-0`.
+- Compact sizes are for a mouse, so use `pointer-fine:`, never `sm:`. A phone
+  in landscape is wider than `sm` and still a touch screen.
+- Every touch target is at least 44px. For a link that must stay visually
+  small, add `.u-tap` rather than padding it out.
+
 **Accessibility**
 
 - One focus treatment, defined once in `base.css`. Don't add per-component focus

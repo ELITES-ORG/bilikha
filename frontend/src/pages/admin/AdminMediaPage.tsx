@@ -132,7 +132,7 @@ export function AdminMediaPage() {
                   {item.profileSlug && (
                     <Link
                       to={`/creatives/${item.profileSlug}`}
-                      className="mt-1 inline-block text-sm text-lawa-800 underline-offset-2 hover:underline"
+                      className="u-tap mt-1 inline-block text-sm text-lawa-800 underline-offset-2 hover:underline"
                     >
                       View profile
                     </Link>

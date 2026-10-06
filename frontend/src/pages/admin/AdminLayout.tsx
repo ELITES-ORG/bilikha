@@ -51,7 +51,7 @@ function AdminShell() {
 
       <div className="sm:flex sm:min-h-[calc(100dvh-4rem-var(--staging-banner-h))]">
         <aside className="hidden w-56 shrink-0 border-r border-hairline sm:block">
-          <nav aria-label="Administration" className="sticky top-(--staging-banner-h) p-4">
+          <nav aria-label="Administration" className="sticky top-(--staging-banner-h) short:top-0 p-4">
             <p className="u-eyebrow px-3">Administration</p>
             <ul className="mt-4 space-y-1">
               {ADMIN_SECTIONS.map((section) => {

@@ -172,7 +172,7 @@ export function CreativeProfilePage() {
               <>
                 {/* Cover. There is no cover photo in the data, so a navy band
                     carries the identity instead of a stock image. */}
-                <div className="relative h-32 overflow-hidden rounded-lg bg-primary sm:h-44 lg:h-56">
+                <div className="relative h-32 overflow-hidden rounded-lg bg-primary sm:h-44 lg:h-56 short:h-24">
                   <CornerBlob placement="top-right" onNavy />
                   <CornerBlob placement="bottom-left" onNavy className="opacity-70" />
                   <div className="absolute top-3 left-3">

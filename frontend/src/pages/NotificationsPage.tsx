@@ -104,6 +104,7 @@ export function NotificationsPage() {
       <main className={pbBottomNav}>
         <Container className="py-(--section-gap)">
           <SectionHeading
+            as="h1"
             eyebrow="Notifications"
             title="What happened"
             description="Decisions on your profile, and replies to your postings. New messages show on the Messages tab."
