@@ -89,7 +89,7 @@ production until Supabase Pro is active there.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Decide and record | 0 / 3 | Not started |
-| 2. Prove the transport | 0 / 2 | Not started |
+| 2. Prove the transport | 0 / 3 | Not started |
 | 3. Schema and the one read path | 0 / 5 | Not started |
 | 4. The upload pipeline | 0 / 10 | Not started |
 | 5. The offer editor | 0 / 7 | Not started |
@@ -112,7 +112,7 @@ else. The frontend reads them from `GET /api/v1/media/limits`.
 | `video` | `{SUPABASE_STORAGE_BUCKET}-video` | `video/mp4`, `video/webm` | 300 MB | 300 s | 2 | 302 MB (file + poster) |
 | `document` | `{SUPABASE_STORAGE_BUCKET}-documents` | `application/pdf` | 10 MB | | 3 | 10 MB |
 
-- **Quota:** 1 GiB (1,073,741,824 bytes) per creative profile. It counts the
+- **Quota:** 1 GB (1,000,000,000 bytes, by the MB rule below) per creative profile. It counts the
   `size_bytes` of recorded items plus the `reserved_bytes` of unexpired
   reservations. Legacy images have no recorded size and count as 0.
 - **Rate limit:** `uploadLimiter`, 30 tickets per hour per user, shared by every
@@ -199,12 +199,25 @@ design depends on these assumptions.
 
 ### Step 2.2 — An interrupted TUS upload resumes
 
-- [ ] **Action.** Repeat the 500 KB upload with a 200 KB chunk size and the
-  network throttled. Turn the network off in DevTools partway through, then back
-  on.
+- [ ] **Action.** Raise `tus-probe`'s `file_size_limit` to 50 MB and issue a
+  new signed upload URL. Upload a 20 MB file with the production chunk size,
+  `6 * 1024 * 1024` — Supabase's resumable endpoint requires 6 MB chunks, so a
+  smaller chunk tests a setup production won't use, and a file under 6 MB is a
+  single chunk with nothing to resume. Throttle the network, and turn it off in
+  DevTools after the first chunk completes, then back on.
 - [ ] **Verify.** The upload completes, and the request log shows a `HEAD` and
-  `PATCH` continuing from an offset above zero, not a new `POST`. Record the
+  `PATCH` continuing from an offset of at least 6 MB, not a new `POST`. Record the
   result here, including whether a resumed `PATCH` still sends `x-signature`.
+
+### Step 2.3 — The allowed formats play on an iPhone
+
+- [ ] **Action.** Upload a short sample of each allowed stored type to the probe
+  bucket — MP3, M4A, OGG/Opus, MP4 (H.264) and WebM — and open each public URL
+  in an `<audio>` or `<video>` element on an iPhone in Safari, and in Chrome on
+  an Android phone.
+- [ ] **Verify.** Record, per type and browser, whether it plays. A type that
+  doesn't play on a current iPhone goes to reyxdz: drop it from the allowlist,
+  or keep it and show a "may not play on iPhone" note. Then delete the bucket.
 
 ---
 
@@ -246,6 +259,9 @@ Visible behaviour doesn't change.
   - `thumb_size_bytes` integer, nullable.
   - `duration_seconds` integer, nullable.
   - `reserved_bytes` bigint, required.
+  - `legacy` boolean, required, default `false`. True for a reservation written
+    by the legacy `kind: "offer"` ticket, which carries no offer id. A legacy
+    reservation is not a portfolio reservation even though `offer_id` is null.
   - `expires_at` timestamptz, required.
   - `created_at` timestamptz, defaulting to `now()`.
   - Index `media_uploads_profile_expiry_idx` on `(profile_id, expires_at)`.
@@ -311,7 +327,8 @@ Visible behaviour doesn't change.
   directly; scripts are allowed to.
 - [ ] **Verify.** `rg "offerImages" backend/src` finds nothing. `npm test` passes.
   `backend/src/modules/profiles/offer-shape.test.ts` and
-  `offer-detail-rating.test.ts` pass unchanged, which shows the shapes didn't move.
+  `backend/src/modules/offers/offer-detail-rating.test.ts` pass unchanged, which
+  shows the shapes didn't move.
 
 ### Step 3.5 — Forbid reading the table directly
 
@@ -345,6 +362,8 @@ per offer.
     - audio or video without a duration;
     - over the per-offer count, with reservations for the same offer and kind counting;
     - over the portfolio count;
+    - a pending legacy `kind: "offer"` reservation does not count toward the
+      portfolio's image count;
     - over the quota, with reservations counting at their reserved size;
     - a kind that is switched off;
     - another creative's offer;
@@ -443,7 +462,9 @@ per offer.
   `issueItemTicket(userId, input)`:
   1. Resolve the creative profile and check the offer belongs to it.
   2. Take `pg_advisory_xact_lock` on the profile.
-  3. Delete this profile's expired reservations, along with their objects.
+  3. Delete this profile's expired reservation rows, collecting their object
+     keys. Delete those objects from storage only after the transaction
+     commits, so a slow storage call never holds the profile's lock.
   4. Check, in order: kind enabled, type, size, duration, count (items plus
      reservations for the same target and kind), and quota.
   5. Insert the reservation.
@@ -453,8 +474,11 @@ per offer.
      - **Video:** the same as audio or PDF, plus
        `poster: { uploadUrl, objectKey }` when `thumbSizeBytes` is given.
 
-  The legacy `kind: "offer"` ticket also writes a reservation, with no offer and
-  kind image, so the legacy confirm can check it.
+  The legacy `kind: "offer"` ticket also writes a reservation, kind image, with
+  `legacy = true` and no offer, so the legacy confirm can check it. Legacy
+  reservations count against the quota but never against a count: the portfolio
+  count reads `offer_id IS NULL AND NOT legacy`, and the legacy confirm
+  (`POST /offers/:id/images`) checks the offer's image count itself.
 
   Error codes, all through `AppError`:
 
@@ -504,8 +528,8 @@ per offer.
     `enabled` for each kind, and `quotaBytes`.
   - `GET /api/v1/media/usage` requires sign-in and returns
     `{ usedBytes, reservedBytes, quotaBytes }`.
-  - Change `OFFER_IMAGE_LIMIT` in `backend/src/db/schema/profiles.ts` to 10,
-    taking it from `media.limits.ts`.
+  - Change `OFFER_IMAGE_LIMIT` in `backend/src/modules/offers/offers.service.ts`
+    to 10, taking it from `media.limits.ts`.
   - Lower `uploadLimiter` in `backend/src/middleware/rate-limit.ts` to 30 per hour.
 - [ ] **Verify.** `curl localhost:4000/api/v1/media/limits` shows image 10, and
   `enabled: false` for the other kinds when the switch is empty.
@@ -609,8 +633,9 @@ class name.
 
 ### Step 5.6 — The editor UI
 
-- [ ] **Action.** In `frontend/src/features/offers/OfferFormDialog.tsx` and a new
-  `frontend/src/features/media/MediaUploader.tsx`:
+- [ ] **Action.** In `frontend/src/features/offers/OfferEditor.tsx`, which holds
+  the offer form and its image upload (`OfferFormDialog.tsx` is only the dialog
+  around it), and a new `frontend/src/features/media/MediaUploader.tsx`:
   - One "Add media" control, which accepts the enabled kinds.
   - The limits for each kind shown before picking.
   - The used / total quota.
@@ -659,13 +684,18 @@ Pull request: `feat(profiles): a portfolio of media on the creative profile`.
 - [ ] **Verify.** On a signed-out visit at phone width, nothing in the media
   downloads until it is tapped (checked in the DevTools Network panel).
 
-### Step 6.3 — Delete everything with the profile
+### Step 6.3 — Leave deletion ready for whoever adds it
 
-- [ ] **Action.** The existing creative profile deletion path, and any account
-  deletion that removes the profile, delete `objectsForProfile` after the rows
-  are gone.
-- [ ] **Verify.** A backend test confirms that deleting a profile with portfolio
-  items deletes its objects in every bucket, using the mocked storage.
+Nothing deletes a creative profile or an account today, so there is no path to
+hook into. Offer deletion exists, and Step 3.4 already moves it into
+`media.service.ts`.
+
+- [ ] **Action.** Add to `docs/reference/data-model.md`, under the media
+  tables: "Deleting a profile or an account must delete `objectsForProfile`
+  after the rows are gone — the database cascade removes the rows, not the
+  stored files." Add a backend test that deleting an offer with one item of
+  each kind deletes its objects in every bucket, using the mocked storage.
+- [ ] **Verify.** The test passes, and `npm run docs:check` passes.
 
 ---
 
@@ -840,6 +870,10 @@ The plan is complete when every box below is checked.
 - **Retire the legacy routes:** `kind: "offer"` tickets,
   `POST /offers/:id/images` and `DELETE /offers/images/:imageId`. Remove them one
   release after Phase 5 ships, once no open tab can still call them.
+- **Expire stalled uploads sooner than 24 hours.** An unconfirmed object is
+  public until its reservation expires (ADR 0046, Consequences). Pruning
+  reservations whose upload has made no progress for an hour would shorten that
+  window.
 - **Reorder media within an offer or the portfolio.**
 - **A report button on offers and profiles.** ADR 0021 noted that discovery of
   abuse depends on an administrator looking. More kinds make that gap bigger.

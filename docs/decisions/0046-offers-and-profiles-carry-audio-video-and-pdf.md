@@ -1,7 +1,7 @@
 # 0046. Offers and profiles carry audio, video and PDF, each kind with its own limits
 
 - **Status:** Proposed
-- **Date:** 2026-10-04
+- **Date:** 2026-10-06
 - **Supersedes:** the images-only scope and free-tier budget of
   [0021](./0021-image-storage-and-upload-path.md). Its browser-side image
   sizing and direct upload stand.
@@ -54,7 +54,8 @@ SVG, HTML, archives, executables, WAV, FLAC, MOV and HEVC video are refused.
 
 **Shared limits:**
 
-- **Quota:** 1 GB per creative, across offers and portfolio. Avatars don't count.
+- **Quota:** 1 GB (1,000,000,000 bytes) per creative, across offers and
+  portfolio. Avatars don't count.
 - **Rate limit:** 30 upload tickets per hour per account, shared by every kind
   including images and avatars.
 - **Pending uploads:** a ticket reserves its kind's *maximum* size against the
@@ -169,6 +170,18 @@ a dishonest client could reserve 1 KB and upload 300 MB.
   holds, and review catches the rest.
 - **The table's name misrepresents its contents** until the rename follow-up
   ships.
+- **Reserving the maximum makes video uploads need headroom.** A video ticket
+  reserves 302 MB until it is confirmed or expires. A creative can have at most
+  three video uploads in progress at once, and with more than about 700 MB used
+  can't start even a 20 MB video until the quota frees up. The editor shows the
+  used / total quota, and says why a video was refused.
+- **Unconfirmed uploads are public until they expire.** The buckets are public,
+  and the type, size and signature checks run at confirm. An upload that is
+  never confirmed stays reachable at its URL until its reservation expires, up to
+  24 hours — at most the creative's 1 GB quota of unchecked content served from
+  Bilikha's storage. The URLs are unguessable and the bucket still refuses the
+  wrong declared type and an oversized file. Expiring stalled uploads sooner is a
+  follow-up in the plan.
 - **The shared rate limit makes filling a catalogue slow.** Six offers with ten
   images each is 60 tickets, so more than two hours at 30 an hour.
 - **Takedowns improve but aren't instant.** Pro's Smart CDN purges the edge copy
