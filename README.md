@@ -95,20 +95,29 @@ Configuration and free-tier caveats: [docs/reference/deployments.md](./docs/refe
 
 ## Current state
 
-This is foundation, not product. Working end to end:
+Live on production since 2026-10-03, with staging running ahead of it on
+`main`. Working end to end:
 
-- Environment validation, structured logging, graceful shutdown
-- Consistent API error envelope
-- Health and readiness endpoints
-- The full nine-domain taxonomy (81 sub-domains) and eight municipalities,
-  seeded and served
-- A design system with a living style guide at `/styleguide`
+- **Accounts.** Username and password registration with admin moderation; one
+  account that adds a creative role, and a client or creative mode
+- **Creative profiles.** Crafts from the nine-domain taxonomy (81 sub-domains),
+  one of eight municipalities, a bio, an avatar and portfolio images
+- **Offers and the directory.** Creatives publish offers; the directory lists
+  offers and creatives, nearby first
+- **Client postings**, which creatives browse in the directory in creative mode
+- **Conversations**, sign-in only, with **work agreements** made in the thread
+- **Ratings**, earned by a completed agreement
+- **A notification centre**, and the account hub: profile, offers, postings,
+  how your work is doing, mode, theme and sign-in
+- **An admin area** for the registration queue, media, accounts and ratings
+- A privacy notice and terms, light and dark themes, an installable PWA, and a
+  living style guide at `/styleguide`
 
-Not yet built: users, creative profiles, organisations, portfolios, inquiries,
-auth, search, and image handling.
+Not built: organisation accounts, free-text search, and web push
+([plan 0018](./docs/plans/0018-web-push.md), deferred).
 
-**Known launch blocker:** public profiles need server-rendered HTML before
-launch. Facebook's scraper does not execute JavaScript, so shared profile links
-currently render without a preview card — and sharing is the product's main
-discovery path. See
-[ADR 0002](./docs/decisions/0002-pern-with-client-rendered-spa.md).
+**Known launch blocker:** shared links have no preview card. Facebook's scraper
+does not execute JavaScript, so a shared profile or offer shows the same generic
+card as every other link — and sharing is the product's main discovery path.
+See [ADR 0002](./docs/decisions/0002-pern-with-client-rendered-spa.md); the fix
+is tracked in [#18](https://github.com/ELITES-ORG/bilikha/issues/18).

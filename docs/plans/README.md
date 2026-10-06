@@ -98,7 +98,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0036](./0036-the-pwa.md) | The PWA | Phase 2 complete |
 | [0037](./0037-offer-detail-puts-proof-and-action-first.md) | Offer detail puts proof and action first | Complete |
 | [0038](./0038-the-offer-card-shows-a-rating-once-there-is-one.md) | The offer card shows a rating once there is one | Complete |
-| [0039](./0039-staging-and-production.md) | Staging and production — the current deployment becomes staging | Complete except two browser checks |
+| [0039](./0039-staging-and-production.md) | Staging and production — the current deployment becomes staging | Complete except the Safari / iPhone session check |
 | [0040](./0040-navy-and-red-restyle.md) | Navy and red restyle | In progress |
 | [0041](./0041-offers-as-a-catalog.md) | Offers as a catalog, and the offer page | In progress |
 | [0042](./0042-the-creative-profile-page.md) | The creative profile page | In progress |

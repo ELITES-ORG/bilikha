@@ -67,6 +67,12 @@ the lightbox are unchanged.
   owner sees Edit profile and Add offer; portfolio lightbox returns focus.
 - [ ] **Verify.** Screenshots at 375 and 1280, light and dark.
 
+  Partly checked 2026-10-06 (reyxdz, local stack): the profile signed in as
+  another user and as the owner, at 375px light and 1280px dark — no errors, no
+  horizontal scroll. Opened directly and switched to Reviews, Back is now a link
+  to `/directory` (it was `navigate(-1)`, which left the site). Sending a message,
+  the owner's buttons and lightbox focus were not walked by hand.
+
 ## Phase 4 — Bundle
 
 ### Step 4.1 — Get under the first-load budget

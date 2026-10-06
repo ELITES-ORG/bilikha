@@ -15,6 +15,13 @@
   `sameSite: 'lax'` with `secure: isProduction`, with the note about the
   same-origin proxy present at plan 0001 step 4.5 — better worded than the text
   this plan asked for, so it was left alone.
+- **Still open (2026-10-04).** Two checks stay open because they are not true
+  yet, not because they were never ticked. The **Safari / iPhone** session check
+  (Step 5.4) has not been run; plan 0039 Step 7.3 carries the same check for
+  production. **Cold starts are not gone** (Step 6.2): GitHub runs the
+  keep-awake workflow 4 or 5 times a day instead of every ten minutes, so
+  production still sleeps between visitors. The fix is undecided — see
+  [#21](https://github.com/ELITES-ORG/bilikha/issues/21).
 - **Related:** [ADR 0002](../decisions/0002-pern-with-client-rendered-spa.md) ·
   [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md) ·
   [Plan 0001](./0001-registration-and-auth.md) ·
@@ -155,8 +162,8 @@ git status         # should be clean
 | 2. Migrate and seed production | 3 / 3 | Live; per-action boxes unticked |
 | 3. Render API | 6 / 6 | Live; per-action boxes unticked |
 | 4. Vercel frontend and proxy | 4 / 5 | CORS_ORIGINS still to update |
-| 5. Verify the deployment | 3 / 4 | Safari check outstanding |
-| 6. Keep the free tier awake | 1 / 2 | Pinger live; cold-start check outstanding |
+| 5. Verify the deployment | 3 / 4 | Safari check outstanding; not yet run |
+| 6. Keep the free tier awake | 1 / 2 | Outstanding — the pinger runs a few times a day, so cold starts continue (#21) |
 | 7. Document and amend plan 0001 | 3 / 3 | Done; verified 2026-09-19 |
 
 ---
@@ -547,6 +554,11 @@ curl -s -o /dev/null -w "%{time_total}s\n" https://<your-project>.vercel.app/api
 ```
 
 - [ ] **Verify.** Under 3 seconds. If it takes 50+, the monitor is not running.
+
+  Not true as of 2026-10-04. The monitor does run, but GitHub schedules it
+  best-effort: 4 or 5 runs a day between 23 September and 4 October, against
+  about 103 scheduled. Production sleeps between them. Tracked in
+  [#21](https://github.com/ELITES-ORG/bilikha/issues/21).
 
 ---
 

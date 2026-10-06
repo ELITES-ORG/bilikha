@@ -62,6 +62,10 @@ editors and edits nothing but the theme and mode choices.
 - [ ] **Verify.** One column under `md`, two from it; no horizontal scroll;
   every row link, Appearance, Mode, Install and Security still work.
 
+  Partly checked 2026-10-06 (reyxdz, local stack): `/account` as a creative at
+  375px light and 1280px dark — no errors, no horizontal scroll. An account
+  without a profile, the other widths, and each row and setting are still open.
+
 ---
 
 ## Acceptance

@@ -76,6 +76,16 @@ are unchanged; the conversation page's state and handlers are byte-identical
 - [ ] **Verify.** One pane below 1024px, two from it; the composer is visible
   without scrolling; sending, drafts, attachments, report and block work.
 
+  Partly checked 2026-10-06 (reyxdz, local stack), at 375px light and 1280px
+  dark. Fixed on the way: switching threads in the split view kept the last
+  thread's typed reply, blocked state and menus (the thread is now keyed by id);
+  the frame overflowed by the registration banner's height and the header's
+  1px border (now 0px with and without the banner); and on a phone the hidden
+  inbox still fetched its list (now not rendered). One pane below 1024px and two
+  from it confirmed. The thread composer keeps no draft across a reload — only
+  the profile's contact composer does. Sending, attachments, report and block
+  were not walked by hand.
+
 ---
 
 ## Acceptance
