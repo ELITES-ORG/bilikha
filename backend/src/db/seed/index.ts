@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { db, closeDatabase, type Database } from '../index.js';
 import { creativeDomains, creativeSubdomains, municipalities } from '../schema/index.js';
 import { logger } from '../../lib/logger.js';
@@ -5,9 +6,18 @@ import { seedBarangays } from './barangays.js';
 import { CREATIVE_DOMAINS, MUNICIPALITIES } from './taxonomy-data.js';
 
 /**
- * Idempotent reference-data seed. Safe to re-run after every deploy: rows are
- * matched on slug and their labels refreshed, so correcting a typo in the
- * taxonomy never orphans the profiles that point at it.
+ * Idempotent reference-data seed. Safe to re-run after every deploy, which is
+ * what Render's build command does.
+ *
+ * **It fills gaps and never overwrites.** The creative taxonomy is edited by
+ * administrators in the admin area, and the database — not
+ * `taxonomy-data.ts` — is its source of truth (ADR 0047). An upsert here
+ * would revert every one of those edits on the next backend deploy, silently.
+ * So domains and sub-domains are inserted when their slug is absent and left
+ * alone when it is present.
+ *
+ * Municipalities and barangays still upsert: nobody edits those in the admin
+ * area, and the eight municipalities are fixed.
  */
 async function seed(): Promise<void> {
   logger.info('Seeding reference data');
@@ -30,41 +40,38 @@ async function seed(): Promise<void> {
     let subdomainCount = 0;
 
     for (const [domainIndex, domain] of CREATIVE_DOMAINS.entries()) {
-      const [insertedDomain] = await tx
+      await tx
         .insert(creativeDomains)
         .values({
           slug: domain.slug,
           name: domain.name,
           displayOrder: domainIndex + 1,
         })
-        .onConflictDoUpdate({
-          target: creativeDomains.slug,
-          set: { name: domain.name, displayOrder: domainIndex + 1, updatedAt: new Date() },
-        })
-        .returning({ id: creativeDomains.id });
+        .onConflictDoNothing({ target: creativeDomains.slug });
 
-      if (!insertedDomain) {
-        throw new Error(`Failed to upsert domain ${domain.slug}`);
+      // `onConflictDoNothing` returns no row when the slug was already there,
+      // which after ADR 0047 is the normal case on every deploy. The id is
+      // read back rather than returned from the insert.
+      const [existingDomain] = await tx
+        .select({ id: creativeDomains.id })
+        .from(creativeDomains)
+        .where(eq(creativeDomains.slug, domain.slug))
+        .limit(1);
+
+      if (!existingDomain) {
+        throw new Error(`Failed to insert domain ${domain.slug}`);
       }
 
       for (const [subIndex, subdomain] of domain.subdomains.entries()) {
         await tx
           .insert(creativeSubdomains)
           .values({
-            domainId: insertedDomain.id,
+            domainId: existingDomain.id,
             slug: subdomain.slug,
             name: subdomain.name,
             displayOrder: subIndex + 1,
           })
-          .onConflictDoUpdate({
-            target: creativeSubdomains.slug,
-            set: {
-              domainId: insertedDomain.id,
-              name: subdomain.name,
-              displayOrder: subIndex + 1,
-              updatedAt: new Date(),
-            },
-          });
+          .onConflictDoNothing({ target: creativeSubdomains.slug });
         subdomainCount += 1;
       }
     }

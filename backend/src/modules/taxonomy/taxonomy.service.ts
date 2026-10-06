@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, isNull } from 'drizzle-orm';
 import type {
   Barangay,
   CreativeDomain,
@@ -26,6 +26,7 @@ function serializeSubdomain(row: {
   slug: string;
   name: string;
   displayOrder: number;
+  archivedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -35,6 +36,7 @@ function serializeSubdomain(row: {
     slug: row.slug,
     name: row.name,
     displayOrder: row.displayOrder,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -43,12 +45,18 @@ function serializeSubdomain(row: {
 /**
  * The full domain tree. Small, static, and requested on nearly every page, so
  * it is served in one round trip rather than as nested lookups.
+ *
+ * Active items only. An archived domain or sub-domain is gone from every
+ * picker and browse surface here, while the rows that already reference it
+ * keep working (ADR 0047).
  */
 export async function listDomains(): Promise<CreativeDomain[]> {
   const domains = await db.query.creativeDomains.findMany({
+    where: isNull(creativeDomains.archivedAt),
     orderBy: asc(creativeDomains.displayOrder),
     with: {
       subdomains: {
+        where: isNull(creativeSubdomains.archivedAt),
         orderBy: asc(creativeSubdomains.displayOrder),
       },
     },
@@ -60,17 +68,28 @@ export async function listDomains(): Promise<CreativeDomain[]> {
     name: domain.name,
     description: domain.description,
     displayOrder: domain.displayOrder,
+    archivedAt: domain.archivedAt?.toISOString() ?? null,
     createdAt: domain.createdAt.toISOString(),
     updatedAt: domain.updatedAt.toISOString(),
     subdomains: domain.subdomains.map(serializeSubdomain),
   }));
 }
 
+/**
+ * One domain by slug, with its active sub-domains.
+ *
+ * **An archived domain is still served here, deliberately.** Its slug is a
+ * public URL that has been shared into Messenger and indexed, and a shared
+ * link must not start 404ing because an administrator tidied the taxonomy. It
+ * simply stops appearing in `listDomains`, so nothing links to it any more.
+ * Its archived sub-domains are filtered out either way.
+ */
 export async function getDomainBySlug(slug: string): Promise<CreativeDomain> {
   const domain = await db.query.creativeDomains.findFirst({
     where: eq(creativeDomains.slug, slug),
     with: {
       subdomains: {
+        where: isNull(creativeSubdomains.archivedAt),
         orderBy: asc(creativeSubdomains.displayOrder),
       },
     },
@@ -86,6 +105,7 @@ export async function getDomainBySlug(slug: string): Promise<CreativeDomain> {
     name: domain.name,
     description: domain.description,
     displayOrder: domain.displayOrder,
+    archivedAt: domain.archivedAt?.toISOString() ?? null,
     createdAt: domain.createdAt.toISOString(),
     updatedAt: domain.updatedAt.toISOString(),
     subdomains: domain.subdomains.map(serializeSubdomain),

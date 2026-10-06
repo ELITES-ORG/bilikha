@@ -634,6 +634,78 @@ and could leave the queue with no administrator; and suspending another
 button beside everyone else's. Re-applying the current status is a no-op with
 `changed: false`.
 
+### `GET /api/v1/admin/taxonomy`
+
+The full domain tree **including archived items**, each with a
+`referenceCount` — how many profile, offer and posting rows point at it. The
+only surface that sees either; the public
+[`GET /api/v1/taxonomy/domains`](#get-apiv1taxonomydomains) serves active items
+only (ADR 0047).
+
+### `POST /api/v1/admin/taxonomy/domains`
+
+Body `{ "slug", "name", "description"?, "displayOrder"? }`. `201` with the
+created domain. A slug is lowercase letters, digits and single hyphens, and is
+**permanent from this moment** — it appears in URLs. A slug already in use
+returns `409`.
+
+Adding a tenth domain makes Bilikha's data incompatible with every other
+RA 11904 registry (constraint 7). The endpoint exists for a statutory revision,
+not for routine use.
+
+### `POST /api/v1/admin/taxonomy/subdomains`
+
+Body `{ "domainSlug", "slug", "name", "displayOrder"? }`. `201` with the created
+sub-domain. Unknown `domainSlug` → `404`; duplicate `slug` → `409`.
+`displayOrder` defaults to the end of that domain's list.
+
+### `PATCH /api/v1/admin/taxonomy/:kind/:slug`
+
+`kind` is `domains` or `subdomains`. Body may carry `name`, `description` and
+`displayOrder`; **an empty body is `400`**, and so is any unrecognised key.
+
+Sending `slug` returns `400 VALIDATION_ERROR` with
+`Unrecognized key: "slug"`. A slug is a public identifier that has been indexed
+and shared, so changing one is a data migration and a redirect, not an edit —
+the schema is `.strict()` rather than merely ignoring the field, so a caller is
+never told a rename worked when it did not (ADR 0047). A wrong slug is fixed by
+archiving the item and creating a replacement.
+
+### `POST /api/v1/admin/taxonomy/:kind/:slug/archive`
+
+Takes the item out of every picker and browse surface while leaving the
+profiles, offers and postings that reference it intact, and leaving its slug
+resolvable. **Archiving a domain archives its sub-domains with it**, in one
+transaction, each with its own audit row.
+
+A creative whose sub-domain is archived can still save their own profile with
+it; nobody else can add it. See
+[`PATCH /api/v1/me/profile`](#patch-apiv1meprofile).
+
+### `POST /api/v1/admin/taxonomy/:kind/:slug/restore`
+
+Clears `archivedAt`. Restoring a sub-domain whose domain is still archived is
+refused with `409` — it would be restored into invisibility. Restore the domain
+first.
+
+### `DELETE /api/v1/admin/taxonomy/:kind/:slug`
+
+Only for an item nothing references. Anything else returns `409` naming the
+number of records that point at it and pointing at archiving instead. The
+guard is the `ON DELETE RESTRICT` constraint rather than a count read first, so
+there is no window in which a registration can slip in between the check and
+the delete.
+
+The item's rows in `taxonomy_changes` survive it: `item_slug` is text, not a
+foreign key.
+
+### `GET /api/v1/admin/taxonomy/changes`
+
+Paginated audit trail, newest first. Each entry carries `itemKind`, `itemSlug`,
+`action` (`created` \| `updated` \| `archived` \| `restored` \| `deleted`),
+the administrator's username (null once that account is deleted), and the
+`before`/`after` of the fields that moved.
+
 ---
 
 ## Postings

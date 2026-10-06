@@ -21,19 +21,24 @@ Reference data plus auth and profile tables from plan 0001.
 
 ## `creative_domains`
 
-The nine RA 11904 domains. Seeded, never user-created.
+The nine RA 11904 domains. Seeded into a new environment, then **administered
+from `/admin/taxonomy`** — the database is the source of truth and the seed
+never overwrites it ([ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)).
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
-| `slug` | `text` | **Unique.** Permanent public identifier |
-| `name` | `text` | Display label. Freely editable |
+| `slug` | `text` | **Unique.** Permanent public identifier; no write path changes it |
+| `name` | `text` | Display label. Edited in the admin area |
 | `description` | `text` null | Unused so far |
 | `display_order` | `integer` | 1–9, mirrors the statutory numbering |
+| `archived_at` | `timestamptz` null | Null = active. Archiving hides it from pickers and browse surfaces; archiving a domain archives its sub-domains |
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 
-Indexes: `creative_domains_slug_idx` (unique) on `slug`
+Indexes:
+- `creative_domains_slug_idx` (unique) on `slug`
+- `creative_domains_active_idx` on `display_order`, partial `where archived_at is null`
 
 ---
 
@@ -48,12 +53,19 @@ Indexes: `creative_domains_slug_idx` (unique) on `slug`
 | `slug` | `text` | **Unique across all domains**, not just within one |
 | `name` | `text` | Display label |
 | `display_order` | `integer` | Order within its domain |
+| `archived_at` | `timestamptz` null | Null = active. An archived sub-domain stays selectable in a profile that already holds it, and nowhere else |
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 
 Indexes:
 - `creative_subdomains_slug_idx` (unique) on `slug`
 - `creative_subdomains_domain_idx` on `domain_id`
+- `creative_subdomains_active_idx` on `(domain_id, display_order)`, partial
+  `where archived_at is null`
+
+Deleting a row is refused by the `ON DELETE RESTRICT` on every referencing
+table (`creative_profile_subdomains`, `offers`, `postings`), which is what
+makes archiving the removal rather than a convention.
 
 Slug uniqueness is global so a sub-domain can be addressed at
 `/creatives/photographers` without its domain in the path.
@@ -240,6 +252,34 @@ acknowledgement / media-removal decision.
 | `created_at` | `timestamptz` | |
 
 Indexes: `profile_id`, `subject_user_id`, `created_at`.
+
+---
+
+## `taxonomy_changes`
+
+Append-only audit of every administrator change to the creative taxonomy. Rows
+are never updated or deleted.
+
+It exists because of
+[ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md):
+once the database rather than `taxonomy-data.ts` owns the labels, "who renamed
+this and when" has no answer in `git log`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `item_kind` | enum | `domain` \| `subdomain` |
+| `item_slug` | `text` | **Text, not a foreign key** — the history outlives a deleted item |
+| `action` | enum | `created` \| `updated` \| `archived` \| `restored` \| `deleted` |
+| `admin_id` | `uuid` FK null → `users.id` | `ON DELETE SET NULL`, so the history survives the account |
+| `before` | `jsonb` null | The changed fields only, as they were |
+| `after` | `jsonb` null | The changed fields only, as they became |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(item_kind, item_slug)`, `created_at`.
+
+The row and the change it records are written in one transaction — a change
+with no audit row is the failure this table exists to prevent.
 
 ---
 
@@ -494,9 +534,17 @@ table.
 `backend/src/db/seed/` — data in `taxonomy-data.ts`, runner in `index.ts`,
 optional barangay CSV loader in `barangays.ts`.
 
-The seed is **idempotent**, upserting on `slug` inside one transaction. Safe to
-run on every deploy. Correcting a label updates in place rather than orphaning
-anything that references it.
+The seed is **idempotent** and runs inside one transaction. Render's build
+command runs it on every backend deploy.
+
+- **Creative taxonomy: insert-only.** A missing slug is inserted; an existing
+  one is left exactly as it is, including its label and its `archived_at`. An
+  upsert here would silently revert every administrator edit on the next
+  deploy ([ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)).
+  `taxonomy-data.ts` is therefore what a *new* environment starts from, not a
+  description of production.
+- **Municipalities and barangays: still upserted on slug.** Nobody edits those
+  in the admin area and Biliran's eight do not change.
 
 ---
 

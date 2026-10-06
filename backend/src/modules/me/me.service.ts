@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type {
   ContactPreference,
   OwnProfile,
@@ -153,10 +153,18 @@ export async function createOwnProfile(
 
   if (!user) throw AppError.unauthorized('Session is no longer valid.');
 
+  // Active sub-domains only. An archived one is out of circulation and must
+  // not be pickable by someone registering now (ADR 0047); the profile edit
+  // path below is the one place an archived slug is still accepted.
   const subdomainRows = await db
     .select()
     .from(creativeSubdomains)
-    .where(inArray(creativeSubdomains.slug, input.subdomainSlugs));
+    .where(
+      and(
+        inArray(creativeSubdomains.slug, input.subdomainSlugs),
+        isNull(creativeSubdomains.archivedAt),
+      ),
+    );
 
   if (subdomainRows.length !== input.subdomainSlugs.length) {
     throw AppError.badRequest('One or more sub-domains are unknown.', {
@@ -246,10 +254,18 @@ export async function updateOwnProfile(
     barangayId = barangay.id;
   }
 
-  const subdomainRows = await db
+  const candidateRows = await db
     .select()
     .from(creativeSubdomains)
     .where(inArray(creativeSubdomains.slug, input.subdomainSlugs));
+
+  // Active items, plus the archived ones this profile already holds. Archiving
+  // a sub-domain must not lock its registrants out of their own edit form, but
+  // it must still stop anybody adding it from here (ADR 0047).
+  const alreadyHeld = new Set(current.subdomainSlugs);
+  const subdomainRows = candidateRows.filter(
+    (row) => row.archivedAt === null || alreadyHeld.has(row.slug),
+  );
 
   if (subdomainRows.length !== input.subdomainSlugs.length) {
     throw AppError.badRequest('One or more sub-domains are unknown.', {

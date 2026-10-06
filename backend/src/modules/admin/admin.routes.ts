@@ -8,6 +8,7 @@ import {
   adminRemoveRating,
 } from '../ratings/ratings.service.js';
 import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
+import { taxonomyAdminRouter } from './taxonomy.routes.js';
 import {
   findAccounts,
   getProfile,
@@ -26,6 +27,10 @@ export const adminRouter: Router = Router();
 // Guards the whole router. Every route below is admin-only by construction,
 // rather than by remembering to add a guard per route.
 adminRouter.use(requireAdmin);
+
+// Taxonomy administration (plan 0047). Its own file because the admin service
+// is already 673 lines, and the taxonomy write rules are a self-contained set.
+adminRouter.use(taxonomyAdminRouter);
 
 adminRouter.get('/profiles', async (req, res) => {
   const query = listQuerySchema.parse(req.query);
