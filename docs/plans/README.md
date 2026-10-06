@@ -102,6 +102,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0040](./0040-navy-and-red-restyle.md) | Navy and red restyle | In progress |
 | [0041](./0041-offers-as-a-catalog.md) | Offers as a catalog, and the offer page | In progress |
 | [0042](./0042-the-creative-profile-page.md) | The creative profile page | In progress |
+| [0043](./0043-the-account-hub-redesign.md) | The account hub redesign | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

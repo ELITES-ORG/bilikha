@@ -1,9 +1,30 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, TriangleAlert } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  Ban,
+  Bookmark,
+  BriefcaseBusiness,
+  ChevronRight,
+  CircleCheck,
+  Clock,
+  Eye,
+  FileText,
+  LockKeyhole,
+  MapPin,
+  PencilLine,
+  SunMoon,
+  TrendingUp,
+  TriangleAlert,
+  UserRound,
+} from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
 import {
+  Avatar,
+  Badge,
   ButtonLink,
+  Card,
   Container,
   EmptyState,
   Eyebrow,
@@ -13,12 +34,14 @@ import {
 } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useCurrentUser } from '@/features/auth/api';
-import type { ViewMode } from '@/features/auth/types';
+import type { AuthUser, ViewMode } from '@/features/auth/types';
 import { useOwnProfile, useSetViewMode } from '@/features/me/api';
-import type { ProfileStatus } from '@/features/me/types';
+import type { OwnProfile, ProfileStatus } from '@/features/me/types';
 import { useOwnOffers } from '@/features/offers/api';
 import { OFFER_LIMIT } from '@/features/offers/limits';
 import { useMyPostings } from '@/features/postings/api';
+import { useCreativeDomains } from '@/features/taxonomy/api';
+import type { CreativeDomain } from '@/features/taxonomy/types';
 import { useWorkSummary } from '@/features/work/api';
 import { nextAction } from '@/features/work/next-action';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -65,42 +88,89 @@ function HubRow({
   to,
   label,
   summary,
+  icon,
 }: {
   to: string;
   label: string;
   summary: string;
+  icon: ReactNode;
 }) {
   return (
     <li>
       <Link
         to={to}
-        className={cn(
-          'flex min-h-11 items-center justify-between gap-3 border-b border-hairline px-1 py-3',
-          'text-left transition-colors hover:bg-clay-50',
-        )}
+        className="group flex min-h-14 items-center gap-4 px-5 py-4 transition-colors hover:bg-clay-50"
       >
-        <span className="min-w-0">
-          <span className="block text-sm font-medium text-ink">{label}</span>
+        <RowIcon>{icon}</RowIcon>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-ink">{label}</span>
           <span className="mt-0.5 block text-sm text-ink-muted">{summary}</span>
         </span>
-        <ChevronRight className="size-4 shrink-0 text-ink-muted" aria-hidden />
+        <ChevronRight
+          className="size-4 shrink-0 text-ink-muted transition-transform motion-safe:group-hover:translate-x-0.5"
+          aria-hidden
+        />
       </Link>
     </li>
   );
 }
 
-function HubGroup({
-  title,
+/** Small navy icon in a soft circle — secondary to the label beside it. */
+function RowIcon({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-lawa-700 [&_svg]:size-4"
+      aria-hidden="true"
+    >
+      {children}
+    </span>
+  );
+}
+
+function HubCard({ title, children }: { title: string; children: ReactNode }) {
+  const id = `hub-${title.toLowerCase().replace(/\s+/g, '-')}`;
+  return (
+    <Card as="section" aria-labelledby={id} className="overflow-hidden">
+      <h2 id={id} className="px-5 pt-5 pb-3 text-xl text-ink">
+        {title}
+      </h2>
+      <ul className="divide-y divide-hairline border-t border-hairline">{children}</ul>
+    </Card>
+  );
+}
+
+/** Text on the left; the control beside it from sm, under it on a phone. */
+function SettingRow({
+  icon,
+  label,
+  description,
   children,
 }: {
-  title: string;
+  icon: ReactNode;
+  label: string;
+  description?: string;
   children: ReactNode;
 }) {
+  const labelId = useId();
   return (
-    <section className="mt-10">
-      <h2 className="u-eyebrow px-1">{title}</h2>
-      <ul className="mt-3 border-t border-hairline">{children}</ul>
-    </section>
+    <li className="px-5 py-4">
+      <div
+        role="group"
+        aria-labelledby={labelId}
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="flex min-w-0 items-start gap-4">
+          <RowIcon>{icon}</RowIcon>
+          <div className="min-w-0">
+            <p id={labelId} className="text-sm font-semibold text-ink">
+              {label}
+            </p>
+            {description && <p className="mt-0.5 text-sm text-ink-muted">{description}</p>}
+          </div>
+        </div>
+        <div className="pl-13 sm:shrink-0 sm:pl-0">{children}</div>
+      </div>
+    </li>
   );
 }
 
@@ -119,43 +189,37 @@ function AppearanceRow() {
   }
 
   return (
-    <li className="border-b border-hairline px-1 py-3">
-      <fieldset>
-        <legend className="text-sm font-medium text-ink">Appearance</legend>
-        <p className="mt-0.5 text-sm text-ink-muted">
-          System follows your device. Light and Dark stay put.
-        </p>
-        <div
-          role="radiogroup"
-          aria-label="Appearance"
-          className={cn('mt-3', segmentTrackClass)}
-        >
-          {APPEARANCE_OPTIONS.map((option) => {
-            const selected = preference === option.value;
-            return (
-              <label
-                key={option.value}
-                className={cn(
-                  segmentItemClass(selected),
-                  // The radio is visually hidden; its focus shows on the pill.
-                  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="appearance"
-                  value={option.value}
-                  checked={selected}
-                  onChange={() => choose(option.value)}
-                  className="sr-only"
-                />
-                {option.label}
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-    </li>
+    <SettingRow
+      icon={<SunMoon />}
+      label="Appearance"
+      description="System follows your device. Light and Dark stay put."
+    >
+      <div role="radiogroup" aria-label="Appearance" className={segmentTrackClass}>
+        {APPEARANCE_OPTIONS.map((option) => {
+          const selected = preference === option.value;
+          return (
+            <label
+              key={option.value}
+              className={cn(
+                segmentItemClass(selected),
+                // The radio is visually hidden; its focus shows on the pill.
+                'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
+              )}
+            >
+              <input
+                type="radio"
+                name="appearance"
+                value={option.value}
+                checked={selected}
+                onChange={() => choose(option.value)}
+                className="sr-only"
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
+    </SettingRow>
   );
 }
 
@@ -183,78 +247,70 @@ function ModeRow() {
   }
 
   return (
-    <li className="border-b border-hairline px-1 py-3">
-      <fieldset>
-        <legend className="text-sm font-medium text-ink">Mode</legend>
-        <div
-          role="radiogroup"
-          aria-label="Mode"
-          className={cn('mt-3', segmentTrackClass)}
-        >
-          {MODE_OPTIONS.map((option) => {
-            const selected = mode === option.value;
-            return (
-              <label
-                key={option.value}
-                className={cn(
-                  segmentItemClass(selected),
-                  'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
-                  setMode.isPending && 'pointer-events-none opacity-60',
-                )}
-              >
-                <input
-                  type="radio"
-                  name="view-mode"
-                  value={option.value}
-                  checked={selected}
-                  disabled={setMode.isPending}
-                  onChange={() => choose(option.value)}
-                  className="sr-only"
-                />
-                {option.label}
-              </label>
-            );
-          })}
-        </div>
-      </fieldset>
-    </li>
+    <SettingRow icon={<ArrowLeftRight />} label="Mode">
+      <div role="radiogroup" aria-label="Mode" className={segmentTrackClass}>
+        {MODE_OPTIONS.map((option) => {
+          const selected = mode === option.value;
+          return (
+            <label
+              key={option.value}
+              className={cn(
+                segmentItemClass(selected),
+                'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
+                setMode.isPending && 'pointer-events-none opacity-60',
+              )}
+            >
+              <input
+                type="radio"
+                name="view-mode"
+                value={option.value}
+                checked={selected}
+                disabled={setMode.isPending}
+                onChange={() => choose(option.value)}
+                className="sr-only"
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
+    </SettingRow>
   );
 }
 
 export function AccountPage() {
+  const { data: user } = useCurrentUser();
   const profile = useOwnProfile();
   const hasCreative = Boolean(profile.data);
   const offers = useOwnOffers(profile.isSuccess && hasCreative);
   const postings = useMyPostings();
   const work = useWorkSummary(profile.isSuccess && hasCreative);
+  // Names for the professions line — the profile carries slugs only. Cached
+  // indefinitely and usually already loaded by the directory.
+  const domains = useCreativeDomains();
 
   const openPostings = postings.data?.filter((p) => p.status === 'open').length;
   const workSummaryLine =
     work.data != null ? nextAction(work.data).headline : work.isPending ? '…' : 'How things stand';
+  // Saved offers are a hiring-side idea; History hides them in creative mode too.
+  const creativeMode = effectiveViewMode(user) === 'creative' && Boolean(user?.profileSlug);
 
   return (
     <div className="bg-paper">
       <RegistrationStatusBanner />
 
       <main className={pbBottomNav}>
-        <Container width="narrow" className="py-(--section-gap)">
+        <Container className="py-8 sm:py-(--section-gap)">
           <Eyebrow>Account</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Your account</h1>
-          <p className="mt-3 max-w-xl text-md text-ink-muted">
-            Your public profile and offers, how your work is doing, and settings
-            for mode, appearance and sign-in.
+          <p className="mt-2 max-w-xl text-md text-ink-muted">
+            Manage your profile, work, preferences and security.
           </p>
 
-          {profile.isPending && (
-            <div className="mt-10 space-y-3">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-            </div>
-          )}
+          {profile.isPending && <AccountSkeleton />}
 
           {profile.isError && (
-            <div className="mt-10">
+            <div className="mt-8">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
                 title="Could not load your account"
@@ -263,79 +319,107 @@ export function AccountPage() {
             </div>
           )}
 
-          {profile.isSuccess && (
+          {profile.isSuccess && user && (
             <>
-              <HubGroup title="What people see">
-                <HubRow
-                  to="/account/profile"
-                  label="Profile"
-                  summary={
-                    profile.data
-                      ? profileSummary(profile.data.subdomainSlugs.length, profile.data.status)
-                      : 'Photo and creative profile setup'
-                  }
-                />
-                {profile.data && (
-                  <HubRow
-                    to="/account/offers"
-                    label="Offers"
-                    summary={offersSummary(offers.data?.length)}
-                  />
-                )}
-                <HubRow
-                  to="/postings/mine"
-                  label="Your postings"
-                  summary={postingsSummary(openPostings)}
-                />
-              </HubGroup>
+              <ProfileSummary
+                user={user}
+                profile={profile.data}
+                professions={professionsOf(profile.data, domains.data)}
+              />
 
-              {profile.data && (
-                <HubGroup title="How it is going">
+              <div className="mt-6 grid items-start gap-6 md:grid-cols-2">
+                <HubCard title="Your activity">
+                  {profile.data && (
+                    <HubRow
+                      to="/account/offers"
+                      icon={<BriefcaseBusiness />}
+                      label="Your offers"
+                      summary={offersSummary(offers.data?.length)}
+                    />
+                  )}
                   <HubRow
-                    to="/account/work"
-                    label="How your work is doing"
-                    summary={workSummaryLine}
+                    to="/postings/mine"
+                    icon={<FileText />}
+                    label="Your postings"
+                    summary={postingsSummary(openPostings)}
                   />
-                </HubGroup>
-              )}
+                  {!creativeMode && (
+                    <HubRow
+                      to="/history?segment=saved"
+                      icon={<Bookmark />}
+                      label="Saved offers"
+                      summary="Offers you kept to come back to"
+                    />
+                  )}
+                  {profile.data && (
+                    <HubRow
+                      to="/account/work"
+                      icon={<TrendingUp />}
+                      label="How your work is doing"
+                      summary={workSummaryLine}
+                    />
+                  )}
+                  <HubRow
+                    to="/account/profile"
+                    icon={<UserRound />}
+                    label="Profile"
+                    summary={
+                      profile.data
+                        ? profileSummary(profile.data.subdomainSlugs.length, profile.data.status)
+                        : 'Photo and creative profile setup'
+                    }
+                  />
+                </HubCard>
 
-              <HubGroup title="Settings">
-                <ModeRow />
-                <AppearanceRow />
-                {/*
-                  A choice about this device, like Appearance above it. Renders
-                  nothing once installed, and nothing in a browser with no
-                  install flow, so it is not a permanent fixture of the group.
-                */}
-                <InstallGuide />
-                <HubRow
-                  to="/account/security"
-                  label="Security"
-                  summary="Password and sign out"
-                />
-              </HubGroup>
+                <HubCard title="Settings">
+                  <ModeRow />
+                  <AppearanceRow />
+                  {/*
+                    A choice about this device, like Appearance above it. Renders
+                    nothing once installed, and nothing in a browser with no
+                    install flow, so it is not a permanent fixture of the group.
+                  */}
+                  <InstallGuide />
+                  <HubRow
+                    to="/account/security"
+                    icon={<LockKeyhole />}
+                    label="Security"
+                    summary="Password and sign out"
+                  />
+                </HubCard>
+              </div>
 
               {!profile.data && (
-                <section className="mt-10" aria-labelledby="offer-work-heading">
-                  <h2 id="offer-work-heading" className="u-display text-2xl text-ink">
-                    Offer your creative work
-                  </h2>
-                  <p className="mt-2 max-w-xl text-sm text-ink-muted">
-                    Add a creative profile to appear in the directory. It is reviewed
-                    before it goes public — the same path as signing up to offer work.
-                  </p>
-                  <ButtonLink to="/welcome/profile?from=account" className="mt-5">
+                <section
+                  className="mt-6 flex flex-col gap-5 rounded-lg border border-hairline bg-surface-sunken p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8"
+                  aria-labelledby="offer-work-heading"
+                >
+                  <div className="max-w-xl">
+                    <Eyebrow>Offer your creative work</Eyebrow>
+                    <h2 id="offer-work-heading" className="mt-3 text-2xl text-ink">
+                      Get discovered by people looking for creative professionals in Biliran.
+                    </h2>
+                    <p className="mt-2 text-sm text-ink-muted">
+                      Add a creative profile to appear in the directory. It is reviewed
+                      before it goes public — the same path as signing up to offer work.
+                    </p>
+                  </div>
+                  <ButtonLink
+                    to="/welcome/profile?from=account"
+                    className="w-full shrink-0 sm:w-auto"
+                    iconRight={<ArrowRight className="size-4" aria-hidden="true" />}
+                  >
                     Set up your profile
                   </ButtonLink>
                 </section>
               )}
 
               {/*
-                Not a fourth hub group: these are two documents to read, not
-                settings to change, and giving them the weight of Profile or
-                Security would misstate what they are. They sit below the
-                groups, the way a footer does, so the account area has them
-                without registration being the only place they are linked.
+                Not a hub group: these are two documents to read, not settings
+                to change, and giving them the weight of Profile or Security
+                would misstate what they are. They sit below the groups, the
+                way a footer does, so the account area has them without
+                registration being the only place they are linked.
               */}
               <p className="mt-12 flex gap-4 border-t border-hairline pt-6 text-sm">
                 <Link to="/privacy" className="link-underline text-ink-muted">
@@ -349,6 +433,112 @@ export function AccountPage() {
           )}
         </Container>
       </main>
+    </div>
+  );
+}
+
+const STATUS_BADGE: Record<ProfileStatus, { tone: 'success' | 'warning' | 'neutral' | 'danger'; icon: ReactNode }> = {
+  published: { tone: 'success', icon: <CircleCheck className="size-3.5" aria-hidden /> },
+  pending_review: { tone: 'warning', icon: <Clock className="size-3.5" aria-hidden /> },
+  draft: { tone: 'neutral', icon: <PencilLine className="size-3.5" aria-hidden /> },
+  suspended: { tone: 'danger', icon: <Ban className="size-3.5" aria-hidden /> },
+};
+
+/** Primary craft first, names resolved from the taxonomy. */
+function professionsOf(profile: OwnProfile | null, domains: CreativeDomain[] | undefined): string[] {
+  if (!profile || !domains) return [];
+  const names = new Map(domains.flatMap((d) => d.subdomains.map((s) => [s.slug, s.name] as const)));
+  const ordered = [...profile.subdomainSlugs].sort(
+    (a, b) => Number(b === profile.primarySubdomainSlug) - Number(a === profile.primarySubdomainSlug),
+  );
+  return ordered.map((slug) => names.get(slug)).filter((name): name is string => Boolean(name));
+}
+
+function ProfileSummary({
+  user,
+  profile,
+  professions,
+}: {
+  user: AuthUser;
+  profile: OwnProfile | null;
+  professions: string[];
+}) {
+  const name = profile?.displayName || `${user.firstName} ${user.lastName}`;
+  const published = profile?.status === 'published' && user.profileSlug;
+  const status = profile ? STATUS_BADGE[profile.status] : null;
+
+  return (
+    <Card as="section" aria-label="Your profile" className="mt-8 p-5 sm:flex sm:gap-6 sm:p-8">
+      <Avatar src={user.avatarUrl} name={name} size="lg" className="sm:size-28" />
+      <div className="mt-4 min-w-0 flex-1 sm:mt-0">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="u-display text-2xl break-words text-ink">{name}</p>
+          {profile && status && (
+            <Badge tone={status.tone} icon={status.icon}>
+              {profileStatusLabel(profile.status)}
+            </Badge>
+          )}
+        </div>
+        <p className="mt-0.5 text-sm text-ink-muted">@{user.username}</p>
+        {professions.length > 0 && (
+          <p className="mt-3 font-semibold text-ink">{professions.join(' · ')}</p>
+        )}
+        {user.municipalityName && (
+          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-muted">
+            <MapPin className="size-4 text-palayok-500" aria-hidden="true" />
+            {user.municipalityName}, Biliran
+          </p>
+        )}
+        {profile?.bio && (
+          <p className="mt-3 line-clamp-3 max-w-prose text-sm text-ink-muted">{profile.bio}</p>
+        )}
+        {profile && !published && (
+          // The public page serves published profiles only, so there is no
+          // View button yet — say why rather than leave it missing.
+          <p className="mt-3 text-sm text-ink-muted">
+            Your profile goes public once it has been reviewed.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 sm:mt-0 sm:w-44 sm:shrink-0">
+        {published && (
+          <ButtonLink
+            to={`/creatives/${user.profileSlug}`}
+            fullWidth
+            iconLeft={<Eye className="size-4" aria-hidden="true" />}
+          >
+            View profile
+          </ButtonLink>
+        )}
+        <ButtonLink
+          to="/account/profile"
+          variant="secondary"
+          fullWidth
+          iconLeft={<PencilLine className="size-4" aria-hidden="true" />}
+        >
+          {profile ? 'Edit profile' : 'Edit account details'}
+        </ButtonLink>
+      </div>
+    </Card>
+  );
+}
+
+function AccountSkeleton() {
+  return (
+    <div aria-hidden="true">
+      <div className="mt-8 rounded-md border border-hairline p-5 sm:flex sm:gap-6 sm:p-8">
+        <Skeleton radius="full" className="size-20 sm:size-28" />
+        <div className="mt-4 flex-1 space-y-3 sm:mt-0">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <Skeleton radius="md" className="h-72" />
+        <Skeleton radius="md" className="h-72" />
+      </div>
     </div>
   );
 }
