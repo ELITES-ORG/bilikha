@@ -1,6 +1,6 @@
 # 0039. Staging and production — the current deployment becomes staging
 
-- **Status:** Complete except two browser checks — see Progress
+- **Status:** Complete except the Safari / iPhone session check — see Progress
 - **Owner:** reyxdz
 - **Related:** [ADR 0042](../decisions/0042-main-is-staging-production-is-a-branch.md) ·
   [plan 0002](./0002-deployment.md) ·
@@ -86,11 +86,11 @@ git fetch origin && git status
 | 1. The production branch | 2 / 2 | Done 2026-10-03 |
 | 2. Production database | 4 / 4 | Done 2026-10-03 |
 | 3. Production API | 4 / 4 | Done 2026-10-03 |
-| 4. Staging frontend | 3 / 3 | Partial — the browser sign-in on staging is unticked |
+| 4. Staging frontend | 3 / 3 | Done 2026-10-03; browser sign-in confirmed 2026-10-04 |
 | 5. Move bilikha.vercel.app to production | 2 / 2 | Done 2026-10-03 |
 | 6. Merge the repository changes | 2 / 2 | Done 2026-10-03, PR #1 |
 | 7. Cut over | 4 / 4 | Partial — the Safari / iPhone session check is unticked |
-| 8. Tidy up | 3 / 3 | Partial — the staging sign-in after the CORS change is unticked |
+| 8. Tidy up | 3 / 3 | Done 2026-10-03; staging sign-in confirmed 2026-10-04 |
 
 ---
 
@@ -313,8 +313,12 @@ curl -s https://bilikha-staging.vercel.app/api/v1/health/ready
 Confirmed 2026-10-03: ready, and `/api/v1/creatives` through the staging site
 returns the original three creatives.
 
-- [ ] **Verify.** In a browser, sign in on `bilikha-staging.vercel.app` with an
+- [x] **Verify.** In a browser, sign in on `bilikha-staging.vercel.app` with an
   existing account. It works — the data is the original data.
+
+Confirmed 2026-10-04 by reyxdz: signed in on staging as `reyxdz_creative`, an
+account from before the split, and the directory showed the original data,
+including Hellmerry's "Test Offer".
 
 ---
 
@@ -436,6 +440,9 @@ curl -sI https://bilikha.vercel.app/ | grep -i x-robots-tag
 - [x] **Action.** Register a new account on `bilikha.vercel.app`.
 - [ ] **Verify.** Reload the page: still signed in. Repeat once in Safari or on
   an iPhone, as plan 0002 Step 5.4 requires.
+
+  Still open on 2026-10-04: it needs a real Safari or iPhone, and nobody has
+  run it yet. Plan 0002 Step 5.4 carries the same check.
 - [x] **Verify.** Upload an avatar. It appears, and its image URL points at the
   **production** Supabase project. This is what proves the `media` bucket from
   Step 2.3.
@@ -478,7 +485,8 @@ Done 2026-10-03 through the SQL Editor, for `Hellmerry`.
 
 - [x] **Action.** Render → `bilikha` → `CORS_ORIGINS` =
   `https://bilikha-staging.vercel.app`.
-- [ ] **Verify.** Staging still signs in.
+- [x] **Verify.** Staging still signs in. Confirmed 2026-10-04 by the same
+  sign-in as Step 4.3, made after this change.
 
 ### Step 8.2 — The pinger reaches both
 
