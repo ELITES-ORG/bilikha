@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  ArrowLeft,
   CalendarDays,
   LayoutGrid,
   MapPin,
   MessageSquare,
   Pencil,
   Plus,
-  Share2,
 } from 'lucide-react';
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { CornerBlob } from '@/components/Decor';
+import { BackPill, ShareButton } from '@/components/PageCornerActions';
 import {
   Avatar,
   Badge,
@@ -22,7 +21,6 @@ import {
   Skeleton,
   StatItem,
   Tabs,
-  useToast,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -67,9 +65,6 @@ function craftsByDomain(profile: PublicProfile) {
 
 export function CreativeProfilePage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const toast = useToast();
   const [params, setParams] = useSearchParams();
   const profile = usePublishedProfile(slug);
   const rating = useRatingSummary(slug);
@@ -124,20 +119,6 @@ export function CreativeProfilePage() {
     setParams(merged, { replace: true });
   }
 
-  async function onShare(title: string) {
-    const url = window.location.href;
-    if (typeof navigator.share === 'function') {
-      await navigator.share({ title, url }).catch(() => undefined);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copied');
-    } catch {
-      toast.error('Could not copy the link');
-    }
-  }
-
   if (profile.isError && profile.error instanceof ProfileNotFoundError) {
     return <NotFoundPage />;
   }
@@ -145,7 +126,6 @@ export function CreativeProfilePage() {
   const nextPath = slug ? `/creatives/${slug}` : '/';
   const data = profile.data;
   const isOwner = Boolean(data && user?.profileSlug === data.slug);
-  const canGoBack = location.key !== 'default';
 
   return (
     <>
@@ -196,26 +176,11 @@ export function CreativeProfilePage() {
                   <CornerBlob placement="top-right" onNavy />
                   <CornerBlob placement="bottom-left" onNavy className="opacity-70" />
                   <div className="absolute top-3 left-3">
-                    {canGoBack ? (
-                      <button type="button" className={coverPill} onClick={() => void navigate(-1)}>
-                        <ArrowLeft className="size-4" aria-hidden="true" />
-                        Back
-                      </button>
-                    ) : (
-                      <Link to="/directory" className={coverPill}>
-                        <ArrowLeft className="size-4" aria-hidden="true" />
-                        Back
-                      </Link>
-                    )}
+                    <BackPill />
                   </div>
-                  <button
-                    type="button"
-                    aria-label="Share this profile"
-                    className="interactive-press absolute top-3 right-3 grid size-11 place-items-center rounded-full bg-surface text-ink shadow-sm hover:text-lawa-700"
-                    onClick={() => void onShare(name)}
-                  >
-                    <Share2 className="size-5" aria-hidden="true" />
-                  </button>
+                  <div className="absolute top-3 right-3">
+                    <ShareButton title={name} label="Share this profile" />
+                  </div>
                 </div>
 
                 {/* Identity: centred on a phone, left-aligned with actions on
@@ -546,9 +511,6 @@ export function CreativeProfilePage() {
     </>
   );
 }
-
-const coverPill =
-  'interactive-press inline-flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-sm';
 
 function AboutBlock({ title, children }: { title: string; children: ReactNode }) {
   return (

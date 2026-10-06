@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ToastContext, type ToastApi } from './toast-context';
@@ -136,7 +137,9 @@ function Toaster({
   toasts: ToastItem[];
   onDismiss: (id: number) => void;
 }) {
-  return (
+  // Portaled to <body>, outside #root: a dialog that makes the app `inert`
+  // must not silence the toasts that report its own saves and failures.
+  return createPortal(
     /**
      * Top centre, on every size. The bottom belongs to the tab bar on phones —
      * anchoring there meant offsetting around it and stacking toasts into the
@@ -159,7 +162,8 @@ function Toaster({
       {toasts.map((toast) => (
         <ToastRow key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }
 

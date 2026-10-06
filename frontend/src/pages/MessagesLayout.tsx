@@ -7,6 +7,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { ConversationList } from '@/features/conversations/ConversationList';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/use-media-query';
 
 /**
  * /messages and /messages/:id share this frame. The URL is the only state:
@@ -17,27 +18,41 @@ import { cn } from '@/lib/cn';
  *
  * The thread is lazy and gets its own Suspense, so the inbox stays on screen
  * while that chunk loads.
+ *
+ * The thread is keyed by its id. The split view switches threads without
+ * leaving this route, so an unkeyed thread would keep the previous one's
+ * typed reply, blocked state and open menus — and send that reply to the
+ * next person.
+ *
+ * Below lg with a thread open, the inbox is not rendered at all rather than
+ * hidden: hidden, it would still fetch a list nobody can see.
  */
 export function MessagesLayout() {
-  const inThread = useMatch('/messages/:id') !== null;
+  const threadId = useMatch('/messages/:id')?.params.id;
+  const inThread = threadId !== undefined;
+  const splitView = useMediaQuery('(min-width: 64rem)');
 
   return (
-    <>
+    // From lg the frame fills the screen under the header (4rem plus its 1px
+    // border), and the registration banner, when shown, takes its share.
+    <div className="lg:flex lg:h-[calc(100dvh-4rem-1px-var(--staging-banner-h))] lg:flex-col">
       <RegistrationStatusBanner />
       {/* The thread sets its own bottom padding: its composer is fixed on a phone. */}
-      <main className={inThread ? undefined : pbBottomNav}>
-        <div className="lg:mx-auto lg:grid lg:h-[calc(100dvh-4rem-var(--staging-banner-h))] lg:max-w-7xl lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-6 lg:px-(--gutter) lg:py-6">
-          <section
-            aria-label="Conversations"
-            className={cn(
-              inThread && 'max-lg:hidden',
-              'lg:min-h-0 lg:overflow-y-auto lg:rounded-lg lg:border lg:border-hairline lg:bg-surface',
-            )}
-          >
-            <Container width="narrow" className="py-(--section-gap) lg:max-w-none lg:px-0 lg:py-0">
-              <ConversationList />
-            </Container>
-          </section>
+      <main className={cn(inThread ? undefined : pbBottomNav, 'lg:min-h-0 lg:flex-1')}>
+        <div className="lg:mx-auto lg:grid lg:h-full lg:max-w-7xl lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-6 lg:px-(--gutter) lg:py-6">
+          {(!inThread || splitView) && (
+            <section
+              aria-label="Conversations"
+              className="lg:min-h-0 lg:overflow-y-auto lg:rounded-lg lg:border lg:border-hairline lg:bg-surface"
+            >
+              <Container
+                width="narrow"
+                className="py-(--section-gap) lg:max-w-none lg:px-0 lg:py-0"
+              >
+                <ConversationList />
+              </Container>
+            </section>
+          )}
 
           <section
             aria-label="Conversation"
@@ -47,12 +62,12 @@ export function MessagesLayout() {
             )}
           >
             <Suspense fallback={<RouteFallback chrome={false} />}>
-              <Outlet />
+              <Outlet key={threadId} />
             </Suspense>
           </section>
         </div>
       </main>
-    </>
+    </div>
   );
 }
 

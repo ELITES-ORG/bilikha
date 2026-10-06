@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, MapPin, Share2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowRight, Bookmark, BookmarkCheck, MapPin } from 'lucide-react';
 import {
   Avatar,
   Badge,
@@ -14,6 +14,7 @@ import {
   Skeleton,
   useToast,
 } from '@/components/ui';
+import { BackPill, ShareButton } from '@/components/PageCornerActions';
 import { useCurrentUser } from '@/features/auth/api';
 import { RatingScore } from '@/features/ratings/components/RatingScore';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -27,11 +28,6 @@ import {
   usePublishedOffers,
   type PublishedOfferDetail,
 } from '@/features/offers/api';
-import {
-  useSaveOffer,
-  useSavedOffers,
-  useUnsaveOffer,
-} from '@/features/me/saved-offers';
 import { useOfferSaving, type OfferSaving } from '@/features/me/use-offer-saving';
 import { formatPriceRange } from '@/lib/money';
 import {
@@ -42,27 +38,27 @@ import {
   pbOfferActionDockGuest,
 } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
+import { effectiveViewMode } from '@/lib/view-mode';
 import { cn } from '@/lib/cn';
 
 export function OfferDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const toast = useToast();
   const offer = usePublishedOffer(id);
   const { data: user } = useCurrentUser();
   const ensure = useEnsureConversation();
-  const saveOffer = useSaveOffer();
-  const unsaveOffer = useUnsaveOffer();
-  const saved = useSavedOffers(Boolean(user));
   const [inquiring, setInquiring] = useState(false);
-  // Same cached saved-offers list as above, for the similar-offer cards.
-  const cardSaving = useOfferSaving(Boolean(user));
+  // One save flow for this offer and the similar-offer cards: one cached
+  // saved-offers list, one set of toasts.
+  const offerSaving = useOfferSaving(Boolean(user));
+  // Similar cards follow the directory: no save hearts while browsing as a
+  // creative. This offer's own Save stays for any signed-in viewer, as before.
+  const browsingAsCreative =
+    Boolean(user?.profileSlug) && effectiveViewMode(user) === 'creative';
   const lightbox = useOfferLightbox(offer.data?.images ?? []);
 
-  const isSaved =
-    Boolean(id) &&
-    (saved.data?.some((row) => row.offer.id === id) ?? false);
+  const isSaved = id ? offerSaving.isSaved(id) : false;
 
   if (offer.isError && offer.error instanceof OfferNotFoundError) {
     return (
@@ -86,11 +82,9 @@ export function OfferDetailPage() {
   const signedIn = Boolean(user);
   const mainPad = signedIn ? pbOfferActionDock : pbOfferActionDockGuest;
   const dockClass = signedIn ? fixedOfferActionDockAboveNav : fixedOfferActionDockGuest;
-  const saving = saveOffer.isPending || unsaveOffer.isPending;
+  const saving = id ? offerSaving.isPending(id) : false;
   const isOwner =
     Boolean(user?.profileSlug) && user?.profileSlug === offer.data?.creative.slug;
-  // An in-app history entry exists unless this page was opened directly.
-  const canGoBack = location.key !== 'default';
 
   async function onInquire() {
     if (!offer.data) return;
@@ -109,47 +103,13 @@ export function OfferDetailPage() {
     }
   }
 
-  async function onToggleSave() {
+  function onToggleSave() {
     if (!id) return;
     if (!user) {
       void navigate(loginHref);
       return;
     }
-    if (isSaved) {
-      await toast.run(
-        'Removing…',
-        () => unsaveOffer.mutateAsync(id),
-        {
-          success: 'Removed from saved',
-          error: (err) => toApiError(err).message,
-        },
-      );
-    } else {
-      await toast.run(
-        'Saving…',
-        () => saveOffer.mutateAsync(id),
-        {
-          success: 'Saved',
-          error: (err) => toApiError(err).message,
-        },
-      );
-    }
-  }
-
-  async function onShare() {
-    if (!offer.data) return;
-    const url = window.location.href;
-    if (typeof navigator.share === 'function') {
-      // Dismissing the share sheet rejects; that is not an error to report.
-      await navigator.share({ title: offer.data.title, url }).catch(() => undefined);
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copied');
-    } catch {
-      toast.error('Could not copy the link');
-    }
+    offerSaving.toggle(id);
   }
 
   const inquireControl = isOwner ? (
@@ -187,7 +147,7 @@ export function OfferDetailPage() {
           <Bookmark className="size-4" aria-hidden />
         )
       }
-      onClick={() => void onToggleSave().catch(() => undefined)}
+      onClick={onToggleSave}
     >
       {isSaved ? 'Saved' : 'Save'}
     </Button>
@@ -259,34 +219,17 @@ export function OfferDetailPage() {
                 )}
 
                 <div className="absolute top-3 left-3">
-                  {canGoBack ? (
-                    <button type="button" className={heroPill} onClick={() => void navigate(-1)}>
-                      <ArrowLeft className="size-4" aria-hidden="true" />
-                      Back
-                    </button>
-                  ) : (
-                    <Link to="/directory" className={heroPill}>
-                      <ArrowLeft className="size-4" aria-hidden="true" />
-                      Back
-                    </Link>
-                  )}
+                  <BackPill />
                 </div>
 
                 <div className="absolute top-3 right-3 flex gap-2">
-                  <button
-                    type="button"
-                    aria-label="Share this offer"
-                    className="interactive-press grid size-11 place-items-center rounded-full bg-surface text-ink shadow-sm hover:text-lawa-700"
-                    onClick={() => void onShare()}
-                  >
-                    <Share2 className="size-5" aria-hidden="true" />
-                  </button>
+                  <ShareButton title={offer.data.title} label="Share this offer" />
                   {user && !isOwner && (
                     <SaveHeart
                       save={{
                         saved: isSaved,
                         pending: saving,
-                        onToggle: () => void onToggleSave().catch(() => undefined),
+                        onToggle: onToggleSave,
                       }}
                     />
                   )}
@@ -395,7 +338,11 @@ export function OfferDetailPage() {
                 </div>
               </div>
 
-              <SimilarOffers offer={data} saving={cardSaving} viewerSlug={user?.profileSlug} />
+              <SimilarOffers
+                offer={data}
+                saving={browsingAsCreative ? null : offerSaving}
+                viewerSlug={user?.profileSlug}
+              />
               {lightbox.lightbox}
             </>
           )}
@@ -404,9 +351,6 @@ export function OfferDetailPage() {
     </>
   );
 }
-
-const heroPill =
-  'interactive-press inline-flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-sm';
 
 /**
  * Other offers in the same sub-domain — the offer index's own filter, so this
@@ -419,7 +363,8 @@ function SimilarOffers({
   viewerSlug,
 }: {
   offer: PublishedOfferDetail;
-  saving: OfferSaving;
+  /** Null where save hearts do not belong. */
+  saving: OfferSaving | null;
   viewerSlug: string | null | undefined;
 }) {
   const similar = usePublishedOffers({ subdomain: offer.subdomain.slug, limit: 5 });
@@ -458,7 +403,7 @@ function SimilarOffers({
               municipality: row.creative.municipality,
             }}
             save={
-              saving.enabled && row.creative.slug !== viewerSlug
+              saving?.enabled && row.creative.slug !== viewerSlug
                 ? {
                     saved: saving.isSaved(row.id),
                     pending: saving.isPending(row.id),

@@ -3,6 +3,7 @@ import { ArrowRight, Heart, MapPin } from 'lucide-react';
 import { Avatar, Badge, ButtonLink, Card, Eyebrow, ProgressiveImage, Skeleton } from '@/components/ui';
 import type { OfferImage } from '@/features/offers/api';
 import { cn } from '@/lib/cn';
+import { initialsFromName } from '@/lib/initials';
 
 export interface OfferCardProvider {
   name: string;
@@ -42,13 +43,6 @@ export interface OfferCardProps {
   className?: string;
 }
 
-function initials(text: string): string {
-  const parts = text.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ''}${parts[parts.length - 1]![0] ?? ''}`.toUpperCase();
-}
-
 /** Navy panel with initials — what an offer with no photo shows instead. */
 export function OfferImageFallback({ text, large = false }: { text: string; large?: boolean }) {
   return (
@@ -59,7 +53,7 @@ export function OfferImageFallback({ text, large = false }: { text: string; larg
       )}
       aria-hidden="true"
     >
-      {initials(text)}
+      {initialsFromName(text)}
     </span>
   );
 }

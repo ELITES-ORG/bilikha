@@ -89,6 +89,13 @@ the create, edit, delete, reorder and image flows are unchanged.
 - [ ] **Verify.** 1, 2 and 3 columns at the right widths, no horizontal page
   scroll, toasts visible while the dialog is open.
 
+  Partly checked 2026-10-06 (reyxdz, local stack): `/directory` signed in as a
+  client and `/account/offers` as a creative, at 375px light and 1280px dark —
+  no errors, no horizontal scroll. With Add offer open, `#root` is inert and the
+  toast region is outside it (the toast region now portals to `<body>`; before,
+  it sat inside the inert root). The remaining widths and the hand walk of
+  create, edit, Esc, delete and reorder are still open.
+
 ## Phase 5 — Card and offer page
 
 ### Step 5.1 — Redesign to the reference
