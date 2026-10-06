@@ -9,6 +9,11 @@
   [0018](./0018-conversations-replace-one-shot-inquiries.md) ·
   [0003](./0003-postgres-native-search.md)
 
+> **Amended by [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md).**
+> Ten images per offer instead of four. Offers also carry audio, video and PDF,
+> and a profile-level portfolio returns as items in the same media table, not as
+> a second image concept.
+
 ## Context
 
 [Plan 0009](../plans/0009-bio-avatars-and-portfolio-images.md) gave creatives a

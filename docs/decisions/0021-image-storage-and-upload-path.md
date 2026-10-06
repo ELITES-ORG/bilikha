@@ -9,6 +9,11 @@
 > upload path, the browser-side sizing and the free-tier facts below are
 > unchanged. What images attach to is not: portfolio items became offer images,
 > and the storage ceiling is recalculated there.
+>
+> **Scope and budget superseded by [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md).**
+> Uploads are no longer images only, and the free-tier ceilings below no longer
+> apply once Supabase is on Pro. Browser-side image sizing and direct upload
+> stand. The confirm step now checks the stored object.
 
 ## Context
 
