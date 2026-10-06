@@ -104,6 +104,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0042](./0042-the-creative-profile-page.md) | The creative profile page | In progress |
 | [0043](./0043-the-account-hub-redesign.md) | The account hub redesign | In progress |
 | [0044](./0044-messaging-redesign.md) | Messaging redesign | In progress |
+| [0045](./0045-audio-video-and-pdf-uploads.md) | Audio, video and PDF uploads, with limits per media type | Draft |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.
