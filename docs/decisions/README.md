@@ -83,3 +83,5 @@ Number sequentially. Never renumber.
 | [0044](./0044-navy-and-red-identity.md) | Navy and red identity, with Plus Jakarta Sans | Accepted |
 | [0045](./0045-headings-stay-in-fraunces.md) | Set headings in Fraunces; keep Plus Jakarta Sans for UI and body | Accepted |
 | [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md) | Offers and profiles carry audio, video and PDF, each kind with its own limits | Proposed |
+| [0047](./0047-animated-icons-load-lazily-with-motion.md) | Animated icons use motion, loaded lazily behind their static icon | Proposed |
+| [0048](./0048-one-radius-for-every-box.md) | One radius for every box | Accepted |

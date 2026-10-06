@@ -5,6 +5,7 @@ import { useUnreadCount } from '@/features/conversations/api';
 import { useNotificationCount } from '@/features/notifications/api';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import { transitionTo } from './page-transition/transition-to';
 import { Wordmark } from './Wordmark';
 
 type HeaderTone = 'default' | 'brand';
@@ -87,7 +88,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                   : 'Notifications'
               }
               className={cn(
-                'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
+                'relative inline-flex size-11 items-center justify-center rounded-sm transition-colors',
                 linkTone(tone, isCurrent('/notifications')),
               )}
             >
@@ -111,6 +112,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
           <Link
             to="/directory"
             viewTransition
+            onClick={transitionTo('panel')}
             className={cn(
               'link-underline px-2 py-1 text-base transition-colors',
               tapArea,
@@ -128,6 +130,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
               <Link
                 to="/messages"
                 viewTransition
+                onClick={transitionTo('panel')}
                 className={cn(
                   'link-underline hidden items-center gap-1.5 px-2 py-1 text-base transition-colors sm:inline-flex',
                   tapArea,
@@ -144,6 +147,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
               <Link
                 to="/account"
                 viewTransition
+                onClick={transitionTo('panel')}
                 className={cn(
                   'link-underline hidden px-2 py-1 text-base transition-colors sm:inline-block', tapArea,
                   linkTone(tone, isCurrent('/account')),
@@ -154,7 +158,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
             </>
           )}
           {user?.role === 'admin' && (
-            <Link to="/admin" className={navClass(tone, false)}>
+            <Link to="/admin" onClick={transitionTo('panel')} className={navClass(tone, false)}>
               Admin
             </Link>
           )}
@@ -193,6 +197,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 variant={brand ? 'inverse' : 'ghost'}
                 size="sm"
                 className="ml-1 hidden sm:inline-flex"
+                onClick={transitionTo('bloom')}
               >
                 Sign in
               </ButtonLink>
@@ -201,6 +206,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 size="sm"
                 variant={brand ? 'inverse' : 'primary'}
                 className="sm:hidden"
+                onClick={transitionTo('bloom')}
               >
                 Sign in
               </ButtonLink>
@@ -209,6 +215,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 size="sm"
                 variant={brand ? 'accent' : 'primary'}
                 className="hidden sm:inline-flex"
+                onClick={transitionTo('bloom')}
               >
                 Register
               </ButtonLink>

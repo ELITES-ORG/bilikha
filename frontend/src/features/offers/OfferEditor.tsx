@@ -508,7 +508,7 @@ export function OfferEditor() {
                       ref={menuOpenId === offer.id ? menuTriggerRef : undefined}
                       type="button"
                       className={cn(
-                        'inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors pointer-fine:size-9',
+                        'inline-flex size-11 items-center justify-center rounded-sm text-ink-muted transition-colors pointer-fine:size-9',
                         'hover:bg-clay-100 hover:text-ink',
                       )}
                       aria-label={`More actions for ${offer.title}`}
