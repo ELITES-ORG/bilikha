@@ -132,7 +132,7 @@ export function HomePage() {
                 <Link
                   key={municipality.id}
                   to={`/directory?municipality=${municipality.slug}`}
-                  className="anim-scale-in interactive-press inline-flex items-center gap-1.5 rounded-full border border-hairline-strong bg-surface px-3.5 py-1.5 text-sm text-ink-muted shadow-xs transition-colors hover:border-lawa-300 hover:bg-lawa-50 hover:text-lawa-800"
+                  className="anim-scale-in interactive-press inline-flex items-center gap-1.5 min-h-11 rounded-full border border-hairline-strong bg-surface px-4 py-2 text-sm text-ink-muted shadow-xs transition-colors hover:border-lawa-300 hover:bg-lawa-50 hover:text-lawa-800"
                   style={{ '--i': index } as CSSProperties}
                 >
                   <MapPin className="size-3.5 text-palayok-500" aria-hidden="true" />

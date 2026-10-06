@@ -508,7 +508,7 @@ export function OfferEditor() {
                       ref={menuOpenId === offer.id ? menuTriggerRef : undefined}
                       type="button"
                       className={cn(
-                        'inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors sm:size-9',
+                        'inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors pointer-fine:size-9',
                         'hover:bg-clay-100 hover:text-ink',
                       )}
                       aria-label={`More actions for ${offer.title}`}
@@ -535,7 +535,7 @@ export function OfferEditor() {
                           ref={menuItemRef}
                           type="button"
                           role="menuitem"
-                          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-medium text-danger-700 hover:bg-danger-50 sm:min-h-9"
+                          className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm font-medium text-danger-700 hover:bg-danger-50 pointer-fine:min-h-9"
                           disabled={busy}
                           onClick={() => {
                             setMenuOpenId(null);

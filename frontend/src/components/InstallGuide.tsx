@@ -58,7 +58,7 @@ export function InstallGuide() {
 
   return (
       <li className="px-5 py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3">
           <div className="flex min-w-0 items-start gap-4">
             <span
               className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-lawa-700"
@@ -75,7 +75,7 @@ export function InstallGuide() {
             </div>
           </div>
 
-          <div className="pl-13 sm:shrink-0 sm:pl-0">
+          <div className="sm:pl-13">
             {canInstall ? (
               <Button
                 type="button"
@@ -103,7 +103,7 @@ export function InstallGuide() {
         {/* `declined` clears itself when the browser offers again, so the
              button and this fallback are never both on screen. */}
         {(open || (declined && !canInstall)) && (
-          <p id={stepsId} className="mt-3 max-w-prose pl-13 text-sm text-ink-muted">
+          <p id={stepsId} className="mt-3 max-w-prose text-sm text-ink-muted sm:pl-13">
             {copy.steps}
           </p>
         )}

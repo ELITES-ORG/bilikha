@@ -43,7 +43,7 @@ function Banner() {
     <div
       ref={ref}
       role="note"
-      className="sticky top-0 z-40 border-b border-warning-500 bg-warning-100 text-ink"
+      className="sticky top-0 z-40 short:static border-b border-warning-500 bg-warning-100 text-ink"
     >
       <Container
         width="wide"

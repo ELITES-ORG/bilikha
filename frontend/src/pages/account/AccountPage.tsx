@@ -12,6 +12,7 @@ import {
   Eye,
   FileText,
   LockKeyhole,
+  LogOut,
   MapPin,
   PencilLine,
   SunMoon,
@@ -23,6 +24,7 @@ import { InstallGuide } from '@/components/InstallGuide';
 import {
   Avatar,
   Badge,
+  Button,
   ButtonLink,
   Card,
   Container,
@@ -33,7 +35,7 @@ import {
   segmentTrackClass,
 } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { useCurrentUser } from '@/features/auth/api';
+import { useCurrentUser, useLogout } from '@/features/auth/api';
 import type { AuthUser, ViewMode } from '@/features/auth/types';
 import { useOwnProfile, useSetViewMode } from '@/features/me/api';
 import type { OwnProfile, ProfileStatus } from '@/features/me/types';
@@ -157,7 +159,7 @@ function SettingRow({
       <div
         role="group"
         aria-labelledby={labelId}
-        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col gap-3"
       >
         <div className="flex min-w-0 items-start gap-4">
           <RowIcon>{icon}</RowIcon>
@@ -168,7 +170,7 @@ function SettingRow({
             {description && <p className="mt-0.5 text-sm text-ink-muted">{description}</p>}
           </div>
         </div>
-        <div className="pl-13 sm:shrink-0 sm:pl-0">{children}</div>
+        <div className="sm:pl-13">{children}</div>
       </div>
     </li>
   );
@@ -194,7 +196,7 @@ function AppearanceRow() {
       label="Appearance"
       description="System follows your device. Light and Dark stay put."
     >
-      <div role="radiogroup" aria-label="Appearance" className={segmentTrackClass}>
+      <div role="radiogroup" aria-label="Appearance" className={cn(segmentTrackClass, 'flex w-full sm:inline-flex sm:w-auto')}>
         {APPEARANCE_OPTIONS.map((option) => {
           const selected = preference === option.value;
           return (
@@ -202,6 +204,7 @@ function AppearanceRow() {
               key={option.value}
               className={cn(
                 segmentItemClass(selected),
+                'flex-1 sm:flex-none',
                 // The radio is visually hidden; its focus shows on the pill.
                 'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
               )}
@@ -248,7 +251,7 @@ function ModeRow() {
 
   return (
     <SettingRow icon={<ArrowLeftRight />} label="Mode">
-      <div role="radiogroup" aria-label="Mode" className={segmentTrackClass}>
+      <div role="radiogroup" aria-label="Mode" className={cn(segmentTrackClass, 'flex w-full sm:inline-flex sm:w-auto')}>
         {MODE_OPTIONS.map((option) => {
           const selected = mode === option.value;
           return (
@@ -256,6 +259,7 @@ function ModeRow() {
               key={option.value}
               className={cn(
                 segmentItemClass(selected),
+                'flex-1 sm:flex-none',
                 'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
                 setMode.isPending && 'pointer-events-none opacity-60',
               )}
@@ -280,6 +284,7 @@ function ModeRow() {
 
 export function AccountPage() {
   const { data: user } = useCurrentUser();
+  const logout = useLogout();
   const profile = useOwnProfile();
   const hasCreative = Boolean(profile.data);
   const offers = useOwnOffers(profile.isSuccess && hasCreative);
@@ -389,6 +394,26 @@ export function AccountPage() {
                 </HubCard>
               </div>
 
+              {/*
+                From sm the header carries Sign out; on a phone the header has
+                no room for it, so it sits here as well as under Security. Same
+                hook as both of those, so it behaves identically.
+              */}
+              <div className="mt-6 sm:hidden">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  loading={logout.isPending}
+                  iconLeft={<LogOut className="size-4" aria-hidden="true" />}
+                  onClick={() => void logout.mutateAsync()}
+                >
+                  Sign out
+                </Button>
+                <p className="mt-2 text-center text-xs text-ink-muted">
+                  Ends this session on this device only.
+                </p>
+              </div>
+
               {!profile.data && (
                 <section
                   className="mt-6 flex flex-col gap-5 rounded-lg border border-hairline bg-surface-sunken p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8"
@@ -422,10 +447,10 @@ export function AccountPage() {
                 registration being the only place they are linked.
               */}
               <p className="mt-12 flex gap-4 border-t border-hairline pt-6 text-sm">
-                <Link to="/privacy" className="link-underline text-ink-muted">
+                <Link to="/privacy" className="link-underline u-tap text-ink-muted">
                   Privacy notice
                 </Link>
-                <Link to="/terms" className="link-underline text-ink-muted">
+                <Link to="/terms" className="link-underline u-tap text-ink-muted">
                   Terms of use
                 </Link>
               </p>

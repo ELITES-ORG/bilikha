@@ -189,6 +189,23 @@
     display: none;
   }
 
+  /* A 44px touch target for a link that is visually smaller — header nav, a
+     footer link, "View profile" under a name. An invisible layer centred on
+     the element, at least 44px tall; it takes taps without moving anything or
+     the hover underline, which lives on ::after. */
+  .u-tap {
+    position: relative;
+  }
+
+  .u-tap::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: max(100%, 2.75rem);
+    transform: translateY(-50%);
+  }
+
   /* Skip link, visible only once focused. */
   .u-skip-link {
     position: absolute;

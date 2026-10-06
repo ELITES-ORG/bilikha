@@ -103,6 +103,7 @@ export function HistoryPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <SectionHeading
+            as="h1"
             eyebrow="History"
             title={creativeMode ? 'Postings you replied to' : 'Offers you care about'}
             description={

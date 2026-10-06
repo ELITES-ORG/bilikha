@@ -79,7 +79,7 @@ function ConversationMenu({
     <div className="relative shrink-0">
       <button
         type="button"
-        className="inline-flex size-10 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+        className="inline-flex size-11 items-center justify-center rounded-full text-ink-muted hover:bg-clay-100 hover:text-ink"
         aria-label="Conversation options"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -305,12 +305,12 @@ export function ConversationPage() {
       )}
     >
       {/* Phone chat header: back + avatar + name | ⋮ */}
-      <header className="sticky top-(--staging-banner-h) z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
+      <header className="sticky top-(--staging-banner-h) z-40 short:top-0 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
         <Link
           to="/messages"
           viewTransition
           aria-label="Back to messages"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-clay-100"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink hover:bg-clay-100"
         >
           <ArrowLeft className="size-5" aria-hidden />
         </Link>

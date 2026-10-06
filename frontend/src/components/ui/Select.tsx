@@ -323,7 +323,7 @@ export function Select({
                           'flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-base',
                           // min-h keeps a comfortable touch target on a phone,
                           // where this list replaces the OS picker.
-                          'min-h-11 sm:min-h-0 sm:py-1.5',
+                          'min-h-11 pointer-fine:min-h-0 pointer-fine:py-1.5',
                           option.disabled && 'cursor-not-allowed text-clay-500',
                           !option.disabled && isActive && 'bg-primary-soft',
                           !option.disabled && !isActive && 'text-ink',
