@@ -122,6 +122,9 @@ Each is replaced here on purpose.
 - A form that reports through toasts opens in `OfferFormDialog`'s pattern, not a
   modal `<dialog>` — the top layer would hide the toasts. Full-screen sheet on a
   phone, centred panel from `sm`.
+- A list-and-detail surface (messaging) is one screen at a time below `lg` and
+  a split view from it: the list stays mounted on the left, the detail changes
+  on the right. The URL is the only state — no selected-item store.
 - The navy header bar (`<SiteHeader tone="brand" />`) is for the landing page
   only. Elsewhere the bar stays white so it recedes behind the content.
 

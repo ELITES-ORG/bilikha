@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, EllipsisVertical } from 'lucide-react';
-import { Avatar, Button, Container, Input, Skeleton } from '@/components/ui';
-import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
+import {
+  ArrowLeft,
+  CircleCheck,
+  EllipsisVertical,
+  SendHorizontal,
+  ShieldOff,
+  TriangleAlert,
+} from 'lucide-react';
+import { Avatar, Button, ButtonLink, Container, EmptyState, Input, Skeleton } from '@/components/ui';
 import { useAgreement } from '@/features/agreements/api';
 import { AgreementComposer } from '@/features/agreements/AgreementComposer';
 import { MessageAgreementBlock } from '@/features/agreements/AgreementCard';
@@ -34,6 +40,26 @@ import { cn } from '@/lib/cn';
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
 
 type ComposerMode = 'closed' | 'open';
+
+/** Calendar day in the reader's time zone, for grouping messages by day. */
+function dayKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string): string {
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (dayKey(iso) === dayKey(now.toISOString())) return 'Today';
+  if (dayKey(iso) === dayKey(yesterday.toISOString())) return 'Yesterday';
+  return new Date(iso).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: new Date(iso).getFullYear() === now.getFullYear() ? undefined : 'numeric',
+  });
+}
 
 function ConversationMenu({
   open,
@@ -270,9 +296,14 @@ export function ConversationPage() {
   const partyAvatar = thread.data?.otherPartyAvatarUrl;
 
   return (
-    <>
-      <RegistrationStatusBanner />
-
+    <div
+      className={cn(
+        // The fixed phone composer needs room under the last message; from lg
+        // the thread is a column that fills its pane instead.
+        thread.data && !blocked ? pbConversationComposer : pbBottomNav,
+        'lg:flex lg:h-full lg:flex-col',
+      )}
+    >
       {/* Phone chat header: back + avatar + name | ⋮ */}
       <header className="sticky top-(--staging-banner-h) z-40 flex h-14 items-center gap-1 border-b border-hairline bg-paper/90 px-1 backdrop-blur-sm sm:hidden">
         <Link
@@ -308,23 +339,25 @@ export function ConversationPage() {
         )}
       </header>
 
-      <main className={thread.data && !blocked ? pbConversationComposer : pbBottomNav}>
-        <Container width="narrow" className="max-sm:py-4 py-(--section-gap)">
-          {/* Desktop back + party row */}
-          <div className="mb-4 hidden items-center justify-between gap-4 sm:flex">
+      <Container
+        width="narrow"
+        className="max-sm:py-4 py-(--section-gap) lg:flex lg:min-h-0 lg:max-w-none lg:flex-1 lg:flex-col lg:p-0"
+      >
+          {/* Desktop back + party row; from lg, the pane's header */}
+          <div className="mb-4 hidden items-center justify-between gap-4 sm:flex lg:mb-0 lg:border-b lg:border-hairline lg:px-5 lg:py-3">
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 to="/messages"
                 viewTransition
                 aria-label="Back to messages"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-clay-100 hover:text-ink lg:hidden"
               >
                 <ArrowLeft className="size-5" aria-hidden />
               </Link>
               {thread.data ? (
                 <>
                   <Avatar src={partyAvatar} name={partyName!} size="md" />
-                  <h1 className="u-display truncate text-3xl text-ink">{partyName}</h1>
+                  <h1 className="u-display truncate text-2xl text-ink lg:text-xl">{partyName}</h1>
                 </>
               ) : (
                 <>
@@ -348,25 +381,44 @@ export function ConversationPage() {
           </div>
 
           {thread.isPending && (
-            <div className="space-y-3">
-              <Skeleton className="h-40 w-full" />
+            <div className="space-y-4 lg:p-5" aria-hidden="true">
+              <Skeleton radius="md" className="h-14 w-2/3" />
+              <Skeleton radius="md" className="ml-auto h-10 w-1/2" />
+              <Skeleton radius="md" className="h-20 w-3/5" />
+              <Skeleton radius="md" className="ml-auto h-10 w-2/5" />
             </div>
           )}
 
           {thread.isError && (
-            <p className="text-danger-700">{thread.error.message}</p>
+            <div className="lg:p-5">
+              <EmptyState
+                icon={<TriangleAlert className="size-5" />}
+                title="Could not load this conversation"
+                description={thread.error.message}
+                action={
+                  <ButtonLink to="/messages" size="sm" variant="secondary">
+                    Back to messages
+                  </ButtonLink>
+                }
+              />
+            </div>
           )}
 
           {thread.data && (
             <>
+              {/* From lg this is the part of the pane that scrolls; the header
+                  above and the composer below stay put. */}
+              <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-5 lg:py-4">
               {reportDone && (
-                <p className="mb-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
+                <p className="mb-4 flex items-center gap-2 rounded-md border border-hairline bg-surface-sunken px-3 py-2 text-sm text-ink-muted">
+                  <CircleCheck className="size-4 shrink-0 text-success-600" aria-hidden />
                   Report received. An administrator will review it.
                 </p>
               )}
 
               {blockConfirmed && !blocked && (
-                <p className="mb-4 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted">
+                <p className="mb-4 flex items-center gap-2 rounded-md border border-hairline bg-surface-sunken px-3 py-2 text-sm text-ink-muted">
+                  <ShieldOff className="size-4 shrink-0" aria-hidden />
                   {thread.data.otherPartyName} can no longer message you. You can still write to
                   them.
                 </p>
@@ -375,7 +427,7 @@ export function ConversationPage() {
               {menu === 'report' && (
                 <form
                   onSubmit={(e) => void onReport(e)}
-                  className="mb-4 rounded-sm border border-hairline bg-surface p-4"
+                  className="mb-4 rounded-md border border-hairline bg-surface p-4 shadow-xs"
                 >
                   <p className="text-sm font-medium text-ink">Report this conversation</p>
                   <p className="mt-1 text-sm text-ink-muted">
@@ -403,7 +455,7 @@ export function ConversationPage() {
               )}
 
               {menu === 'block' && (
-                <div className="mb-4 rounded-sm border border-hairline bg-surface p-4">
+                <div className="mb-4 rounded-md border border-hairline bg-surface p-4 shadow-xs">
                   <p className="text-sm font-medium text-ink">
                     Block {thread.data.otherPartyName}?
                   </p>
@@ -429,15 +481,31 @@ export function ConversationPage() {
                 </div>
               )}
 
-              <div className="space-y-3">
-                {thread.data.messages.map((msg) => (
-                  <div
+              <ol className="flex flex-col" aria-label="Messages">
+                {thread.data.messages.map((msg, index, all) => {
+                  const prev = all[index - 1];
+                  const newDay = !prev || dayKey(prev.createdAt) !== dayKey(msg.createdAt);
+                  // Same sender within five minutes reads as one run of messages.
+                  const grouped =
+                    !newDay &&
+                    prev?.fromSelf === msg.fromSelf &&
+                    Date.parse(msg.createdAt) - Date.parse(prev.createdAt) < 5 * 60_000;
+                  return (
+                  <li
                     key={msg.id}
+                    className={cn('flex flex-col', msg.fromSelf ? 'items-end' : 'items-start', grouped ? 'mt-1' : 'mt-4')}
+                  >
+                  {newDay && (
+                    <p className="my-3 self-center text-xs font-medium text-ink-subtle">
+                      {dayLabel(msg.createdAt)}
+                    </p>
+                  )}
+                  <div
                     className={cn(
-                      'max-w-[85%] rounded-sm px-3 py-2 text-base',
+                      'max-w-[min(85%,36rem)] rounded-2xl px-3.5 py-2.5 text-base',
                       msg.fromSelf
-                        ? 'ml-auto bg-primary text-on-primary'
-                        : 'mr-auto border border-hairline bg-surface text-ink',
+                        ? 'rounded-br-sm bg-primary text-on-primary'
+                        : 'rounded-bl-sm border border-hairline bg-surface text-ink',
                     )}
                   >
                     <MessageOfferBlock
@@ -456,18 +524,17 @@ export function ConversationPage() {
                       fromSelf={msg.fromSelf}
                     />
                     <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>
-                    <p
-                      className={cn(
-                        'mt-1 text-2xs tabular-nums',
-                        msg.fromSelf ? 'text-on-primary-muted' : 'text-ink-subtle',
-                      )}
-                    >
+                  </div>
+                  {!grouped && (
+                    <p className="mt-1 px-1 text-2xs text-ink-subtle tabular-nums">
                       {relativeTime(msg.createdAt)}
                     </p>
-                  </div>
-                ))}
-                <div ref={bottomRef} />
-              </div>
+                  )}
+                  </li>
+                  );
+                })}
+              </ol>
+              <div ref={bottomRef} />
 
               {/*
                * Agreement work is a sibling of the reply form below, never a
@@ -536,8 +603,10 @@ export function ConversationPage() {
                 </div>
               )}
 
+              </div>
+
               {blocked ? (
-                <div className="mt-8 border-t border-hairline pt-6">
+                <div className="mt-8 border-t border-hairline pt-6 lg:mt-0 lg:px-5 lg:py-4">
                   <p className="text-base text-ink-muted text-pretty">
                     Messaging with this person is stopped. Further messages cannot be delivered.
                   </p>
@@ -545,7 +614,10 @@ export function ConversationPage() {
               ) : (
                 <form
                   onSubmit={(e) => void onReply(e)}
-                  className={fixedComposerAboveNav}
+                  className={cn(
+                    fixedComposerAboveNav,
+                    'sm:mt-6 lg:mt-0 lg:shrink-0 lg:border-t lg:border-hairline lg:px-5 lg:py-3',
+                  )}
                 >
                   {(attachedOfferId || attachedPostingId) && (
                     <div className="mb-2 max-sm:max-h-28 max-sm:overflow-y-auto">
@@ -637,7 +709,8 @@ export function ConversationPage() {
                     </div>
                   )}
                   {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
-                  <div className="flex flex-row items-end gap-2">
+                  {/* One field: the textarea and the send button share a border. */}
+                  <div className="flex flex-row items-end gap-2 rounded-xl border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-lawa-100">
                     <label htmlFor="reply-body" className="sr-only">
                       Reply
                     </label>
@@ -649,11 +722,7 @@ export function ConversationPage() {
                       value={body}
                       onChange={(e) => setBody(e.target.value)}
                       placeholder="Write a reply"
-                      className={cn(
-                        'min-h-10 max-h-28 min-w-0 flex-1 resize-none rounded-sm border border-hairline-strong bg-surface',
-                        'px-3 py-2 text-base leading-5 text-ink',
-                        'focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none',
-                      )}
+                      className="min-h-10 max-h-28 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-base leading-5 text-ink focus:outline-none"
                       onInput={(e) => {
                         const el = e.currentTarget;
                         el.style.height = 'auto';
@@ -663,18 +732,18 @@ export function ConversationPage() {
                     <Button
                       type="submit"
                       size="sm"
-                      className="h-10 shrink-0 self-end"
+                      className="size-11 shrink-0 self-end rounded-lg px-0 sm:size-11"
                       loading={send.isPending}
+                      aria-label="Send"
                     >
-                      Send
+                      <SendHorizontal className="size-5" aria-hidden="true" />
                     </Button>
                   </div>
                 </form>
               )}
             </>
           )}
-        </Container>
-      </main>
-    </>
+      </Container>
+    </div>
   );
 }
