@@ -57,8 +57,8 @@ Number sequentially. Never renumber.
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted (amended by 0024) |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
 | [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted |
-| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted |
-| [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted |
+| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted (scope and budget superseded by 0046) |
+| [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted (amended by 0046) |
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
 | [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |
 | [0025](./0025-client-postings-and-mirrored-home.md) | Client postings; Home shows the other side of the market | Accepted |
@@ -82,3 +82,4 @@ Number sequentially. Never renumber.
 | [0043](./0043-only-reyxdz-merges-and-releases.md) | Only reyxdz merges and releases, and a pull request must be ready first | Accepted |
 | [0044](./0044-navy-and-red-identity.md) | Navy and red identity, with Plus Jakarta Sans | Accepted |
 | [0045](./0045-headings-stay-in-fraunces.md) | Set headings in Fraunces; keep Plus Jakarta Sans for UI and body | Accepted |
+| [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md) | Offers and profiles carry audio, video and PDF, each kind with its own limits | Proposed |
