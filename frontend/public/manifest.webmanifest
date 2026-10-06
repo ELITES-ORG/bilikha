@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "lang": "en",
   "dir": "ltr",
-  "background_color": "#ffffff",
+  "background_color": "#032b61",
   "theme_color": "#ffffff",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

@@ -144,8 +144,19 @@ control that actually installs cannot live in the page until Phase 2 — see ste
 ### How the icons were made, since it will come up again
 
 A white **B** in Fraunces Semibold — the wordmark's own face, at the wordmark's
-own weight — on `#14110e`, the app's black. Rendered from the font rather than
-drawn, so it stays correct if the type ever changes.
+own weight and optical size (600, opsz 48) — on `#032b61`, the light theme's
+`--color-primary`. Rendered from the font rather than drawn, so it stays correct
+if the type ever changes. The first set was on `#14110e`, the app's black before
+the navy restyle (plan 0040), and shipped with square corners on every icon
+despite the table below; the navy set has the radius.
+
+The manifest's `background_color` is the same navy, so Android's launch splash
+runs straight into the boot curtain instead of flashing white first.
+
+The tab icon is the same B on a 22% rounded square, drawn larger — 62% of the
+height against 50% — so it still reads at 16px: `favicon.svg` for browsers that
+take SVG, and `favicon.ico` (16, 32, 48) for Safari and anything that asks for
+`/favicon.ico` by default.
 
 **The corner radius is not the same on all three, and that is deliberate:**
 
@@ -163,7 +174,8 @@ Two things that cost time and are worth writing down:
 **Measure the output, do not look at it.** A "B" has unequal side bearings and
 lands right of the box it is laid out in — 0.7% right and 0.4% low here, which
 is invisible by eye and obvious in the numbers. The offsets in the generator are
-measured, not chosen.
+measured, not chosen. The navy set sidesteps it by rendering the glyph alone,
+cropping to its ink, and centring that.
 
 **The harness emulates a mobile device below 700px wide, so a page with no
 viewport meta is laid out at Chrome's 980px default and scaled to fit.** Every
