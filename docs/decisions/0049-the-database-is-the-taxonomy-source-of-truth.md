@@ -1,6 +1,6 @@
 # 0049. The database is the taxonomy's source of truth; archiving replaces deletion
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-07)
 - **Date:** 2026-10-07
 - **Related:** [0009](./0009-migrations-over-db-push.md) ·
   [0032](./0032-an-accepted-agreement-is-not-deleted.md) ·

@@ -41,9 +41,9 @@ audit row.
 
 Everything below must be true before step 1.1.
 
-- [ ] **Not met — ADR 0049 is still Proposed.** Only reyxdz can accept it.
-      Execution went ahead on userMarcPaul's instruction; nothing is merged, so
-      the decision is still reversible by discarding this branch.
+- [x] **ADR 0049 is Accepted** — by reyxdz on 2026-10-07. (Execution had
+      already gone ahead on userMarcPaul's instruction before then; the
+      acceptance covers it.)
       Verify: `head -4 docs/decisions/0049-the-database-is-the-taxonomy-source-of-truth.md`.
 - [x] A local database is running and current:
       ```bash
@@ -66,8 +66,9 @@ Everything below must be true before step 1.1.
   (Draft, owner reyxdz), and only `AdminMediaPage.tsx` — a file phase 4 never
   opens. Confirm this is still true before starting phase 4:
   `grep -rln "pages/admin" docs/plans/*.md`.
-- Phase 1 cannot start until ADR 0049 is Accepted. The seed change is the part
-  that is awkward to reverse once an environment has been edited.
+- ~~Phase 1 cannot start until ADR 0049 is Accepted. The seed change is the part
+  that is awkward to reverse once an environment has been edited.~~ Cleared
+  2026-10-07: reyxdz accepted ADR 0049.
 
 ## Progress
 
@@ -573,8 +574,8 @@ end — a guide that describes the old behaviour is worse than no guide.
 
 - **No deploy has run from this branch**, so "the edit survives a deploy" is
   verified only as "the edit survives the seed that a deploy runs".
-- **Nothing is merged.** ADR 0049 is still Proposed, and accepting it is
-  reyxdz's call.
+- **Nothing is merged yet.** ADR 0049 was accepted by reyxdz on 2026-10-07;
+  merging the pull request is still reyxdz's call.
 - **Phase 4 is written but not in this pull request.** The screen has never
   been rendered — there was no browser on the machine this was executed on —
   so it waits for screenshots.
