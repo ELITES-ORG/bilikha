@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import type { FormEvent, MouseEvent } from 'react';
 import { routeLabel } from '@/lib/route-labels';
 
 /** Which branded overlay a link plays. See `PageTransition.tsx`. */
@@ -10,7 +10,14 @@ export interface PageTransitionRun {
   label: string;
   phase: 'cover' | 'reveal';
   origin: { x: number; y: number };
+  /** Replace the current history entry rather than push a new one. */
+  replace?: boolean;
+  /** Run once the screen is covered, in place of navigating to `to`; it must navigate there. */
+  go?: () => void;
 }
+
+/** What signing in and signing out show: the name, as on the opening curtain. */
+export const SESSION_LABEL = 'Bilikha';
 
 /**
  * `start` is filled while `PageTransitions` is mounted; without it, links
@@ -54,12 +61,48 @@ export function transitionTo(kind: PageTransitionKind) {
     if (to === `${window.location.pathname}${window.location.search}`) return;
 
     event.preventDefault();
-    // A keyboard "click" has no pointer position; open from the link instead.
-    const box = anchor.getBoundingClientRect();
-    const origin =
-      event.detail === 0
-        ? { x: box.left + box.width / 2, y: box.top + box.height / 2 }
-        : { x: event.clientX, y: event.clientY };
-    start({ kind, to, label: routeLabel(to), phase: 'cover', origin });
+    start({ kind, to, label: routeLabel(to), phase: 'cover', origin: tapOrigin(event) });
   };
+}
+
+/** Where a click landed, for the bloom to open from. */
+export function tapOrigin(event: MouseEvent<HTMLElement>): { x: number; y: number } {
+  // A keyboard "click" has no pointer position; open from the element instead.
+  if (event.detail === 0) {
+    const box = event.currentTarget.getBoundingClientRect();
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  }
+  return { x: event.clientX, y: event.clientY };
+}
+
+/** Where a form was submitted from: its submit button, or the screen's centre. */
+export function submitOrigin(event: FormEvent<HTMLFormElement>): { x: number; y: number } | undefined {
+  const { submitter } = event.nativeEvent as SubmitEvent;
+  if (!submitter) return undefined;
+  const box = submitter.getBoundingClientRect();
+  return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+}
+
+/**
+ * The same transitions for a navigation made in code, after a form or a button
+ * has done its work. Returns false when there is no overlay to play, under
+ * reduced motion or outside `PageTransitions`; the caller navigates itself.
+ */
+export function playTransition(
+  kind: PageTransitionKind,
+  to: string,
+  options: Partial<Pick<PageTransitionRun, 'label' | 'origin' | 'replace' | 'go'>> = {},
+): boolean {
+  const { start } = overlay;
+  if (!start || prefersReducedMotion()) return false;
+  start({
+    kind,
+    to,
+    label: options.label ?? routeLabel(to),
+    phase: 'cover',
+    origin: options.origin ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+    replace: options.replace,
+    go: options.go,
+  });
+  return true;
 }

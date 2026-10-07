@@ -238,7 +238,8 @@ export function PageTransitions() {
         overlay.hold = null;
       } else {
         arriving.current = run.kind;
-        void navigate(run.to);
+        if (run.go) run.go();
+        else void navigate(run.to, { replace: run.replace });
       }
       setRun({ ...run, phase: 'hold', coveredAt: performance.now() });
     } else if (run.phase === 'reveal' || ready) {

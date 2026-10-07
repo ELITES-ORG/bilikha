@@ -5,7 +5,12 @@ import { toFieldErrors } from '@/features/auth/field-errors';
 import { useBarangays, useMunicipalities } from '@/features/taxonomy/api';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
-import { transitionTo } from '@/components/page-transition/transition-to';
+import {
+  playTransition,
+  SESSION_LABEL,
+  submitOrigin,
+  transitionTo,
+} from '@/components/page-transition/transition-to';
 import { Button, ButtonLink, Eyebrow, Input, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { withNextParam } from '@/lib/return-path';
@@ -121,6 +126,7 @@ export function RegisterPage() {
     event.preventDefault();
     setFieldErrors({});
     setFormError(null);
+    const origin = submitOrigin(event);
 
     const nextErrors: Record<string, string> = {};
     if (!form.municipalitySlug) nextErrors.municipalitySlug = 'Select a municipality';
@@ -150,7 +156,8 @@ export function RegisterPage() {
         termsAccepted: true,
       });
       clearDraft();
-      void navigate(withNextParam('/welcome', nextRaw));
+      const welcome = withNextParam('/welcome', nextRaw);
+      if (!playTransition('bloom', welcome, { label: SESSION_LABEL, origin })) void navigate(welcome);
     } catch (error) {
       const mapped = toFieldErrors(error);
       if (Object.keys(mapped).length > 0) {

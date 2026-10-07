@@ -21,7 +21,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
-import { transitionTo } from '@/components/page-transition/transition-to';
+import { tapOrigin, transitionTo } from '@/components/page-transition/transition-to';
 import {
   Avatar,
   Badge,
@@ -406,7 +406,7 @@ export function AccountPage() {
                   fullWidth
                   loading={logout.isPending}
                   iconLeft={<LogOut className="size-4" aria-hidden="true" />}
-                  onClick={() => void logout.mutateAsync()}
+                  onClick={(event) => void logout.mutateAsync(tapOrigin(event))}
                 >
                   Sign out
                 </Button>

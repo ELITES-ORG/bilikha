@@ -1,3 +1,4 @@
+import { tapOrigin } from '@/components/page-transition/transition-to';
 import { Button, Card, CardBody, Container } from '@/components/ui';
 import { useLogout } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -42,7 +43,7 @@ export function SecuritySettingsPage() {
                   variant="secondary"
                   size="sm"
                   loading={logout.isPending}
-                  onClick={() => void logout.mutateAsync()}
+                  onClick={(event) => void logout.mutateAsync(tapOrigin(event))}
                 >
                   Sign out
                 </Button>

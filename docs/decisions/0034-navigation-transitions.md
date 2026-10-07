@@ -115,6 +115,11 @@ each covering the screen, changing the route underneath and revealing it:
 - **bloom** — a navy circle grows from where the tap landed. Every link to
   sign in or register: "Get listed", the header's and the landing footer's
   Sign in and Register, and the buttons that switch between the two auth pages.
+  And the change of session itself: signing in, finishing registration and
+  signing out, which carry the name "Bilikha" rather than a page's. Those
+  navigate from code once the request succeeds, through `playTransition`; a
+  sign-out clears the session cache behind the drawn curtain, so the
+  signed-in page is never seen turning into the signed-out one.
 - **panel** — a navy panel slides up under the header, which stays put. The
   header's section links, which only show from `sm` up.
 
@@ -123,8 +128,9 @@ line drawn across the top of the screen, inside 200ms.
 
 **What is relaxed, and what is not.** The overlays run about 0.5 seconds,
 over the 200ms rule. The bloom stays fully drawn for at least two seconds more
-(`MIN_COVERED_MS`): it only runs between public pages, and lifted the moment
-the page was ready it flickered past before its label could be read. A
+(`MIN_COVERED_MS`): it only runs between public pages and at the change of
+session, each once in a visit, and lifted the moment the page was ready it
+flickered past before its label could be read. A
 navigation that starts while an overlay is up — a second tap, or the back
 button — takes the overlay over and renames it for the new destination rather
 than being dropped. That is accepted only because they are confined to a few
