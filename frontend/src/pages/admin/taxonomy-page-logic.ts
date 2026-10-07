@@ -49,3 +49,30 @@ export function swapTarget<T extends TaxonomyItemLike>(
 ): T | undefined {
   return siblings[index + direction];
 }
+
+/**
+ * The writes a reorder makes: the list renumbered 1…n with the item moved one
+ * place, keeping only the items whose number changes.
+ *
+ * Swapping the two items' stored `displayOrder` looked equivalent and is not.
+ * Two items can share a value — a reorder whose second request failed, or two
+ * administrators creating at once — and swapping equal values moves nothing,
+ * so the arrows stop working for that pair for good. Renumbering from the
+ * list's own order repairs a tie or a gap on the first press. On a list that
+ * is already 1…n, which is the seed's and the server's numbering, it is the
+ * same two writes as a swap.
+ */
+export function reorderWrites<T extends TaxonomyItemLike>(
+  siblings: readonly T[],
+  index: number,
+  direction: -1 | 1,
+): { slug: string; displayOrder: number }[] {
+  if (!swapTarget(siblings, index, direction)) return [];
+  const order = [...siblings];
+  const [moved] = order.splice(index, 1);
+  order.splice(index + direction, 0, moved!);
+  return order
+    .map((item, position) => ({ slug: item.slug, displayOrder: position + 1, was: item.displayOrder }))
+    .filter((entry) => entry.displayOrder !== entry.was)
+    .map(({ slug, displayOrder }) => ({ slug, displayOrder }));
+}

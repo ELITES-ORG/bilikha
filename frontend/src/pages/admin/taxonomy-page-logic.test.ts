@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canDelete, referencesLabel, swapTarget } from './taxonomy-page-logic';
+import { canDelete, referencesLabel, reorderWrites, swapTarget } from './taxonomy-page-logic';
 
 /**
  * Plan 0047 phase 4. The screen itself needs a browser, which the repository
@@ -56,5 +56,39 @@ describe('which sibling a reorder swaps with', () => {
 
   it('is safe on an empty list', () => {
     expect(swapTarget([], 0, 1)).toBeUndefined();
+  });
+});
+
+describe('what a reorder writes', () => {
+  const item = (slug: string, displayOrder: number) => ({ slug, displayOrder, referenceCount: 0 });
+
+  it('is the same two writes as a swap on a list numbered 1 to n', () => {
+    const siblings = [item('a', 1), item('b', 2), item('c', 3)];
+    expect(reorderWrites(siblings, 1, -1)).toEqual([
+      { slug: 'b', displayOrder: 1 },
+      { slug: 'a', displayOrder: 2 },
+    ]);
+  });
+
+  it('separates two items that tie, which a swap of equal values never could', () => {
+    const siblings = [item('a', 1), item('b', 1)];
+    const writes = reorderWrites(siblings, 1, -1);
+    expect(writes).toEqual([{ slug: 'a', displayOrder: 2 }]);
+    // b keeps 1 and a becomes 2: b is now first, as asked.
+  });
+
+  it('renumbers around a gap rather than colliding with the rest of the list', () => {
+    const siblings = [item('a', 5), item('b', 6), item('c', 7)];
+    expect(reorderWrites(siblings, 2, -1)).toEqual([
+      { slug: 'a', displayOrder: 1 },
+      { slug: 'c', displayOrder: 2 },
+      { slug: 'b', displayOrder: 3 },
+    ]);
+  });
+
+  it('writes nothing past either end', () => {
+    const siblings = [item('a', 1), item('b', 2)];
+    expect(reorderWrites(siblings, 0, -1)).toEqual([]);
+    expect(reorderWrites(siblings, 1, 1)).toEqual([]);
   });
 });

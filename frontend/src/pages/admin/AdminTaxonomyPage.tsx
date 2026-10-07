@@ -36,7 +36,7 @@ import {
   type TaxonomyKind,
 } from '@/features/admin/taxonomy-api';
 import { toApiError } from '@/lib/api-client';
-import { canDelete, referencesLabel, swapTarget } from './taxonomy-page-logic';
+import { canDelete, referencesLabel, reorderWrites } from './taxonomy-page-logic';
 
 /**
  * The taxonomy editor (plan 0047 phase 4, ADR 0049).
@@ -147,7 +147,7 @@ function DomainRow({ domain }: { domain: AdminTaxonomyDomain }) {
 
           <div className="flex flex-wrap items-center gap-2">
             {archived && <ArchivedBadge />}
-            <ItemActions kind="domains" item={domain} />
+            <ItemActions kind="domains" item={domain} craftCount={domain.subdomains.length} />
           </div>
         </div>
 
@@ -240,10 +240,11 @@ function SubdomainRow({
 }
 
 /**
- * Order is swapped with the neighbour rather than renumbered, because the
- * server updates one item at a time. Two requests, and if the second fails the
- * pair ties on `displayOrder` — a stable order, just not the intended one, and
- * fixed by pressing the arrow again.
+ * A move renumbers the crafts 1…n in their new order and writes only the ones
+ * whose number changed (`reorderWrites`) — two requests on a well-numbered
+ * list. The server updates one item at a time, so a failure part-way leaves a
+ * tie or a gap; renumbering from the list's own order repairs it on the next
+ * press, where swapping two equal values would move nothing.
  */
 function Reorder({
   subdomain,
@@ -258,23 +259,18 @@ function Reorder({
   const update = useUpdateTaxonomyItem();
 
   async function swap(direction: -1 | 1) {
-    const other = swapTarget(siblings, index, direction);
-    if (!other) return;
+    const writes = reorderWrites(siblings, index, direction);
+    if (writes.length === 0) return;
 
     try {
       await toast.run(
         'Reordering…',
         async () => {
-          await update.mutateAsync({
-            kind: 'subdomains',
-            slug: subdomain.slug,
-            displayOrder: other.displayOrder,
-          });
-          await update.mutateAsync({
-            kind: 'subdomains',
-            slug: other.slug,
-            displayOrder: subdomain.displayOrder,
-          });
+          // One at a time: each is an audited write, and a failure stops the
+          // rest rather than leaving several half-applied.
+          for (const write of writes) {
+            await update.mutateAsync({ kind: 'subdomains', ...write });
+          }
         },
         { success: 'Order saved', error: (error) => toApiError(error).message },
       );
@@ -318,9 +314,12 @@ function Reorder({
 function ItemActions({
   kind,
   item,
+  craftCount = 0,
 }: {
   kind: TaxonomyKind;
   item: { slug: string; name: string; archivedAt: string | null; referenceCount: number };
+  /** A domain's crafts, which a delete removes with it (`ON DELETE CASCADE`). */
+  craftCount?: number;
 }) {
   const toast = useToast();
   const archive = useArchiveTaxonomyItem();
@@ -361,8 +360,13 @@ function ItemActions({
     return (
       <div className="w-full space-y-2 rounded-sm border border-hairline bg-clay-50 p-3">
         <p className="text-sm text-ink">
-          Delete <strong className="font-semibold">{item.name}</strong> permanently? This cannot be
-          undone. Archiving is the reversible option and keeps the record.
+          Delete <strong className="font-semibold">{item.name}</strong> permanently
+          {craftCount > 0 && (
+            <>
+              , and its {craftCount} {craftCount === 1 ? 'craft' : 'crafts'} with it
+            </>
+          )}
+          ? This cannot be undone. Archiving is the reversible option and keeps the record.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button

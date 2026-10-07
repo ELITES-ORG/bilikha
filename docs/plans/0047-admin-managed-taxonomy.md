@@ -77,7 +77,7 @@ Everything below must be true before step 1.1.
 | 1. Schema, migration and the seed | 6 / 6 | Done |
 | 2. Service, validation and audit | 6 / 6 | Done |
 | 3. Endpoints, contracts and read paths | 7 / 7 | Done |
-| 4. The `/admin/taxonomy` screen | 5 / 5 | Done; three of seven PR states unreachable locally |
+| 4. The `/admin/taxonomy` screen | 5 / 5 | Done; all PR states checked, empty, loading and error by request interception |
 | 5. Documentation | 4 / 4 | Done |
 
 ---
@@ -475,13 +475,19 @@ a signed-in non-admin bounces to `/directory`, and the API answers that account
 `404`. *Creative mode and client mode* does not apply — the screen is identical
 in both.
 
-**Not checked: empty, loading and error states.** All three resist a local
-setup. The error state needs the taxonomy request to fail while the session
-request succeeds; stopping the API fails both, so `RequireAdmin` bounces before
-the page renders. The empty state needs zero domains, which means deleting the
-nine the law defines. The loading skeletons need network throttling that
-`screenshot.mjs` does not expose. They are written but have never been seen —
-say so in the pull request rather than ticking the box.
+**Empty, loading and error, checked 2026-10-07 by reyxdz's audit** by
+intercepting the browser's requests rather than breaking the local setup: the
+taxonomy request held open shows three card skeletons; answered with no domains
+it shows "No domains" with the seed explanation and Add a domain; answered with
+a 500 it shows "Could not load the taxonomy" with the server's message, and the
+history its own "Could not load the history". At 375px, light and dark, with no
+horizontal scroll.
+
+**Two fixes from the same audit.** Reorder renumbers the crafts 1…n and writes
+only the ones that change (`reorderWrites`): swapping two stored values could
+never separate a tie, which a reorder failing half-way leaves behind, so the
+arrows stopped working for that pair. And deleting a domain now says its crafts
+go with it — the `ON DELETE CASCADE` the API records a history row for.
 
 One trap found while doing it: on a database with no profiles every
 `referenceCount` is 0, so the 409 cannot be reproduced and `DELETE` succeeds on
