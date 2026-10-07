@@ -46,7 +46,7 @@ until it sets a new password. The reset is on the record; the password is not.
 | 1. Schema and sessions | 4 / 4 | Done |
 | 2. The reset itself | 4 / 4 | Done |
 | 3. The forced change | 3 / 3 | Done |
-| 4. The admin screen | 3 / 3 | Done — not rendered in a browser |
+| 4. The admin screen | 4 / 4 | Done |
 | 5. Documentation | 3 / 3 | Done |
 
 ---
@@ -204,6 +204,25 @@ until it sets a new password. The reset is on the record; the password is not.
 - [x] **Verify.** `npm --prefix frontend run build && npm run check:bundle` —
       the budget is unchanged.
 
+### Step 4.4 — Look at both screens in a browser
+
+- [x] **Action.** Driven through headless Brave with `scripts/screenshot.mjs`
+      (its `CHROME` constant is a hard-coded Windows path, so a patched copy was
+      run from a scratch directory — see Follow-ups). Captured `/admin/accounts`
+      in its three states (the row, the confirmation, the issued password) and
+      `/change-password`, at 320, 375 and 1280 wide, light and dark.
+- [x] **Verify.** No horizontal scroll at any width —
+      `scrollingElement.scrollLeft` stays 0 after being driven to 9999, and no
+      element's right edge passes the client width. Two things the renders found
+      and this plan then fixed:
+      - **The forced-change screen was a trap.** No way off it, so somebody who
+        mislaid their temporary password could not even reach the sign-in page.
+        It now carries a sign-out and a line saying the administrator cannot
+        look the old one up.
+      - **The bottom tab bar showed on it**, offering four exits that each
+        bounce straight back. `BottomNav` now hides there, the same way it
+        already hides during `/welcome` onboarding.
+
 ---
 
 ## Phase 5 — Documentation
@@ -237,19 +256,25 @@ until it sets a new password. The reset is on the record; the password is not.
 
 ## Acceptance
 
-- [ ] An administrator resets an account from `/admin/accounts` and is shown a
+- [x] An administrator resets an account from `/admin/accounts` and is shown a
       temporary password once.
-- [ ] That password signs the account in and nothing else works until it is
+- [x] That password signs the account in and nothing else works until it is
       changed.
-- [ ] Every session the account held is gone; other accounts' sessions are not.
-- [ ] A `password_reset` row names the administrator, the account and the time,
+- [x] Every session the account held is gone; other accounts' sessions are not.
+- [x] A `password_reset` row names the administrator, the account and the time,
       and contains no password.
-- [ ] Resetting your own account, or another administrator's, is refused.
-- [ ] Non-admins and signed-out callers get `404`.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
+- [x] Resetting your own account, or another administrator's, is refused.
+- [x] Non-admins and signed-out callers get `404`.
+- [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
       `npm run check:bundle` pass, with the bundle budget unchanged.
 
 ## Follow-ups
+
+- **`scripts/screenshot.mjs` cannot run outside Windows.** `CHROME` is the
+  hard-coded path `C:/Program Files/Google/Chrome/...`, and the scratch profile
+  is built from `process.env.TEMP`, which is undefined on Linux and macOS. Both
+  want an environment override — it is a tooling change, so it belongs in its
+  own pull request and not in this one.
 
 - **No expiry on the temporary password.** An unused one stays valid
   indefinitely. A `temporary_password_expires_at` column is the fix and needs a

@@ -29,3 +29,14 @@ cookies.txt
 
 # Local Supabase CLI scratch
 supabase/.temp/
+issue.md
+
+# code-review-graph — local tooling, never shared repository state.
+# The graph database, the MCP server config, the skills it installs, and the
+# pre-commit hook it adds to the otherwise-tracked .githooks/ (it shells out to
+# a binary nobody else has). CLAUDE.md stays tracked on purpose: its rules
+# apply to everyone, not just whoever has this tool installed.
+.code-review-graph/
+.claude/
+.mcp.json
+.githooks/pre-commit
