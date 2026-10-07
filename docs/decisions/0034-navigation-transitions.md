@@ -122,7 +122,7 @@ Everything else keeps the view transition above and gains the **tide**, a red
 line drawn across the top of the screen, inside 200ms.
 
 **What is relaxed, and what is not.** The overlays run about 0.5 seconds,
-over the 200ms rule. The bloom stays fully drawn for at least a second more
+over the 200ms rule. The bloom stays fully drawn for at least two seconds more
 (`MIN_COVERED_MS`): it only runs between public pages, and lifted the moment
 the page was ready it flickered past before its label could be read. A
 navigation that starts while an overlay is up — a second tap, or the back

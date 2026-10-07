@@ -75,7 +75,7 @@ const HOLD_TIMEOUT_MS = 5000;
  * runs between public pages, and lifted as soon as the page was ready it
  * flickered past before its label could be read.
  */
-const MIN_COVERED_MS: Record<PageTransitionKind, number> = { wave: 0, bloom: 1000, panel: 0 };
+const MIN_COVERED_MS: Record<PageTransitionKind, number> = { wave: 0, bloom: 2000, panel: 0 };
 
 /** React Router's record on the current history entry: a key, and a number that is lower further back. */
 function historyEntry(): { key: string; index: number } {
