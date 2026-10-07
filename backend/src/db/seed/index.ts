@@ -11,7 +11,7 @@ import { CREATIVE_DOMAINS, MUNICIPALITIES } from './taxonomy-data.js';
  *
  * **It fills gaps and never overwrites.** The creative taxonomy is edited by
  * administrators in the admin area, and the database — not
- * `taxonomy-data.ts` — is its source of truth (ADR 0047). An upsert here
+ * `taxonomy-data.ts` — is its source of truth (ADR 0049). An upsert here
  * would revert every one of those edits on the next backend deploy, silently.
  * So domains and sub-domains are inserted when their slug is absent and left
  * alone when it is present.
@@ -50,7 +50,7 @@ async function seed(): Promise<void> {
         .onConflictDoNothing({ target: creativeDomains.slug });
 
       // `onConflictDoNothing` returns no row when the slug was already there,
-      // which after ADR 0047 is the normal case on every deploy. The id is
+      // which after ADR 0049 is the normal case on every deploy. The id is
       // read back rather than returned from the insert.
       const [existingDomain] = await tx
         .select({ id: creativeDomains.id })

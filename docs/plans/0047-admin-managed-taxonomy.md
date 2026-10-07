@@ -2,7 +2,7 @@
 
 - **Status:** In progress
 - **Owner:** userMarcPaul
-- **Related:** [ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md) ·
+- **Related:** [ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md) ·
   [ADR 0009](../decisions/0009-migrations-over-db-push.md) ·
   [ADR 0032](../decisions/0032-an-accepted-agreement-is-not-deleted.md) ·
   [ADR 0035](../decisions/0035-the-admin-area-is-a-layout.md) ·
@@ -24,7 +24,7 @@ audit row.
 
 ## Rules for whoever executes this
 
-- **Read [ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)
+- **Read [ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)
   first.** It is the whole design. In particular: the seed stops updating,
   slugs are immutable, and the client cache is deliberately *not* invalidated
   by polling.
@@ -41,10 +41,10 @@ audit row.
 
 Everything below must be true before step 1.1.
 
-- [ ] **Not met — ADR 0047 is still Proposed.** Only reyxdz can accept it.
+- [ ] **Not met — ADR 0049 is still Proposed.** Only reyxdz can accept it.
       Execution went ahead on userMarcPaul's instruction; nothing is merged, so
       the decision is still reversible by discarding this branch.
-      Verify: `head -4 docs/decisions/0047-the-database-is-the-taxonomy-source-of-truth.md`.
+      Verify: `head -4 docs/decisions/0049-the-database-is-the-taxonomy-source-of-truth.md`.
 - [x] A local database is running and current:
       ```bash
       npm run db:up
@@ -66,7 +66,7 @@ Everything below must be true before step 1.1.
   (Draft, owner reyxdz), and only `AdminMediaPage.tsx` — a file phase 4 never
   opens. Confirm this is still true before starting phase 4:
   `grep -rln "pages/admin" docs/plans/*.md`.
-- Phase 1 cannot start until ADR 0047 is Accepted. The seed change is the part
+- Phase 1 cannot start until ADR 0049 is Accepted. The seed change is the part
   that is awkward to reverse once an environment has been edited.
 
 ## Progress
@@ -95,7 +95,7 @@ and nothing reads it.
           // Null means active. Archiving hides the item from pickers and browse
           // surfaces without touching the profiles, offers and postings that
           // already reference it, and without breaking a URL that names its
-          // slug (ADR 0047).
+          // slug (ADR 0049).
           archivedAt: timestamp('archived_at', { withTimezone: true }),
       ```
       Add a partial index to each table's index array so the active-only reads
@@ -125,7 +125,7 @@ and nothing reads it.
        * Append-only record of every administrator change to the taxonomy. Rows
        * are never updated or deleted.
        *
-       * This exists because of ADR 0047: once the database rather than
+       * This exists because of ADR 0049: once the database rather than
        * `taxonomy-data.ts` is the source of truth, "who renamed this and when"
        * has no answer in git. `item_kind` and `item_slug` are stored as text,
        * not as a foreign key, so the history of a deleted item survives it.
@@ -205,7 +205,7 @@ and nothing reads it.
               .onConflictDoNothing({ target: creativeDomains.slug });
 
             // onConflictDoNothing returns nothing when the row was already
-            // there, which after ADR 0047 is the normal case: the seed fills
+            // there, which after ADR 0049 is the normal case: the seed fills
             // gaps and never overwrites an administrator's edit. The id is
             // read back rather than returned.
             const [existingDomain] = await tx
@@ -222,7 +222,7 @@ and nothing reads it.
       from `drizzle-orm`.
 
       Leave the `municipalities` upsert and `seedBarangays` exactly as they
-      are — ADR 0047 changes the creative taxonomy only.
+      are — ADR 0049 changes the creative taxonomy only.
 
       Update the file's header comment: it currently claims labels are
       refreshed on every run, which this step makes false.
@@ -349,7 +349,7 @@ rules get reviewed on their own.
       that resolve submitted sub-domain slugs (around `:155` and `:250`)
       currently accept any slug that exists. Narrow them to active slugs
       **plus** the slugs already on that profile, so archiving does not lock a
-      registrant out of their own edit form (ADR 0047). Reject the rest with
+      registrant out of their own edit form (ADR 0049). Reject the rest with
       the existing `field: 'subdomainSlugs'` error.
 - [x] **Verify.** Add a case to `backend/src/modules/admin/taxonomy.test.ts`:
       a creative whose sub-domain is archived can re-save an unchanged profile;
@@ -428,7 +428,7 @@ already calls `requireAdmin` for everything mounted under it.
       and mutation hooks, following `frontend/src/features/admin/api.ts`. Every
       mutation's `onSuccess` invalidates both `adminKeys.all` and
       `taxonomyKeys.all` — the second is what makes the administrator's own
-      pickers correct immediately (ADR 0047 §5).
+      pickers correct immediately (ADR 0049 §5).
 - [x] **Verify.** `npm --prefix frontend run typecheck` passes.
 
 ### Step 3.7 — Document the endpoints
@@ -533,7 +533,7 @@ end — a guide that describes the old behaviour is worse than no guide.
       README lists admin-managed taxonomy as not built, remove those rows.
       Ship with the PR that makes each true.
 - [x] **Verify.** `grep -rn "admin-managed taxonomy" docs README.md` returns
-      only this plan and ADR 0047.
+      only this plan and ADR 0049.
 
 ### Step 5.4 — Mark the plan and ADR
 
@@ -573,7 +573,7 @@ end — a guide that describes the old behaviour is worse than no guide.
 
 - **No deploy has run from this branch**, so "the edit survives a deploy" is
   verified only as "the edit survives the seed that a deploy runs".
-- **Nothing is merged.** ADR 0047 is still Proposed, and accepting it is
+- **Nothing is merged.** ADR 0049 is still Proposed, and accepting it is
   reyxdz's call.
 - **Phase 4 is written but not in this pull request.** The screen has never
   been rendered — there was no browser on the machine this was executed on —
@@ -581,12 +581,12 @@ end — a guide that describes the old behaviour is worse than no guide.
 
 ## Follow-ups
 
-- **Seed drift is invisible.** ADR 0047 gives up reproducibility from the
+- **Seed drift is invisible.** ADR 0049 gives up reproducibility from the
   repository and nothing detects the divergence. A `db:taxonomy:diff` command
   printing the difference between `taxonomy-data.ts` and the connected database
   is the cheap mitigation. Not in this plan.
 - **A stale tab can show an archived sub-domain in a picker** until it reloads.
-  Deliberate (ADR 0047 §5, alternatives). The version endpoint the issue
+  Deliberate (ADR 0049 §5, alternatives). The version endpoint the issue
   proposes is the fix if this turns out to matter; `app-update.ts` already has
   the focus hook to hang it on.
 - **Aliases** — the everyday-words search in

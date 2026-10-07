@@ -48,7 +48,7 @@ function serializeSubdomain(row: {
  *
  * Active items only. An archived domain or sub-domain is gone from every
  * picker and browse surface here, while the rows that already reference it
- * keep working (ADR 0047).
+ * keep working (ADR 0049).
  */
 export async function listDomains(): Promise<CreativeDomain[]> {
   const domains = await db.query.creativeDomains.findMany({

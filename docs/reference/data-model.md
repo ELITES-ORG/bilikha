@@ -23,7 +23,7 @@ Reference data plus auth and profile tables from plan 0001.
 
 The nine RA 11904 domains. Seeded into a new environment, then **administered
 from `/admin/taxonomy`** — the database is the source of truth and the seed
-never overwrites it ([ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)).
+never overwrites it ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
 
 | Column | Type | Notes |
 |---|---|---|
@@ -261,7 +261,7 @@ Append-only audit of every administrator change to the creative taxonomy. Rows
 are never updated or deleted.
 
 It exists because of
-[ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md):
+[ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md):
 once the database rather than `taxonomy-data.ts` owns the labels, "who renamed
 this and when" has no answer in `git log`.
 
@@ -540,7 +540,7 @@ command runs it on every backend deploy.
 - **Creative taxonomy: insert-only.** A missing slug is inserted; an existing
   one is left exactly as it is, including its label and its `archived_at`. An
   upsert here would silently revert every administrator edit on the next
-  deploy ([ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)).
+  deploy ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
   `taxonomy-data.ts` is therefore what a *new* environment starts from, not a
   description of production.
 - **Municipalities and barangays: still upserted on slug.** Nobody edits those

@@ -37,7 +37,7 @@ export const createSubdomainSchema = z.object({
  *
  * A slug is a public identifier: it is in URLs, indexed by Google, and shared
  * into Messenger. Changing one breaks every link that ever pointed at it, which
- * is a data migration and a redirect, not an edit (ADR 0047). An edit form must
+ * is a data migration and a redirect, not an edit (ADR 0049). An edit form must
  * not be one keystroke away from that, and a schema that merely ignores the
  * field would let a caller believe the rename worked.
  *

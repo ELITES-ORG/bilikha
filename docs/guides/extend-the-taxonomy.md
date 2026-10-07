@@ -5,7 +5,7 @@ user-generated content. They follow the RA 11904 domain set.
 
 **Source of truth: the database.** An administrator edits the taxonomy at
 `/admin/taxonomy`, and those edits survive every deploy
-([ADR 0047](../decisions/0047-the-database-is-the-taxonomy-source-of-truth.md)).
+([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
 
 `backend/src/db/seed/taxonomy-data.ts` is the data a **new environment starts
 from**, not a description of what is in production. The seed inserts a slug it
@@ -87,7 +87,7 @@ edited differently now differ permanently, and **nothing detects the drift** —
 `taxonomy-data.ts` stops being an accurate description of production the first
 time anyone renames anything.
 
-This is the acknowledged cost of ADR 0047, not an oversight. A
+This is the acknowledged cost of ADR 0049, not an oversight. A
 `db:taxonomy:diff` command that prints the difference between the seed file and
 the connected database is the mitigation worth having, and is not built.
 
@@ -97,7 +97,7 @@ the connected database is the mitigation worth having, and is not built.
 account, the action, and the `before`/`after` of the fields that moved.
 `GET /api/v1/admin/taxonomy/changes` reads it, newest first.
 
-It is there because after ADR 0047 a label change is not in `git log` at all, so
+It is there because after ADR 0049 a label change is not in `git log` at all, so
 "who renamed this and when" would otherwise have no answer.
 
 ## Aliases — the part that actually matters

@@ -1,4 +1,4 @@
-# 0047. The database is the taxonomy's source of truth; archiving replaces deletion
+# 0049. The database is the taxonomy's source of truth; archiving replaces deletion
 
 - **Status:** Proposed
 - **Date:** 2026-10-07
@@ -91,6 +91,17 @@ A creative whose primary sub-domain was archived can still save their profile.
 archived slug when it is already on that profile, and reject it otherwise.
 Without this, archiving a sub-domain locks its registrants out of their own
 edit form.
+
+The same rule holds for **offers and postings**: a new one may not be filed
+under an archived sub-domain (or one whose domain is archived) — it would sit
+in the directory under a category no filter shows — while an existing one keeps
+the sub-domain it already has through an edit. Both return `400` on
+`subdomainSlug` otherwise (`offers.service.ts` `assertRegisteredSubdomain`,
+`postings.service.ts` `resolveSubdomainBySlug`).
+
+Deleting a domain deletes its sub-domains with it (`ON DELETE CASCADE` on
+`creative_subdomains.domain_id`), so the delete writes a `deleted` history row
+for each of them as well as the domain, as archiving a domain does.
 
 This mirrors [ADR 0032](./0032-an-accepted-agreement-is-not-deleted.md): once
 something has been referenced by someone else's record, it stops being ours to

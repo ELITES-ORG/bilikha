@@ -27,7 +27,7 @@ export interface CreativeDomain {
 }
 
 /**
- * Admin taxonomy shapes (ADR 0047). The admin area is the only surface that
+ * Admin taxonomy shapes (ADR 0049). The admin area is the only surface that
  * sees archived items, and the only one that needs to know how many rows
  * reference an item — that count is what decides whether deleting it is even
  * offered.

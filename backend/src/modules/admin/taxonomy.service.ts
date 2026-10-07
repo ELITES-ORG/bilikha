@@ -23,7 +23,7 @@ import type {
 } from './taxonomy.schema.js';
 
 /**
- * Administrator writes against the creative taxonomy (ADR 0047).
+ * Administrator writes against the creative taxonomy (ADR 0049).
  *
  * Three rules hold throughout and are the reason this file is not a thin CRUD
  * wrapper:
@@ -508,7 +508,31 @@ export async function deleteTaxonomyItem({ kind, slug, adminId }: ItemRef) {
   try {
     await db.transaction(async (tx) => {
       if (kind === 'domains') {
+        // The sub-domains go with the domain (`ON DELETE CASCADE`), so each
+        // gets its own history row, as archiving a domain does — read before
+        // the delete, while they still exist.
+        const children = await tx
+          .select({
+            slug: creativeSubdomains.slug,
+            name: creativeSubdomains.name,
+            displayOrder: creativeSubdomains.displayOrder,
+          })
+          .from(creativeSubdomains)
+          .where(eq(creativeSubdomains.domainId, current.id));
+
         await tx.delete(creativeDomains).where(eq(creativeDomains.id, current.id));
+
+        if (children.length > 0) {
+          await tx.insert(taxonomyChanges).values(
+            children.map((child) => ({
+              itemKind: 'subdomain' as const,
+              itemSlug: child.slug,
+              action: 'deleted' as const,
+              adminId,
+              before: { name: child.name, displayOrder: child.displayOrder, viaDomain: slug },
+            })),
+          );
+        }
       } else {
         await tx.delete(creativeSubdomains).where(eq(creativeSubdomains.id, current.id));
       }

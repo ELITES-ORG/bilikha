@@ -17,7 +17,7 @@ import { users } from './users.js';
  * Creative Industries Development Act) domain set. They arrive from
  * `seed/taxonomy-data.ts` when an environment is first set up, but **the
  * database is the source of truth from then on** — an administrator edits
- * labels in the admin area and the seed never overwrites them (ADR 0047).
+ * labels in the admin area and the seed never overwrites them (ADR 0049).
  *
  * `slug` is the stable public identifier used in URLs; renaming a label must
  * never change a slug. `archived_at` takes an item out of circulation without
@@ -35,7 +35,7 @@ export const creativeDomains = pgTable(
     displayOrder: integer('display_order').notNull(),
     // Null means active. Archiving hides the item from pickers and browse
     // surfaces without touching the profiles, offers and postings that already
-    // reference it, and without breaking a URL that names its slug (ADR 0047).
+    // reference it, and without breaking a URL that names its slug (ADR 0049).
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -87,7 +87,7 @@ export const taxonomyChangeActionEnum = pgEnum('taxonomy_change_action', [
  * Append-only record of every administrator change to the taxonomy. Rows are
  * never updated or deleted.
  *
- * This exists because of ADR 0047: once the database rather than
+ * This exists because of ADR 0049: once the database rather than
  * `taxonomy-data.ts` is the source of truth, "who renamed this and when" has no
  * answer in git. `itemKind` and `itemSlug` are stored as text rather than as a
  * foreign key, so the history of a deleted item survives it.

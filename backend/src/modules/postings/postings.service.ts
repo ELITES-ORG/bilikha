@@ -68,13 +68,21 @@ async function registeredSubdomainIdsForUser(userId: string): Promise<string[]> 
   return rows.map((row) => row.subdomainId);
 }
 
-async function resolveSubdomainBySlug(subdomainSlug: string) {
+/**
+ * The sub-domain a posting is filed under. An archived one — or one whose
+ * domain is archived — is out of circulation and refused (ADR 0049), except
+ * the one this posting already has: editing an older posting must not force a
+ * new category on it.
+ */
+async function resolveSubdomainBySlug(subdomainSlug: string, keepSubdomainId?: string) {
   const [subdomain] = await db
     .select({
       id: creativeSubdomains.id,
       slug: creativeSubdomains.slug,
       name: creativeSubdomains.name,
       domainName: creativeDomains.name,
+      subdomainArchivedAt: creativeSubdomains.archivedAt,
+      domainArchivedAt: creativeDomains.archivedAt,
     })
     .from(creativeSubdomains)
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
@@ -82,6 +90,12 @@ async function resolveSubdomainBySlug(subdomainSlug: string) {
     .limit(1);
   if (!subdomain) {
     throw AppError.badRequest('Unknown sub-domain.', { field: 'subdomainSlug' });
+  }
+  const archived = subdomain.subdomainArchivedAt !== null || subdomain.domainArchivedAt !== null;
+  if (archived && subdomain.id !== keepSubdomainId) {
+    throw AppError.badRequest('That sub-domain is no longer offered. Choose another.', {
+      field: 'subdomainSlug',
+    });
   }
   return subdomain;
 }
@@ -305,7 +319,7 @@ export async function updatePosting(userId: string, postingId: string, input: Pa
 
   let subdomainId = current.subdomainId;
   if (input.subdomainSlug !== undefined) {
-    subdomainId = (await resolveSubdomainBySlug(input.subdomainSlug)).id;
+    subdomainId = (await resolveSubdomainBySlug(input.subdomainSlug, current.subdomainId)).id;
   }
   let municipalityId = current.municipalityId;
   if (input.municipalitySlug !== undefined) {

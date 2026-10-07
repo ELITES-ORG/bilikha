@@ -640,7 +640,7 @@ The full domain tree **including archived items**, each with a
 `referenceCount` — how many profile, offer and posting rows point at it. The
 only surface that sees either; the public
 [`GET /api/v1/taxonomy/domains`](#get-apiv1taxonomydomains) serves active items
-only (ADR 0047).
+only (ADR 0049).
 
 ### `POST /api/v1/admin/taxonomy/domains`
 
@@ -668,7 +668,7 @@ Sending `slug` returns `400 VALIDATION_ERROR` with
 `Unrecognized key: "slug"`. A slug is a public identifier that has been indexed
 and shared, so changing one is a data migration and a redirect, not an edit —
 the schema is `.strict()` rather than merely ignoring the field, so a caller is
-never told a rename worked when it did not (ADR 0047). A wrong slug is fixed by
+never told a rename worked when it did not (ADR 0049). A wrong slug is fixed by
 archiving the item and creating a replacement.
 
 ### `POST /api/v1/admin/taxonomy/:kind/:slug/archive`
@@ -736,12 +736,15 @@ conversations that carry the posting on a message).
 
 `201`. `expiresInDays` 1–60, default 30. Budget max must be ≥ min (`400` with
 `field: "budgetMaxCentavos"`). Sixth open posting → `400` naming the limit.
-Any of the 81 sub-domains is valid (clients have no registered set).
+Any active sub-domain is valid (clients have no registered set). An archived
+sub-domain, or one under an archived domain, → `400` with
+`field: "subdomainSlug"` ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
 
 ### `PATCH /api/v1/postings/:id`
 
 Title, description, sub-domain, municipality, budget while you own it. Another
-account's id → `404` (never `403`).
+account's id → `404` (never `403`). A posting may keep the archived sub-domain it
+already has; switching to a different archived one → `400`.
 
 ### `POST /api/v1/postings/:id/close`
 
@@ -791,13 +794,16 @@ moderation fields (`flaggedAt`, `reviewedAt`). Requires a creative profile.
 ```
 
 `201`. Enforces the six-offer cap. Sub-domain must be registered on the
-caller's profile — otherwise `400`. Published profiles set
-`editedSinceReviewAt`.
+caller's profile — otherwise `400` — and active: an archived one the profile
+still holds → `400`, so a new offer never lands under a category no directory
+filter shows ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
+Published profiles set `editedSinceReviewAt`.
 
 ### `PATCH /api/v1/offers/:id`
 
 Any of title, `subdomainSlug`, description, price. Another creative's id →
-`404`. Changing title, description, or price clears `reviewedAt` (offer stays
+`404`. An offer may keep the archived sub-domain it already has; switching to a
+different archived one → `400`. Changing title, description, or price clears `reviewedAt` (offer stays
 live); subdomain-only edits do not. Contact-detail patterns in the description
 set `flaggedAt`.
 

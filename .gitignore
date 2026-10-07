@@ -29,10 +29,3 @@ cookies.txt
 
 # Local Supabase CLI scratch
 supabase/.temp/
-
-
-.code-review-graph/
-.githooks/pre-commit
-.mcp.json
-.MY-ISSUES.md
-.claude/

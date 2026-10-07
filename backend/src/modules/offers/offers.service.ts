@@ -47,14 +47,31 @@ async function requireOwnProfile(userId: string): Promise<ProfileOwner> {
   return profile;
 }
 
-export async function assertRegisteredSubdomain(profileId: string, subdomainSlug: string) {
+/**
+ * The sub-domain an offer is filed under: one registered on the profile, and
+ * in circulation. A creative keeps an archived sub-domain on their profile
+ * (ADR 0049), but a new offer may not be filed under it, or it would appear in
+ * the directory under a category no filter shows. The offer that already has
+ * it (`keepSubdomainId`) may keep it through an edit.
+ */
+export async function assertRegisteredSubdomain(
+  profileId: string,
+  subdomainSlug: string,
+  keepSubdomainId?: string,
+) {
   const [subdomain] = await db
-    .select({ id: creativeSubdomains.id, name: creativeSubdomains.name })
+    .select({
+      id: creativeSubdomains.id,
+      name: creativeSubdomains.name,
+      subdomainArchivedAt: creativeSubdomains.archivedAt,
+      domainArchivedAt: creativeDomains.archivedAt,
+    })
     .from(creativeProfileSubdomains)
     .innerJoin(
       creativeSubdomains,
       eq(creativeProfileSubdomains.subdomainId, creativeSubdomains.id),
     )
+    .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .where(
       and(
         eq(creativeProfileSubdomains.profileId, profileId),
@@ -66,6 +83,13 @@ export async function assertRegisteredSubdomain(profileId: string, subdomainSlug
   if (!subdomain) {
     throw AppError.badRequest(
       `The sub-domain "${subdomainSlug}" is not registered on your profile.`,
+      { field: 'subdomainSlug' },
+    );
+  }
+  const archived = subdomain.subdomainArchivedAt !== null || subdomain.domainArchivedAt !== null;
+  if (archived && subdomain.id !== keepSubdomainId) {
+    throw AppError.badRequest(
+      `The sub-domain "${subdomainSlug}" is no longer offered, so a new offer cannot be filed under it.`,
       { field: 'subdomainSlug' },
     );
   }
@@ -206,7 +230,7 @@ export async function updateOffer(userId: string, offerId: string, input: PatchO
 
   let subdomainId = current.subdomainId;
   if (input.subdomainSlug !== undefined) {
-    subdomainId = (await assertRegisteredSubdomain(profile.id, input.subdomainSlug)).id;
+    subdomainId = (await assertRegisteredSubdomain(profile.id, input.subdomainSlug, current.subdomainId)).id;
   }
 
   const title = input.title !== undefined ? input.title : current.title;

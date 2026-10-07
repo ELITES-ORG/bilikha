@@ -5,9 +5,13 @@ import {
   creativeDomains,
   creativeProfileSubdomains,
   creativeSubdomains,
+  offers,
+  postings,
   taxonomyChanges,
 } from '../../db/schema/index.js';
-import { makeAdmin, makeCreative } from '../../test/factories.js';
+import { makeAdmin, makeCreative, makeOffer, makePosting, makeUser } from '../../test/factories.js';
+import { createOffer, updateOffer } from '../offers/offers.service.js';
+import { createPosting, updatePosting } from '../postings/postings.service.js';
 import { AppError } from '../../lib/http-error.js';
 import { updateTaxonomySchema } from './taxonomy.schema.js';
 import {
@@ -37,11 +41,14 @@ afterEach(async () => {
     .where(like(creativeSubdomains.slug, `${TEST_PREFIX}%`));
 
   if (subs.length > 0) {
+    const ids = subs.map((s) => s.id);
+    // Everything that references a test sub-domain goes first: the references
+    // are ON DELETE RESTRICT, and a cleanup that fails leaks `zz-test-` rows
+    // into every later run.
+    await db.delete(offers).where(inArray(offers.subdomainId, ids));
+    await db.delete(postings).where(inArray(postings.subdomainId, ids));
     await db.delete(creativeProfileSubdomains).where(
-      inArray(
-        creativeProfileSubdomains.subdomainId,
-        subs.map((s) => s.id),
-      ),
+      inArray(creativeProfileSubdomains.subdomainId, ids),
     );
   }
 
@@ -355,5 +362,112 @@ describe('admin taxonomy — the change log', () => {
 
     expect(mine[0]?.action).toBe('updated');
     expect(mine[0]?.adminUsername).toBe(admin.username);
+  });
+});
+
+describe('admin taxonomy — deleting a domain', () => {
+  it('records a deleted row for each sub-domain removed with it', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const first = await makeTestSubdomain(admin.id, domain.slug, 'sub-one');
+    const second = await makeTestSubdomain(admin.id, domain.slug, 'sub-two');
+
+    await deleteTaxonomyItem({ kind: 'domains', slug: domain.slug, adminId: admin.id });
+
+    for (const sub of [first, second]) {
+      const rows = await auditFor(sub.slug);
+      const deleted = rows.filter((row) => row.action === 'deleted');
+      expect(deleted).toHaveLength(1);
+      expect(deleted[0]).toMatchObject({ itemKind: 'subdomain', adminId: admin.id });
+      expect(deleted[0]!.before).toMatchObject({ viaDomain: domain.slug });
+    }
+    const [domainRow] = (await auditFor(domain.slug)).filter((row) => row.action === 'deleted');
+    expect(domainRow).toMatchObject({ itemKind: 'domain', adminId: admin.id });
+  });
+
+  it('refuses a domain whose sub-domain is referenced, and deletes nothing', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+    const { profile } = await makeCreative();
+    await db
+      .insert(creativeProfileSubdomains)
+      .values({ profileId: profile.id, subdomainId: sub.id, isPrimary: false });
+
+    await expect(
+      deleteTaxonomyItem({ kind: 'domains', slug: domain.slug, adminId: admin.id }),
+    ).rejects.toMatchObject({ status: 409 });
+
+    const [still] = await db
+      .select()
+      .from(creativeSubdomains)
+      .where(eq(creativeSubdomains.id, sub.id));
+    expect(still).toBeDefined();
+    expect((await auditFor(sub.slug)).some((row) => row.action === 'deleted')).toBe(false);
+  });
+});
+
+describe('admin taxonomy — archived sub-domains in offers and postings', () => {
+  async function archivedTestSubdomain() {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+    await archiveTaxonomyItem({ kind: 'subdomains', slug: sub.slug, adminId: admin.id });
+    return sub;
+  }
+
+  it('refuses a new posting under an archived sub-domain', async () => {
+    const sub = await archivedTestSubdomain();
+    const client = await makeUser();
+
+    await expect(
+      createPosting(client.id, {
+        title: 'Need a test',
+        subdomainSlug: sub.slug,
+        municipalitySlug: 'naval',
+        expiresInDays: 30,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('lets an existing posting keep its archived sub-domain through an edit', async () => {
+    const sub = await archivedTestSubdomain();
+    const client = await makeUser();
+    const posting = await makePosting(client.id, { subdomainId: sub.id });
+
+    const updated = await updatePosting(client.id, posting.id, {
+      subdomainSlug: sub.slug,
+      title: 'Still need a test',
+      description: undefined,
+    });
+    expect(updated).toBeDefined();
+  });
+
+  it('refuses a new offer under an archived sub-domain the profile still holds', async () => {
+    const sub = await archivedTestSubdomain();
+    const { user, profile } = await makeCreative();
+    await db
+      .insert(creativeProfileSubdomains)
+      .values({ profileId: profile.id, subdomainId: sub.id, isPrimary: false });
+
+    await expect(
+      createOffer(user.id, { title: 'Test offer', subdomainSlug: sub.slug }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('lets an existing offer keep its archived sub-domain through an edit', async () => {
+    const sub = await archivedTestSubdomain();
+    const { user, profile } = await makeCreative();
+    await db
+      .insert(creativeProfileSubdomains)
+      .values({ profileId: profile.id, subdomainId: sub.id, isPrimary: false });
+    const offer = await makeOffer(profile.id, { subdomainId: sub.id });
+
+    const updated = await updateOffer(user.id, offer.id, {
+      subdomainSlug: sub.slug,
+      title: 'Renamed offer',
+      description: undefined,
+    });
+    expect(updated).toBeDefined();
   });
 });

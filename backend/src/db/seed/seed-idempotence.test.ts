@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import path from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
@@ -10,7 +11,7 @@ const run = promisify(execFile);
 /**
  * The seed is what Render's build command runs on every backend deploy, so
  * these two properties are the difference between an administrator's edit
- * lasting and being silently reverted (ADR 0047).
+ * lasting and being silently reverted (ADR 0049).
  *
  * The real script is spawned rather than a extracted copy of its logic: the
  * thing worth testing is the command production runs, including its top-level
@@ -21,10 +22,14 @@ const run = promisify(execFile);
  * what it touched.
  */
 async function reseed(): Promise<void> {
-  await run('npm', ['run', 'db:seed'], {
-    cwd: process.cwd(),
-    env: process.env,
-  });
+  // `npm run db:seed` is `tsx src/db/seed/index.ts`; this runs that same
+  // command through Node directly. Spawning `npm` itself fails on Windows,
+  // where it is `npm.cmd` and `execFile` cannot start it without a shell.
+  await run(
+    process.execPath,
+    [path.join('node_modules', 'tsx', 'dist', 'cli.mjs'), path.join('src', 'db', 'seed', 'index.ts')],
+    { cwd: process.cwd(), env: process.env },
+  );
 }
 
 const SUBJECT = 'filmmakers';
@@ -69,7 +74,7 @@ describe('reference-data seed', () => {
       .from(creativeSubdomains)
       .where(eq(creativeSubdomains.slug, SUBJECT));
 
-    // Before ADR 0047 this read 'Filmmakers' again, with nothing logged.
+    // Before ADR 0049 this read 'Filmmakers' again, with nothing logged.
     expect(after?.name).toBe('Edited In The Admin Area');
   });
 
