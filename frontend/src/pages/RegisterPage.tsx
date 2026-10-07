@@ -164,7 +164,12 @@ export function RegisterPage() {
   return (
     <AuthShell
       action={
-        <ButtonLink to={withNextParam('/login', nextRaw)} variant="secondary" size="sm">
+        <ButtonLink
+          to={withNextParam('/login', nextRaw)}
+          variant="secondary"
+          size="sm"
+          onClick={transitionTo('bloom')}
+        >
           Sign in
         </ButtonLink>
       }

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import { transitionTo } from '@/components/page-transition/transition-to';
 import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
@@ -31,7 +32,12 @@ export function LoginPage() {
   return (
     <AuthShell
       action={
-        <ButtonLink to={withNextParam('/register', searchParams.get('next'))} variant="secondary" size="sm">
+        <ButtonLink
+          to={withNextParam('/register', searchParams.get('next'))}
+          variant="secondary"
+          size="sm"
+          onClick={transitionTo('bloom')}
+        >
           Register
         </ButtonLink>
       }

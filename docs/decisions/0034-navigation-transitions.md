@@ -113,7 +113,8 @@ each covering the screen, changing the route underneath and revealing it:
   directory", the wordmark on the sign-in and registration pages, and every
   link to the privacy notice or terms of use.
 - **bloom** — a navy circle grows from where the tap landed. The main calls to
-  action: "Get listed", and the header's Sign in and Register.
+  action: "Get listed", the header's Sign in and Register, and the Sign in and
+  Register buttons that switch between the two auth pages.
 - **panel** — a navy panel slides up under the header, which stays put. The
   header's section links, which only show from `sm` up.
 
