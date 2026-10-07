@@ -19,7 +19,7 @@ describe('which admin section is marked', () => {
   });
 
   it('does not light the review queue on the other sections', () => {
-    for (const path of ['/admin/media', '/admin/accounts', '/admin/ratings']) {
+    for (const path of ['/admin/media', '/admin/accounts', '/admin/ratings', '/admin/taxonomy']) {
       expect(isAdminSectionActive(path, '/admin'), `queue lit on ${path}`).toBe(false);
     }
   });
