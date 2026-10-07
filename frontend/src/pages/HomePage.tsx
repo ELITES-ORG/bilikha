@@ -307,9 +307,7 @@ function Hero() {
               className="anim-rise-in mt-4 max-w-xl text-md text-ink-muted sm:mt-6 sm:text-lg"
               style={{ '--i': 2 } as CSSProperties}
             >
-              <span className="hidden sm:inline">
-                Filmmakers, weavers, musicians, designers, festival organisers.{' '}
-              </span>
+              Filmmakers, weavers, musicians, designers, festival organisers.{' '}
               Find the people already doing the work here — and let them find you.
             </p>
 
