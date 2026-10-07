@@ -20,7 +20,7 @@ Run from the repository root.
 | `npm run db:down` | Stops it, keeps the data volume | End of a session |
 | `npm run db:reset` | **Destroys the volume** and restarts clean | Schema is tangled locally; you want a known state |
 | `npm run db:migrate` | Applies pending migrations | After pulling schema changes |
-| `npm run db:seed` | Loads domains, sub-domains, municipalities | After a migrate or reset |
+| `npm run db:seed` | Inserts any missing domains, sub-domains, municipalities | After a migrate or reset |
 | `npm run dev:api` | Backend on :4000, watch mode | Always |
 | `npm run dev:web` | Frontend on :5173, watch mode | Always |
 | `npm run build` | Production build, both services | Before deploying; to check nothing broke |
@@ -51,7 +51,7 @@ will re-run migrate and seed afterwards.
 | `db:migrate` | Applies pending migrations |
 | `db:push` | Syncs schema with no migration file. Needs a TTY; not the default — see [ADR 0009](../decisions/0009-migrations-over-db-push.md) |
 | `db:studio` | Opens Drizzle Studio to browse data |
-| `db:seed` | Idempotent reference-data load, matched on slug |
+| `db:seed` | Idempotent reference-data load, matched on slug. The creative taxonomy is **insert-only** — it never overwrites an administrator's edit ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)) |
 | `admin:reset-password` | Sets a new password for a username. Sprint 1 recovery path — verify identity out of band first |
 | `admin:grant` | Promotes an existing account to `admin`. **The only way to create the first administrator** |
 | `migrate:offers` | Manual fallback and verifier for the portfolio → offers move. **The move itself is in migration 0013**, because `db:migrate` applies every pending migration in one pass and leaves no window for a script between creating `offers` and dropping `portfolio_items`. Idempotent; exits 0 if the table is already gone |
@@ -132,7 +132,7 @@ npm run dev:api     # and npm run dev:web in a second terminal
 ```bash
 npm run setup          # picks up new dependencies and env variables
 npm run db:migrate
-npm run db:seed        # only if reference data changed; always safe
+npm run db:seed        # only if reference data changed; always safe, never overwrites
 ```
 
 **Before committing**
