@@ -109,12 +109,12 @@ name, and the owner wanted that character in Bilikha, in Bilikha's own shapes.
 each covering the screen, changing the route underneath and revealing it:
 
 - **wave** — the hero's navy-and-red wave rolls up with the page's name.
-  Between the public pages: the landing page's footer menu and "Browse the
-  directory", the wordmark on the sign-in and registration pages, and every
+  Between the public pages: the rest of the landing page's footer menu and
+  "Browse the directory", the wordmark on the sign-in and registration pages, and every
   link to the privacy notice or terms of use.
-- **bloom** — a navy circle grows from where the tap landed. The main calls to
-  action: "Get listed", the header's Sign in and Register, and the Sign in and
-  Register buttons that switch between the two auth pages.
+- **bloom** — a navy circle grows from where the tap landed. Every link to
+  sign in or register: "Get listed", the header's and the landing footer's
+  Sign in and Register, and the buttons that switch between the two auth pages.
 - **panel** — a navy panel slides up under the header, which stays put. The
   header's section links, which only show from `sm` up.
 
@@ -167,7 +167,9 @@ The owner chose this for every press, knowing it costs about half a second on
 the most-used navigation there is. Which one: the overlay that brought you to
 the page you are leaving, with the wave and panel run in reverse, or the wave
 when a plain link did. Only a change of pathname; going back through filters
-on the same page stays still.
+on the same page stays still. Which overlay brought each entry is kept in
+session storage (`lib/arrived-by.ts`), so a reload does not turn a bloom page's
+way back into a wave.
 
 It works because the router applies a history change as a React transition.
 `PageTransitions` hears `popstate` first and draws the curtain as an urgent

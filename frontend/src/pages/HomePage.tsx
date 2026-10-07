@@ -4,7 +4,7 @@ import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type Luci
 import elitesWordmark from '@/assets/elites-wordmark.webp';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
-import { transitionTo } from '@/components/page-transition/transition-to';
+import { transitionTo, type PageTransitionKind } from '@/components/page-transition/transition-to';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Wordmark } from '@/components/Wordmark';
 import { useCurrentUser } from '@/features/auth/api';
@@ -441,16 +441,18 @@ const externalLink = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 function SiteFooter() {
   const { data: user } = useCurrentUser();
-  const links = [
-    { to: '/directory', label: 'Directory' },
+  // Register and Sign in bloom, as they do from the header: the same
+  // destination arrives the same way wherever it is tapped.
+  const links: { to: string; label: string; kind: PageTransitionKind }[] = [
+    { to: '/directory', label: 'Directory', kind: 'wave' },
     ...(user
       ? []
       : [
-          { to: '/register', label: 'Register' },
-          { to: '/login', label: 'Sign in' },
+          { to: '/register', label: 'Register', kind: 'bloom' as const },
+          { to: '/login', label: 'Sign in', kind: 'bloom' as const },
         ]),
-    { to: '/privacy', label: 'Privacy notice' },
-    { to: '/terms', label: 'Terms of use' },
+    { to: '/privacy', label: 'Privacy notice', kind: 'wave' },
+    { to: '/terms', label: 'Terms of use', kind: 'wave' },
   ];
 
   return (
@@ -481,7 +483,7 @@ function SiteFooter() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    onClick={transitionTo('wave')}
+                    onClick={transitionTo(link.kind)}
                     className="u-tap link-underline text-ink-muted hover:text-ink"
                   >
                     {link.label}

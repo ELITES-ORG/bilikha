@@ -8,6 +8,7 @@ import {
   type AnimationEvent,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { arrivedByKey, readArrivedBy, writeArrivedBy } from '@/lib/arrived-by';
 import { cn } from '@/lib/cn';
 import { routeLabel } from '@/lib/route-labels';
 import { boot, bootFadeDelayMs, useBootPhase } from './boot';
@@ -87,6 +88,14 @@ function historyEntry(): { key: string; index: number } {
   };
 }
 
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
 function restart(element: Element | null, className: string) {
   if (!(element instanceof HTMLElement)) return;
   element.classList.remove(className);
@@ -106,8 +115,9 @@ export function PageTransitions() {
   const runIds = useRef(0);
   const committed = useRef({ pathname, key, index: historyEntry().index });
   // Which overlay brought each history entry on screen, so leaving it by the
-  // back button can play the same one in reverse.
-  const arrivedBy = useRef(new Map<string, PageTransitionKind>());
+  // back button can play the same one in reverse (`lib/arrived-by.ts`).
+  const arrivedBy = useRef<Map<string, PageTransitionKind> | null>(null);
+  arrivedBy.current ??= readArrivedBy(sessionStore());
   const arriving = useRef<PageTransitionKind | null>(null);
 
   useEffect(() => {
@@ -179,9 +189,12 @@ export function PageTransitions() {
 
       holdUntilReleased(entry.key);
       const back = entry.index < from.index;
+      const replayed = back
+        ? arrivedByKey(from.key, from.pathname)
+        : arrivedByKey(entry.key, window.location.pathname);
       setRun({
         id: ++runIds.current,
-        kind: arrivedBy.current.get(back ? from.key : entry.key) ?? 'wave',
+        kind: arrivedBy.current!.get(replayed) ?? 'wave',
         to,
         label,
         phase: 'cover',
@@ -261,7 +274,12 @@ export function PageTransitions() {
     const previous = committed.current;
     committed.current = { pathname, key, index: historyEntry().index };
     if (arriving.current) {
-      arrivedBy.current.set(key, arriving.current);
+      const record = arrivedBy.current!;
+      const entry = arrivedByKey(key, pathname);
+      // Re-inserted, so the most recently used entries are the ones kept.
+      record.delete(entry);
+      record.set(entry, arriving.current);
+      writeArrivedBy(sessionStore(), record);
       arriving.current = null;
     }
     if (previous.pathname === pathname) return;
