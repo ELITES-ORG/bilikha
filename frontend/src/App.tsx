@@ -56,6 +56,9 @@ const AdminAccountsPage = lazy(() =>
 const AdminRatingsPage = lazy(() =>
   import('@/pages/admin/AdminRatingsPage').then((m) => ({ default: m.AdminRatingsPage })),
 );
+const AdminTaxonomyPage = lazy(() =>
+  import('@/pages/admin/AdminTaxonomyPage').then((m) => ({ default: m.AdminTaxonomyPage })),
+);
 const AdminProfilePage = lazy(() =>
   import('@/pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })),
 );
@@ -315,6 +318,7 @@ export default function App() {
                 <Route path="media" element={<AdminMediaPage />} />
                 <Route path="accounts" element={<AdminAccountsPage />} />
                 <Route path="ratings" element={<AdminRatingsPage />} />
+                <Route path="taxonomy" element={<AdminTaxonomyPage />} />
                 <Route path="profiles/:id" element={<AdminProfilePage />} />
               </Route>
               {/* Internal design-system reference. Not linked from the product. */}
