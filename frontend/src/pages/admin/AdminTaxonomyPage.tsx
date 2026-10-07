@@ -36,6 +36,7 @@ import {
   type TaxonomyKind,
 } from '@/features/admin/taxonomy-api';
 import { toApiError } from '@/lib/api-client';
+import { canDelete, referencesLabel, swapTarget } from './taxonomy-page-logic';
 
 /**
  * The taxonomy editor (plan 0047 phase 4, ADR 0049).
@@ -257,7 +258,7 @@ function Reorder({
   const update = useUpdateTaxonomyItem();
 
   async function swap(direction: -1 | 1) {
-    const other = siblings[index + direction];
+    const other = swapTarget(siblings, index, direction);
     if (!other) return;
 
     try {
@@ -326,7 +327,7 @@ function ItemActions({
   const remove = useDeleteTaxonomyItem();
   const [confirming, setConfirming] = useState(false);
   const archived = item.archivedAt !== null;
-  const deletable = item.referenceCount === 0;
+  const deletable = canDelete(item);
 
   async function setArchived(action: 'archive' | 'restore') {
     try {
@@ -417,12 +418,6 @@ function ItemActions({
       )}
     </span>
   );
-}
-
-/** "nothing references it" / "1 reference" / "13 references". */
-function referencesLabel(count: number): string {
-  if (count === 0) return 'nothing references it';
-  return count === 1 ? '1 reference' : `${count} references`;
 }
 
 function ArchivedBadge() {

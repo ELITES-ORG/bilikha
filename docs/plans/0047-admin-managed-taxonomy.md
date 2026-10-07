@@ -545,9 +545,13 @@ once anything points at it.
 - [x] **Verify.** `npm --prefix frontend run build && npm run check:bundle`
       passes with the budget **unchanged** (500 kB JS / 200 kB CSS, the ceiling
       reyxdz set on 2026-10-07; `bundle-budget.json` is untouched). Measured
-      both ways: initial JS 164.56 kB without this phase and 164.63 kB with it,
-      CSS 18.68 → 18.70 kB. The 0.07 kB is the `lazy()` call and the route line;
-      the page's own code is not in the first load.
+      against `origin/main` in a throwaway worktree, which is the only honest
+      baseline once main has been merged in: **170.53 kB JS / 18.80 kB CSS on
+      `origin/main`, 170.58 / 18.82 here.** The 0.05 kB is the `lazy()` call and
+      the route line; the page's own code is not in the first load.
+      (An earlier note here read 164.56 → 164.63. Those were taken before
+      `3991ac7` merged main in, and the ~6 kB between the two pairs is PR #45's
+      landing work, not this phase.)
 
 ### Step 4.5 — Check it on a phone-sized viewport
 
