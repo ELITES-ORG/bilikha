@@ -55,11 +55,6 @@
     to { opacity: 1; }
   }
 
-  @keyframes bk-route-fallback-pulse {
-    0%, 100% { opacity: 0.28; }
-    50% { opacity: 0.9; }
-  }
-
   /* Biliran map (components/biliran-map): the islands settle, the pins land
      with a little give, then a ripple travels round the coast a town at a
      time. Each pulse is the first fifth of a cycle and the rest is stillness. */
@@ -471,17 +466,12 @@
     }
 
     /*
-      Delayed fade stays; only the pulse stops. Killing the whole animation
-      made the mark opaque from frame 0 (plan 0030 audit) — the same defect
-      on every cached navigation here.
+      Delayed fade stays; only the shimmer stops. Killing the whole animation
+      made the fallback opaque from frame 0 (plan 0030 audit) — the same
+      defect on every cached navigation here.
     */
     .bk-route-fallback {
       animation: bk-route-fallback-in 0.35s ease 0.25s forwards !important;
-    }
-
-    .bk-route-fallback-dot {
-      animation: none !important;
-      opacity: 0.7 !important;
     }
 
     .skeleton::after {

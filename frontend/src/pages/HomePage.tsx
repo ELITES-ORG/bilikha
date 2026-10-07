@@ -4,6 +4,7 @@ import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type Luci
 import elitesWordmark from '@/assets/elites-wordmark.webp';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
+import { DomainListSkeleton } from '@/components/page-skeleton/parts';
 import { transitionTo, type PageTransitionKind } from '@/components/page-transition/transition-to';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Wordmark } from '@/components/Wordmark';
@@ -375,24 +376,6 @@ function Hero() {
         </div>
       </Container>
     </section>
-  );
-}
-
-function DomainListSkeleton() {
-  return (
-    <div className="border-t border-hairline">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center gap-8 border-b border-hairline py-6 last:border-b-0"
-          style={{ opacity: 1 - index * 0.14 }}
-        >
-          <Skeleton className="h-7 w-10 shrink-0" />
-          <Skeleton className="h-6 w-52 shrink-0" />
-          <Skeleton className="hidden h-4 flex-1 md:block" />
-        </div>
-      ))}
-    </div>
   );
 }
 

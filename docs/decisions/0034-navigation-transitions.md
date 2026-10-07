@@ -125,7 +125,8 @@ each covering the screen, changing the route underneath and revealing it:
 
 All three are for someone signed out. Once signed in, no link and no back
 press plays one: the signed-in app is where people move around all day, and
-there the tide and the loading dots are the loader. The bloom that signs
+there the tide and the page's skeleton are the loader
+([ADR 0050](./0050-loading-states-are-skeletons-of-the-page.md)). The bloom that signs
 someone out is the one exception, as the last thing the session does.
 
 Everything else keeps the view transition above and gains the **tide**, a red
@@ -155,8 +156,8 @@ holds until the router has actually rendered a different history entry. The
 legal pages are lazy, and the router keeps the old page on screen while a
 chunk downloads, so lifting on a timer revealed the page being left and then
 cut to the new one. Nor does it lift while a `RouteFallback` is on screen: a
-back press to a lazy page, or a page still waiting on the session, renders the
-loading dots first, and the curtain is the loader while it is up
+back press to a lazy page, or a page still waiting on the session, renders its
+skeleton first, and the curtain is the loader while it is up
 (`page-transition/loading.ts`). The hold gives up after five seconds and
 reveals whatever is there; the destination's name on the curtain is the
 loading state meanwhile.
@@ -230,7 +231,8 @@ React's `BootCurtain` takes it over in the first commit at the same opacity:
 its fade is delayed from the page-load clock rather than from mount, so the
 handover cannot restart it. Every `RouteFallback` on screen holds the curtain,
 and once the last has gone it lifts with the wave onto the first real page.
-After that it never returns; later loading states are the ordinary dots. The
+After that it never returns; later loading states are page skeletons
+([ADR 0050](./0050-loading-states-are-skeletons-of-the-page.md)). The
 "server may be waking up" line moves onto the curtain.
 
 **Cost.** A few hundred bytes of inline CSS, and two more pairs of colour

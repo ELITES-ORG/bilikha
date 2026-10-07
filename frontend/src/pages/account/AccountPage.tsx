@@ -21,6 +21,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
+import { AccountSkeleton } from '@/components/page-skeleton/parts';
 import { tapOrigin, transitionTo } from '@/components/page-transition/transition-to';
 import {
   Avatar,
@@ -31,7 +32,6 @@ import {
   Container,
   EmptyState,
   Eyebrow,
-  Skeleton,
   segmentItemClass,
   segmentTrackClass,
 } from '@/components/ui';
@@ -555,24 +555,5 @@ function ProfileSummary({
         </ButtonLink>
       </div>
     </Card>
-  );
-}
-
-function AccountSkeleton() {
-  return (
-    <div aria-hidden="true">
-      <div className="mt-8 rounded-md border border-hairline p-5 sm:flex sm:gap-6 sm:p-8">
-        <Skeleton radius="full" className="size-20 sm:size-28" />
-        <div className="mt-4 flex-1 space-y-3 sm:mt-0">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-      </div>
-      <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <Skeleton radius="md" className="h-72" />
-        <Skeleton radius="md" className="h-72" />
-      </div>
-    </div>
   );
 }

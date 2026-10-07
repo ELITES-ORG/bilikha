@@ -24,7 +24,7 @@ export function HomeRoute() {
   // signed-in user on every visit to `/`. Not nothing either: this returned
   // null, and on a cold API that is a blank screen with no boot animation left
   // to cover it, which is exactly what it looked like from Biliran.
-  if (isPending) return <RouteFallback chrome={false} slowAfterMs={8000} />;
+  if (isPending) return <RouteFallback slowAfterMs={8000} />;
 
   if (user) return <Navigate to="/directory" replace />;
 

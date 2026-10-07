@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
-import { Avatar, Badge, Button, ButtonLink, Container, Eyebrow, Skeleton, useToast } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Container, Eyebrow, useToast } from '@/components/ui';
+import { PostingDetailSkeleton } from '@/components/page-skeleton/parts';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useEnsureConversation } from '@/features/conversations/api';
@@ -54,13 +55,7 @@ export function PostingDetailPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          {posting.isPending && (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-2/3" />
-              <Skeleton className="h-5 w-1/3" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          )}
+          {posting.isPending && <PostingDetailSkeleton />}
 
           {posting.isError && !(posting.error instanceof PostingNotFoundError) && (
             <p className="text-danger-700">{posting.error.message}</p>

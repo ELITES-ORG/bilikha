@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Outlet, useMatch } from 'react-router-dom';
 import { MessagesSquare } from 'lucide-react';
+import { FallbackScopeContext } from '@/components/page-skeleton/scope';
 import { RouteFallback } from '@/components/RouteFallback';
 import { Container, EmptyState } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
@@ -61,9 +62,11 @@ export function MessagesLayout() {
               'lg:min-h-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-hairline lg:bg-surface',
             )}
           >
-            <Suspense fallback={<RouteFallback chrome={false} />}>
-              <Outlet key={threadId} />
-            </Suspense>
+            <FallbackScopeContext value="pane">
+              <Suspense fallback={<RouteFallback />}>
+                <Outlet key={threadId} />
+              </Suspense>
+            </FallbackScopeContext>
           </section>
         </div>
       </main>
