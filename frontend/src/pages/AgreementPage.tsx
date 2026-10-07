@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { Container, Eyebrow, Skeleton } from '@/components/ui';
+import { Container, Eyebrow } from '@/components/ui';
+import { AgreementSkeleton } from '@/components/page-skeleton/parts';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { AgreementNotFoundError, useAgreement } from '@/features/agreements/api';
 import { AgreementStateChip } from '@/features/agreements/AgreementCard';
@@ -111,13 +112,7 @@ export function AgreementPage() {
 
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
-          {agreement.isPending && (
-            <div className="space-y-4">
-              <Skeleton className="h-6 w-32" />
-              <Skeleton className="h-10 w-2/3" />
-              <Skeleton className="h-40 w-full" />
-            </div>
-          )}
+          {agreement.isPending && <AgreementSkeleton />}
 
           {agreement.isError && !(agreement.error instanceof AgreementNotFoundError) && (
             <p className="text-danger-700">{agreement.error.message}</p>

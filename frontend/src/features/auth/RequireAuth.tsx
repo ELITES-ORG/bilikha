@@ -11,7 +11,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   // /login on every refresh. Not nothing either: this used to return null, and
   // on a cold API that is a blank screen for as long as the wait lasts, with
   // the boot animation already gone because React has mounted.
-  if (isPending) return <RouteFallback chrome={false} slowAfterMs={8000} />;
+  if (isPending) return <RouteFallback slowAfterMs={8000} />;
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;

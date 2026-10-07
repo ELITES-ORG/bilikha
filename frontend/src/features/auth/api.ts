@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
+import { playTransition, SESSION_LABEL } from '@/components/page-transition/transition-to';
 import { apiClient, toApiError } from '@/lib/api-client';
 import { clearLastSession, readLastSession, writeLastSession } from './session-cache';
 import type { AuthUser, RegisterPayload } from './types';
@@ -144,14 +145,15 @@ export function useLogout() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: async (): Promise<void> => {
+    /** `origin`: where the Sign out tap landed, for the bloom to open from. */
+    mutationFn: async (_origin?: { x: number; y: number }): Promise<void> => {
       try {
         await apiClient.post('/auth/logout');
       } catch (error) {
         throw toApiError(error);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, origin) => {
       /**
        * Navigate first, then clear.
        *
@@ -169,8 +171,13 @@ export function useLogout() {
       // reseed itself from it on the next render and paint a signed-in shell
       // for somebody who just signed out.
       clearLastSession();
-      navigate('/', { replace: true });
-      queryClient.clear();
+      const leave = () => {
+        void navigate('/', { replace: true });
+        queryClient.clear();
+      };
+      // Behind the bloom, so the signed-in page is never seen turning into
+      // the signed-out one.
+      if (!playTransition('bloom', '/', { label: SESSION_LABEL, origin, go: leave })) leave();
     },
   });
 }

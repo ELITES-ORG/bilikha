@@ -5,9 +5,9 @@ import {
   Container,
   EmptyState,
   SectionHeading,
-  Skeleton,
   useToast,
 } from '@/components/ui';
+import { NotificationRowsSkeleton } from '@/components/page-skeleton/parts';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import {
   useMarkAllNotificationsRead,
@@ -122,13 +122,7 @@ export function NotificationsPage() {
             }
           />
 
-          {notifications.isPending && (
-            <div className="mt-8 space-y-3">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-            </div>
-          )}
+          {notifications.isPending && <NotificationRowsSkeleton />}
 
           {notifications.isError && (
             <div className="mt-8">

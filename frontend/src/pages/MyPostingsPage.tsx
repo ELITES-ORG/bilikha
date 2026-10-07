@@ -6,9 +6,9 @@ import {
   ButtonLink,
   Container,
   EmptyState,
-  Skeleton,
   useToast,
 } from '@/components/ui';
+import { PostingRowsSkeleton } from '@/components/page-skeleton/parts';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useClosePosting, useDeletePosting, useMyPostings } from '@/features/postings/api';
 import {
@@ -70,7 +70,7 @@ export function MyPostingsPage() {
           )}
 
           <div className="mt-10">
-            {list.isPending && <Skeleton className="h-40 w-full" />}
+            {list.isPending && <PostingRowsSkeleton />}
             {list.isError && <p className="text-danger-700">{list.error.message}</p>}
 
             {empty && (

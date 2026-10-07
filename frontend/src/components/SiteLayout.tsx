@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { Outlet, useMatch } from 'react-router-dom';
+import { FallbackScopeContext } from '@/components/page-skeleton/scope';
 import { RouteFallback } from '@/components/RouteFallback';
 import { SiteHeader } from '@/components/SiteHeader';
 
@@ -13,7 +14,8 @@ import { SiteHeader } from '@/components/SiteHeader';
  * page below it changes — the same way `BottomNav` already persists.
  *
  * Its own Suspense keeps the header up while a lazy page's chunk loads; the
- * one in App would otherwise replace the whole layout with its fallback.
+ * one in App would otherwise replace the whole layout with its fallback. The
+ * fallback scope tells that skeleton the header is already drawn.
  *
  * Not used by the landing page (its navy `brand` header and skip link are its
  * own), the auth and onboarding screens (no header), or the admin area (its
@@ -26,9 +28,11 @@ export function SiteLayout() {
   return (
     <>
       <SiteHeader className={inConversation ? 'hidden sm:block' : undefined} />
-      <Suspense fallback={<RouteFallback chrome={false} />}>
-        <Outlet />
-      </Suspense>
+      <FallbackScopeContext value="site">
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
+      </FallbackScopeContext>
     </>
   );
 }

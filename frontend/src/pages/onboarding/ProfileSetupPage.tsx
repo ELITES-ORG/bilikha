@@ -8,7 +8,8 @@ import {
   type ProfileCraftFormState,
 } from '@/features/me/ProfileCraftFields';
 import type { CreateProfilePayload } from '@/features/me/types';
-import { Button, Container, Eyebrow, Skeleton } from '@/components/ui';
+import { ProfileSetupSkeleton } from '@/components/page-skeleton/parts';
+import { Button, Container, Eyebrow } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
@@ -97,10 +98,18 @@ export function ProfileSetupPage() {
   if (existing.isPending) {
     return (
       <div className="min-h-page bg-paper">
-        <Container width="narrow" className="py-(--section-gap)">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="mt-6 h-64 w-full" />
-        </Container>
+        <header className="border-b border-hairline">
+          <Container width="narrow" className="flex h-16 items-center">
+            <Link to="/" className="u-display text-xl font-semibold text-ink">
+              Bilikha
+            </Link>
+          </Container>
+        </header>
+        <main>
+          <Container width="narrow" className="py-(--section-gap)">
+            <ProfileSetupSkeleton />
+          </Container>
+        </main>
       </div>
     );
   }

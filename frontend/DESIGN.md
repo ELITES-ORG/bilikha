@@ -136,6 +136,11 @@ The single radius is a decision, not a default
   on the right. The URL is the only state — no selected-item store.
 - The navy header bar (`<SiteHeader tone="brand" />`) is for the landing page
   only. Elsewhere the bar stays white so it recedes behind the content.
+- A loading state is a skeleton of what replaces it — never dots, a spinner,
+  or a single grey block. Build it from `components/page-skeleton/parts.tsx`
+  so each bar sits in the height of its real line, and share it with the
+  page's route fallback; a new route gets an entry in `PageSkeleton.tsx`
+  ([ADR 0050](../docs/decisions/0050-loading-states-are-skeletons-of-the-page.md)).
 
 **Motion**
 

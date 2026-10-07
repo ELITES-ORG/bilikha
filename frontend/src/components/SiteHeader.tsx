@@ -5,7 +5,7 @@ import { useUnreadCount } from '@/features/conversations/api';
 import { useNotificationCount } from '@/features/notifications/api';
 import { Badge, Button, ButtonLink, Container, Avatar } from '@/components/ui';
 import { cn } from '@/lib/cn';
-import { transitionTo } from './page-transition/transition-to';
+import { tapOrigin, transitionTo } from './page-transition/transition-to';
 import { Wordmark } from './Wordmark';
 
 type HeaderTone = 'default' | 'brand';
@@ -183,7 +183,7 @@ export function SiteHeader({ tone = 'default', className }: SiteHeaderProps = {}
                 variant={brand ? 'inverse' : 'secondary'}
                 className="ml-1 hidden sm:inline-flex"
                 loading={logout.isPending}
-                onClick={() => void logout.mutateAsync()}
+                onClick={(event) => void logout.mutateAsync(tapOrigin(event))}
               >
                 Sign out
               </Button>
