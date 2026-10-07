@@ -361,7 +361,7 @@ export function ConversationPage() {
                 </>
               ) : (
                 <>
-                  <Skeleton className="size-10 shrink-0 rounded-full" />
+                  <Skeleton className="size-12 shrink-0 rounded-full" />
                   <Skeleton className="h-8 w-40" />
                 </>
               )}

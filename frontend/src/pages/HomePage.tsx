@@ -4,7 +4,8 @@ import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type Luci
 import elitesWordmark from '@/assets/elites-wordmark.webp';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
-import { transitionTo } from '@/components/page-transition/transition-to';
+import { DomainListSkeleton } from '@/components/page-skeleton/parts';
+import { transitionTo, type PageTransitionKind } from '@/components/page-transition/transition-to';
 import { SiteHeader } from '@/components/SiteHeader';
 import { Wordmark } from '@/components/Wordmark';
 import { useCurrentUser } from '@/features/auth/api';
@@ -307,9 +308,7 @@ function Hero() {
               className="anim-rise-in mt-4 max-w-xl text-md text-ink-muted sm:mt-6 sm:text-lg"
               style={{ '--i': 2 } as CSSProperties}
             >
-              <span className="hidden sm:inline">
-                Filmmakers, weavers, musicians, designers, festival organisers.{' '}
-              </span>
+              Filmmakers, weavers, musicians, designers, festival organisers.{' '}
               Find the people already doing the work here — and let them find you.
             </p>
 
@@ -380,24 +379,6 @@ function Hero() {
   );
 }
 
-function DomainListSkeleton() {
-  return (
-    <div className="border-t border-hairline">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <div
-          key={index}
-          className="flex items-center gap-8 border-b border-hairline py-6 last:border-b-0"
-          style={{ opacity: 1 - index * 0.14 }}
-        >
-          <Skeleton className="h-7 w-10 shrink-0" />
-          <Skeleton className="h-6 w-52 shrink-0" />
-          <Skeleton className="hidden h-4 flex-1 md:block" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /**
  * The page's last step for a creative who has read this far. Anyone signed in
  * already has an account, so it stays away for them — and while the session is
@@ -443,23 +424,26 @@ const externalLink = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 function SiteFooter() {
   const { data: user } = useCurrentUser();
-  const links = [
-    { to: '/directory', label: 'Directory' },
+  // Register and Sign in bloom, as they do from the header: the same
+  // destination arrives the same way wherever it is tapped.
+  const links: { to: string; label: string; kind: PageTransitionKind }[] = [
+    { to: '/directory', label: 'Directory', kind: 'wave' },
     ...(user
       ? []
       : [
-          { to: '/register', label: 'Register' },
-          { to: '/login', label: 'Sign in' },
+          { to: '/register', label: 'Register', kind: 'bloom' as const },
+          { to: '/login', label: 'Sign in', kind: 'bloom' as const },
         ]),
-    { to: '/privacy', label: 'Privacy notice' },
-    { to: '/terms', label: 'Terms of use' },
+    { to: '/privacy', label: 'Privacy notice', kind: 'wave' },
+    { to: '/terms', label: 'Terms of use', kind: 'wave' },
   ];
 
   return (
     // The tab-bar clearance sits here, at the very end of the page: on `main`
     // it opened a gap above the footer and still let the bar cover its last line.
-    <footer className={cn('border-t border-hairline pt-12', pbBottomNav)}>
-      <Container width="wide" className="pb-12">
+    // Only signed-in visitors have the bar, so only they get the clearance.
+    <footer className={cn('border-t border-hairline pt-12', user && pbBottomNav)}>
+      <Container width="wide" className="pb-8 sm:pb-12">
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div>
             <Wordmark />
@@ -482,7 +466,7 @@ function SiteFooter() {
                 <li key={link.to}>
                   <Link
                     to={link.to}
-                    onClick={transitionTo('wave')}
+                    onClick={transitionTo(link.kind)}
                     className="u-tap link-underline text-ink-muted hover:text-ink"
                   >
                     {link.label}

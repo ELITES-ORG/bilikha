@@ -109,19 +109,37 @@ name, and the owner wanted that character in Bilikha, in Bilikha's own shapes.
 each covering the screen, changing the route underneath and revealing it:
 
 - **wave** — the hero's navy-and-red wave rolls up with the page's name.
-  Between the public pages: the landing page's footer menu and "Browse the
-  directory", the wordmark on the sign-in and registration pages, and every
+  Between the public pages: the rest of the landing page's footer menu and
+  "Browse the directory", the wordmark on the sign-in and registration pages, and every
   link to the privacy notice or terms of use.
-- **bloom** — a navy circle grows from where the tap landed. The main calls to
-  action: "Get listed", and the header's Sign in and Register.
+- **bloom** — a navy circle grows from where the tap landed. Every link to
+  sign in or register: "Get listed", the header's and the landing footer's
+  Sign in and Register, and the buttons that switch between the two auth pages.
+  And the change of session itself: signing in, finishing registration and
+  signing out, which carry the name "Bilikha" rather than a page's. Those
+  navigate from code once the request succeeds, through `playTransition`; a
+  sign-out clears the session cache behind the drawn curtain, so the
+  signed-in page is never seen turning into the signed-out one.
 - **panel** — a navy panel slides up under the header, which stays put. The
   header's section links, which only show from `sm` up.
+
+All three are for someone signed out. Once signed in, no link and no back
+press plays one: the signed-in app is where people move around all day, and
+there the tide and the page's skeleton are the loader
+([ADR 0050](./0050-loading-states-are-skeletons-of-the-page.md)). The bloom that signs
+someone out is the one exception, as the last thing the session does.
 
 Everything else keeps the view transition above and gains the **tide**, a red
 line drawn across the top of the screen, inside 200ms.
 
 **What is relaxed, and what is not.** The overlays run about 0.5 seconds,
-over the 200ms rule. That is accepted only because they are confined to a few
+over the 200ms rule. The bloom stays fully drawn for at least two seconds more
+(`MIN_COVERED_MS`): it only runs between public pages and at the change of
+session, each once in a visit, and lifted the moment the page was ready it
+flickered past before its label could be read. A
+navigation that starts while an overlay is up — a second tap, or the back
+button — takes the overlay over and renames it for the new destination rather
+than being dropped. That is accepted only because they are confined to a few
 links someone taps once in a visit, never tabs, filters, back links or the
 phone tab bar. Everything else from this record holds: no library, transform
 and opacity only, nothing in the first load beyond a little CSS and one
@@ -137,8 +155,12 @@ curtain.
 holds until the router has actually rendered a different history entry. The
 legal pages are lazy, and the router keeps the old page on screen while a
 chunk downloads, so lifting on a timer revealed the page being left and then
-cut to the new one. The hold gives up after five seconds and reveals whatever
-is there; the destination's name on the curtain is the loading state meanwhile.
+cut to the new one. Nor does it lift while a `RouteFallback` is on screen: a
+back press to a lazy page, or a page still waiting on the session, renders its
+skeleton first, and the curtain is the loader while it is up
+(`page-transition/loading.ts`). The hold gives up after five seconds and
+reveals whatever is there; the destination's name on the curtain is the
+loading state meanwhile.
 
 **Rejected: the Elites curtain as it is.** About 1.5 seconds on every change of
 page, driven by `motion`. On an app people move around constantly that is
@@ -161,7 +183,9 @@ The owner chose this for every press, knowing it costs about half a second on
 the most-used navigation there is. Which one: the overlay that brought you to
 the page you are leaving, with the wave and panel run in reverse, or the wave
 when a plain link did. Only a change of pathname; going back through filters
-on the same page stays still.
+on the same page stays still. Which overlay brought each entry is kept in
+session storage (`lib/arrived-by.ts`), so a reload does not turn a bloom page's
+way back into a wave.
 
 It works because the router applies a history change as a React transition.
 `PageTransitions` hears `popstate` first and draws the curtain as an urgent
@@ -207,7 +231,8 @@ React's `BootCurtain` takes it over in the first commit at the same opacity:
 its fade is delayed from the page-load clock rather than from mount, so the
 handover cannot restart it. Every `RouteFallback` on screen holds the curtain,
 and once the last has gone it lifts with the wave onto the first real page.
-After that it never returns; later loading states are the ordinary dots. The
+After that it never returns; later loading states are page skeletons
+([ADR 0050](./0050-loading-states-are-skeletons-of-the-page.md)). The
 "server may be waking up" line moves onto the curtain.
 
 **Cost.** A few hundred bytes of inline CSS, and two more pairs of colour

@@ -8,9 +8,12 @@ import {
   type AnimationEvent,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '@/features/auth/api';
+import { arrivedByKey, readArrivedBy, writeArrivedBy } from '@/lib/arrived-by';
 import { cn } from '@/lib/cn';
 import { routeLabel } from '@/lib/route-labels';
 import { boot, bootFadeDelayMs, useBootPhase } from './boot';
+import { usePageLoading } from './loading';
 import {
   overlay,
   prefersReducedMotion,
@@ -34,15 +37,21 @@ import {
  * handler sees those presses and the URL has already changed when they arrive,
  * so `PageTransitionGate` holds the page back until the curtain is down.
  *
+ * None of these play for someone signed in, except the bloom that signs them
+ * in or out (`overlay.signedIn`).
+ *
  * Every other change of page gets the tide, a red line across the top, and the
  * new `main` sliding in, inside the 200ms rule. That stands in for ADR 0034's
  * view transition, which the declarative <BrowserRouter> never starts.
  */
 type Run = Omit<PageTransitionRun, 'phase'> & {
+  /** A new number for each run, so a replaced overlay restarts its animations. */
+  id: number;
   /**
    * `hold` sits behind the drawn curtain until the new page has rendered. A
    * lazy page renders only once its chunk arrives, and lifting the curtain
-   * before then would reveal the old page and cut to the new one after.
+   * before then would reveal the old page, or the loading dots, and cut to
+   * the new one after.
    */
   phase: 'cover' | 'hold' | 'reveal';
   /** Travelling back through history: wave and panel run the other way. */
@@ -51,6 +60,8 @@ type Run = Omit<PageTransitionRun, 'phase'> & {
   traversal: boolean;
   /** The history entry on screen when the run began; the hold ends once it is not. */
   fromKey: string;
+  /** When the screen was last fully covered, for `MIN_COVERED_MS`. */
+  coveredAt: number | null;
 };
 
 /** What the overlays draw: a hold looks like a finished cover. */
@@ -63,8 +74,18 @@ type ShownRun = Omit<Run, 'phase'> & { phase: 'cover' | 'reveal' };
  */
 const PHASE_TIMEOUT_MS = 900;
 
-/** The hold's own limit: long enough for a page chunk on a slow connection. */
+/**
+ * The hold's own limit: long enough for a page chunk on a slow connection. A
+ * longer wait, an API still waking, lifts onto the loading dots instead.
+ */
 const HOLD_TIMEOUT_MS = 5000;
+
+/**
+ * How long an overlay stays fully drawn before it may lift. The bloom only
+ * runs between public pages, and lifted as soon as the page was ready it
+ * flickered past before its label could be read.
+ */
+const MIN_COVERED_MS: Record<PageTransitionKind, number> = { wave: 0, bloom: 2000, panel: 0 };
 
 /** React Router's record on the current history entry: a key, and a number that is lower further back. */
 function historyEntry(): { key: string; index: number } {
@@ -74,6 +95,14 @@ function historyEntry(): { key: string; index: number } {
     key: typeof record.key === 'string' ? record.key : 'default',
     index: typeof record.idx === 'number' ? record.idx : 0,
   };
+}
+
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 function restart(element: Element | null, className: string) {
@@ -88,22 +117,41 @@ export function PageTransitions() {
   const navigate = useNavigate();
   const { pathname, key } = useLocation();
   const [run, setRun] = useState<Run | null>(null);
+  // The `coveredAt` whose minimum has passed.
+  const [coveredLongEnough, setCoveredLongEnough] = useState<number | null>(null);
 
-  const runActive = useRef(false);
+  const runPhase = useRef<Run['phase'] | null>(null);
+  const runIds = useRef(0);
   const committed = useRef({ pathname, key, index: historyEntry().index });
   // Which overlay brought each history entry on screen, so leaving it by the
-  // back button can play the same one in reverse.
-  const arrivedBy = useRef(new Map<string, PageTransitionKind>());
+  // back button can play the same one in reverse (`lib/arrived-by.ts`).
+  const arrivedBy = useRef<Map<string, PageTransitionKind> | null>(null);
+  arrivedBy.current ??= readArrivedBy(sessionStore());
   const arriving = useRef<PageTransitionKind | null>(null);
 
   useEffect(() => {
-    runActive.current = run !== null;
+    runPhase.current = run?.phase ?? null;
   }, [run]);
 
+  const { data: user } = useCurrentUser();
   useEffect(() => {
+    overlay.signedIn = Boolean(user);
+  }, [user]);
+
+  useEffect(() => {
+    // The newest navigation wins: a link tapped while an overlay is still up
+    // replaces it, rather than being swallowed with its click already cancelled.
     overlay.start = (next) => {
-      const fromKey = committed.current.key;
-      setRun((current) => current ?? { ...next, back: false, traversal: false, fromKey });
+      overlay.hold?.release();
+      overlay.hold = null;
+      setRun({
+        ...next,
+        id: ++runIds.current,
+        back: false,
+        traversal: false,
+        fromKey: committed.current.key,
+        coveredAt: null,
+      });
     };
     return () => {
       overlay.start = null;
@@ -112,33 +160,63 @@ export function PageTransitions() {
 
   // A layout effect, so the listener is in place before the router's own.
   useLayoutEffect(() => {
-    const onPopState = () => {
-      const entry = historyEntry();
-      if (overlay.hold) {
-        overlay.hold.key = entry.key;
-        return;
-      }
-      const from = committed.current;
-      if (runActive.current || prefersReducedMotion()) return;
-      if (window.location.pathname === from.pathname) return;
-
+    const holdUntilReleased = (key: string) => {
       let release = () => {};
       const until = new Promise<void>((resolve) => {
         release = resolve;
       });
-      overlay.hold = { key: entry.key, until, release };
+      overlay.hold = { key, until, release };
+    };
 
-      const back = entry.index < from.index;
+    const onPopState = () => {
+      const entry = historyEntry();
       const to = `${window.location.pathname}${window.location.search}`;
+      const label = routeLabel(to);
+
+      // An overlay is already up: keep it, but it now names where this press
+      // goes, and it stays down until that page has rendered.
+      if (runPhase.current !== null) {
+        if (overlay.hold) {
+          overlay.hold.key = entry.key;
+        } else if (runPhase.current === 'cover') {
+          holdUntilReleased(entry.key);
+        }
+        const fromKey = committed.current.key;
+        const now = performance.now();
+        setRun((current) =>
+          current && {
+            ...current,
+            to,
+            label,
+            traversal: true,
+            fromKey,
+            phase: current.phase === 'cover' ? 'cover' : 'hold',
+            coveredAt: current.phase === 'cover' ? null : now,
+          },
+        );
+        return;
+      }
+
+      const from = committed.current;
+      if (overlay.signedIn || prefersReducedMotion()) return;
+      if (window.location.pathname === from.pathname) return;
+
+      holdUntilReleased(entry.key);
+      const back = entry.index < from.index;
+      const replayed = back
+        ? arrivedByKey(from.key, from.pathname)
+        : arrivedByKey(entry.key, window.location.pathname);
       setRun({
-        kind: arrivedBy.current.get(back ? from.key : entry.key) ?? 'wave',
+        id: ++runIds.current,
+        kind: arrivedBy.current!.get(replayed) ?? 'wave',
         to,
-        label: routeLabel(to),
+        label,
         phase: 'cover',
         origin: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
         back,
         traversal: true,
         fromKey: from.key,
+        coveredAt: null,
       });
     };
     window.addEventListener('popstate', onPopState);
@@ -149,37 +227,60 @@ export function PageTransitions() {
     };
   }, []);
 
-  const arrived = run !== null && key !== run.fromKey;
+  const loading = usePageLoading();
+  // The new entry is committed and no loading fallback stands in for its page.
+  const arrived = run !== null && key !== run.fromKey && !loading;
+  const ready =
+    arrived &&
+    (MIN_COVERED_MS[run.kind] === 0 ||
+      (run.coveredAt !== null && coveredLongEnough === run.coveredAt));
   const shown: ShownRun | null = run && {
     ...run,
-    phase: run.phase === 'reveal' || (run.phase === 'hold' && arrived) ? 'reveal' : 'cover',
+    phase: run.phase === 'reveal' || (run.phase === 'hold' && ready) ? 'reveal' : 'cover',
   };
 
   const advance = useCallback(() => {
     if (!run) return;
     if (run.phase === 'cover') {
       if (run.traversal) {
+        // A back or forward press during a run that does its own work when
+        // covered — signing out — must not skip that work: sign-out would
+        // otherwise leave the old account's cached data on screen with the
+        // session already gone. It runs first, then the held page is let go.
+        run.go?.();
         overlay.hold?.release();
         overlay.hold = null;
       } else {
         arriving.current = run.kind;
-        void navigate(run.to);
+        if (run.go) run.go();
+        else void navigate(run.to, { replace: run.replace });
       }
-      setRun({ ...run, phase: 'hold' });
-    } else if (run.phase === 'reveal' || arrived) {
+      setRun({ ...run, phase: 'hold', coveredAt: performance.now() });
+    } else if (run.phase === 'reveal' || ready) {
       setRun(null);
     } else {
       // The page never arrived in time: lift the curtain on what is there.
       setRun({ ...run, phase: 'reveal' });
     }
-  }, [run, arrived, navigate]);
+  }, [run, ready, navigate]);
 
   useEffect(() => {
     if (!run) return;
-    const waiting = run.phase === 'hold' && !arrived;
+    const waiting = run.phase === 'hold' && !ready;
     const timer = window.setTimeout(advance, waiting ? HOLD_TIMEOUT_MS : PHASE_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [run, arrived, advance]);
+  }, [run, ready, advance]);
+
+  const coveredAt = run?.coveredAt ?? null;
+  const minCovered = run ? MIN_COVERED_MS[run.kind] : 0;
+  useEffect(() => {
+    if (coveredAt === null || minCovered === 0) return;
+    const timer = window.setTimeout(
+      () => setCoveredLongEnough(coveredAt),
+      Math.max(0, coveredAt + minCovered - performance.now()),
+    );
+    return () => window.clearTimeout(timer);
+  }, [coveredAt, minCovered]);
 
   const onAnimationEnd = (event: AnimationEvent) => {
     const name = event.animationName;
@@ -195,11 +296,16 @@ export function PageTransitions() {
     const previous = committed.current;
     committed.current = { pathname, key, index: historyEntry().index };
     if (arriving.current) {
-      arrivedBy.current.set(key, arriving.current);
+      const record = arrivedBy.current!;
+      const entry = arrivedByKey(key, pathname);
+      // Re-inserted, so the most recently used entries are the ones kept.
+      record.delete(entry);
+      record.set(entry, arriving.current);
+      writeArrivedBy(sessionStore(), record);
       arriving.current = null;
     }
     if (previous.pathname === pathname) return;
-    if (runActive.current || prefersReducedMotion()) return;
+    if (runPhase.current !== null || prefersReducedMotion()) return;
     restart(tideRef.current, 'nav-tide-run');
     restart(document.querySelector('main'), 'page-enter');
   }, [pathname, key]);
@@ -213,7 +319,7 @@ export function PageTransitions() {
       />
 
       {shown && (
-        <div aria-hidden="true" onAnimationEnd={onAnimationEnd}>
+        <div key={shown.id} aria-hidden="true" onAnimationEnd={onAnimationEnd}>
           {shown.kind === 'wave' && <Wave run={shown} />}
           {shown.kind === 'bloom' && <Bloom run={shown} />}
           {shown.kind === 'panel' && <Panel run={shown} />}

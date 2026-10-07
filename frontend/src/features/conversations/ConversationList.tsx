@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useMatch } from 'react-router-dom';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
 import { ModeNotice } from '@/components/ModeNotice';
-import { Avatar, Badge, Button, ButtonLink, Skeleton } from '@/components/ui';
+import { ConversationRowsSkeleton } from '@/components/page-skeleton/parts';
+import { Avatar, Badge, Button, ButtonLink } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
@@ -49,19 +50,7 @@ export function ConversationList() {
       </div>
 
       <div className="mt-6 lg:mt-0">
-        {list.isPending && (
-          <ul className="divide-y divide-hairline" aria-label="Loading conversations">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <li key={i} className="flex items-center gap-3.5 px-4 py-4 sm:px-5">
-                <Skeleton radius="full" className="size-12 shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-48" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        {list.isPending && <ConversationRowsSkeleton />}
 
         {list.isError && (
           <p className="px-4 text-danger-700" role="alert">

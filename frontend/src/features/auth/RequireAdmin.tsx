@@ -17,10 +17,11 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
    * would show the shape of the admin tools to somebody who cannot use them.
    *
    * So this one waits for the answer from the server, every time. Admins are a
-   * handful of people who visit rarely; a second of dots costs them nothing.
+   * handful of people who visit rarely; a second of waiting costs them nothing.
+   * The wait is a plain page, not the admin skeleton, for the same reason.
    */
   if (isPending || !isFetchedAfterMount) {
-    return <RouteFallback chrome={false} slowAfterMs={8000} />;
+    return <RouteFallback generic slowAfterMs={8000} />;
   }
 
   if (!user || user.role !== 'admin') {

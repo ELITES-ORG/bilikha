@@ -9,10 +9,10 @@ import {
   ButtonLink,
   Container,
   SectionHeading,
-  Skeleton,
   Tabs,
   useToast,
 } from '@/components/ui';
+import { ListRowsSkeleton } from '@/components/page-skeleton/parts';
 import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useAgreements } from '@/features/agreements/api';
@@ -132,7 +132,7 @@ export function HistoryPage() {
           <div className="mt-8">
             {segment === 'inquired' && creativeMode && (
               <>
-                {history.isPending && <Skeleton className="h-40 w-full" />}
+                {history.isPending && <ListRowsSkeleton lead="avatar" />}
 
                 {history.isError && <p className="text-danger-700">{history.error.message}</p>}
 
@@ -208,7 +208,7 @@ export function HistoryPage() {
 
             {segment === 'inquired' && !creativeMode && (
               <>
-                {history.isPending && <Skeleton className="h-40 w-full" />}
+                {history.isPending && <ListRowsSkeleton />}
 
                 {history.isError && <p className="text-danger-700">{history.error.message}</p>}
 
@@ -292,7 +292,7 @@ export function HistoryPage() {
 
             {segment === 'saved' && !creativeMode && (
               <>
-                {saved.isPending && <Skeleton className="h-40 w-full" />}
+                {saved.isPending && <ListRowsSkeleton meta={false} action />}
 
                 {saved.isError && <p className="text-danger-700">{saved.error.message}</p>}
 
@@ -359,7 +359,7 @@ export function HistoryPage() {
 
             {segment === 'agreements' && (
               <>
-                {agreements.isPending && <Skeleton className="h-40 w-full" />}
+                {agreements.isPending && <ListRowsSkeleton lead="chip" />}
 
                 {agreements.isError && (
                   <p className="text-danger-700">{agreements.error.message}</p>

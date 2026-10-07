@@ -10,6 +10,7 @@ import {
 import { useParams, useSearchParams } from 'react-router-dom';
 import { CornerBlob } from '@/components/Decor';
 import { BackPill, ShareButton } from '@/components/PageCornerActions';
+import { ProfileSkeleton } from '@/components/page-skeleton/parts';
 import {
   Avatar,
   Badge,
@@ -26,7 +27,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { ContactComposer } from '@/features/conversations/ContactComposer';
 import type { OfferImage } from '@/features/offers/api';
-import { OfferCard, OfferCardSkeleton } from '@/features/offers/OfferCard';
+import { OfferCard } from '@/features/offers/OfferCard';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
 import type { PublicProfile } from '@contracts/profiles';
 import { useRatingSummary } from '@/features/ratings/api';
@@ -527,30 +528,5 @@ function SidebarBlock({ title, children }: { title: string; children: ReactNode 
       <h2 className="text-md font-semibold text-ink">{title}</h2>
       <div className="mt-3">{children}</div>
     </section>
-  );
-}
-
-function ProfileSkeleton() {
-  return (
-    <div aria-hidden="true">
-      <Skeleton radius="md" className="h-32 w-full sm:h-44 lg:h-56" />
-      <div className="-mt-14 flex flex-col items-center gap-3 sm:-mt-16 lg:items-start lg:px-8">
-        <Skeleton radius="full" className="size-30" />
-        <Skeleton className="h-9 w-56" />
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-      <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(18rem,3fr)]">
-        <div>
-          <Skeleton className="h-11 w-full" />
-          <ul className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <OfferCardSkeleton key={i} />
-            ))}
-          </ul>
-        </div>
-        <Skeleton radius="md" className="hidden h-96 lg:block" />
-      </div>
-    </div>
   );
 }

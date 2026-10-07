@@ -2,6 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { AuthShell } from '@/components/AuthShell';
+import {
+  playTransition,
+  SESSION_LABEL,
+  submitOrigin,
+  transitionTo,
+} from '@/components/page-transition/transition-to';
 import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
@@ -19,10 +25,12 @@ export function LoginPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    const origin = submitOrigin(event);
 
     try {
       await login.mutateAsync({ username, password });
-      void navigate(next, { replace: true });
+      const shown = playTransition('bloom', next, { label: SESSION_LABEL, origin, replace: true });
+      if (!shown) void navigate(next, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed');
     }
@@ -31,7 +39,12 @@ export function LoginPage() {
   return (
     <AuthShell
       action={
-        <ButtonLink to={withNextParam('/register', searchParams.get('next'))} variant="secondary" size="sm">
+        <ButtonLink
+          to={withNextParam('/register', searchParams.get('next'))}
+          variant="secondary"
+          size="sm"
+          onClick={transitionTo('bloom')}
+        >
           Register
         </ButtonLink>
       }

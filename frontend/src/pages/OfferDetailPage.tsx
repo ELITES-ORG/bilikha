@@ -11,15 +11,15 @@ import {
   EmptyState,
   Eyebrow,
   ProgressiveImage,
-  Skeleton,
   useToast,
 } from '@/components/ui';
 import { BackPill, ShareButton } from '@/components/PageCornerActions';
+import { OfferDetailSkeleton } from '@/components/page-skeleton/parts';
 import { useCurrentUser } from '@/features/auth/api';
 import { RatingScore } from '@/features/ratings/components/RatingScore';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useEnsureConversation } from '@/features/conversations/api';
-import { OfferCard, OfferCardSkeleton, OfferImageFallback, SaveHeart } from '@/features/offers/OfferCard';
+import { OfferCard, OfferImageFallback, SaveHeart } from '@/features/offers/OfferCard';
 import { OfferGalleryGrid } from '@/features/offers/OfferGallery';
 import { useOfferLightbox } from '@/features/offers/use-offer-lightbox';
 import {
@@ -423,35 +423,5 @@ function SimilarOffers({
         ))}
       </ul>
     </section>
-  );
-}
-
-function OfferDetailSkeleton() {
-  return (
-    <div aria-hidden="true">
-      <Skeleton radius="md" className="aspect-video w-full lg:aspect-21/9" />
-      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)] lg:gap-x-10">
-        <div className="space-y-3">
-          <Skeleton className="h-3 w-32" />
-          <Skeleton className="h-10 w-4/5" />
-          <Skeleton className="h-6 w-40" />
-          <div className="mt-6 flex items-center gap-3 border-y border-hairline py-4">
-            <Skeleton radius="full" className="size-12" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-36" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          </div>
-          <Skeleton className="mt-6 h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-        </div>
-        <Skeleton radius="md" className="hidden h-56 lg:block" />
-      </div>
-      <ul className="mt-16 hidden gap-4 lg:grid lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <OfferCardSkeleton key={i} compact />
-        ))}
-      </ul>
-    </div>
   );
 }
