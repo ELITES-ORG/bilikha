@@ -243,6 +243,11 @@ export function PageTransitions() {
     if (!run) return;
     if (run.phase === 'cover') {
       if (run.traversal) {
+        // A back or forward press during a run that does its own work when
+        // covered — signing out — must not skip that work: sign-out would
+        // otherwise leave the old account's cached data on screen with the
+        // session already gone. It runs first, then the held page is let go.
+        run.go?.();
         overlay.hold?.release();
         overlay.hold = null;
       } else {
