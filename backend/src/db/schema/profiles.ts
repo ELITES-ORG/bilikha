@@ -87,6 +87,10 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   // An administrator removing a rating after a creative's appeal. Removal is
   // the only answer available — nobody edits someone else's words (ADR 0033).
   'rating_removed',
+  // An administrator issuing a temporary password (ADR 0051). No reason is
+  // recorded: unlike a suspension, nothing about a reset needs explaining to
+  // the person it happened to. The row exists so the reset is detectable.
+  'password_reset',
 ]);
 
 /**

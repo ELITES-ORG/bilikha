@@ -63,6 +63,10 @@ export class DrizzleSessionStore extends Store {
           sid,
           data: JSON.stringify(session),
           expiresAt: this.expiryFor(session),
+          // Denormalised out of `data` so revoking every session an account
+          // holds is one delete (ADR 0051). Null until the session carries a
+          // signed-in user, which is every session before login.
+          userId: session.userId ?? null,
         };
 
         await db
@@ -70,7 +74,7 @@ export class DrizzleSessionStore extends Store {
           .values(values)
           .onConflictDoUpdate({
             target: sessions.sid,
-            set: { data: values.data, expiresAt: values.expiresAt },
+            set: { data: values.data, expiresAt: values.expiresAt, userId: values.userId },
           });
 
         callback?.();

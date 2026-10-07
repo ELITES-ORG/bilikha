@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAdmin } from '../../middleware/require-admin.js';
+import { adminPasswordResetLimiter } from '../../middleware/rate-limit.js';
 import { listRatingsSchema } from '../ratings/ratings.schema.js';
 import {
   adminDismissReport,
@@ -15,6 +16,7 @@ import {
   listProfiles,
   listUnreviewedMedia,
   moderate,
+  resetAccountPassword,
   reviewMedia,
   setAccountStatus,
   statusCounts,
@@ -113,6 +115,22 @@ adminRouter.post('/accounts/:id/status', async (req, res) => {
     userId: id,
     action: input.action,
     reason: input.reason,
+  });
+
+  res.json({ data });
+});
+
+/**
+ * Mints a credential, so it is a POST with no body, never retried, and the
+ * temporary password in the response is the only time it is readable. Nothing
+ * here logs the response (ADR 0051).
+ */
+adminRouter.post('/accounts/:id/reset-password', adminPasswordResetLimiter, async (req, res) => {
+  const { id } = z.object({ id: z.string().uuid('Invalid account id') }).parse(req.params);
+
+  const data = await resetAccountPassword({
+    adminId: req.session.userId!,
+    userId: id,
   });
 
   res.json({ data });

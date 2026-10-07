@@ -87,3 +87,4 @@ Number sequentially. Never renumber.
 | [0048](./0048-one-radius-for-every-box.md) | One radius for every box | Accepted |
 | [0049](./0049-the-database-is-the-taxonomy-source-of-truth.md) | The database is the taxonomy's source of truth; archiving replaces deletion | Accepted |
 | [0050](./0050-loading-states-are-skeletons-of-the-page.md) | Loading states are skeletons of the page | Accepted |
+| [0051](./0051-an-admin-reset-issues-a-one-time-password.md) | An admin reset issues a one-time password, revokes every session, and forces a change | Proposed |

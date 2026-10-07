@@ -15,7 +15,8 @@ export type ModerationActionType =
   | 'media_removed'
   | 'account_suspended'
   | 'account_reinstated'
-  | 'rating_removed';
+  | 'rating_removed'
+  | 'password_reset';
 
 export type AccountStatus = 'active' | 'suspended';
 

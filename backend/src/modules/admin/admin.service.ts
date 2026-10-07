@@ -16,10 +16,13 @@ import {
   municipalities,
   offerImages,
   offers,
+  sessions,
   users,
 } from '../../db/schema/index.js';
 import type { AdminMediaListResult, AdminMediaRow } from '../../contracts/admin.js';
 import { AppError } from '../../lib/http-error.js';
+import { hashPassword } from '../../lib/password.js';
+import { generateTemporaryPassword } from '../../lib/temporary-password.js';
 import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notify } from '../notifications/notifications.service.js';
 import type { NotificationType } from '../notifications/notifications.service.js';
@@ -670,4 +673,87 @@ export async function setAccountStatus(input: {
   });
 
   return { id: target.id, status: nextStatus, changed: true as const };
+}
+
+/**
+ * Issue a temporary password for an account that cannot get in.
+ *
+ * There is no self-service reset and there cannot be one yet: nobody has proved
+ * they own the email or phone on their account, so a link sent to either is an
+ * account-takeover primitive rather than a recovery path (ADR 0051, and the
+ * comment on `users.email`). Recovery therefore runs through an administrator
+ * who verified the person out of band — which is what the existing developer
+ * script already assumed, minus the database credentials and minus any record.
+ *
+ * Three things happen together, so none of them can be observed without the
+ * others:
+ *
+ * 1. The password becomes a fresh random one, stored only as its argon2 hash.
+ * 2. Every session the account holds is deleted. Suspension deliberately does
+ *    not do this — it is enforced per request instead (ADR 0028) — but a
+ *    password change is different in kind: those sessions are live credentials
+ *    issued against a password that no longer exists, and nothing in a later
+ *    request would notice.
+ * 3. `mustChangePassword` is set, so the temporary password unlocks exactly one
+ *    action: replacing itself. `requireAuth` enforces that.
+ *
+ * The returned `temporaryPassword` is the only time it exists outside the hash.
+ * It is deliberately not logged, not stored, and not recoverable — a second
+ * call mints a different one and invalidates this.
+ */
+export async function resetAccountPassword(input: {
+  adminId: string;
+  userId: string;
+}): Promise<{ id: string; username: string; temporaryPassword: string }> {
+  // Resetting yourself would delete the session you are holding, logging you
+  // out mid-action with a password you then have to read back to yourself.
+  if (input.userId === input.adminId) {
+    throw AppError.badRequest('You cannot reset your own password here. Use Account → Security.');
+  }
+
+  const [target] = await db
+    .select({ id: users.id, username: users.username, role: users.role })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1);
+
+  if (!target) throw AppError.notFound('No such account.');
+
+  // Same line as suspension: administrators are not administered through this
+  // surface. One admin resetting another's password is a takeover of the
+  // account that can reset everyone else's.
+  if (target.role === 'admin') {
+    throw AppError.badRequest('Administrator passwords cannot be reset here.');
+  }
+
+  const temporaryPassword = generateTemporaryPassword();
+  const passwordHash = await hashPassword(temporaryPassword);
+
+  const [profile] = await db
+    .select({ id: creativeProfiles.id })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.userId, input.userId))
+    .limit(1);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(users)
+      .set({ passwordHash, mustChangePassword: true, updatedAt: new Date() })
+      .where(eq(users.id, input.userId));
+
+    await tx.delete(sessions).where(eq(sessions.userId, input.userId));
+
+    await tx.insert(moderationActions).values({
+      profileId: profile?.id ?? null,
+      subjectUserId: input.userId,
+      adminId: input.adminId,
+      action: 'password_reset',
+      // Null on purpose. The row records that a reset happened and by whom;
+      // the password itself must never reach this table, and there is nothing
+      // else about a reset to explain.
+      reason: null,
+    });
+  });
+
+  return { id: target.id, username: target.username, temporaryPassword };
 }

@@ -52,7 +52,7 @@ will re-run migrate and seed afterwards.
 | `db:push` | Syncs schema with no migration file. Needs a TTY; not the default — see [ADR 0009](../decisions/0009-migrations-over-db-push.md) |
 | `db:studio` | Opens Drizzle Studio to browse data |
 | `db:seed` | Idempotent reference-data load, matched on slug. The creative taxonomy is **insert-only** — it never overwrites an administrator's edit ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)) |
-| `admin:reset-password` | Sets a new password for a username. Sprint 1 recovery path — verify identity out of band first |
+| `admin:reset-password` | Sets a new password for a username. **Prefer the admin area** (Accounts → Reset password), which audits the reset and revokes sessions ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)). This is for the first administrator and for a broken environment — verify identity out of band first |
 | `admin:grant` | Promotes an existing account to `admin`. **The only way to create the first administrator** |
 | `migrate:offers` | Manual fallback and verifier for the portfolio → offers move. **The move itself is in migration 0013**, because `db:migrate` applies every pending migration in one pass and leaves no window for a script between creating `offers` and dropping `portfolio_items`. Idempotent; exits 0 if the table is already gone |
 | `media:prune` | Dry-run list of orphaned storage objects older than 24 hours. Pass `--delete` to remove them |

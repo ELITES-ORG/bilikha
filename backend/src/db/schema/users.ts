@@ -4,6 +4,7 @@ import {
   uuid,
   text,
   date,
+  boolean,
   timestamp,
   uniqueIndex,
   index,
@@ -68,6 +69,10 @@ export const users = pgTable(
     consentVersion: text('consent_version').notNull(),
 
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+    // Set by an administrator's password reset (ADR 0051). While it is true,
+    // requireAuth refuses every request but reading the session and setting a
+    // new password, so a temporary password unlocks nothing else.
+    mustChangePassword: boolean('must_change_password').notNull().default(false),
     // One avatar per account — on the user, not the creative profile (ADR 0019).
     avatarKey: text('avatar_key'),
     avatarReviewedAt: timestamp('avatar_reviewed_at', { withTimezone: true }),
