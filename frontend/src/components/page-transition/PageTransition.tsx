@@ -8,6 +8,7 @@ import {
   type AnimationEvent,
 } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCurrentUser } from '@/features/auth/api';
 import { arrivedByKey, readArrivedBy, writeArrivedBy } from '@/lib/arrived-by';
 import { cn } from '@/lib/cn';
 import { routeLabel } from '@/lib/route-labels';
@@ -35,6 +36,9 @@ import {
  * you to the page you are leaving, run in reverse, or the wave. No click
  * handler sees those presses and the URL has already changed when they arrive,
  * so `PageTransitionGate` holds the page back until the curtain is down.
+ *
+ * None of these play for someone signed in, except the bloom that signs them
+ * in or out (`overlay.signedIn`).
  *
  * Every other change of page gets the tide, a red line across the top, and the
  * new `main` sliding in, inside the 200ms rule. That stands in for ADR 0034's
@@ -129,6 +133,11 @@ export function PageTransitions() {
     runPhase.current = run?.phase ?? null;
   }, [run]);
 
+  const { data: user } = useCurrentUser();
+  useEffect(() => {
+    overlay.signedIn = Boolean(user);
+  }, [user]);
+
   useEffect(() => {
     // The newest navigation wins: a link tapped while an overlay is still up
     // replaces it, rather than being swallowed with its click already cancelled.
@@ -189,7 +198,7 @@ export function PageTransitions() {
       }
 
       const from = committed.current;
-      if (prefersReducedMotion()) return;
+      if (overlay.signedIn || prefersReducedMotion()) return;
       if (window.location.pathname === from.pathname) return;
 
       holdUntilReleased(entry.key);

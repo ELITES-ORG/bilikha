@@ -123,6 +123,11 @@ each covering the screen, changing the route underneath and revealing it:
 - **panel** — a navy panel slides up under the header, which stays put. The
   header's section links, which only show from `sm` up.
 
+All three are for someone signed out. Once signed in, no link and no back
+press plays one: the signed-in app is where people move around all day, and
+there the tide and the loading dots are the loader. The bloom that signs
+someone out is the one exception, as the last thing the session does.
+
 Everything else keeps the view transition above and gains the **tide**, a red
 line drawn across the top of the screen, inside 200ms.
 

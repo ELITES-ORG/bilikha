@@ -24,11 +24,17 @@ export const SESSION_LABEL = 'Bilikha';
  * navigate as usual. `hold` is set while a back or forward press is behind the
  * curtain: `key` is the history entry being travelled to, and the page for it
  * waits on `until`.
+ *
+ * `signedIn` turns the links' and the back button's overlays off. The signed-in
+ * app is moved around constantly, and there the tide and the loading dots are
+ * the loader; only the change of session itself, through `playTransition`,
+ * still plays one.
  */
 export const overlay: {
   start: ((run: PageTransitionRun) => void) | null;
   hold: { key: string; until: Promise<void>; release: () => void } | null;
-} = { start: null, hold: null };
+  signedIn: boolean;
+} = { start: null, hold: null, signedIn: false };
 
 export const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -47,13 +53,13 @@ function isPlainClick(event: MouseEvent<HTMLAnchorElement>) {
 /**
  * `onClick={transitionTo('wave')}` on a `Link`. The link keeps its href, focus
  * and middle-click; a plain click plays the transition instead of navigating
- * at once. Under reduced motion the click is left alone, so the link behaves
- * exactly as it would without this.
+ * at once. Under reduced motion, or for someone signed in, the click is left
+ * alone, so the link behaves exactly as it would without this.
  */
 export function transitionTo(kind: PageTransitionKind) {
   return (event: MouseEvent<HTMLAnchorElement>) => {
     const { start } = overlay;
-    if (!start || !isPlainClick(event) || prefersReducedMotion()) return;
+    if (!start || overlay.signedIn || !isPlainClick(event) || prefersReducedMotion()) return;
     const anchor = event.currentTarget;
     const to = anchor.getAttribute('href');
     if (!to || (anchor.target && anchor.target !== '_self')) return;
