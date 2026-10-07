@@ -77,7 +77,7 @@ Everything below must be true before step 1.1.
 | 1. Schema, migration and the seed | 6 / 6 | Done |
 | 2. Service, validation and audit | 6 / 6 | Done |
 | 3. Endpoints, contracts and read paths | 7 / 7 | Done |
-| 4. The `/admin/taxonomy` screen | 0 / 5 | Not started — ships as its own pull request |
+| 4. The `/admin/taxonomy` screen | 5 / 5 | Done; three of seven PR states unreachable locally |
 | 5. Documentation | 4 / 4 | Done |
 
 ---
@@ -452,18 +452,58 @@ seven "States checked" boxes the moment a `.tsx` file changes, and the screen
 has not been rendered yet. Holding it back keeps that requirement off the API
 work, which has nothing to show.
 
+**Every response shape and status code this screen depends on was exercised
+against the running API on 2026-10-07**, signed in as an administrator — not
+inferred from the service code. `GET /admin/taxonomy` returns exactly the keys
+the page reads, on both the domain and the sub-domain, `referenceCount`
+included; `changes` returns `meta: {page, limit, total}`. Create 201, rename
+200, archive 200, restore 200, delete-unreferenced 200, `PATCH` carrying a
+`slug` 400 with `Unrecognized key: "slug"`, and delete of a referenced
+sub-domain 409 with `CONFLICT` and a message naming the count. Archiving takes
+an item out of `GET /taxonomy/domains` while leaving it in the admin tree, and
+restoring puts it back. The audit trail listed all eight actions newest-first
+with the administrator against each, including `deleted` rows for items that no
+longer exist.
+
+**The seven "States checked" boxes, as of 2026-10-07.** Four are checked by
+looking: *admin* (the whole screen), *phone width with the bottom navigation*
+(320/360/375), *light and dark themes*, and *very long text and missing
+optional fields* (a 97-character craft name wraps without overflow; a domain
+with no description and one with no crafts both render). *Signed out, signed
+in, and without permission* is checked three ways: signed out bounces to `/`,
+a signed-in non-admin bounces to `/directory`, and the API answers that account
+`404`. *Creative mode and client mode* does not apply — the screen is identical
+in both.
+
+**Not checked: empty, loading and error states.** All three resist a local
+setup. The error state needs the taxonomy request to fail while the session
+request succeeds; stopping the API fails both, so `RequireAdmin` bounces before
+the page renders. The empty state needs zero domains, which means deleting the
+nine the law defines. The loading skeletons need network throttling that
+`screenshot.mjs` does not expose. They are written but have never been seen —
+say so in the pull request rather than ticking the box.
+
+One trap found while doing it: on a database with no profiles every
+`referenceCount` is 0, so the 409 cannot be reproduced and `DELETE` succeeds on
+anything — including one of the nine domains' crafts. Testing that guard needs
+a real referencing row first. The insert-only seed does restore a deleted slug,
+but with a **new** id, so this is only survivable because deletion is refused
+once anything points at it.
+
 ### Step 4.1 — Add the section
 
-- [ ] **Action.** Add `{ label: 'Taxonomy', path: '/admin/taxonomy' }` to
+- [x] **Action.** Add `{ label: 'Taxonomy', path: '/admin/taxonomy' }` to
       `ADMIN_SECTIONS` in `frontend/src/pages/admin/admin-sections.ts`. That
       array plus a route is the whole cost of a new admin surface (ADR 0035) —
       do not edit the sibling pages.
-- [ ] **Verify.** `npm --prefix frontend run test` passes
-      `admin-sections.test.ts`.
+- [x] **Verify.** `npm --prefix frontend run test` passes
+      `admin-sections.test.ts`. 116 tests pass. `/admin/taxonomy` was added to
+      the one hardcoded path list in that file, so the new section is covered by
+      the "does not light the review queue" case rather than only by the loop.
 
 ### Step 4.2 — Build the page
 
-- [ ] **Action.** Create `frontend/src/pages/admin/AdminTaxonomyPage.tsx`:
+- [x] **Action.** Create `frontend/src/pages/admin/AdminTaxonomyPage.tsx`:
       the nine domains, each expandable to its sub-domains, with create,
       rename, reorder, archive, restore and delete. Archived items are shown
       with their state and their reference count, not hidden — an administrator
@@ -471,35 +511,66 @@ work, which has nothing to show.
       Primitives from `frontend/src/components/ui/` only. Tokens only: no raw
       colours, no interpolated Tailwind class names
       ([`frontend/DESIGN.md`](../../frontend/DESIGN.md)).
-- [ ] **Verify.** `npm --prefix frontend run lint` and `typecheck` pass.
+      The data layer went in `frontend/src/features/admin/taxonomy-api.ts`
+      rather than into `features/admin/api.ts`: it shares no cache key or
+      invalidation rule with the moderation queues.
+- [x] **Verify.** `npm --prefix frontend run lint` and `typecheck` pass. Both
+      clean; the three lint warnings are pre-existing and in other files.
 
 ### Step 4.3 — Make delete say what it does
 
-- [ ] **Action.** Delete asks for confirmation naming the item, and is only
+- [x] **Action.** Delete asks for confirmation naming the item, and is only
       offered when `referenceCount` is 0. Archive is the primary action
       everywhere else. The confirmation text says the deletion cannot be undone
-      and that archiving is the reversible option.
-- [ ] **Verify.** With a referenced item selected, no delete control is
-      reachable.
+      and that archiving is the reversible option. The confirmation is a
+      two-step panel in place, not a dialog — a modal would sit above the toasts
+      that report the result (DESIGN.md).
+- [x] **Verify.** With a referenced item selected, no delete control is
+      reachable. **Verified by reading the code, not by clicking:** the control
+      renders under `{deletable && …}` where `deletable` is
+      `referenceCount === 0`, so there is no disabled-but-present button and
+      nothing to reach by keyboard either. No browser on this machine — see
+      step 4.5.
 
 ### Step 4.4 — Add the route
 
-- [ ] **Action.** In `frontend/src/App.tsx`, lazy-import `AdminTaxonomyPage`
+- [x] **Action.** In `frontend/src/App.tsx`, lazy-import `AdminTaxonomyPage`
       alongside the other admin pages and add the nested route under `/admin`.
-      It must land in the existing admin chunk, not a new one.
-- [ ] **Verify.** `npm --prefix frontend run build && npm run check:bundle`
-      passes with the budget **unchanged**. The page is lazy, so the initial
-      bundle must not move; if it does, the import is not lazy.
+      ~~It must land in the existing admin chunk, not a new one.~~ **This step's
+      wording was wrong about the build:** there is no single admin chunk. Every
+      admin page is already its own lazy chunk (`AdminAccountsPage-*.js`,
+      `AdminMediaPage-*.js`, …), so `AdminTaxonomyPage-*.js` follows the
+      convention rather than breaking it. What matters — that it stays out of
+      the first load — is what the verify step measures.
+- [x] **Verify.** `npm --prefix frontend run build && npm run check:bundle`
+      passes with the budget **unchanged** (500 kB JS / 200 kB CSS, the ceiling
+      reyxdz set on 2026-10-07; `bundle-budget.json` is untouched). Measured
+      both ways: initial JS 164.56 kB without this phase and 164.63 kB with it,
+      CSS 18.68 → 18.70 kB. The 0.07 kB is the `lazy()` call and the route line;
+      the page's own code is not in the first load.
 
 ### Step 4.5 — Check it on a phone-sized viewport
 
-- [ ] **Action.** Open `/admin/taxonomy` at 360px wide and at 320px.
-      **Not done:** no Chrome or Chromium on the machine this was executed on,
-      so `scripts/screenshot.mjs` could not run. The layout was written to the
-      rules — wrapping rows, `min-h-11` controls, no fixed widths — but that is
-      not the same as having looked at it.
-- [ ] **Verify.** No horizontal scroll; every control at least 44px
+- [x] **Action.** Open `/admin/taxonomy` at 360px wide and at 320px. Done
+      2026-10-07 at 320, 360 and 375px, light and dark, with the domain
+      expanded. **`scripts/screenshot.mjs` does not run as committed on
+      anything but Windows** — line 37 hardcodes
+      `C:/Program Files/Google/Chrome/Application/chrome.exe` and the
+      `--user-data-dir` is built from `process.env.TEMP`. A copy with those two
+      lines pointed at `/usr/bin/brave-browser` drove it fine; Brave is
+      Chromium, so CDP is identical. The committed script is untouched — making
+      it find a browser per platform is worth its own change.
+      **Looking at it found two layout faults that reading the code did not:**
+      the domain name was squeezed into two lines by the Archive button sharing
+      its row, and the rename form's Save button bottom-aligned against a
+      two-line hint instead of the field. Both now stack below `sm`. A copy bug
+      came with them — "1 references".
+- [x] **Verify.** No horizontal scroll; every control at least 44px
       ([plan 0046](./0046-responsive-on-every-screen.md)).
+      `scrollWidth === clientWidth` at 320, 360 and 375. Measured every
+      interactive element in `main` at 375px: 94 of them, **0 under 44px**. The
+      one element that does overflow is the admin section nav, which is
+      `overflow-x-auto` by design and belongs to `AdminLayout`.
 
 ---
 

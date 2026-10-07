@@ -11,6 +11,7 @@ export const ADMIN_SECTIONS = [
   { label: 'Media', path: '/admin/media' },
   { label: 'Accounts', path: '/admin/accounts' },
   { label: 'Ratings', path: '/admin/ratings' },
+  { label: 'Taxonomy', path: '/admin/taxonomy' },
 ] as const;
 
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];
