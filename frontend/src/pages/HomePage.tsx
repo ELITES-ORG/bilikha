@@ -456,8 +456,9 @@ function SiteFooter() {
   return (
     // The tab-bar clearance sits here, at the very end of the page: on `main`
     // it opened a gap above the footer and still let the bar cover its last line.
-    <footer className={cn('border-t border-hairline pt-12', pbBottomNav)}>
-      <Container width="wide" className="pb-12">
+    // Only signed-in visitors have the bar, so only they get the clearance.
+    <footer className={cn('border-t border-hairline pt-12', user && pbBottomNav)}>
+      <Container width="wide" className="pb-8 sm:pb-12">
         <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
           <div>
             <Wordmark />
