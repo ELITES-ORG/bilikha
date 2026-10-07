@@ -143,8 +143,12 @@ curtain.
 holds until the router has actually rendered a different history entry. The
 legal pages are lazy, and the router keeps the old page on screen while a
 chunk downloads, so lifting on a timer revealed the page being left and then
-cut to the new one. The hold gives up after five seconds and reveals whatever
-is there; the destination's name on the curtain is the loading state meanwhile.
+cut to the new one. Nor does it lift while a `RouteFallback` is on screen: a
+back press to a lazy page, or a page still waiting on the session, renders the
+loading dots first, and the curtain is the loader while it is up
+(`page-transition/loading.ts`). The hold gives up after five seconds and
+reveals whatever is there; the destination's name on the curtain is the
+loading state meanwhile.
 
 **Rejected: the Elites curtain as it is.** About 1.5 seconds on every change of
 page, driven by `motion`. On an app people move around constantly that is

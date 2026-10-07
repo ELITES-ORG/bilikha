@@ -18,12 +18,14 @@
  *
  * While the app is opening, none of this shows: the opening curtain is up
  * (`page-transition/boot.ts`), every fallback on screen holds it, and it lifts
- * only once they have all gone. It says the slow line itself.
+ * only once they have all gone. It says the slow line itself. A page-transition
+ * overlay waits for them the same way (`page-transition/loading.ts`).
  */
 
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { boot, useBootPhase } from '@/components/page-transition/boot';
+import { pageLoading } from '@/components/page-transition/loading';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 
@@ -37,7 +39,14 @@ export function RouteFallback({
   const [slow, setSlow] = useState(false);
   const bootPhase = useBootPhase();
 
-  useLayoutEffect(() => boot.hold(), []);
+  useLayoutEffect(() => {
+    const releaseBoot = boot.hold();
+    const releasePage = pageLoading.hold();
+    return () => {
+      releaseBoot();
+      releasePage();
+    };
+  }, []);
 
   useEffect(() => {
     if (!slowAfterMs) return;

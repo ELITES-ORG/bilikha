@@ -12,6 +12,7 @@ import { arrivedByKey, readArrivedBy, writeArrivedBy } from '@/lib/arrived-by';
 import { cn } from '@/lib/cn';
 import { routeLabel } from '@/lib/route-labels';
 import { boot, bootFadeDelayMs, useBootPhase } from './boot';
+import { usePageLoading } from './loading';
 import {
   overlay,
   prefersReducedMotion,
@@ -45,7 +46,8 @@ type Run = Omit<PageTransitionRun, 'phase'> & {
   /**
    * `hold` sits behind the drawn curtain until the new page has rendered. A
    * lazy page renders only once its chunk arrives, and lifting the curtain
-   * before then would reveal the old page and cut to the new one after.
+   * before then would reveal the old page, or the loading dots, and cut to
+   * the new one after.
    */
   phase: 'cover' | 'hold' | 'reveal';
   /** Travelling back through history: wave and panel run the other way. */
@@ -68,7 +70,10 @@ type ShownRun = Omit<Run, 'phase'> & { phase: 'cover' | 'reveal' };
  */
 const PHASE_TIMEOUT_MS = 900;
 
-/** The hold's own limit: long enough for a page chunk on a slow connection. */
+/**
+ * The hold's own limit: long enough for a page chunk on a slow connection. A
+ * longer wait, an API still waking, lifts onto the loading dots instead.
+ */
 const HOLD_TIMEOUT_MS = 5000;
 
 /**
@@ -213,7 +218,9 @@ export function PageTransitions() {
     };
   }, []);
 
-  const arrived = run !== null && key !== run.fromKey;
+  const loading = usePageLoading();
+  // The new entry is committed and no loading fallback stands in for its page.
+  const arrived = run !== null && key !== run.fromKey && !loading;
   const ready =
     arrived &&
     (MIN_COVERED_MS[run.kind] === 0 ||
