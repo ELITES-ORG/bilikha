@@ -85,5 +85,5 @@ Number sequentially. Never renumber.
 | [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md) | Offers and profiles carry audio, video and PDF, each kind with its own limits | Proposed |
 | [0047](./0047-animated-icons-load-lazily-with-motion.md) | Animated icons use motion, loaded lazily behind their static icon | Proposed |
 | [0048](./0048-one-radius-for-every-box.md) | One radius for every box | Accepted |
-| [0049](./0049-the-database-is-the-taxonomy-source-of-truth.md) | The database is the taxonomy's source of truth; archiving replaces deletion | Proposed |
+| [0049](./0049-the-database-is-the-taxonomy-source-of-truth.md) | The database is the taxonomy's source of truth; archiving replaces deletion | Accepted |
 | [0050](./0050-loading-states-are-skeletons-of-the-page.md) | Loading states are skeletons of the page | Accepted |
