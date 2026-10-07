@@ -107,7 +107,8 @@ state or component behaviour.
 ## Follow-ups
 
 - Ramp rename (`clay` is slate, `lawa` navy, `palayok` red).
-- A real favicon.
+- ~~A real favicon.~~ Done: the navy B, described in plan 0036 under "How the
+  icons were made".
 - The admin layout (Step 4.2).
 - `Tabs` uses `role="tab"` without arrow-key navigation or panel links: add
   both, or render it as `aria-pressed` buttons, as a segmented control.

@@ -84,7 +84,7 @@ export function useOfferLightbox(images: OfferImage[]) {
             <button
               ref={closeRef}
               type="button"
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-clay-100 hover:text-ink"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
               aria-label="Close"
               onClick={closeLightbox}
             >

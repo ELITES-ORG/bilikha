@@ -247,7 +247,7 @@ export function DirectoryPage() {
 
               <button
                 type="button"
-                className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-hairline-strong bg-surface text-ink-muted transition-colors hover:border-lawa-700 hover:text-lawa-700"
+                className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-hairline-strong bg-surface text-ink-muted transition-colors hover:border-lawa-700 hover:text-lawa-700"
                 aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"

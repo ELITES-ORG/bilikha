@@ -15,10 +15,15 @@
  * starts looking like breakage. The API sleeps on its free tier and can take
  * most of a minute to wake (plan 0002 phase 6), and half a minute of silent
  * dots is indistinguishable from a dead app.
+ *
+ * While the app is opening, none of this shows: the opening curtain is up
+ * (`page-transition/boot.ts`), every fallback on screen holds it, and it lifts
+ * only once they have all gone. It says the slow line itself.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { boot, useBootPhase } from '@/components/page-transition/boot';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 
@@ -30,12 +35,17 @@ export function RouteFallback({
   slowAfterMs?: number;
 }) {
   const [slow, setSlow] = useState(false);
+  const bootPhase = useBootPhase();
+
+  useLayoutEffect(() => boot.hold(), []);
 
   useEffect(() => {
     if (!slowAfterMs) return;
     const timer = setTimeout(() => setSlow(true), slowAfterMs);
     return () => clearTimeout(timer);
   }, [slowAfterMs]);
+
+  if (bootPhase === 'covering') return <div className="min-h-page bg-paper" />;
 
   return (
     <div className="min-h-page bg-paper">

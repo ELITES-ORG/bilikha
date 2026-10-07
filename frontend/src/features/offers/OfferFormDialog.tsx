@@ -77,7 +77,7 @@ export function OfferFormDialog({ open, title, busy, onClose, children }: OfferF
           </h2>
           <button
             type="button"
-            className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink disabled:opacity-50"
+            className="-mr-2 inline-flex size-11 items-center justify-center rounded-sm text-ink-muted transition-colors hover:bg-clay-100 hover:text-ink disabled:opacity-50"
             aria-label="Close"
             disabled={busy}
             onClick={onClose}

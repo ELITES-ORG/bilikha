@@ -21,6 +21,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { InstallGuide } from '@/components/InstallGuide';
+import { transitionTo } from '@/components/page-transition/transition-to';
 import {
   Avatar,
   Badge,
@@ -121,7 +122,7 @@ function HubRow({
 function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
-      className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-lawa-700 [&_svg]:size-4"
+      className="grid size-9 shrink-0 place-items-center rounded-sm bg-primary-soft text-lawa-700 [&_svg]:size-4"
       aria-hidden="true"
     >
       {children}
@@ -447,10 +448,18 @@ export function AccountPage() {
                 registration being the only place they are linked.
               */}
               <p className="mt-12 flex gap-4 border-t border-hairline pt-6 text-sm">
-                <Link to="/privacy" className="link-underline u-tap text-ink-muted">
+                <Link
+                  to="/privacy"
+                  className="link-underline u-tap text-ink-muted"
+                  onClick={transitionTo('wave')}
+                >
                   Privacy notice
                 </Link>
-                <Link to="/terms" className="link-underline u-tap text-ink-muted">
+                <Link
+                  to="/terms"
+                  className="link-underline u-tap text-ink-muted"
+                  onClick={transitionTo('wave')}
+                >
                   Terms of use
                 </Link>
               </p>

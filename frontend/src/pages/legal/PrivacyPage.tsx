@@ -1,5 +1,5 @@
 import { LegalLayout, LegalList, LegalSection } from './LegalLayout';
-import { LEGAL_CONTACT } from '@/lib/legal';
+import { LEGAL_CONTACT, LEGAL_OPERATOR } from '@/lib/legal';
 
 /**
  * The privacy notice.
@@ -19,9 +19,22 @@ export function PrivacyPage() {
     >
       <LegalSection title="Who is responsible">
         <p>
-          Bilikha is a registry of creative work in the province of Biliran. Whoever
-          operates it is the personal information controller for the data described
-          here, under Republic Act 10173, the Data Privacy Act of 2012.
+          Bilikha is a registry of creative work in the province of Biliran. It is
+          operated by the {LEGAL_OPERATOR}, the personal information controller for the
+          data described here, under Republic Act 10173, the Data Privacy Act of 2012.
+        </p>
+        <p>
+          The software is built and maintained for the province by{' '}
+          <a
+            className="link-underline text-lawa-700"
+            href="https://elitesys.org"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Elites
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+          .
         </p>
       </LegalSection>
 

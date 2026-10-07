@@ -4,6 +4,12 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BottomNav } from '@/components/BottomNav';
 import { NewBuildNotice } from '@/components/NewBuildNotice';
 import { RouteFallback } from '@/components/RouteFallback';
+import {
+  BootCurtain,
+  PageTransitionGate,
+  PageTransitions,
+} from '@/components/page-transition/PageTransition';
+import { ScrollOnNavigate } from '@/components/ScrollOnNavigate';
 import { SiteLayout } from '@/components/SiteLayout';
 import { StagingBanner } from '@/components/StagingBanner';
 import { ToastProvider } from '@/components/ui';
@@ -128,13 +134,16 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrowserRouter>
+          <ScrollOnNavigate />
           <StagingBanner />
           {/*
             One Suspense high up for the routes outside SiteLayout. BottomNav
             sits outside the routes and SiteHeader inside SiteLayout, so neither
             is remounted on navigation. Fallback is never null (plan 0031 rule 1).
+            The gate holds a back press's page here while its curtain comes down.
           */}
           <Suspense fallback={<RouteFallback />}>
+            <PageTransitionGate />
             <Routes>
               <Route path="/" element={<HomeRoute />} />
               {/* Every page with the site header: rendered once by SiteLayout. */}
@@ -314,6 +323,8 @@ export default function App() {
             </Routes>
           </Suspense>
           <BottomNav />
+          <PageTransitions />
+          <BootCurtain />
           <NewBuildNotice />
           <SessionMemory />
         </BrowserRouter>

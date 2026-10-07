@@ -14,6 +14,7 @@ import {
   Skeleton,
   useToast,
 } from '@/components/ui';
+import { cn } from '@/lib/cn';
 
 /**
  * Living reference for the design system. Not linked from the product; it
@@ -100,15 +101,25 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section title="Radius" note="Graded by element size. Uniform rounding flattens hierarchy.">
-          <div className="flex flex-wrap gap-4 border-t border-hairline pt-6">
-            {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((r) => (
-              <div key={r} className="text-center">
+        <Section
+          title="Radius"
+          note="One 8px corner on every box, whatever its size. Round only what is round by nature."
+        >
+          <div className="flex flex-wrap items-end gap-4 border-t border-hairline pt-6">
+            {[
+              { name: 'badge', className: 'h-6 w-16' },
+              { name: 'button', className: 'h-11 w-28' },
+              { name: 'card', className: 'size-20' },
+              { name: 'panel', className: 'h-20 w-40' },
+            ].map(({ name, className }) => (
+              <div key={name} className="text-center">
                 <div
-                  className="size-20 border border-hairline-strong bg-surface shadow-xs"
-                  style={{ borderRadius: `var(--radius-${r})` }}
+                  className={cn(
+                    'rounded-sm border border-hairline-strong bg-surface shadow-xs',
+                    className,
+                  )}
                 />
-                <code className="mt-2 block text-xs text-ink-subtle">{r}</code>
+                <code className="mt-2 block text-xs text-ink-subtle">{name}</code>
               </div>
             ))}
           </div>

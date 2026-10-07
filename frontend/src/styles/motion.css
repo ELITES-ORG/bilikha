@@ -60,6 +60,101 @@
     50% { opacity: 0.9; }
   }
 
+  /* Biliran map (components/biliran-map): the islands settle, the pins land
+     with a little give, then a ripple travels round the coast a town at a
+     time. Each pulse is the first fifth of a cycle and the rest is stillness. */
+  @keyframes bk-island-in {
+    from { opacity: 0; transform: scale3d(0.92, 0.92, 1); }
+    to { opacity: 1; transform: scale3d(1, 1, 1); }
+  }
+
+  @keyframes bk-pin-drop {
+    0% { opacity: 0; transform: translate3d(0, -1rem, 0); }
+    60% { opacity: 1; transform: translate3d(0, 0.125rem, 0); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-pin-pulse {
+    0% { opacity: 0.5; transform: scale3d(1, 1, 1); }
+    20%, 100% { opacity: 0; transform: scale3d(3.5, 3.5, 1); }
+  }
+
+  /* Page transitions (components/page-transition, ADR 0034 amendment). Each
+     overlay covers, the route changes underneath, then it reveals. The names
+     are `bk-<kind>-<phase>`: the component advances on exactly those. */
+  @keyframes bk-wave-cover {
+    from { transform: translate3d(0, calc(100% + 3rem), 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-wave-reveal {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, calc(-100% - 3rem), 0); }
+  }
+
+  @keyframes bk-bloom-cover {
+    from { transform: scale3d(0, 0, 1); }
+    to { transform: scale3d(1, 1, 1); }
+  }
+
+  @keyframes bk-bloom-reveal {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  /* Back through history: the same sheet travelling the other way. */
+  @keyframes bk-wave-back-cover {
+    from { transform: translate3d(0, calc(-100% - 3rem), 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-wave-back-reveal {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, calc(100% + 3rem), 0); }
+  }
+
+  @keyframes bk-panel-back-cover {
+    from { transform: translate3d(0, -100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-panel-back-reveal {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, 100%, 0); }
+  }
+
+  @keyframes bk-panel-cover {
+    from { transform: translate3d(0, 100%, 0); }
+    to { transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-panel-reveal {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(0, -100%, 0); }
+  }
+
+  @keyframes bk-label-in {
+    from { opacity: 0; transform: translate3d(0, 0.5rem, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  @keyframes bk-tide {
+    0% { opacity: 1; transform: scaleX(0); }
+    70% { opacity: 1; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(1); }
+  }
+
+  @keyframes bk-boot-spark {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+
+  /* The page arriving after a plain link. */
+  @keyframes bk-page-enter {
+    from { opacity: 0; transform: translate3d(1rem, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
   /* ------------------------------------------------------------- utilities */
   .anim-fade-in {
     animation: bk-fade-in var(--duration-slow) var(--ease-out-quart) both;
@@ -73,8 +168,11 @@
     animation: bk-drop-in var(--duration-base) var(--ease-out-expo) both;
   }
 
+  /* `backwards`, not `both`: a filled animation keeps owning `transform` after
+     it ends, which silently cancels `interactive-press` on the same element.
+     The last keyframe is the element's natural state, so nothing jumps. */
   .anim-scale-in {
-    animation: bk-scale-in var(--duration-base) var(--ease-out-expo) both;
+    animation: bk-scale-in var(--duration-base) var(--ease-out-expo) backwards;
   }
 
   .anim-slide-in-right {
@@ -85,6 +183,108 @@
      Capped so a long list never leaves the last row waiting. */
   [style*='--i'] {
     animation-delay: calc(min(var(--i, 0) * 45ms, 360ms));
+  }
+
+  .map-island {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bk-island-in var(--duration-slower) var(--ease-out-expo) both;
+  }
+
+  /* Pins wait for the islands, then land one by one. */
+  .map-pin {
+    animation: bk-pin-drop var(--duration-slower) var(--ease-out-expo) both;
+  }
+
+  .map-pin[style] {
+    animation-delay: calc(350ms + var(--i, 0) * 70ms);
+  }
+
+  /* One cycle is a turn for every town; --turn is a town's place round the
+     coast. Runs only while the map is on screen (`data-map-live`). */
+  .map-pin-pulse {
+    animation: bk-pin-pulse calc(var(--map-pins, 8) * 900ms) var(--ease-out-quart) infinite paused;
+    animation-delay: calc(1.2s + var(--turn, 0) * 900ms);
+  }
+
+  [data-map-live] .map-pin-pulse {
+    animation-play-state: running;
+  }
+
+  /* Cover is quick so the tap feels answered; the brief hold before the
+     reveal is what gives the destination's name time to be read. */
+  .page-wave-cover {
+    animation: bk-wave-cover var(--duration-base) var(--ease-in-out-soft) both;
+  }
+
+  .page-wave-reveal {
+    animation: bk-wave-reveal var(--duration-base) var(--ease-in-out-soft) 100ms both;
+  }
+
+  .page-bloom-cover {
+    animation: bk-bloom-cover var(--duration-slow) var(--ease-out-quart) both;
+  }
+
+  .page-bloom-reveal {
+    animation: bk-bloom-reveal var(--duration-base) var(--ease-out-quart) 100ms both;
+  }
+
+  .page-wave-back-cover {
+    animation: bk-wave-back-cover var(--duration-base) var(--ease-in-out-soft) both;
+  }
+
+  .page-wave-back-reveal {
+    animation: bk-wave-back-reveal var(--duration-base) var(--ease-in-out-soft) 100ms both;
+  }
+
+  .page-panel-cover {
+    animation: bk-panel-cover var(--duration-base) var(--ease-out-quart) both;
+  }
+
+  .page-panel-reveal {
+    animation: bk-panel-reveal var(--duration-base) var(--ease-in-out-soft) 100ms both;
+  }
+
+  .page-panel-back-cover {
+    animation: bk-panel-back-cover var(--duration-base) var(--ease-out-quart) both;
+  }
+
+  .page-panel-back-reveal {
+    animation: bk-panel-back-reveal var(--duration-base) var(--ease-in-out-soft) 100ms both;
+  }
+
+  .page-label {
+    animation: bk-label-in var(--duration-base) var(--ease-out-quart) 60ms both;
+  }
+
+  .nav-tide-run {
+    animation: bk-tide var(--duration-base) var(--ease-out-quart);
+  }
+
+  /* `backwards` for the reason given at .anim-scale-in, and because a filled
+     transform on `main` would become the containing block of every fixed bar
+     inside it. */
+  .page-enter {
+    animation: bk-page-enter var(--duration-base) var(--ease-out-quart) backwards;
+  }
+
+  /* The opening curtain (page-transition/boot.ts). Same fade as the boot mark
+     in index.html, with its delay set inline from the page-load clock, so
+     React's copy takes over at whatever opacity the boot mark had reached. */
+  .boot-curtain {
+    animation: bk-fade-in 450ms ease both;
+  }
+
+  .boot-spark {
+    animation: bk-boot-spark 1.6s ease-in-out infinite;
+  }
+
+  /* Scroll reveal (lib/use-reveal-on-scroll.ts). A paused animation holds its
+     first keyframe and its delay, so an entrance waits, unseen, until the
+     element is reached — instead of finishing below the fold on page load. */
+  [data-reveal]:not([data-revealed]):is(.anim-fade-in, .anim-rise-in, .anim-drop-in, .anim-scale-in),
+  [data-reveal]:not([data-revealed]) :is(.anim-fade-in, .anim-rise-in, .anim-drop-in, .anim-scale-in, .map-island, .map-pin) {
+    animation-play-state: paused;
   }
 
   /* --------------------------------------------------------- interactions */
@@ -251,8 +451,18 @@
     .anim-rise-in,
     .anim-drop-in,
     .anim-scale-in,
-    .anim-slide-in-right {
+    .anim-slide-in-right,
+    .map-island,
+    .map-pin {
       animation: bk-fade-in 0.01ms both;
+    }
+
+    .map-pin-pulse {
+      display: none;
+    }
+
+    .boot-spark {
+      animation: none;
     }
 
     .interactive-lift:hover,
@@ -294,6 +504,9 @@
    Both rules at the top of this file still apply: compositor-only properties,
    and short enough not to read as lag. A view transition freezes the page
    while it runs, so a slow one is worse here than anywhere else.
+
+   Inert today: the declarative <BrowserRouter> never starts a view transition,
+   so `.page-enter` above does this job (ADR 0034, second amendment).
    ========================================================================== */
 
 main {
