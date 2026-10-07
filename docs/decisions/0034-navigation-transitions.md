@@ -122,7 +122,12 @@ Everything else keeps the view transition above and gains the **tide**, a red
 line drawn across the top of the screen, inside 200ms.
 
 **What is relaxed, and what is not.** The overlays run about 0.5 seconds,
-over the 200ms rule. That is accepted only because they are confined to a few
+over the 200ms rule. The bloom stays fully drawn for at least a second more
+(`MIN_COVERED_MS`): it only runs between public pages, and lifted the moment
+the page was ready it flickered past before its label could be read. A
+navigation that starts while an overlay is up — a second tap, or the back
+button — takes the overlay over and renames it for the new destination rather
+than being dropped. That is accepted only because they are confined to a few
 links someone taps once in a visit, never tabs, filters, back links or the
 phone tab bar. Everything else from this record holds: no library, transform
 and opacity only, nothing in the first load beyond a little CSS and one
