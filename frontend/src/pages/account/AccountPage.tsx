@@ -153,8 +153,8 @@ function SettingRow({
   children,
 }: {
   icon: ReactNode;
-  label: string;
-  description?: string;
+  label: ReactNode;
+  description?: ReactNode;
   children: ReactNode;
 }) {
   const labelId = useId();
@@ -231,7 +231,7 @@ function AppearanceRow() {
 }
 
 /**
- * Language. Layout mirrors AppearanceRow exactly (ADR 0053).
+ * Language. Layout mirrors AppearanceRow exactly (ADR 0054).
  *
  * Each option is labelled in its own language, never translated into the
  * current one: the person who needs this control is the one who cannot read
@@ -242,17 +242,20 @@ function AppearanceRow() {
  * English, and finding that out by switching is worse than being told.
  */
 function LanguageRow() {
-  const { locale, choose, t } = useI18n();
+  const { locale, choose, message } = useI18n();
+  const label = message('account.language.label');
+  const description = message('account.language.description');
 
   return (
     <SettingRow
       icon={<Languages />}
-      label={t('account.language.label')}
-      description={t('account.language.description')}
+      label={<span lang={label.lang}>{label.text}</span>}
+      description={<span lang={description.lang}>{description.text}</span>}
     >
       <div
         role="radiogroup"
-        aria-label={t('account.language.label')}
+        aria-label={label.text}
+        lang={label.lang}
         className={cn(segmentTrackClass, 'flex w-full sm:inline-flex sm:w-auto')}
       >
         {LOCALES.map((option) => {

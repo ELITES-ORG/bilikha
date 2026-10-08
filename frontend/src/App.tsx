@@ -144,7 +144,7 @@ export default function App() {
       {/*
         Above the router so a language change re-renders every screen, and
         outside ToastProvider for no reason beyond reading order — neither
-        depends on the other (ADR 0053).
+        depends on the other (ADR 0054).
       */}
       <I18nProvider>
         <ToastProvider>

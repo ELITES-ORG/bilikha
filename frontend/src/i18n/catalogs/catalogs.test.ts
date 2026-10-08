@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { en } from './en';
 import { fil } from './fil';
 import { war } from './war';
-import { translate } from '../i18n-context';
+import { resolveMessage, translate } from '../i18n-context';
 
 /**
  * The guard that keeps a translator's file in step with the interface
- * (ADR 0053). Without it, a key added to English is simply absent elsewhere
+ * (ADR 0054). Without it, a key added to English is simply absent elsewhere
  * and nobody finds out until a reader meets an English string on a page they
  * chose to read in Waray.
  */
@@ -39,5 +39,19 @@ describe('catalogues', () => {
     // The whole file ships as empty strings, so this is the case that decides
     // whether an untranslated screen reads English or reads nothing at all.
     expect(translate({ 'signIn.heading': '' }, 'signIn.heading')).toBe(en['signIn.heading']);
+  });
+
+  it('identifies fallback copy as English for assistive technology', () => {
+    expect(resolveMessage({ 'signIn.heading': '' }, 'war', 'signIn.heading')).toEqual({
+      text: 'Sign in',
+      lang: 'en',
+    });
+  });
+
+  it('identifies translated copy as the selected language', () => {
+    expect(resolveMessage({ 'signIn.heading': 'Waray heading' }, 'war', 'signIn.heading')).toEqual({
+      text: 'Waray heading',
+      lang: 'war',
+    });
   });
 });

@@ -11,18 +11,36 @@ export interface I18nApi {
   locale: Locale;
   choose: (locale: Locale) => void;
   t: (key: MessageKey) => string;
+  message: (key: MessageKey) => ResolvedMessage;
+}
+
+export interface ResolvedMessage {
+  text: string;
+  lang: Locale;
 }
 
 /**
  * Resolve a key against a catalogue, falling back to English.
  *
  * An empty string falls back too, not just a missing key: an untranslated
- * entry is committed as `''` (ADR 0053), and rendering nothing would turn a
+ * entry is committed as `''` (ADR 0054), and rendering nothing would turn a
  * missing translation into a blank screen instead of an English one.
  */
 export function translate(catalog: Catalog, key: MessageKey): string {
   const value = catalog[key];
   return value !== undefined && value !== '' ? value : en[key];
+}
+
+/** Resolve both the copy and the language it is actually written in. */
+export function resolveMessage(
+  catalog: Catalog,
+  locale: Locale,
+  key: MessageKey,
+): ResolvedMessage {
+  const value = catalog[key];
+  return value !== undefined && value !== ''
+    ? { text: value, lang: locale }
+    : { text: en[key], lang: 'en' };
 }
 
 /**
@@ -35,6 +53,7 @@ export const I18nContext = createContext<I18nApi>({
   locale: 'en',
   choose: () => {},
   t: (key) => en[key],
+  message: (key) => ({ text: en[key], lang: 'en' }),
 });
 
 export function useI18n(): I18nApi {

@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { applyLocale, readLocale, setLocale, type Locale } from '@/lib/locale';
 import { en, type Catalog, type MessageKey } from './catalogs/en';
-import { I18nContext, translate, type I18nApi } from './i18n-context';
+import {
+  I18nContext,
+  resolveMessage,
+  translate,
+  type I18nApi,
+} from './i18n-context';
 
 /**
- * Holds the chosen language and its catalogue (ADR 0053).
+ * Holds the chosen language and its catalogue (ADR 0054).
  *
  * English is bundled and every other catalogue is a dynamic `import()`, so an
  * English-only visitor — which on a first visit is everyone — fetches nothing
@@ -20,7 +25,19 @@ const LOADERS: Record<Exclude<Locale, 'en'>, () => Promise<Catalog>> = {
   war: () => import('./catalogs/war').then((m) => m.war),
 };
 
-export function I18nProvider({ children }: { children: ReactNode }) {
+export type CatalogLoader = (locale: Exclude<Locale, 'en'>) => Promise<Catalog>;
+
+function loadCatalog(locale: Exclude<Locale, 'en'>): Promise<Catalog> {
+  return LOADERS[locale]();
+}
+
+export function I18nProvider({
+  children,
+  catalogLoader = loadCatalog,
+}: {
+  children: ReactNode;
+  catalogLoader?: CatalogLoader;
+}) {
   const [locale, setLocaleState] = useState<Locale>(() => readLocale());
   const [loaded, setLoaded] = useState<{ locale: Locale; catalog: Catalog } | null>(null);
 
@@ -31,18 +48,22 @@ export function I18nProvider({ children }: { children: ReactNode }) {
    * simply not the active one any more, so it is never used.
    */
   const catalog: Catalog = locale === 'en' || loaded?.locale !== locale ? en : loaded.catalog;
+  const catalogLocale: Locale = locale !== 'en' && loaded?.locale === locale ? locale : 'en';
 
-  // `lang` is what a screen reader picks a voice from, so it has to follow the
-  // choice even before the catalogue has arrived.
+  // Keep the preference on the document while declaring the app's existing
+  // hard-coded and fallback copy as English. A translated message overrides
+  // this nearer ancestor with its actual catalogue language.
   useEffect(() => {
     applyLocale(locale);
+    const appRoot = document.getElementById('root');
+    if (appRoot) appRoot.lang = 'en';
   }, [locale]);
 
   useEffect(() => {
     if (locale === 'en') return;
 
     let cancelled = false;
-    void LOADERS[locale]()
+    void catalogLoader(locale)
       .then((next) => {
         if (!cancelled) setLoaded({ locale, catalog: next });
       })
@@ -55,7 +76,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [locale]);
+  }, [catalogLoader, locale]);
 
   const choose = useCallback((next: Locale) => {
     setLocale(next);
@@ -63,8 +84,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback((key: MessageKey) => translate(catalog, key), [catalog]);
+  const message = useCallback(
+    (key: MessageKey) => resolveMessage(catalog, catalogLocale, key),
+    [catalog, catalogLocale],
+  );
 
-  const value = useMemo<I18nApi>(() => ({ locale, choose, t }), [locale, choose, t]);
+  const value = useMemo<I18nApi>(
+    () => ({ locale, choose, t, message }),
+    [locale, choose, t, message],
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

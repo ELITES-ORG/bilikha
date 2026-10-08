@@ -4,7 +4,7 @@ For whoever is writing Filipino or Waray copy. You do not need to run the app,
 and you never open a component.
 
 Decided in
-[ADR 0053](../decisions/0053-copy-is-translated-per-device-never-by-machine.md).
+[ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md).
 
 ---
 

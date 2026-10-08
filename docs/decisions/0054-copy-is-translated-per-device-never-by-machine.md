@@ -1,6 +1,6 @@
-# 0053. Language is a per-device choice, catalogues load on demand, and no string ships machine-translated
+# 0054. Language is a per-device choice, catalogues load on demand, and no string ships machine-translated
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-08
 - **Related:** [0026](./0026-dark-mode-follows-the-device.md) ·
   [0010](./0010-theme-static-tokens.md) ·
@@ -65,6 +65,14 @@ strings is not.
 
 Every catalogue entry is written or reviewed by a fluent speaker. A key with no
 human translation falls back to English, visibly and on purpose.
+
+The document's `<html lang>` records the chosen language. The application root
+remains `lang="en"` because most existing copy is still English, and every
+catalogue message declares the language of the value it actually renders. A
+real Filipino or Waray value therefore overrides the English ancestor, while
+an empty entry keeps the English voice. This preserves the device choice
+without asking assistive technology to pronounce fallback English as another
+language.
 
 This is the part of this ADR that is a rule rather than a technique. Machine
 output in Waray reads as plausible to a non-speaker and wrong to a speaker,

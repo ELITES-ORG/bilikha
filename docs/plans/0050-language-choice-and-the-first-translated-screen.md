@@ -1,8 +1,8 @@
-# 0050. Language choice, and the first translated screen
+# 0050. Language choice, and the first translation-ready screen
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** userMarcPaul
-- **Related:** [ADR 0053](../decisions/0053-copy-is-translated-per-device-never-by-machine.md) ·
+- **Related:** [ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md) ·
   [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [plan 0024](./0024-theme-choice.md) ·
   [constraints §3 and §5](../explanation/constraints.md) ·
@@ -13,15 +13,16 @@
 
 Somebody can choose Filipino or Waray in the account hub, the choice survives a
 reload on that device, and the chosen catalogue is fetched only when it is
-chosen. One screen — sign-in — is translated end to end as the worked example
-that every later screen copies.
+chosen. One screen — sign-in — reads all of its copy from the catalogue as the
+worked example that every later screen copies. Until fluent speakers supply the
+words, its empty Filipino and Waray entries intentionally render English.
 
 ## What this plan does not do
 
 **It ships no Filipino or Waray words.** Issue #26 leaves three decisions to
 reyxdz — which languages come first, who translates and reviews, and what the
 first pass covers — and
-[ADR 0053](../decisions/0053-copy-is-translated-per-device-never-by-machine.md)
+[ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md)
 rules out filling the gap with machine output. So the catalogues are committed
 with every key present and every value empty, the runtime falls back to
 English, and a translator fills them in without opening a component.
@@ -33,7 +34,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ## Rules for whoever executes this
 
-- **Read [ADR 0053](../decisions/0053-copy-is-translated-per-device-never-by-machine.md).**
+- **Read [ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md).**
   Especially §4 — no machine translation, ever, including "just to see the
   layout".
 - `frontend/src/lib/theme-preference.ts` is the shape to copy. Same storage
@@ -43,7 +44,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 ## Prerequisites
 
 - [x] Branch `feat/language-choice` cut fresh from `origin/main` (ADR 0052).
-- [ ] ADR 0053 Accepted. It is **Proposed**; only reyxdz accepts.
+- [x] ADR 0054 Accepted by reyxdz before the merge-ready repair.
 
 ## Progress
 
@@ -110,7 +111,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - [x] **Action.** Create `frontend/src/i18n/catalogs/fil.ts` and `war.ts` with
       every key from `en.ts` present and every value `''`. A header comment
       says plainly that a value must be written or reviewed by a fluent
-      speaker and that machine output is not acceptable (ADR 0053 §4).
+      speaker and that machine output is not acceptable (ADR 0054 §4).
 - [x] **Verify.** A test asserts the three catalogues have identical key sets,
       so a key added to English can never be silently missing elsewhere.
 
@@ -136,17 +137,18 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ---
 
-## Phase 4 — The first screen
+## Phase 4 — The first translation-ready screen
 
-### Step 4.1 — Translate sign-in
+### Step 4.1 — Prepare sign-in for human translation
 
 - [x] **Action.** Replace the literal strings in
       `frontend/src/pages/LoginPage.tsx` with `t('signIn.…')` keys and add them
       to `en.ts`. Sign-in is the worked example because it is small,
       self-contained, and the screen every returning registrant meets.
 - [x] **Verify.** The page is unchanged in English; switching language leaves
-      it in English too, because no translation exists yet. That is the
-      designed behaviour, not a bug.
+      it in English too, because no translation exists yet. Fallback copy is
+      marked `lang="en"` so assistive technology does not pronounce it as if it
+      were Filipino or Waray.
 
 ### Step 4.2 — Check it at 360px in both themes
 
@@ -178,6 +180,8 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 - [x] Choosing Filipino or Waray survives a reload on that device.
 - [x] `<html lang>` matches the choice.
+- [x] Existing hard-coded and fallback copy keeps English language metadata;
+      future translated catalogue values carry the selected language metadata.
 - [x] An English-only visitor downloads no catalogue but `en`.
 - [x] An untranslated key renders its English string.
 - [x] The three catalogues have identical key sets, enforced by a test.
@@ -198,5 +202,5 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - **Nothing stops a developer hard-coding a string back into a component**,
   where no translator will find it. A lint rule for literal text in JSX is the
   obvious guard and is not built.
-- **No first-visit hint.** `Accept-Language` is a poor signal here (ADR 0053),
+- **No first-visit hint.** `Accept-Language` is a poor signal here (ADR 0054),
   but some prompt for a first-time visitor is probably better than none.

@@ -197,7 +197,7 @@ The single radius is a decision, not a default
 
 - User-facing text goes in `src/i18n/catalogs/en.ts` and is read with `useT()`,
   not written into the component. A string hard-coded in JSX is one no
-  translator will ever find ([ADR 0053](../docs/decisions/0053-copy-is-translated-per-device-never-by-machine.md)).
+  translator will ever find ([ADR 0054](../docs/decisions/0054-copy-is-translated-per-device-never-by-machine.md)).
 - Layouts absorb longer text. Filipino and Waray run longer than English for
   the same sentence, so no fixed-width text containers and no truncation on
   anything load-bearing — checked at 360px.

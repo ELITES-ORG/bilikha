@@ -1,5 +1,5 @@
 /**
- * Language preference — English, Filipino, or Waray (ADR 0053).
+ * Language preference — English, Filipino, or Waray (ADR 0054).
  *
  * Deliberately the same shape as `theme-preference.ts`: a device-level choice
  * in `localStorage`, where the default stores nothing at all. Biliran is

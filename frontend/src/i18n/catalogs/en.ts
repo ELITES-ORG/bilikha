@@ -1,5 +1,5 @@
 /**
- * The English catalogue — the source of truth and the fallback (ADR 0053).
+ * The English catalogue — the source of truth and the fallback (ADR 0054).
  *
  * Bundled rather than fetched, because this *is* the interface text: moving a
  * string out of a component and into here moves bytes rather than adding
