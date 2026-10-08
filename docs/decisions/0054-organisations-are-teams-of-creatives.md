@@ -40,9 +40,10 @@ organisation and becomes its founder. The page enters review before it is public
 as a creative profile does ([0013](./0013-username-password-auth-sprint-1.md)),
 because an organisation name is easier to impersonate than a person's.
 
-**Forte.** A founder picks **one or two** of the nine domains, and within them
-the sub-domains that name the organisation — Gaming Studios, Film Production
-Companies, Crafts Cooperatives. They describe what the organisation does — they
+**Forte.** The founder picks **one or two** of the nine domains, and within them
+**up to five** sub-domains that name the organisation — Gaming Studios, Film
+Production Companies, Crafts Cooperatives — the same cap a creative profile has.
+They describe what the organisation does — they
 drive its page and where it appears in the directory. They do **not** restrict
 membership.
 
@@ -53,14 +54,15 @@ their consent for that. An invitation lasts **seven days**; once it expires the
 founder can send it again. Each member carries a free-text role title
 ("Full-stack developer", "QA") shown on the page, because job titles are not
 taxonomy and the nine domains are not ours to extend. A person may belong to
-more than one organisation.
+**up to five** organisations, counting the ones they founded.
 
 **Roles.** Three, and an organisation has exactly one founder:
 
 - **Founder** — edits the page, picks the domains and sub-domains, invites and
-  removes members, and is the only one who can invite **co-founders**.
-- **Co-founder** — runs the team alongside the founder: edits the page and
-  invites members, but cannot invite another co-founder.
+  removes members, and is the only one who can invite or remove **co-founders**.
+- **Co-founder** — runs the team alongside the founder: edits the page, invites
+  and removes members. Cannot invite co-founders or change the domains and
+  sub-domains. There is no limit on how many an organisation has.
 - **Member** — listed on the page, and can leave at any time.
 
 **The founder cannot walk away from a team.** A founder who leaves, or deletes
@@ -71,7 +73,8 @@ never exists without a founder.
 
 **Scope of the first release.** A public page and a team: name, logo, bio,
 domains, municipality, members with their titles and profile links. A client who
-contacts the organisation reaches the founder in an ordinary conversation.
+contacts the organisation reaches the founder alone, in an ordinary
+conversation; co-founders do not see it.
 Messaging, posting offers or signing agreements *as* the organisation come later
 and get their own decision.
 
@@ -117,9 +120,7 @@ together can be found as one. Members control their own listing.
 admins. Account deletion gains a precondition: the founder of an organisation
 with anyone else in it is stopped and sent to hand over first, which the
 deletion flow must explain rather than just refuse. Three roles mean three sets
-of permission checks. `users.account_type` becomes a dead column to remove.
-
-**Open, for the plan.** Whether to cap how many organisations one person can
-join, how many co-founders an organisation can have, and how many sub-domains
-it can pick; whether co-founders can remove members, or change the domains;
-and whether a client's message reaches only the founder or the co-founders too.
+of permission checks. A client's message reaching only the founder makes the
+founder a bottleneck for a busy team; sharing it with co-founders is the likely
+next step once acting on behalf of an organisation is decided.
+`users.account_type` becomes a dead column to remove.
