@@ -190,6 +190,20 @@
       "when": 1791308081163,
       "tag": "0026_strange_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791392011264,
+      "tag": "0027_lying_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791428518277,
+      "tag": "0028_backfill_session_user_id",
+      "breakpoints": true
     }
   ]
 }

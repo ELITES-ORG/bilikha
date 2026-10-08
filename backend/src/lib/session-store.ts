@@ -63,6 +63,10 @@ export class DrizzleSessionStore extends Store {
           sid,
           data: JSON.stringify(session),
           expiresAt: this.expiryFor(session),
+          // Denormalised out of `data` so revoking every session an account
+          // holds is one delete (ADR 0051). Null until the session carries a
+          // signed-in user, which is every session before login.
+          userId: session.userId ?? null,
         };
 
         await db
@@ -70,7 +74,7 @@ export class DrizzleSessionStore extends Store {
           .values(values)
           .onConflictDoUpdate({
             target: sessions.sid,
-            set: { data: values.data, expiresAt: values.expiresAt },
+            set: { data: values.data, expiresAt: values.expiresAt, userId: values.userId },
           });
 
         callback?.();
@@ -94,9 +98,12 @@ export class DrizzleSessionStore extends Store {
   override touch(sid: string, session: SessionData, callback?: () => void): void {
     void (async () => {
       try {
+        // `userId` too: with `rolling` and no `resave`, a session that is only
+        // being used is touched, never set, so this is what keeps `user_id`
+        // current for a session signed in by an older build (ADR 0051).
         await db
           .update(sessions)
-          .set({ expiresAt: this.expiryFor(session) })
+          .set({ expiresAt: this.expiryFor(session), userId: session.userId ?? null })
           .where(eq(sessions.sid, sid));
       } catch (error) {
         logger.warn({ err: error }, 'Session touch failed');

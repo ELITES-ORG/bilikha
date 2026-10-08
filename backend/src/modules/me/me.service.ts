@@ -406,6 +406,13 @@ export async function updateOwnProfile(
   return updated;
 }
 
+/**
+ * Also the way out of an administrator's password reset: `mustChangePassword`
+ * is cleared here, and the temporary password is what satisfies
+ * `currentPassword` (ADR 0051). That is what makes a temporary password
+ * single-use in practice — it stops working the moment it is used for the one
+ * thing it unlocks.
+ */
 export async function changePassword(userId: string, input: ChangePasswordInput): Promise<void> {
   const [user] = await db
     .select({ id: users.id, passwordHash: users.passwordHash, username: users.username })
@@ -429,7 +436,7 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
   const passwordHash = await hashPassword(input.newPassword);
   await db
     .update(users)
-    .set({ passwordHash, updatedAt: new Date() })
+    .set({ passwordHash, mustChangePassword: false, updatedAt: new Date() })
     .where(eq(users.id, userId));
 }
 

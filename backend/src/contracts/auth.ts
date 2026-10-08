@@ -16,4 +16,6 @@ export interface PublicUser {
   profileStatus: string | null;
   rejectionReason: string | null;
   avatarUrl: string | null;
+  /** An administrator reset this password; nothing works until it is changed. */
+  mustChangePassword: boolean;
 }

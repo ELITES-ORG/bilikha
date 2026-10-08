@@ -89,6 +89,11 @@ const ProfileSettingsPage = lazy(() =>
 const SecuritySettingsPage = lazy(() =>
   import('@/pages/account/SecuritySettingsPage').then((m) => ({ default: m.SecuritySettingsPage })),
 );
+const ForcePasswordChangePage = lazy(() =>
+  import('@/pages/account/ForcePasswordChangePage').then((m) => ({
+    default: m.ForcePasswordChangePage,
+  })),
+);
 
 const AgreementPage = lazy(() =>
   import('@/pages/AgreementPage').then((m) => ({ default: m.AgreementPage })),
@@ -302,6 +307,20 @@ export default function App() {
                 }
               />
               <Route path="/login" element={<LoginPage />} />
+              {/*
+                Where RequireAuth sends an account whose password an
+                administrator reset. Inside RequireAuth so it still needs a
+                session, and deliberately outside the account layout — there is
+                nothing else to navigate to (ADR 0051).
+              */}
+              <Route
+                path="/change-password"
+                element={
+                  <RequireAuth>
+                    <ForcePasswordChangePage />
+                  </RequireAuth>
+                }
+              />
               {/*
                 RequireAdmin wraps the lazy layout so a bounce never downloads
                 the admin chunk.

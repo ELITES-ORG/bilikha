@@ -151,6 +151,7 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `privacy_consent_at` / `terms_accepted_at` | `timestamptz` | |
 | `consent_version` | `text` | Bumped when policy text changes |
 | `last_login_at` | `timestamptz` null | |
+| `must_change_password` | `boolean` | Default false. Set by an administrator's password reset; while true `requireAuth` refuses every route but `GET /auth/me` and `POST /me/password` ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)) |
 | `avatar_key` | `text` null | Storage object key; one avatar per account |
 | `avatar_reviewed_at` | `timestamptz` null | Cleared on upload; set by admin media review |
 | `view_mode` | enum | `hiring` \| `creative`; default `hiring`. Flips to `creative` when a profile is created ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)) |
@@ -247,7 +248,7 @@ acknowledgement / media-removal decision.
 | `profile_id` | `uuid` FK null | `ON DELETE CASCADE`; null when a client avatar is removed with no creative profile |
 | `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
-| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` |
+| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` |
 | `reason` | `text` null | Required for rejections |
 | `created_at` | `timestamptz` | |
 
@@ -526,6 +527,7 @@ table.
 | `sid` | `text` PK | |
 | `data` | `text` | JSON session payload |
 | `expires_at` | `timestamptz` | Indexed for prune |
+| `user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`, indexed. Denormalised out of `data` so revoking every session an account holds is one delete ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)). Null until the session carries a signed-in user. Written on `set` and on `touch`; migration `0028` backfilled sessions that predate it |
 
 ---
 

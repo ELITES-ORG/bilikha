@@ -3,6 +3,8 @@ import type { NextFunction, Request, Response } from 'express';
 import { requireAuth } from './require-auth.js';
 import { requireAdmin } from './require-admin.js';
 import { makeAdmin, makeUser, suspend } from '../test/factories.js';
+import { resetAccountPassword } from '../modules/admin/admin.service.js';
+import { changePassword } from '../modules/me/me.service.js';
 
 /**
  * The guards read the account's current status from the database on every
@@ -69,6 +71,83 @@ describe('requireAuth', () => {
     await run(requireAuth, req);
 
     expect(destroy).toHaveBeenCalled();
+  });
+});
+
+describe('requireAuth after an administrator password reset', () => {
+  /**
+   * The gate is matched on `originalUrl`, so these pass one — `fakeRequest`
+   * alone would test the wrong thing.
+   */
+  function lockedRequest(userId: string, originalUrl: string): Request {
+    const destroy = (cb: (err?: unknown) => void) => cb();
+    return { session: { userId, destroy }, originalUrl } as unknown as Request;
+  }
+
+  async function lock(userId: string): Promise<void> {
+    const admin = await makeAdmin();
+    await resetAccountPassword({ adminId: admin.id, userId });
+  }
+
+  it('refuses an ordinary request with 403, not 401 — the session is still valid', async () => {
+    const user = await makeUser();
+    await lock(user.id);
+
+    const result = await run(requireAuth, lockedRequest(user.id, '/api/v1/offers'));
+    expect(result.passed).toBe(false);
+    expect((result.error as { status?: number }).status).toBe(403);
+    expect((result.error as { code?: string }).code).toBe('PASSWORD_CHANGE_REQUIRED');
+  });
+
+  it('lets through the two things a locked account needs', async () => {
+    const user = await makeUser();
+    await lock(user.id);
+
+    for (const url of ['/api/v1/auth/me', '/api/v1/me/password']) {
+      const result = await run(requireAuth, lockedRequest(user.id, url));
+      expect(result.passed, `blocked ${url}`).toBe(true);
+    }
+  });
+
+  it('is not fooled by a query string or a trailing slash', async () => {
+    const user = await makeUser();
+    await lock(user.id);
+
+    for (const url of ['/api/v1/me/password?x=1', '/api/v1/me/password/']) {
+      const result = await run(requireAuth, lockedRequest(user.id, url));
+      expect(result.passed, `blocked ${url}`).toBe(true);
+    }
+  });
+
+  it('does not let a near-miss path through', async () => {
+    const user = await makeUser();
+    await lock(user.id);
+
+    for (const url of ['/api/v1/me/passwords', '/api/v1/me/password/extra', '/api/v1/me']) {
+      const result = await run(requireAuth, lockedRequest(user.id, url));
+      expect(result.passed, `allowed ${url}`).toBe(false);
+    }
+  });
+
+  it('stops refusing once the password has been changed', async () => {
+    const user = await makeUser();
+    await lock(user.id);
+
+    const locked = await run(requireAuth, lockedRequest(user.id, '/api/v1/offers'));
+    expect(locked.passed).toBe(false);
+
+    const { temporaryPassword } = await resetAccountPassword({
+      adminId: (await makeAdmin()).id,
+      userId: user.id,
+    });
+    await changePassword(user.id, {
+      currentPassword: temporaryPassword,
+      newPassword: 'a-password-they-chose-1234',
+      confirmPassword: 'a-password-they-chose-1234',
+    });
+
+    const freed = await run(requireAuth, lockedRequest(user.id, '/api/v1/offers'));
+    expect(freed.passed).toBe(true);
   });
 });
 

@@ -146,3 +146,33 @@ export function useSetAccountStatus() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
   });
 }
+
+/**
+ * Issues a temporary password (ADR 0051).
+ *
+ * `retry: false` is load-bearing, not caution: every call mints a new password
+ * and invalidates the one before it, so an automatic retry would show the
+ * administrator a password that no longer works. Nothing caches the response
+ * either — it is the only time the password is readable.
+ */
+export function useResetAccountPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    retry: false,
+    mutationFn: async (input: {
+      userId: string;
+    }): Promise<{ username: string; temporaryPassword: string }> => {
+      try {
+        const { data } = await apiClient.post<
+          ApiResponse<{ id: string; username: string; temporaryPassword: string }>
+        >(`/admin/accounts/${input.userId}/reset-password`);
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    // The account's sessions are gone, which the queues and counts can reflect.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
+  });
+}

@@ -634,6 +634,58 @@ and could leave the queue with no administrator; and suspending another
 button beside everyone else's. Re-applying the current status is a no-op with
 `changed: false`.
 
+### `POST /api/v1/admin/accounts/:id/reset-password`
+
+No body. Issues a temporary password for an account that cannot get in, and
+returns it:
+
+```json
+{ "data": { "id": "…", "username": "juancruz", "temporaryPassword": "Abcd-efgh-jkmn-pqrt" } }
+```
+
+**That response is the only time the password exists outside its hash.** It is
+not stored, not logged, and not recoverable — calling again mints a different
+one and invalidates this one. Sixteen characters from an alphabet with no
+look-alikes, because an administrator reads it down a phone line.
+
+Three things happen in one transaction: the password becomes the temporary one,
+**every session that account holds is deleted**, and `must_change_password` is
+set. Suspension deliberately does not delete sessions — it is enforced per
+request ([ADR 0028](../decisions/0028-suspension-is-enforced-per-request.md)) —
+but a reset must, because those sessions are credentials issued against a
+password that no longer exists.
+
+A `password_reset` row is written to `moderation_actions` with `reason` null.
+There is no password in it.
+
+Refused with `400`: resetting **your own** password, which would delete the
+session you are using, and resetting another **administrator**, which stays a
+deliberate act at the database. Unknown account → `404`. Rate limited to ten
+per administrator per hour; over that, `429 RATE_LIMITED`.
+
+Recovery runs through an administrator rather than an emailed link because
+nobody has verified the address or number on their account
+([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)).
+Verify who you are talking to out of band first.
+
+### `PASSWORD_CHANGE_REQUIRED` — every authenticated route
+
+Once an administrator has reset an account's password, **every authenticated
+route refuses it** with:
+
+```json
+{ "error": { "code": "PASSWORD_CHANGE_REQUIRED", "message": "Set a new password before continuing." } }
+```
+
+`403`, not `401`: the session is valid, the account simply may not do anything
+else yet. Two routes are exempt, because they are what it needs to recover —
+`GET /api/v1/auth/me` and `POST /api/v1/me/password`. The latter takes the
+temporary password as `currentPassword` and clears the flag, which is what
+makes a temporary password single-use in practice.
+
+`GET /api/v1/auth/me` carries `mustChangePassword` so a client can route
+straight to the change form instead of discovering this on the next tap.
+
 ### `GET /api/v1/admin/taxonomy`
 
 The full domain tree **including archived items**, each with a

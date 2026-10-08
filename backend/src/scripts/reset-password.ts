@@ -5,8 +5,20 @@ import { hashPassword } from '../lib/password.js';
 import { normalizeUsername } from '../lib/username.js';
 
 /**
- * Sprint 1 has no self-service password reset (ADR 0013). This is the only
- * recovery path. Verify the person's identity out of band before running it.
+ * Sprint 1 has no self-service password reset (ADR 0013).
+ *
+ * **The recovery path is now the admin area** — Accounts → Reset password,
+ * which issues a temporary password, revokes the account's sessions and records
+ * who did it (ADR 0051). Prefer it: it needs no database credentials and leaves
+ * a trail.
+ *
+ * This script stays for the two cases that screen cannot serve: the first
+ * administrator, who has nobody to reset their password, and an environment
+ * broken enough that the admin area is unreachable. It writes no audit row and
+ * does not force a change, so the password it sets is permanent until someone
+ * changes it.
+ *
+ * Verify the person's identity out of band before running it.
  *
  *   npm --prefix backend run admin:reset-password -- <username> <new-password>
  */

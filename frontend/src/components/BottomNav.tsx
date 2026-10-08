@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Clock, House, MessageSquare, User } from 'lucide-react';
 import { useCurrentUser } from '@/features/auth/api';
+import { CHANGE_PASSWORD_PATH } from '@/features/auth/RequireAuth';
 import { useUnreadCount } from '@/features/conversations/api';
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -31,6 +32,16 @@ function isOnboarding(pathname: string) {
 }
 
 /**
+ * Same category as onboarding: a flow that must finish before the app is
+ * navigable at all. After an administrator's password reset the API refuses
+ * every route but this one (ADR 0051), so four tabs that each bounce straight
+ * back here would be offering exits that do not exist.
+ */
+function isForcedPasswordChange(pathname: string) {
+  return pathname === CHANGE_PASSWORD_PATH;
+}
+
+/**
  * Phone-only tab bar for signed-in users. Mounted once in App — not per page.
  * Desktop (`sm` and up) keeps the header nav; this component is `sm:hidden`.
  */
@@ -40,7 +51,7 @@ export function BottomNav() {
   const unread = unreadQuery.data ?? 0;
   const { pathname } = useLocation();
 
-  if (!user || isOnboarding(pathname)) return null;
+  if (!user || isOnboarding(pathname) || isForcedPasswordChange(pathname)) return null;
 
   return (
     <nav

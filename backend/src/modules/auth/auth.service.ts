@@ -158,6 +158,7 @@ async function toPublicUser(
     profileSlug: profile?.slug ?? null,
     profileStatus: profile?.status ?? null,
     rejectionReason: profile?.rejectionReason ?? null,
+    mustChangePassword: user.mustChangePassword,
     avatarUrl: user.avatarKey ? publicUrl(user.avatarKey) : null,
   };
 }

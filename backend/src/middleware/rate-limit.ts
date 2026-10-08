@@ -127,3 +127,30 @@ export const uploadLimiter = rateLimit({
     },
   },
 });
+
+/**
+ * An administrator issuing temporary passwords. Ten per hour, keyed on the
+ * administrator rather than the IP, because the thing worth bounding is one
+ * account's authority and admins may share an office connection.
+ *
+ * Not a guess at abuse volume so much as a ceiling on a compromised admin
+ * session: each reset mints a credential for someone else's account, so a
+ * stolen session should not be able to walk the whole user table in an
+ * afternoon. Failures do not consume the budget — being refused for resetting
+ * your own account must not cost a slot.
+ */
+export const adminPasswordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many password resets. Try again in an hour.',
+    },
+  },
+});
