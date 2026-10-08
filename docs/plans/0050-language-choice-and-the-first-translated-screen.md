@@ -98,7 +98,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 ### Step 2.2 — The provider and `useT`
 
 - [x] **Action.** Create `frontend/src/i18n/I18nProvider.tsx` and
-      `frontend/src/i18n/use-t.ts`. The provider holds the active locale and
+      `frontend/src/i18n/i18n-context.ts`. The provider holds the active locale and
       its catalogue, fetches a non-English catalogue with a dynamic
       `import()`, and falls back to English for a key whose value is empty or
       missing. Mount it in `frontend/src/App.tsx` above the router. No
