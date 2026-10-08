@@ -41,7 +41,7 @@ Number sequentially. Never renumber.
 | [0002](./0002-pern-with-client-rendered-spa.md) | PERN with a client-rendered SPA | Accepted |
 | [0003](./0003-postgres-native-search.md) | Postgres-native search, no PostGIS | Accepted |
 | [0004](./0004-unified-account-model.md) | Unified account, creative profile as a role | Accepted (refined by 0015) |
-| [0005](./0005-organization-pages.md) | Public pages for organisations only | Accepted |
+| [0005](./0005-organization-pages.md) | Public pages for organisations only | Accepted (amended by 0054) |
 | [0006](./0006-asymmetric-reviews.md) | Asymmetric, restrained reputation | Proposed |
 | [0007](./0007-phone-as-primary-identity.md) | Phone number as primary identity | Superseded by 0013 |
 | [0008](./0008-publish-immediately-with-tiers.md) | Publish immediately with verification tiers | Proposed (narrowed by 0013) |
@@ -90,3 +90,4 @@ Number sequentially. Never renumber.
 | [0051](./0051-an-admin-reset-issues-a-one-time-password.md) | An admin reset issues a one-time password, revokes every session, and forces a change | Accepted |
 | [0052](./0052-pull-requests-merge-by-squash-only.md) | Pull requests merge into `main` by squash only | Accepted |
 | [0053](./0053-errors-are-reported-to-sentry-without-personal-data.md) | Errors are reported to Sentry, without personal data | Proposed |
+| [0054](./0054-organisations-are-teams-of-creatives.md) | Organisations are teams of creatives, founded by one of them | Proposed |
