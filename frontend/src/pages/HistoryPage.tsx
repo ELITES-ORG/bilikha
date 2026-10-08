@@ -22,7 +22,7 @@ import { useHistory } from '@/features/conversations/api';
 import type { CreativeHistoryItem, HistoryItem } from '@/features/conversations/types';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { useSavedOffers, useUnsaveOffer } from '@/features/me/saved-offers';
-import { formatPesos, formatPriceRange } from '@/lib/money';
+import { formatBudgetRange, formatPesos, formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
@@ -169,7 +169,7 @@ export function HistoryPage() {
                                 <>
                                   <p className="truncate font-medium text-ink">{row.posting.title}</p>
                                   <p className="mt-0.5 text-sm text-ink-muted">
-                                    {formatPriceRange(
+                                    {formatBudgetRange(
                                       row.posting.budgetMinCentavos,
                                       row.posting.budgetMaxCentavos,
                                     )}

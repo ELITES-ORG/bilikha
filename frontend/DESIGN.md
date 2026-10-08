@@ -124,6 +124,10 @@ The single radius is a decision, not a default
 - A card that is a link uses one stretched link (`after:absolute after:inset-0`
   on its "View offer" link, the card `relative`). Any other control on the card
   — the save heart — is a sibling above that layer, never nested in the link.
+- Client postings use `PostingCatalogCard` (`features/postings/`). Postings carry
+  no image, so the card leads with a soft band naming the domain — never a
+  placeholder image that would be identical on every card. Grid columns come
+  from an 18rem minimum card width (`postingGridClass`), not from breakpoints.
 - `OfferCard` (`features/offers/`) is the one way an offer is shown in a grid:
   4:3 image, the craft as a badge over its corner, price pinned to the bottom so
   a row lines up. Hover is a border shift and a 3% image zoom — no lift, no

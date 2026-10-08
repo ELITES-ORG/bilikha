@@ -813,7 +813,9 @@ Creative feed. Requires a creative profile (`403` otherwise). Open, unexpired
 postings excluding the caller's own. Query: `domain`, `subdomain`,
 `municipality`, `page`, `limit`. Ordered by the caller's registered sub-domains
 first, then municipality match, then newest, then id. Each row includes
-sub-domain, municipality, client `{ name, avatarUrl }`, and `hasReplied`.
+sub-domain, municipality, client `{ name, avatarUrl }`, `hasReplied`, and
+`replyCount` — the same count as `/postings/mine`, so creatives can see how
+many others have already replied.
 
 ### `GET /api/v1/postings/:id`
 

@@ -464,7 +464,7 @@ registered — a client is not a creative.
 | `municipality_id` | `uuid` FK → `municipalities.id` | Where the work is; `ON DELETE RESTRICT` |
 | `title` | `text` | |
 | `description` | `text` null | Contact-detail patterns set `flagged_at` (advisory) |
-| `budget_min_centavos` / `budget_max_centavos` | `integer` null | Integer centavos; both null = budget on request |
+| `budget_min_centavos` / `budget_max_centavos` | `integer` null | Integer centavos; both null renders "Budget not given" (`formatBudgetRange`) |
 | `status` | enum | `open` \| `closed` \| `expired`; default `open` |
 | `expires_at` | `timestamptz` | Feed excludes rows with `expires_at <= now()` |
 | `reviewed_at` / `flagged_at` | `timestamptz` null | |

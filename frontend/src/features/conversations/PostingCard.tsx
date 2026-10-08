@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { formatPriceRange } from '@/lib/money';
+import { formatBudgetRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
 import type { MessagePosting } from './types';
 
@@ -53,7 +53,7 @@ export function PostingCard({ posting, tone = 'default', className, footer }: Po
             tone === 'onPrimary' ? 'text-on-primary-muted' : 'text-ink-muted',
           )}
         >
-          {formatPriceRange(posting.budgetMinCentavos, posting.budgetMaxCentavos)}
+          {formatBudgetRange(posting.budgetMinCentavos, posting.budgetMaxCentavos)}
         </p>
         {unavailable && (
           <p

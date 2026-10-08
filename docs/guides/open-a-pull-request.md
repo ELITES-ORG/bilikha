@@ -19,8 +19,8 @@ Nothing here is on trust ([ADR 0043](../decisions/0043-only-reyxdz-merges-and-re
 | `pre-push` hook | Every `git push` | The push, if typecheck, lint or the docs checks fail. Skippable — it is early warning, not the gate |
 | `check` (CI) | Every push | The merge, if typecheck, lint, tests, build, docs or commit messages fail |
 | `pr-audit` | Opening, editing or pushing to a pull request | The merge, if the description is incomplete or the diff breaks a rule below |
-| Code owner | — | The merge, until reyxdz approves. A push after approval dismisses it |
-| `main` rulesets | — | Anyone but reyxdz merging, and anyone merging past a red check |
+| Code owner | — | The merge, until reyxdz approves. A push after approval dismisses it, and the last push must be approved by someone other than whoever pushed it |
+| `main` rulesets | — | Anyone but reyxdz merging, anyone merging past a red check, and any merge method but squash |
 
 A failing pull request can still be opened and discussed. It cannot be merged.
 
@@ -104,6 +104,13 @@ same pull request and say why with `Budget raised: <why>`.
 
 - Branch from current `main`, and run `npm run setup` once per clone — it
   installs the commit hook.
+- **Merging is squash-only**
+  ([ADR 0052](../decisions/0052-pull-requests-merge-by-squash-only.md)), so a
+  merged branch's commits never reach `main`. Start every branch fresh with
+  `git switch -c <name> origin/main`; never reuse a branch whose pull request
+  has merged, and never branch from another open pull request's branch. The
+  branch is deleted on merge, and the pull request's Merged state — not
+  `git branch --merged` — is the record that it landed.
 - **No AI attribution** in commits or the description. The hook and CI both
   reject it ([ADR 0041](../decisions/0041-ai-attribution-is-blocked-by-a-hook-not-a-rule.md)).
 - **Never commit** `.env`, a secret, `tmp/`, or a cookie jar.
@@ -237,7 +244,9 @@ verify" must work from a fresh local setup.
 
 ## After the audit
 
-Merge → staging deploys automatically → check the change on
+Squash and merge (trim the prefilled message to a summary; the
+`Co-authored-by` lines GitHub adds stay) → staging deploys automatically →
+check the change on
 `bilikha-staging.vercel.app` → release:
 
 ```bash

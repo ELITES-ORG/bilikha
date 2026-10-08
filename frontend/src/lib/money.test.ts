@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   centavosToPesoInput,
+  formatBudgetRange,
   formatPriceRange,
   groupPesoDigits,
   pesoInputToCentavos,
@@ -62,6 +63,18 @@ describe('a peso round trip', () => {
   it('shows an empty field for no price', () => {
     expect(centavosToPesoInput(null)).toBe('');
     expect(centavosToPesoInput(undefined)).toBe('');
+  });
+});
+
+describe('formatBudgetRange', () => {
+  it("says the budget was not given, rather than an offer's price on request", () => {
+    expect(formatBudgetRange(null, null)).toBe('Budget not given');
+    expect(formatBudgetRange(undefined, undefined)).toBe('Budget not given');
+  });
+
+  it('formats a budget like a price otherwise', () => {
+    expect(formatBudgetRange(500_000, 1_500_000)).toBe('₱5,000 – ₱15,000');
+    expect(formatBudgetRange(1_500_000, null)).toBe('From ₱15,000');
   });
 });
 

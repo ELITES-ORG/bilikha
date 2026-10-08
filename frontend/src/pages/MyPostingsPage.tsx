@@ -17,7 +17,7 @@ import {
   effectivePostingStatus,
   formatPostingStatus,
 } from '@/lib/posting-time';
-import { formatPriceRange } from '@/lib/money';
+import { formatBudgetRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { AccountPageHeading } from './account/AccountPageHeading';
@@ -98,7 +98,7 @@ export function MyPostingsPage() {
                             {row.title}
                           </Link>
                           <p className="mt-1 text-sm text-ink-muted">
-                            {formatPriceRange(row.budgetMinCentavos, row.budgetMaxCentavos)}
+                            {formatBudgetRange(row.budgetMinCentavos, row.budgetMaxCentavos)}
                             {' · '}
                             {row.subdomain.name}
                             {' · '}
