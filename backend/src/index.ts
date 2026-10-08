@@ -1,13 +1,22 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
+import { initErrorReporting, reportCrash } from './lib/error-reporting.js';
 import { logger } from './lib/logger.js';
 import { isStorageConfigured, projectRefFromUrl, storageKeyClaims } from './lib/storage.js';
 import { closeDatabase } from './db/index.js';
+
+// Before anything takes a request, so the first failure is not the one missed.
+const reportingAs = initErrorReporting();
 
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
   logger.info(`Bilikha API listening on http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+  logger.info(
+    reportingAs
+      ? `Error reporting is on, as ${reportingAs}`
+      : 'SENTRY_DSN is not set — errors are logged here and reported nowhere else.',
+  );
 
   // Loud, because the symptom otherwise is "images silently do nothing".
   if (!isStorageConfigured()) {
@@ -65,7 +74,17 @@ async function shutdown(signal: string): Promise<void> {
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGINT', () => void shutdown('SIGINT'));
 
-process.on('unhandledRejection', (reason) => {
-  logger.fatal({ err: reason }, 'Unhandled promise rejection');
+/**
+ * A crash is logged, reported, and then exits — reporting first, because the
+ * exit is what makes it otherwise invisible: Render restarts the service and
+ * the only trace is a log line nobody was watching.
+ */
+async function crash(error: unknown, kind: 'uncaughtException' | 'unhandledRejection') {
+  logger.fatal({ err: error }, kind === 'unhandledRejection' ? 'Unhandled promise rejection' : 'Uncaught exception');
+  await reportCrash(error, kind);
   process.exit(1);
-});
+}
+
+process.on('unhandledRejection', (reason) => void crash(reason, 'unhandledRejection'));
+// Listening replaces Node's own print-and-exit, so crash() must exit itself.
+process.on('uncaughtException', (error) => void crash(error, 'uncaughtException'));

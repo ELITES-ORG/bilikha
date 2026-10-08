@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import { AppErrorBoundary } from '@/components/AppErrorBoundary'
 import { clearReloadGuard } from '@/lib/app-update'
+import { reportUncaughtErrors } from '@/lib/error-reporting'
 import { registerServiceWorker } from '@/lib/service-worker'
 // Imported for its side effect, and it must be here rather than in the
 // component that uses it: beforeinstallprompt fires once, early, and the
@@ -15,6 +16,10 @@ import '@/lib/install-prompt-store'
 // guard can be released. Outside React on purpose: it must run even if App
 // itself is what throws (ADR 0040).
 clearReloadGuard()
+
+// Before the first render, so an error during it is not missed. Only listens:
+// the reporting SDK is fetched on the first error, never on first paint.
+reportUncaughtErrors()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

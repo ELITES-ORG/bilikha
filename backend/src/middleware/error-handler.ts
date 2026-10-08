@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../lib/http-error.js';
+import { recordUnhandledError } from '../lib/error-reporting.js';
 import { logger } from '../lib/logger.js';
 import { isProduction } from '../config/env.js';
 
@@ -9,6 +10,10 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
 };
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  // Reported after the response is sent, and only if it is a 5xx — an
+  // AppError with a 5xx status is a failure too. See reportServerErrors.
+  recordUnhandledError(res, err);
+
   if (err instanceof ZodError) {
     res.status(400).json({
       error: {

@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { isChunkLoadError, reloadForNewBuildOnce } from '@/lib/app-update';
+import { reportError } from '@/lib/error-reporting';
 
 /**
  * The last thing between a thrown error and a white screen.
@@ -34,9 +35,13 @@ export class AppErrorBoundary extends Component<{ children: ReactNode }, State> 
     if (isChunkLoadError(error) && reloadForNewBuildOnce()) return;
 
     // Already reloaded once for this build, or not a chunk error. Show the
-    // message. Logged so it is visible in a console someone has open.
+    // message. Logged so it is visible in a console someone has open, and
+    // reported because nobody usually has one open. A chunk error that reaches
+    // here survived a reload — a broken deploy, not a stale tab — so it is
+    // reported too.
     if (this.state.recovering) this.setState({ recovering: false });
     console.error('Unhandled error', error, info.componentStack);
+    reportError(error, info.componentStack ?? undefined);
   }
 
   render() {

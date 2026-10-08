@@ -41,6 +41,20 @@ const envSchema = z.object({
     .optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(20).optional(),
   SUPABASE_STORAGE_BUCKET: z.string().trim().default('media'),
+
+  // Optional for the same reason as storage: without it nothing is reported and
+  // everything else works. `.env.example` leaves it empty, so empty means unset.
+  // See lib/error-reporting.ts and ADR 0053.
+  SENTRY_DSN: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().url('SENTRY_DSN must be the DSN URL from the Sentry project').optional(),
+  ),
+
+  // Set by Render on every service, never by hand. They name the deployment the
+  // way the hostname does for the frontend: the branch cannot be misconfigured,
+  // a hand-typed SENTRY_ENVIRONMENT could. Absent everywhere but Render.
+  RENDER_GIT_BRANCH: z.string().trim().optional(),
+  RENDER_GIT_COMMIT: z.string().trim().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

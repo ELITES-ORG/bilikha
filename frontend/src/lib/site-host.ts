@@ -13,3 +13,17 @@ export const PRODUCTION_ORIGIN = `https://${PRODUCTION_HOST}`;
 export function isProductionHost(hostname: string): boolean {
   return hostname.toLowerCase() === PRODUCTION_HOST;
 }
+
+export type DeploymentEnvironment = 'production' | 'staging' | 'local';
+
+/**
+ * The environment an error report is filed under (ADR 0053). Same rule as the
+ * banner: production is matched exactly, so a preview can never file as
+ * production. Previews count as staging — they call the staging API.
+ */
+export function deploymentEnvironment(hostname: string): DeploymentEnvironment {
+  if (isProductionHost(hostname)) return 'production';
+  const host = hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return 'local';
+  return 'staging';
+}

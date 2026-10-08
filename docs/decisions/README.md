@@ -89,3 +89,4 @@ Number sequentially. Never renumber.
 | [0050](./0050-loading-states-are-skeletons-of-the-page.md) | Loading states are skeletons of the page | Accepted |
 | [0051](./0051-an-admin-reset-issues-a-one-time-password.md) | An admin reset issues a one-time password, revokes every session, and forces a change | Accepted |
 | [0052](./0052-pull-requests-merge-by-squash-only.md) | Pull requests merge into `main` by squash only | Accepted |
+| [0053](./0053-errors-are-reported-to-sentry-without-personal-data.md) | Errors are reported to Sentry, without personal data | Proposed |

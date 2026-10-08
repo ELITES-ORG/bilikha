@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isProductionHost, PRODUCTION_ORIGIN } from './site-host';
+import { deploymentEnvironment, isProductionHost, PRODUCTION_ORIGIN } from './site-host';
 
 /**
  * The staging banner is shown everywhere this says false. The failure that
@@ -34,5 +34,22 @@ describe('PRODUCTION_ORIGIN', () => {
   it('points at the production hostname over https', () => {
     expect(new URL(PRODUCTION_ORIGIN).hostname).toBe('bilikha.vercel.app');
     expect(new URL(PRODUCTION_ORIGIN).protocol).toBe('https:');
+  });
+});
+
+describe('deploymentEnvironment', () => {
+  it('is production only on the production hostname', () => {
+    expect(deploymentEnvironment('bilikha.vercel.app')).toBe('production');
+  });
+
+  it('files staging and every preview as staging', () => {
+    expect(deploymentEnvironment('bilikha-staging.vercel.app')).toBe('staging');
+    expect(deploymentEnvironment('bilikha-git-feat-x-elites-org.vercel.app')).toBe('staging');
+    expect(deploymentEnvironment('evil-bilikha.vercel.app')).toBe('staging');
+  });
+
+  it('files a laptop as local', () => {
+    expect(deploymentEnvironment('localhost')).toBe('local');
+    expect(deploymentEnvironment('127.0.0.1')).toBe('local');
   });
 });

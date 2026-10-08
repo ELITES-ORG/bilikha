@@ -124,6 +124,7 @@ Environment variables:
 | Name | Notes |
 |---|---|
 | `VITE_API_BASE_URL` | Must be `/api/v1`. Relative, no host |
+| `VITE_SENTRY_DSN` | The `bilikha-web` DSN, the same on both projects — see [Sentry](#sentry--error-reports). Optional. Inlined at build time, so a change needs a redeploy |
 
 **Hobby plan cannot deploy private organisation repositories.** This is why the
 repository is public. If it ever returns to private, Vercel needs a Pro plan or
@@ -166,6 +167,7 @@ environments**:
 | `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`). Optional: if absent the API still boots and images are simply disabled |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
+| `SENTRY_DSN` | The `bilikha-api` DSN, the same on both services — see [Sentry](#sentry--error-reports). Optional: if absent the API reports nothing and otherwise runs unchanged |
 
 **Never set `PORT`.** Render provides it; overriding it breaks routing.
 
@@ -212,6 +214,53 @@ Nothing here uses it; the API connects over the Postgres wire protocol.
 **Do not enable it.** Supabase is a Postgres host, nothing more. In particular
 do not wire up Supabase Auth — see
 [ADR 0013](../decisions/0013-username-password-auth-sprint-1.md).
+
+---
+
+## Sentry — error reports
+
+What reaches it, and what never does:
+[ADR 0053](../decisions/0053-errors-are-reported-to-sentry-without-personal-data.md).
+
+| Setting | Value |
+|---|---|
+| Plan | Developer (free) |
+| Projects | `bilikha-web` (Browser JavaScript) and `bilikha-api` (Node.js) |
+| Environments | `production`, `staging`, `local` — set by the code, not by a variable |
+| Alerts | Filtered to the `production` environment |
+
+**One project per side, not per environment.** Staging and production send to
+the same DSN and are told apart by the environment on every report — decided
+by the hostname in the browser and by Render's `RENDER_GIT_BRANCH` on the API,
+neither of which can be set wrongly by hand. Filter the issue list to
+`production` and staging noise never hides a production problem. If staging
+ever threatens the free plan's monthly quota, give it its own projects and DSNs;
+the code does not change.
+
+On **both** projects, when they are created:
+
+- Settings → Security & Privacy → **Prevent Storing of IP Addresses**: on.
+- Settings → Security & Privacy → **Data Scrubber** and **Use Default
+  Scrubbers**: on (the default). A second net behind the code's own scrubbing.
+
+Not set up: **source maps.** Browser stack traces arrive minified. Uploading
+maps needs an auth token in both Vercel builds; see the ADR's consequences.
+
+### Checking it works
+
+Signed in as an administrator on the environment being checked, both from the
+browser console:
+
+- **API:** `fetch('/api/v1/admin/error-check', { method: 'POST' })`. Answers
+  500; `bilikha-api` gets *Deliberate error check, sent by an administrator*.
+- **Frontend:**
+  `setTimeout(() => { throw new Error('Deliberate error check from the console') })`.
+  `bilikha-web` gets it, with the route as `:param` wherever the URL had a slug
+  or an id. Reload before checking again: identical consecutive errors are
+  deduplicated.
+
+Each should arrive under the right environment, with no user, no cookie, no
+request body and no URL — only the route pattern.
 
 ---
 
@@ -264,6 +313,5 @@ Deployments → *Promote to Production* on a previous one.
 | Item | Why it matters |
 |---|---|
 | Database backups | Supabase free retains very little. Needed before real accounts |
-| Error tracking | Nothing reports runtime errors users hit |
 | Custom domain | Cosmetic; the proxy means it is not structural |
 | `render.yaml` blueprint | Render config is dashboard-only and not reproducible |
