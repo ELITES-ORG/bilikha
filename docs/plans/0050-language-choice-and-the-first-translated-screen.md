@@ -49,11 +49,11 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. The locale itself | 0 / 3 | Not started |
-| 2. The runtime | 0 / 3 | Not started |
-| 3. The control | 0 / 2 | Not started |
-| 4. The first screen | 0 / 2 | Not started |
-| 5. Documentation | 0 / 2 | Not started |
+| 1. The locale itself | 3 / 3 | Done |
+| 2. The runtime | 3 / 3 | Done |
+| 3. The control | 2 / 2 | Done |
+| 4. The first screen | 2 / 2 | Done |
+| 5. Documentation | 2 / 2 | Done |
 
 ---
 
@@ -61,26 +61,26 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ### Step 1.1 — The locale module
 
-- [ ] **Action.** Create `frontend/src/lib/locale.ts` mirroring
+- [x] **Action.** Create `frontend/src/lib/locale.ts` mirroring
       `theme-preference.ts`: a `Locale` union (`'en' | 'fil' | 'war'`), the
       `bilikha-locale` storage key, `parseLocale`, `readLocale`,
       `setLocale`, and `applyLocale` which sets `document.documentElement.lang`.
       English stores nothing, as `system` does for the theme.
-- [ ] **Verify.** `npm --prefix frontend run typecheck` passes.
+- [x] **Verify.** `npm --prefix frontend run typecheck` passes.
 
 ### Step 1.2 — Test the storage rules
 
-- [ ] **Action.** Create `frontend/src/lib/locale.test.ts`, following
+- [x] **Action.** Create `frontend/src/lib/locale.test.ts`, following
       `theme-preference.test.ts`: an unknown or absent value reads as `en`;
       choosing `en` clears the key rather than writing it; a throwing
       `localStorage` does not crash the caller.
-- [ ] **Verify.** `npm --prefix frontend run test` passes.
+- [x] **Verify.** `npm --prefix frontend run test` passes.
 
 ### Step 1.3 — `<html lang>` follows the choice
 
-- [ ] **Action.** `applyLocale` sets `lang` on `<html>`. `frontend/index.html`
+- [x] **Action.** `applyLocale` sets `lang` on `<html>`. `frontend/index.html`
       ships `lang="en"`, which stays as the pre-paint default.
-- [ ] **Verify.** Switching to Filipino sets `document.documentElement.lang`
+- [x] **Verify.** Switching to Filipino sets `document.documentElement.lang`
       to `fil`; a reload keeps it.
 
 ---
@@ -89,29 +89,29 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ### Step 2.1 — The English catalogue
 
-- [ ] **Action.** Create `frontend/src/i18n/catalogs/en.ts` exporting a flat
+- [x] **Action.** Create `frontend/src/i18n/catalogs/en.ts` exporting a flat
       object of dotted keys. It is the source of truth and the fallback, and
       it is bundled, because it is the interface text rather than an extra.
-- [ ] **Verify.** `npm --prefix frontend run typecheck` passes.
+- [x] **Verify.** `npm --prefix frontend run typecheck` passes.
 
 ### Step 2.2 — The provider and `useT`
 
-- [ ] **Action.** Create `frontend/src/i18n/I18nProvider.tsx` and
+- [x] **Action.** Create `frontend/src/i18n/I18nProvider.tsx` and
       `frontend/src/i18n/use-t.ts`. The provider holds the active locale and
       its catalogue, fetches a non-English catalogue with a dynamic
       `import()`, and falls back to English for a key whose value is empty or
       missing. Mount it in `frontend/src/App.tsx` above the router. No
       dependency.
-- [ ] **Verify.** `t` returns the English string for an untranslated key, not
+- [x] **Verify.** `t` returns the English string for an untranslated key, not
       the key itself and not an empty string. Covered by a test.
 
 ### Step 2.3 — The empty catalogues
 
-- [ ] **Action.** Create `frontend/src/i18n/catalogs/fil.ts` and `war.ts` with
+- [x] **Action.** Create `frontend/src/i18n/catalogs/fil.ts` and `war.ts` with
       every key from `en.ts` present and every value `''`. A header comment
       says plainly that a value must be written or reviewed by a fluent
       speaker and that machine output is not acceptable (ADR 0053 §4).
-- [ ] **Verify.** A test asserts the three catalogues have identical key sets,
+- [x] **Verify.** A test asserts the three catalogues have identical key sets,
       so a key added to English can never be silently missing elsewhere.
 
 ---
@@ -120,17 +120,17 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ### Step 3.1 — Language in the account hub
 
-- [ ] **Action.** Add a `LanguageRow` to `frontend/src/pages/account/AccountPage.tsx`,
+- [x] **Action.** Add a `LanguageRow` to `frontend/src/pages/account/AccountPage.tsx`,
       directly mirroring `AppearanceRow` — same `SettingRow`, same
       `segmentTrackClass` radiogroup. Label each language in its own language
       (`English`, `Filipino`, `Waray`), never in English, because the person
       who needs the control is the one who cannot read the English label.
-- [ ] **Verify.** `npm --prefix frontend run lint` and `typecheck` pass.
+- [x] **Verify.** `npm --prefix frontend run lint` and `typecheck` pass.
 
 ### Step 3.2 — The budget does not move
 
-- [ ] **Action.** None; this is the check.
-- [ ] **Verify.** `npm --prefix frontend run build && npm run check:bundle`.
+- [x] **Action.** None; this is the check.
+- [x] **Verify.** `npm --prefix frontend run build && npm run check:bundle`.
       `fil` and `war` appear as their own chunks in the build output, not in
       the entry, and the initial figures are unchanged.
 
@@ -140,19 +140,19 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ### Step 4.1 — Translate sign-in
 
-- [ ] **Action.** Replace the literal strings in
+- [x] **Action.** Replace the literal strings in
       `frontend/src/pages/LoginPage.tsx` with `t('signIn.…')` keys and add them
       to `en.ts`. Sign-in is the worked example because it is small,
       self-contained, and the screen every returning registrant meets.
-- [ ] **Verify.** The page is unchanged in English; switching language leaves
+- [x] **Verify.** The page is unchanged in English; switching language leaves
       it in English too, because no translation exists yet. That is the
       designed behaviour, not a bug.
 
 ### Step 4.2 — Check it at 360px in both themes
 
-- [ ] **Action.** Render sign-in at 360px, light and dark, with the longest
+- [x] **Action.** Render sign-in at 360px, light and dark, with the longest
       placeholder text available.
-- [ ] **Verify.** No horizontal scroll; nothing truncated.
+- [x] **Verify.** No horizontal scroll; nothing truncated.
 
 ---
 
@@ -160,29 +160,29 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ### Step 5.1 — A guide for whoever translates
 
-- [ ] **Action.** Create `docs/guides/translate-the-interface.md`: where the
+- [x] **Action.** Create `docs/guides/translate-the-interface.md`: where the
       catalogues are, that English is the source, that an empty value falls
       back, the no-machine-translation rule and why, and how to add a language.
       Aimed at a translator, not a developer.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ### Step 5.2 — Point the UI guide at it
 
-- [ ] **Action.** Add a line to `frontend/DESIGN.md` saying user-facing copy
+- [x] **Action.** Add a line to `frontend/DESIGN.md` saying user-facing copy
       goes in a catalogue, not in a component.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ---
 
 ## Acceptance
 
-- [ ] Choosing Filipino or Waray survives a reload on that device.
-- [ ] `<html lang>` matches the choice.
-- [ ] An English-only visitor downloads no catalogue but `en`.
-- [ ] An untranslated key renders its English string.
-- [ ] The three catalogues have identical key sets, enforced by a test.
-- [ ] Sign-in reads from the catalogue, and is unchanged on screen.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
+- [x] Choosing Filipino or Waray survives a reload on that device.
+- [x] `<html lang>` matches the choice.
+- [x] An English-only visitor downloads no catalogue but `en`.
+- [x] An untranslated key renders its English string.
+- [x] The three catalogues have identical key sets, enforced by a test.
+- [x] Sign-in reads from the catalogue, and is unchanged on screen.
+- [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
       `npm run check:bundle` pass, with the budget unchanged.
 
 ## Follow-ups
