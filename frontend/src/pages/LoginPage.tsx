@@ -12,8 +12,20 @@ import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
+import { useI18n } from '@/i18n/i18n-context';
 
 export function LoginPage() {
+  const { message } = useI18n();
+  const copy = {
+    eyebrow: message('signIn.eyebrow'),
+    heading: message('signIn.heading'),
+    intro: message('signIn.intro'),
+    username: message('signIn.username'),
+    password: message('signIn.password'),
+    submit: message('signIn.submit'),
+    register: message('signIn.register'),
+    noSelfService: message('signIn.noSelfService'),
+  };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = safeReturnPath(searchParams.get('next'));
@@ -45,15 +57,19 @@ export function LoginPage() {
           size="sm"
           onClick={transitionTo('bloom')}
         >
-          Register
+          <span lang={copy.register.lang}>{copy.register.text}</span>
         </ButtonLink>
       }
       banner={<RegistrationStatusBanner />}
     >
-      <Eyebrow>Welcome back</Eyebrow>
-      <h1 className="u-serif mt-4 text-4xl text-ink md:text-5xl">Sign in</h1>
-      <p className="mt-3 max-w-md text-md text-ink-muted">
-        Use the username and password you chose at registration.
+      <Eyebrow>
+        <span lang={copy.eyebrow.lang}>{copy.eyebrow.text}</span>
+      </Eyebrow>
+      <h1 lang={copy.heading.lang} className="u-serif mt-4 text-4xl text-ink md:text-5xl">
+        {copy.heading.text}
+      </h1>
+      <p lang={copy.intro.lang} className="mt-3 max-w-md text-md text-ink-muted">
+        {copy.intro.text}
       </p>
 
       <form onSubmit={(event) => void onSubmit(event)} className="mt-10 max-w-md space-y-5" noValidate>
@@ -67,14 +83,14 @@ export function LoginPage() {
         )}
 
         <Input
-          label="Username"
+          label={<span lang={copy.username.lang}>{copy.username.text}</span>}
           required
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
         <Input
-          label="Password"
+          label={<span lang={copy.password.lang}>{copy.password.text}</span>}
           type="password"
           required
           autoComplete="current-password"
@@ -89,12 +105,11 @@ export function LoginPage() {
           loading={login.isPending}
           iconRight={<ArrowRight className="size-4" aria-hidden="true" />}
         >
-          Sign in
+          <span lang={copy.submit.lang}>{copy.submit.text}</span>
         </Button>
 
-        <p className="text-sm text-ink-subtle">
-          Forgotten your password? An administrator must reset it — there is no self-service
-          reset in this release.
+        <p lang={copy.noSelfService.lang} className="text-sm text-ink-subtle">
+          {copy.noSelfService.text}
         </p>
       </form>
     </AuthShell>
