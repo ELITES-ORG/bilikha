@@ -429,6 +429,134 @@
     animation: bk-spin 0.7s linear infinite;
   }
 
+  /* ------------------------------------------------------------- glitch */
+  /* `GlitchImage`, after the Elites site's headings. The two layers are the
+     image as a mask over a token colour. Offsets are a share of the image's
+     own width, not em: the heading this came from is display size, and an em
+     offset on a 16px logo moves it less than a pixel. `clip-path` paints but
+     never lays out, and the image is a few dozen pixels, so it is the one
+     exception to compositor-only here. */
+  .bk-glitch {
+    position: relative;
+    display: inline-block;
+  }
+
+  .bk-glitch-base {
+    display: block;
+    height: 100%;
+    width: auto;
+  }
+
+  .bk-glitch-layer {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+    pointer-events: none;
+    -webkit-mask: var(--glitch-mask) center / contain no-repeat;
+    mask: var(--glitch-mask) center / contain no-repeat;
+  }
+
+  .bk-glitch-layer-a {
+    background-color: var(--color-palayok-500);
+  }
+
+  .bk-glitch-layer-b {
+    background-color: var(--color-ink);
+  }
+
+  .bk-glitch[data-glitch] .bk-glitch-base {
+    animation: bk-glitch-base 0.42s steps(1) both;
+  }
+
+  .bk-glitch[data-glitch] .bk-glitch-layer {
+    visibility: visible;
+  }
+
+  .bk-glitch[data-glitch] .bk-glitch-layer-a {
+    animation: bk-glitch-slice-a 0.42s steps(1) both;
+  }
+
+  .bk-glitch[data-glitch] .bk-glitch-layer-b {
+    animation: bk-glitch-slice-b 0.42s steps(1) both;
+  }
+
+  @keyframes bk-glitch-base {
+    0% {
+      transform: translate3d(2%, 0, 0) skewX(-6deg);
+    }
+    18% {
+      transform: translate3d(-2.5%, 0, 0);
+    }
+    36% {
+      transform: none;
+    }
+    62% {
+      transform: translate3d(1.2%, 0, 0) skewX(4deg);
+    }
+    80%,
+    100% {
+      transform: none;
+    }
+  }
+
+  @keyframes bk-glitch-slice-a {
+    0% {
+      clip-path: inset(12% 0 64% 0);
+      transform: translate3d(-5%, 0, 0);
+    }
+    16% {
+      clip-path: inset(58% 0 18% 0);
+      transform: translate3d(4%, 0, 0);
+    }
+    32% {
+      clip-path: inset(30% 0 52% 0);
+      transform: translate3d(-3%, 0, 0);
+    }
+    48% {
+      clip-path: inset(76% 0 4% 0);
+      transform: translate3d(6%, 0, 0);
+    }
+    64% {
+      clip-path: inset(4% 0 84% 0);
+      transform: translate3d(-2%, 0, 0);
+    }
+    80% {
+      clip-path: inset(44% 0 40% 0);
+      transform: translate3d(3.5%, 0, 0);
+    }
+    100% {
+      clip-path: inset(100% 0 0 0);
+      transform: none;
+    }
+  }
+
+  @keyframes bk-glitch-slice-b {
+    0% {
+      clip-path: inset(68% 0 14% 0);
+      transform: translate3d(4%, 0, 0);
+    }
+    20% {
+      clip-path: inset(8% 0 76% 0);
+      transform: translate3d(-4.5%, 0, 0);
+    }
+    40% {
+      clip-path: inset(40% 0 38% 0);
+      transform: translate3d(2.5%, 0, 0);
+    }
+    60% {
+      clip-path: inset(86% 0 2% 0);
+      transform: translate3d(-5%, 0, 0);
+    }
+    80% {
+      clip-path: inset(22% 0 66% 0);
+      transform: translate3d(2%, 0, 0);
+    }
+    100% {
+      clip-path: inset(100% 0 0 0);
+      transform: none;
+    }
+  }
+
   /* ------------------------------------------------------- reduced motion */
   /* Honour the OS setting properly: cut movement, keep opacity changes so
      state transitions remain perceptible rather than snapping. */
@@ -475,6 +603,10 @@
     }
 
     .skeleton::after {
+      display: none;
+    }
+
+    .bk-glitch-layer {
       display: none;
     }
   }
