@@ -42,8 +42,10 @@ committees, and resorts — not individuals hiring a logo designer.
 - Organisations need real accounts with multiple staff — a PIO team, not one
   person's Gmail. Hence `organizations` and `organization_members`.
 - Roughly a fifth of the sub-domains are themselves organisations (production
-  companies, cooperatives, broadcasting stations, theatre companies). The
-  registration flow must branch early on individual vs organisation.
+  companies, cooperatives, broadcasting stations, theatre companies). They are
+  founded by a creative and joined by invitation, not chosen at registration —
+  see [ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md),
+  which also defers the client-side PIO team above.
 
 ## 3. Supply-side users are on budget Android over metered data
 
