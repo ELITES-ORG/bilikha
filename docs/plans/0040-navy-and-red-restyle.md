@@ -90,9 +90,9 @@ state or component behaviour.
 
 ### Step 4.2 — The admin layout
 
-- [x] **Action.** `AdminLayout` still shows the plain-text "Bilikha" header,
-  and the review queue's tabs keep the old underline style. Restyle both to
-  match — found in review, left for the next pull request.
+- [x] **Action.** Replace `AdminLayout`'s plain-text "Bilikha" header with the
+  `Wordmark`, and move the review queue from its old underline tabs to the
+  shared admin tab treatment.
 - [x] **Verify.** The header uses `Wordmark`; the queue uses `Tabs` with its
   counts, scrolling sideways on a phone. Every admin page seen at 1280px in
   light and dark, and the queue at 320 and 375px (issue #12).
