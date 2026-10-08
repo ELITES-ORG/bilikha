@@ -487,15 +487,17 @@ export async function listFeedPostings(
 
   const postingIds = rows.map((row) => row.id);
   const clientIds = [...new Set(rows.map((row) => row.userId))];
-  const [clientMap, replied] = await Promise.all([
+  const [clientMap, replied, replyMap] = await Promise.all([
     clientsForUserIds(clientIds),
     repliedPostingIds(userId, postingIds),
+    replyCountsForPostings(postingIds),
   ]);
 
   return {
     data: rows.map((row) => mapPostingRow(row, {
       client: clientMap.get(row.userId) ?? { name: 'Unknown', avatarUrl: null },
       hasReplied: replied.has(row.id),
+      replyCount: replyMap.get(row.id) ?? 0,
     })),
     total: totals?.total ?? 0,
   };

@@ -107,6 +107,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0045](./0045-audio-video-and-pdf-uploads.md) | Audio, video and PDF uploads, with limits per media type | Draft |
 | [0046](./0046-responsive-on-every-screen.md) | Responsive on every screen | In progress |
 | [0047](./0047-admin-managed-taxonomy.md) | Admin-managed taxonomy — create, edit, archive domains and sub-domains | In progress |
+| [0048](./0048-postings-as-a-card-catalog.md) | Client postings as a card catalog | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

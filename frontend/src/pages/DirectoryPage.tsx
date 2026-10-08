@@ -19,6 +19,11 @@ import {
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { usePostingsFeed } from '@/features/postings/api';
+import {
+  PostingCatalogCard,
+  PostingCatalogCardSkeleton,
+  postingGridClass,
+} from '@/features/postings/PostingCatalogCard';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useOfferSaving } from '@/features/me/use-offer-saving';
 import { usePublishedOffers } from '@/features/offers/api';
@@ -27,7 +32,6 @@ import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
-import { formatTimeLeft } from '@/lib/posting-time';
 import { cn } from '@/lib/cn';
 
 type DirectoryView = 'offers' | 'creatives';
@@ -441,7 +445,8 @@ export function DirectoryPage() {
               </p>
             )}
             {creativeHome && nearbyMunicipalityName && !municipality && (
-              <p className="mb-6 text-sm text-ink-muted">
+              <p className="mb-6 flex items-center gap-1.5 text-sm text-ink-muted">
+                <MapPin className="size-4 shrink-0 text-palayok-500" aria-hidden="true" />
                 {`Showing postings in ${nearbyMunicipalityName} higher in the list`}
               </p>
             )}
@@ -451,6 +456,12 @@ export function DirectoryPage() {
                 <ul className={offerGridClass} aria-label="Loading offers">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <OfferCardSkeleton key={i} />
+                  ))}
+                </ul>
+              ) : creativeHome ? (
+                <ul className={postingGridClass} aria-label="Loading postings">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <PostingCatalogCardSkeleton key={i} />
                   ))}
                 </ul>
               ) : (
@@ -621,47 +632,10 @@ export function DirectoryPage() {
             )}
 
             {creativeHome && postings.data && postings.data.data.length > 0 && (
-              <ul className="divide-y divide-hairline border-t border-hairline">
-                {postings.data.data.map((posting) => {
-                  const clientName = posting.client?.name ?? 'Client';
-                  return (
-                    <li key={posting.id}>
-                      <Link
-                        to={`/postings/${posting.id}`}
-                        className="group flex flex-col gap-4 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:gap-6"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
-                              {posting.title}
-                            </h2>
-                            <Badge tone="brand">{posting.subdomain.name}</Badge>
-                            {posting.hasReplied && <Badge tone="accent">Replied</Badge>}
-                          </div>
-                          <p className="mt-1 text-sm font-medium text-ink">
-                            {formatPriceRange(
-                              posting.budgetMinCentavos,
-                              posting.budgetMaxCentavos,
-                            )}
-                          </p>
-                          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-                            <MapPin className="size-3.5" aria-hidden />
-                            {posting.municipality.name}
-                            <Badge tone="neutral">{formatTimeLeft(posting.expiresAt)}</Badge>
-                          </p>
-                          <div className="mt-3 flex items-center gap-3">
-                            <Avatar
-                              src={posting.client?.avatarUrl}
-                              name={clientName}
-                              size="sm"
-                            />
-                            <p className="text-sm text-ink">{clientName}</p>
-                          </div>
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
+              <ul className={postingGridClass}>
+                {postings.data.data.map((posting) => (
+                  <PostingCatalogCard key={posting.id} posting={posting} />
+                ))}
               </ul>
             )}
 
