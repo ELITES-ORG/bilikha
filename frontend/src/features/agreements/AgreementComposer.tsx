@@ -318,14 +318,14 @@ export function AgreementComposer({
           maxLength={2000}
           value={form.notes}
           onChange={(event) => update('notes', event.target.value)}
-          className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
+          className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-navy-100 focus:outline-none"
         />
         <p className="text-xs text-ink-subtle">
           Anything the services do not say — what you need from the client, what is not included.
         </p>
       </div>
 
-      <div className="rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+      <div className="rounded-sm border border-hairline bg-slate-50 px-3 py-2">
         <p className="text-sm text-ink">
           Total {formatPesos(totalCentavos)}
           {endDate ? ` · ends ${formatDate(endDate)}` : ''}

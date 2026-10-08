@@ -63,7 +63,7 @@
 
   ::selection {
     background-color: var(--color-primary-soft);
-    color: var(--color-lawa-900);
+    color: var(--color-navy-900);
   }
 
   hr {
@@ -127,7 +127,7 @@
   @supports (scrollbar-width: thin) {
     * {
       scrollbar-width: thin;
-      scrollbar-color: var(--color-clay-300) transparent;
+      scrollbar-color: var(--color-slate-300) transparent;
     }
   }
 }
@@ -164,7 +164,7 @@
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-lawa-700);
+    color: var(--color-navy-700);
   }
 
   /* Hairline rule that fades out — used instead of a hard full-width border

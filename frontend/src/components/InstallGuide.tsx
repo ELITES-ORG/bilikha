@@ -61,7 +61,7 @@ export function InstallGuide() {
         <div className="flex flex-col gap-3">
           <div className="flex min-w-0 items-start gap-4">
             <span
-              className="grid size-9 shrink-0 place-items-center rounded-sm bg-primary-soft text-lawa-700"
+              className="grid size-9 shrink-0 place-items-center rounded-sm bg-primary-soft text-navy-700"
               aria-hidden="true"
             >
               <Download className="size-4" />

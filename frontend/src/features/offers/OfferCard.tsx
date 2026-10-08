@@ -69,12 +69,12 @@ export function SaveHeart({ save, className }: { save: OfferCardSave; className?
       onClick={save.onToggle}
       className={cn(
         'interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm',
-        'hover:text-lawa-700 disabled:opacity-60',
+        'hover:text-navy-700 disabled:opacity-60',
         className,
       )}
     >
       <Heart
-        className={cn('size-5', save.saved && 'fill-current text-palayok-500')}
+        className={cn('size-5', save.saved && 'fill-current text-red-500')}
         aria-hidden="true"
       />
     </button>
@@ -107,7 +107,7 @@ export function OfferCard({
     <Card
       as="li"
       className={cn(
-        'group relative flex flex-col overflow-hidden transition-colors hover:border-lawa-300',
+        'group relative flex flex-col overflow-hidden transition-colors hover:border-navy-300',
         className,
       )}
     >
@@ -162,7 +162,7 @@ export function OfferCard({
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-ink">{provider.name}</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
-                <MapPin className="size-3 text-palayok-500" aria-hidden="true" />
+                <MapPin className="size-3 text-red-500" aria-hidden="true" />
                 <span>{provider.municipality}</span>
                 {provider.nearby && <span>· Nearby</span>}
               </p>

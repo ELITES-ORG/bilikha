@@ -49,7 +49,7 @@ export function LegalLayout({
           <p className="mt-12 border-t border-hairline pt-6 text-sm">
             <Link
               to={other.to}
-              className="link-underline text-lawa-700"
+              className="link-underline text-navy-700"
               onClick={transitionTo('wave')}
             >
               {other.label}
@@ -77,7 +77,7 @@ export function LegalList({ items }: { items: ReactNode[] }) {
     <ul className="mt-3 space-y-2 text-md leading-relaxed text-ink-muted">
       {items.map((item, index) => (
         <li key={index} className="flex gap-3">
-          <span aria-hidden className="mt-2.5 size-1 shrink-0 rounded-full bg-clay-400" />
+          <span aria-hidden className="mt-2.5 size-1 shrink-0 rounded-full bg-slate-400" />
           <span className="min-w-0">{item}</span>
         </li>
       ))}

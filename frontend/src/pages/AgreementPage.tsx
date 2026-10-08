@@ -139,7 +139,7 @@ export function AgreementPage() {
               </div>
 
               {data.status === 'superseded' && (
-                <p className="mt-6 rounded-sm border border-hairline bg-clay-50 px-3 py-2 text-sm text-ink-muted text-pretty">
+                <p className="mt-6 rounded-sm border border-hairline bg-slate-50 px-3 py-2 text-sm text-ink-muted text-pretty">
                   This version was replaced.{' '}
                   {data.supersededById ? (
                     <Link to={`/agreements/${data.supersededById}`} className="underline">
@@ -210,7 +210,7 @@ export function AgreementPage() {
               </section>
 
               {data.acceptance && (
-                <section className="mt-6 rounded-md border border-hairline bg-clay-50 p-5">
+                <section className="mt-6 rounded-md border border-hairline bg-slate-50 p-5">
                   <h2 className="text-base font-medium text-ink">Accepted</h2>
                   <p className="mt-1 text-sm text-ink-muted">
                     {data.acceptance.acceptedByName ?? 'The client'} accepted these terms on{' '}

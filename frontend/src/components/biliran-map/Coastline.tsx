@@ -19,7 +19,7 @@ export function Coastline() {
         <path
           key={d.slice(0, 12)}
           d={d}
-          className="map-island fill-primary-soft stroke-lawa-300"
+          className="map-island fill-primary-soft stroke-navy-300"
           style={{ '--i': index } as CSSProperties}
           strokeWidth={1.5}
           strokeLinejoin="round"

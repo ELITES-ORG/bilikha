@@ -199,7 +199,7 @@ function ToastRow({
         <button
           type="button"
           onClick={() => onDismiss(toast.id)}
-          className="-mr-1 shrink-0 rounded-sm p-0.5 opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lawa-100"
+          className="-mr-1 shrink-0 rounded-sm p-0.5 opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-100"
           style={{ transitionDuration: 'var(--duration-fast)' }}
           aria-label="Dismiss notification"
         >

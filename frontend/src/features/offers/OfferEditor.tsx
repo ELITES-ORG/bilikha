@@ -509,7 +509,7 @@ export function OfferEditor() {
                       type="button"
                       className={cn(
                         'inline-flex size-11 items-center justify-center rounded-sm text-ink-muted transition-colors pointer-fine:size-9',
-                        'hover:bg-clay-100 hover:text-ink',
+                        'hover:bg-slate-100 hover:text-ink',
                       )}
                       aria-label={`More actions for ${offer.title}`}
                       aria-expanded={menuOpenId === offer.id}

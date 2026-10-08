@@ -124,7 +124,7 @@ function AccountRow({ account }: { account: AdminAccount }) {
             {account.profileSlug && (
               <p className="mt-1 text-sm text-ink-muted">
                 Creative profile:{' '}
-                <Link to={`/creatives/${account.profileSlug}`} className="link-underline text-lawa-700">
+                <Link to={`/creatives/${account.profileSlug}`} className="link-underline text-navy-700">
                   {account.profileSlug}
                 </Link>{' '}
                 · {account.profileStatus}

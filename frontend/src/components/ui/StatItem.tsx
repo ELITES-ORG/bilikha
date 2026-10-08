@@ -57,7 +57,7 @@ export function StatItem({
             href={href}
             className={cn(
               'inline-flex items-center gap-0.5 underline-offset-4 transition-colors after:absolute after:inset-0 group-hover:underline',
-              inverse ? 'group-hover:text-on-primary' : 'group-hover:text-lawa-700',
+              inverse ? 'group-hover:text-on-primary' : 'group-hover:text-navy-700',
             )}
           >
             {text}
@@ -79,7 +79,7 @@ export function StatItem({
         <span
           className={cn(
             'font-sans text-2xl font-extrabold tabular-nums sm:text-3xl',
-            inverse ? 'text-on-primary' : 'text-lawa-700',
+            inverse ? 'text-on-primary' : 'text-navy-700',
           )}
           data-numeric
         >

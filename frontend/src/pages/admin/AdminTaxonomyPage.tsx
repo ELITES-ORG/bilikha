@@ -206,7 +206,7 @@ function SubdomainRow({
   const archived = subdomain.archivedAt !== null;
 
   return (
-    <li className="rounded-sm border border-hairline bg-clay-50 p-3">
+    <li className="rounded-sm border border-hairline bg-slate-50 p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-base text-ink">{subdomain.name}</p>
@@ -358,7 +358,7 @@ function ItemActions({
 
   if (confirming) {
     return (
-      <div className="w-full space-y-2 rounded-sm border border-hairline bg-clay-50 p-3">
+      <div className="w-full space-y-2 rounded-sm border border-hairline bg-slate-50 p-3">
         <p className="text-sm text-ink">
           Delete <strong className="font-semibold">{item.name}</strong> permanently
           {craftCount > 0 && (
@@ -574,7 +574,7 @@ function CreateSubdomainForm({
   }
 
   return (
-    <div className="space-y-3 rounded-sm border border-hairline bg-clay-50 p-3">
+    <div className="space-y-3 rounded-sm border border-hairline bg-slate-50 p-3">
       <Input
         label="Name"
         maxLength={120}

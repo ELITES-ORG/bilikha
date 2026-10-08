@@ -109,7 +109,7 @@ function ReportRow({ report }: { report: RatingReport }) {
       <CardBody className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-sm text-ink-muted">
-            <Link to={`/creatives/${report.profileSlug}`} className="link-underline text-lawa-700">
+            <Link to={`/creatives/${report.profileSlug}`} className="link-underline text-navy-700">
               {report.creativeName}
             </Link>{' '}
             appealed a rating from {report.raterName}
@@ -119,7 +119,7 @@ function ReportRow({ report }: { report: RatingReport }) {
           </p>
         </div>
 
-        <div className="rounded-sm border border-hairline bg-clay-50 p-3">
+        <div className="rounded-sm border border-hairline bg-slate-50 p-3">
           <div className="flex flex-wrap items-center gap-2">
             <StarRow value={report.rating.stars} label={starsLabel(report.rating.stars)} />
             <span className="text-xs text-ink-subtle">

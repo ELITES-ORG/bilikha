@@ -59,7 +59,7 @@ export function ShareButton({ title, label }: { title: string; label: string }) 
     <button
       type="button"
       aria-label={label}
-      className="interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm hover:text-lawa-700"
+      className="interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm hover:text-navy-700"
       onClick={() => void share()}
     >
       <Share2 className="size-5" aria-hidden="true" />

@@ -58,7 +58,7 @@ export function AdminQueuePage() {
               className={cn(
                 'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
                 active
-                  ? 'border-lawa-700 text-ink'
+                  ? 'border-navy-700 text-ink'
                   : 'border-transparent text-ink-muted hover:text-ink',
               )}
             >
@@ -120,7 +120,7 @@ export function AdminQueuePage() {
                     <td className="py-3 pr-4">
                       <Link
                         to={`/admin/profiles/${row.id}`}
-                        className="font-medium text-lawa-800 link-underline"
+                        className="font-medium text-navy-800 link-underline"
                       >
                         {row.firstName} {row.lastName}
                       </Link>

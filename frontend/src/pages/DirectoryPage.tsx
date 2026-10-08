@@ -251,7 +251,7 @@ export function DirectoryPage() {
 
               <button
                 type="button"
-                className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-hairline-strong bg-surface text-ink-muted transition-colors hover:border-lawa-700 hover:text-lawa-700"
+                className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-hairline-strong bg-surface text-ink-muted transition-colors hover:border-navy-700 hover:text-navy-700"
                 aria-label="Quick filters"
                 aria-expanded={filtersOpen}
                 aria-controls="directory-filters"
@@ -296,7 +296,7 @@ export function DirectoryPage() {
                   </div>
                   <button
                     type="button"
-                    className="inline-flex size-8 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+                    className="inline-flex size-8 items-center justify-center rounded-sm text-ink-muted hover:bg-slate-100 hover:text-ink"
                     aria-label="Close filters"
                     onClick={() => setFiltersOpen(false)}
                   >
@@ -365,7 +365,7 @@ export function DirectoryPage() {
                             value={draftBudgetMin}
                             onChange={(e) => setDraftBudgetMin(e.target.value)}
                             onBlur={applyBudget}
-                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
+                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-navy-100 focus:outline-none"
                           />
                         </label>
                         <label className="flex flex-col gap-1.5 text-sm text-ink">
@@ -379,7 +379,7 @@ export function DirectoryPage() {
                             value={draftBudgetMax}
                             onChange={(e) => setDraftBudgetMax(e.target.value)}
                             onBlur={applyBudget}
-                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
+                            className="h-11 rounded-sm border border-hairline-strong bg-surface px-3.5 text-base tabular-nums focus:border-ring focus:ring-4 focus:ring-navy-100 focus:outline-none"
                           />
                         </label>
                       </div>
@@ -446,7 +446,7 @@ export function DirectoryPage() {
             )}
             {creativeHome && nearbyMunicipalityName && !municipality && (
               <p className="mb-6 flex items-center gap-1.5 text-sm text-ink-muted">
-                <MapPin className="size-4 shrink-0 text-palayok-500" aria-hidden="true" />
+                <MapPin className="size-4 shrink-0 text-red-500" aria-hidden="true" />
                 {`Showing postings in ${nearbyMunicipalityName} higher in the list`}
               </p>
             )}
@@ -648,7 +648,7 @@ export function DirectoryPage() {
                     <li key={profile.slug}>
                       <Link
                         to={`/creatives/${profile.slug}`}
-                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-clay-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
+                        className="group flex flex-col gap-2 py-6 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-start sm:justify-between sm:gap-8"
                       >
                         <div className="flex gap-4">
                           <Avatar
@@ -659,7 +659,7 @@ export function DirectoryPage() {
                           />
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <h2 className="u-display text-xl text-ink group-hover:text-lawa-700">
+                              <h2 className="u-display text-xl text-ink group-hover:text-navy-700">
                                 {profile.displayName ?? profile.fullName}
                               </h2>
                               {profile.isNearby && <Badge tone="accent">Nearby</Badge>}

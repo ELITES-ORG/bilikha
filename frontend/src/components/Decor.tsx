@@ -35,11 +35,11 @@ export function CornerBlob({
     >
       {/* A large navy lobe with a smaller red one tucked under its edge. */}
       <path
-        className="fill-palayok-500"
+        className="fill-red-500"
         d="M200 120c-22 4-40 22-44 48-3 18-14 30-30 32h74Z"
       />
       <path
-        className={onNavy ? 'fill-decor-on-primary' : 'fill-lawa-700'}
+        className={onNavy ? 'fill-decor-on-primary' : 'fill-navy-700'}
         d="M40 0c4 30 26 52 58 56 34 4 52 28 54 60 1 20 18 34 48 34V0Z"
       />
     </svg>
@@ -56,8 +56,8 @@ export function CornerWave({ className }: { className?: string }) {
       focusable="false"
       className={cn('pointer-events-none absolute', PLACEMENT['bottom-right'], className)}
     >
-      <path className="fill-palayok-500" d="M400 20C320 30 280 80 200 96 150 106 110 100 80 120l320 0Z" />
-      <path className="fill-lawa-700" d="M400 70C330 76 300 120 220 132 160 141 120 136 60 160h340Z" />
+      <path className="fill-red-500" d="M400 20C320 30 280 80 200 96 150 106 110 100 80 120l320 0Z" />
+      <path className="fill-navy-700" d="M400 70C330 76 300 120 220 132 160 141 120 136 60 160h340Z" />
     </svg>
   );
 }

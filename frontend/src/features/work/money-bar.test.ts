@@ -62,7 +62,7 @@ describe('moneySegments', () => {
       }),
     );
     expect(segments.map((s) => s.key)).toEqual(['completed', 'cancelled']);
-    expect(segments[1]!.fillClass).toBe('bg-clay-400');
+    expect(segments[1]!.fillClass).toBe('bg-slate-400');
   });
 
   it('flags labels that would not fit under 15%', () => {

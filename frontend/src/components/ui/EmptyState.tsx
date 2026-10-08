@@ -20,7 +20,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
     <div
       className={cn(
         'flex flex-col items-center rounded-lg border border-dashed border-hairline-strong',
-        'bg-clay-50/50 px-6 py-12 text-center',
+        'bg-slate-50/50 px-6 py-12 text-center',
         className,
       )}
     >

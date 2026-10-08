@@ -88,7 +88,7 @@ function Banner({
   const surfaces = {
     warning: 'border-warning-100 bg-warning-50 text-warning-700',
     danger: 'border-danger-100 bg-danger-50 text-danger-700',
-    neutral: 'border-hairline bg-clay-50 text-ink-muted',
+    neutral: 'border-hairline bg-slate-50 text-ink-muted',
   } as const;
 
   return (

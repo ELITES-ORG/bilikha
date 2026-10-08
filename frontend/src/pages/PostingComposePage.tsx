@@ -139,7 +139,7 @@ export function PostingComposePage() {
           <h1 className="u-display mt-4 text-3xl text-ink md:text-4xl">
             {isEdit ? 'Update your posting' : 'Describe the work you need'}
           </h1>
-          <p className="mt-4 flex max-w-xl items-start gap-2.5 rounded-sm bg-primary-soft px-4 py-3 text-sm text-lawa-800">
+          <p className="mt-4 flex max-w-xl items-start gap-2.5 rounded-sm bg-primary-soft px-4 py-3 text-sm text-navy-800">
             <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             Creatives whose sub-domains match will see this on their Home feed.
           </p>
@@ -240,7 +240,7 @@ export function PostingComposePage() {
           )}
 
           <p className="mt-8 text-sm text-ink-muted">
-            <Link to="/postings/mine" className="link-underline text-lawa-700">
+            <Link to="/postings/mine" className="link-underline text-navy-700">
               Your postings
             </Link>
           </p>

@@ -89,7 +89,7 @@ export function ProfileCraftFields({
             'placeholder:text-ink-subtle focus:outline-none focus-visible:outline-none',
             fieldErrors.bio
               ? 'border-danger-500 focus:border-danger-600 focus:ring-2 focus:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus:border-ring focus:ring-4 focus:ring-lawa-100',
+              : 'border-hairline-strong hover:border-slate-400 focus:border-ring focus:ring-4 focus:ring-navy-100',
           )}
         />
         {fieldErrors.bio && (

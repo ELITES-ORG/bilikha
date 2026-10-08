@@ -28,7 +28,7 @@ export function OfferCard({ offer, tone = 'default', className, footer }: OfferC
       className={cn(
         'overflow-hidden rounded-sm border',
         tone === 'onPrimary' && 'border-primary/40 bg-primary-active/40',
-        tone === 'onSurface' && 'border-hairline bg-clay-50',
+        tone === 'onSurface' && 'border-hairline bg-slate-50',
         tone === 'default' && 'border-hairline bg-surface',
         className,
       )}
@@ -46,7 +46,7 @@ export function OfferCard({ offer, tone = 'default', className, footer }: OfferC
             className="size-14 shrink-0 object-cover"
           />
         ) : (
-          <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
+          <div className="size-14 shrink-0 bg-slate-100" aria-hidden />
         )}
         <div className="min-w-0 flex-1">
           <p

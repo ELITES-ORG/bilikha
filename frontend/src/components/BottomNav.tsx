@@ -72,7 +72,7 @@ export function BottomNav() {
                 className={cn(
                   'flex h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5',
                   'text-2xs tracking-wide transition-colors',
-                  active ? 'font-bold text-lawa-700' : 'font-medium text-ink-subtle hover:text-ink',
+                  active ? 'font-bold text-navy-700' : 'font-medium text-ink-subtle hover:text-ink',
                 )}
               >
                 <span className="relative inline-flex">

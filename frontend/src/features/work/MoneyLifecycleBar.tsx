@@ -21,10 +21,10 @@ export function MoneyLifecycleBar({ money }: { money: WorkSummary['money'] }) {
   return (
     <div className="mt-4" data-testid="money-lifecycle-bar">
       {/*
-        clay-100 track + hairline bounds the lightest lawa steps so they read
+        slate-100 track + hairline bounds the lightest navy steps so they read
         as data (rules 4–5). Paper-coloured 2px gaps separate adjacent fills.
       */}
-      <div className="rounded-xs border border-hairline bg-clay-100 p-0.5">
+      <div className="rounded-xs border border-hairline bg-slate-100 p-0.5">
         <div
           className="flex h-10 gap-0.5 overflow-hidden rounded-xs bg-paper"
           role="img"

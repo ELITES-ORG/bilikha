@@ -24,22 +24,22 @@ export interface MoneySegmentDef {
 }
 
 /**
- * Lifecycle order. Fill tokens are the measured five-step lawa spread plus
- * clay for cancelled (plan 0029 rules 2–5). Class names are static so Tailwind
+ * Lifecycle order. Fill tokens are the measured five-step navy spread plus
+ * slate for cancelled (plan 0029 rules 2–5). Class names are static so Tailwind
  * emits the CSS.
  */
 export const MONEY_SEGMENT_DEFS = [
-  { key: 'proposed', label: 'Proposed', fillClass: 'bg-lawa-100', field: 'proposedCentavos' },
-  { key: 'agreed', label: 'Agreed', fillClass: 'bg-lawa-300', field: 'agreedCentavos' },
-  { key: 'inProgress', label: 'In progress', fillClass: 'bg-lawa-500', field: 'inProgressCentavos' },
+  { key: 'proposed', label: 'Proposed', fillClass: 'bg-navy-100', field: 'proposedCentavos' },
+  { key: 'agreed', label: 'Agreed', fillClass: 'bg-navy-300', field: 'agreedCentavos' },
+  { key: 'inProgress', label: 'In progress', fillClass: 'bg-navy-500', field: 'inProgressCentavos' },
   {
     key: 'awaitingConfirmation',
     label: 'Awaiting confirmation',
-    fillClass: 'bg-lawa-700',
+    fillClass: 'bg-navy-700',
     field: 'awaitingConfirmationCentavos',
   },
-  { key: 'completed', label: 'Completed', fillClass: 'bg-lawa-950', field: 'completedCentavos' },
-  { key: 'cancelled', label: 'Cancelled', fillClass: 'bg-clay-400', field: 'cancelledCentavos' },
+  { key: 'completed', label: 'Completed', fillClass: 'bg-navy-950', field: 'completedCentavos' },
+  { key: 'cancelled', label: 'Cancelled', fillClass: 'bg-slate-400', field: 'cancelledCentavos' },
 ] as const satisfies readonly MoneySegmentDef[];
 
 /**

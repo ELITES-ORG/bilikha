@@ -156,7 +156,7 @@ export function HistoryPage() {
                         <li key={row.posting?.id ?? row.conversationId}>
                           <Link
                             to={`/messages/${row.conversationId}`}
-                            className="flex gap-3 px-4 py-4 transition-colors hover:bg-clay-50"
+                            className="flex gap-3 px-4 py-4 transition-colors hover:bg-slate-50"
                           >
                             <Avatar
                               src={row.client.avatarUrl}
@@ -234,7 +234,7 @@ export function HistoryPage() {
                         <li key={rowKey}>
                           <Link
                             to={`/messages/${threadId}`}
-                            className="flex gap-3 px-4 py-4 transition-colors hover:bg-clay-50"
+                            className="flex gap-3 px-4 py-4 transition-colors hover:bg-slate-50"
                           >
                             {row.offer?.image ? (
                               <img
@@ -245,7 +245,7 @@ export function HistoryPage() {
                                 className="size-14 shrink-0 object-cover"
                               />
                             ) : (
-                              <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
+                              <div className="size-14 shrink-0 bg-slate-100" aria-hidden />
                             )}
 
                             <div className="min-w-0 flex-1">
@@ -325,7 +325,7 @@ export function HistoryPage() {
                               className="size-14 shrink-0 object-cover"
                             />
                           ) : (
-                            <div className="size-14 shrink-0 bg-clay-100" aria-hidden />
+                            <div className="size-14 shrink-0 bg-slate-100" aria-hidden />
                           )}
                           <div className="min-w-0">
                             <p className="truncate font-medium text-ink">{row.offer.title}</p>
@@ -384,7 +384,7 @@ export function HistoryPage() {
                       <li key={row.id}>
                         <Link
                           to={`/agreements/${row.id}`}
-                          className="block px-4 py-4 transition-colors hover:bg-clay-50"
+                          className="block px-4 py-4 transition-colors hover:bg-slate-50"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <p className="min-w-0 truncate font-medium text-ink">

@@ -263,8 +263,8 @@ export function Select({
             'focus:outline-none focus-visible:outline-none',
             error
               ? 'border-danger-500 focus-visible:border-danger-600 focus-visible:ring-4 focus-visible:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-lawa-100',
-            'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
+              : 'border-hairline-strong hover:border-slate-400 focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-navy-100',
+            'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
             className,
           )}
           style={{ transitionDuration: 'var(--duration-fast)' }}
@@ -324,13 +324,13 @@ export function Select({
                           // min-h keeps a comfortable touch target on a phone,
                           // where this list replaces the OS picker.
                           'min-h-11 pointer-fine:min-h-0 pointer-fine:py-1.5',
-                          option.disabled && 'cursor-not-allowed text-clay-500',
+                          option.disabled && 'cursor-not-allowed text-slate-500',
                           !option.disabled && isActive && 'bg-primary-soft',
                           !option.disabled && !isActive && 'text-ink',
                         )}
                       >
                         <span className="truncate">{option.label}</span>
-                        {isSelected && <Check className="size-4 shrink-0 text-lawa-700" aria-hidden />}
+                        {isSelected && <Check className="size-4 shrink-0 text-navy-700" aria-hidden />}
                       </li>
                     );
                   })}

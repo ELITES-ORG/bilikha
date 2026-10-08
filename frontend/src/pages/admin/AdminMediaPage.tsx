@@ -103,7 +103,7 @@ export function AdminMediaPage() {
                     loading="lazy"
                   />
                 ) : (
-                  <div className="aspect-square bg-clay-100" />
+                  <div className="aspect-square bg-slate-100" />
                 )}
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -132,7 +132,7 @@ export function AdminMediaPage() {
                   {item.profileSlug && (
                     <Link
                       to={`/creatives/${item.profileSlug}`}
-                      className="u-tap mt-1 inline-block text-sm text-lawa-800 underline-offset-2 hover:underline"
+                      className="u-tap mt-1 inline-block text-sm text-navy-800 underline-offset-2 hover:underline"
                     >
                       View profile
                     </Link>

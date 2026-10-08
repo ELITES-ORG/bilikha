@@ -25,8 +25,8 @@ import { cn } from '@/lib/cn';
 type Tone = 'neutral' | 'brand';
 
 const TONES: Record<Tone, string> = {
-  neutral: 'bg-clay-100 text-clay-700',
-  brand: 'bg-lawa-50 text-lawa-800',
+  neutral: 'bg-slate-100 text-slate-700',
+  brand: 'bg-navy-50 text-navy-800',
 };
 
 export interface CalloutProps extends HTMLAttributes<HTMLDivElement> {
@@ -70,7 +70,7 @@ Two correct options:
 
 ```tsx
 // 1. a lookup map of complete literals
-const BG: Record<Tone, string> = { neutral: 'bg-clay-100', brand: 'bg-lawa-50' };
+const BG: Record<Tone, string> = { neutral: 'bg-slate-100', brand: 'bg-navy-50' };
 
 // 2. read the token directly, for genuinely dynamic values
 <div style={{ backgroundColor: `var(--color-${prefix}-${step})` }} />

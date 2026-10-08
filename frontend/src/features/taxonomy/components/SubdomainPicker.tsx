@@ -82,7 +82,7 @@ export function SubdomainPicker({ selected, primary, onChange, error }: Subdomai
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => toggleDomain(domain.slug)}
-                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-clay-50"
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-sm font-medium text-ink">{domain.name}</span>
@@ -92,7 +92,7 @@ export function SubdomainPicker({ selected, primary, onChange, error }: Subdomai
                   </span>
                   <ChevronDown
                     className={cn(
-                      'size-4 text-clay-400 transition-transform',
+                      'size-4 text-slate-400 transition-transform',
                       isOpen && 'rotate-180',
                     )}
                     aria-hidden="true"
@@ -110,7 +110,7 @@ export function SubdomainPicker({ selected, primary, onChange, error }: Subdomai
                           <label
                             className={cn(
                               'flex cursor-pointer items-center gap-2 text-sm text-ink',
-                              disabled && 'cursor-not-allowed text-clay-400',
+                              disabled && 'cursor-not-allowed text-slate-400',
                             )}
                           >
                             <input

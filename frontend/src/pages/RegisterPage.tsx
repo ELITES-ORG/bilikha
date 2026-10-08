@@ -359,7 +359,7 @@ export function RegisterPage() {
               I have read and accept the{' '}
               <Link
                 to="/privacy"
-                className="link-underline text-lawa-700"
+                className="link-underline text-navy-700"
                 onClick={transitionTo('wave')}
               >
                 privacy notice
@@ -382,7 +382,7 @@ export function RegisterPage() {
               I accept the{' '}
               <Link
                 to="/terms"
-                className="link-underline text-lawa-700"
+                className="link-underline text-navy-700"
                 onClick={transitionTo('wave')}
               >
                 terms of use

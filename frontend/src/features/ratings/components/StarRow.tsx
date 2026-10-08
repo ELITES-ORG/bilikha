@@ -41,7 +41,7 @@ export function StarRow({ value, label, size = 'sm', className }: StarRowProps) 
           aria-hidden
           className={cn(
             SIZES[size],
-            star <= filled ? 'fill-palayok-500 text-palayok-600' : 'text-clay-300',
+            star <= filled ? 'fill-red-500 text-red-600' : 'text-slate-300',
           )}
         />
       ))}

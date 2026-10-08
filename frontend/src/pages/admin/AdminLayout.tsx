@@ -64,8 +64,8 @@ function AdminShell() {
                       className={cn(
                         'block rounded-sm px-3 py-2 text-sm font-medium transition-colors',
                         active
-                          ? 'bg-clay-100 text-ink'
-                          : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                          ? 'bg-slate-100 text-ink'
+                          : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
                       )}
                     >
                       {section.label}
@@ -117,8 +117,8 @@ function AdminPhoneNav({ pathname }: { pathname: string }) {
               className={cn(
                 'inline-flex h-11 shrink-0 items-center rounded-sm px-3 text-sm font-medium whitespace-nowrap transition-colors',
                 active
-                  ? 'bg-clay-100 text-ink'
-                  : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                  ? 'bg-slate-100 text-ink'
+                  : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
               )}
             >
               {section.label}

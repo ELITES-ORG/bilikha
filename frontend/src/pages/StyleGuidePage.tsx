@@ -401,7 +401,7 @@ export function StyleGuidePage() {
             {DURATIONS.map(([token, ms, use]) => (
               <Card key={token} elevation="flat">
                 <CardBody>
-                  <code className="text-sm font-medium text-lawa-700">--duration-{token}</code>
+                  <code className="text-sm font-medium text-navy-700">--duration-{token}</code>
                   <p className="mt-1 text-2xl tabular-nums">{ms}</p>
                   <p className="mt-1 text-xs text-ink-subtle">{use}</p>
                 </CardBody>
@@ -449,18 +449,18 @@ function ColourRamps() {
   return (
     <div className="flex flex-col gap-6">
       <Ramp
-        name="Clay — neutral"
-        prefix="clay"
+        name="Slate — neutral"
+        prefix="slate"
         steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
       />
       <Ramp
-        name="Lawa — primary"
-        prefix="lawa"
+        name="Navy — primary"
+        prefix="navy"
         steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]}
       />
       <Ramp
-        name="Palayok — accent (decorative only)"
-        prefix="palayok"
+        name="Red — accent (decorative only)"
+        prefix="red"
         steps={[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]}
       />
       <div className="grid gap-6 sm:grid-cols-3">
@@ -538,7 +538,7 @@ function Specimen({
       <span className={display ? 'u-display' : 'max-w-lg'} style={style}>
         {children}
       </span>
-      <span className="text-xs text-clay-400">{use}</span>
+      <span className="text-xs text-slate-400">{use}</span>
     </div>
   );
 }

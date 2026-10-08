@@ -26,7 +26,7 @@ export function PrivacyPage() {
         <p>
           The software is built and maintained for the province by{' '}
           <a
-            className="link-underline text-lawa-700"
+            className="link-underline text-navy-700"
             href="https://elitesys.org"
             target="_blank"
             rel="noopener noreferrer"
@@ -222,7 +222,7 @@ export function PrivacyPage() {
           They are handled by request while that is being built.{' '}
           {LEGAL_CONTACT ? (
             <>
-              Write to <a className="link-underline text-lawa-700" href={`mailto:${LEGAL_CONTACT}`}>{LEGAL_CONTACT}</a> and we will
+              Write to <a className="link-underline text-navy-700" href={`mailto:${LEGAL_CONTACT}`}>{LEGAL_CONTACT}</a> and we will
               do it by hand.
             </>
           ) : (
