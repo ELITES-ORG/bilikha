@@ -142,3 +142,6 @@ never push any other ref.
 merges.** Fill in the template GitHub pre-fills; the `pr-audit` check fails the
 pull request until it is complete. What each part is for, and what the audit
 checks, is in [`docs/guides/open-a-pull-request.md`](./docs/guides/open-a-pull-request.md).
+Merging is squash-only, so start every branch fresh from `origin/main` — never
+reuse a merged branch or branch from another open pull request's branch
+([ADR 0052](./docs/decisions/0052-pull-requests-merge-by-squash-only.md)).

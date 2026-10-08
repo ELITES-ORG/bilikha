@@ -87,3 +87,4 @@ Number sequentially. Never renumber.
 | [0048](./0048-one-radius-for-every-box.md) | One radius for every box | Accepted |
 | [0049](./0049-the-database-is-the-taxonomy-source-of-truth.md) | The database is the taxonomy's source of truth; archiving replaces deletion | Accepted |
 | [0050](./0050-loading-states-are-skeletons-of-the-page.md) | Loading states are skeletons of the page | Accepted |
+| [0052](./0052-pull-requests-merge-by-squash-only.md) | Pull requests merge into `main` by squash only | Accepted |
