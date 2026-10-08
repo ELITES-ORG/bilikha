@@ -232,7 +232,7 @@ function AppearanceRow() {
 }
 
 /**
- * Language. Layout mirrors AppearanceRow exactly (ADR 0054).
+ * Language. Layout mirrors AppearanceRow exactly (ADR 0055).
  *
  * Each option is labelled in its own language, never translated into the
  * current one: the person who needs this control is the one who cannot read

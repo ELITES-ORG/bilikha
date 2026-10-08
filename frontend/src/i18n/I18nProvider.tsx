@@ -9,7 +9,7 @@ import {
 } from './i18n-context';
 
 /**
- * Holds the chosen language and its catalogue (ADR 0054).
+ * Holds the chosen language and its catalogue (ADR 0055).
  *
  * English is bundled and every other catalogue is a dynamic `import()`, so an
  * English-only visitor — which on a first visit is everyone — fetches nothing

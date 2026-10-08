@@ -23,7 +23,7 @@ export interface ResolvedMessage {
  * Resolve a key against a catalogue, falling back to English.
  *
  * An empty string falls back too, not just a missing key: an untranslated
- * entry is committed as `''` (ADR 0054), and rendering nothing would turn a
+ * entry is committed as `''` (ADR 0055), and rendering nothing would turn a
  * missing translation into a blank screen instead of an English one.
  */
 export function translate(catalog: Catalog, key: MessageKey): string {

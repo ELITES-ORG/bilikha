@@ -6,7 +6,7 @@ import { resolveMessage, translate } from '../i18n-context';
 
 /**
  * The guard that keeps a translator's file in step with the interface
- * (ADR 0054). Without it, a key added to English is simply absent elsewhere
+ * (ADR 0055). Without it, a key added to English is simply absent elsewhere
  * and nobody finds out until a reader meets an English string on a page they
  * chose to read in Waray.
  */

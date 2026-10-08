@@ -1,4 +1,4 @@
-# 0054. Language is a per-device choice, catalogues load on demand, and no string ships machine-translated
+# 0055. Language is a per-device choice, catalogues load on demand, and no string ships machine-translated
 
 - **Status:** Accepted
 - **Date:** 2026-10-08

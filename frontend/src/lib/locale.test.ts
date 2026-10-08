@@ -9,7 +9,7 @@ import { LOCALE_STORAGE_KEY, parseLocale, readLocale, setLocale } from './locale
  * applies the choice to `<html lang>` as well as writing storage, and the
  * clearing-versus-writing branch is worth a test. Absent, unrecognised and throwing storage
  * all resolve to English, so a broken preference leaves somebody on the one
- * language the catalogue is guaranteed to have (ADR 0054).
+ * language the catalogue is guaranteed to have (ADR 0055).
  */
 describe('parseLocale', () => {
   it('accepts the two non-default languages', () => {

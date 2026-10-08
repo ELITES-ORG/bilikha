@@ -2,7 +2,7 @@
 
 - **Status:** Complete
 - **Owner:** userMarcPaul
-- **Related:** [ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md) ·
+- **Related:** [ADR 0055](../decisions/0055-copy-is-translated-per-device-never-by-machine.md) ·
   [ADR 0026](../decisions/0026-dark-mode-follows-the-device.md) ·
   [plan 0024](./0024-theme-choice.md) ·
   [constraints §3 and §5](../explanation/constraints.md) ·
@@ -22,7 +22,7 @@ words, its empty Filipino and Waray entries intentionally render English.
 **It ships no Filipino or Waray words.** Issue #26 leaves three decisions to
 reyxdz — which languages come first, who translates and reviews, and what the
 first pass covers — and
-[ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md)
+[ADR 0055](../decisions/0055-copy-is-translated-per-device-never-by-machine.md)
 rules out filling the gap with machine output. So the catalogues are committed
 with every key present and every value empty, the runtime falls back to
 English, and a translator fills them in without opening a component.
@@ -34,7 +34,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ## Rules for whoever executes this
 
-- **Read [ADR 0054](../decisions/0054-copy-is-translated-per-device-never-by-machine.md).**
+- **Read [ADR 0055](../decisions/0055-copy-is-translated-per-device-never-by-machine.md).**
   Especially §4 — no machine translation, ever, including "just to see the
   layout".
 - `frontend/src/lib/theme-preference.ts` is the shape to copy. Same storage
@@ -44,7 +44,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 ## Prerequisites
 
 - [x] Branch `feat/language-choice` cut fresh from `origin/main` (ADR 0052).
-- [x] ADR 0054 Accepted by reyxdz before the merge-ready repair.
+- [x] ADR 0055 Accepted by reyxdz before the merge-ready repair.
 
 ## Progress
 
@@ -111,7 +111,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - [x] **Action.** Create `frontend/src/i18n/catalogs/fil.ts` and `war.ts` with
       every key from `en.ts` present and every value `''`. A header comment
       says plainly that a value must be written or reviewed by a fluent
-      speaker and that machine output is not acceptable (ADR 0054 §4).
+      speaker and that machine output is not acceptable (ADR 0055 §4).
 - [x] **Verify.** A test asserts the three catalogues have identical key sets,
       so a key added to English can never be silently missing elsewhere.
 
@@ -202,5 +202,5 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - **Nothing stops a developer hard-coding a string back into a component**,
   where no translator will find it. A lint rule for literal text in JSX is the
   obvious guard and is not built.
-- **No first-visit hint.** `Accept-Language` is a poor signal here (ADR 0054),
+- **No first-visit hint.** `Accept-Language` is a poor signal here (ADR 0055),
   but some prompt for a first-time visitor is probably better than none.

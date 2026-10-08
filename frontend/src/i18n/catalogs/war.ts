@@ -3,7 +3,7 @@
  *
  * Every value here must be written or reviewed by a fluent speaker. Machine
  * translation is not acceptable in this file, including "just to see the
- * layout" (ADR 0054 §4): generated Waray reads as plausible to a
+ * layout" (ADR 0055 §4): generated Waray reads as plausible to a
  * non-speaker and wrong to a speaker, which is the worst combination for a
  * registry whose whole problem is trust in a small province.
  *
