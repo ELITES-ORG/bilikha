@@ -556,8 +556,8 @@ Sketched only. Nothing below is built, and the shapes will change.
 
 | Table | Holds | Decided in |
 |---|---|---|
-| `organizations` | Public pages for teams of creatives: one or two domains, an owner | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
-| `organization_members` | Creatives in an organisation: owner or member, a role title, invitation state | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
+| `organizations` | Public pages for teams of creatives: one or two domains and their sub-domains, exactly one founder | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
+| `organization_members` | Creatives in an organisation: founder, co-founder or member, a role title, a seven-day invitation | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
 

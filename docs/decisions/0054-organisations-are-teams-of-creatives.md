@@ -36,30 +36,42 @@ creatives join it by invitation. It is not an account type: nobody signs in *as*
 an organisation, and `users.account_type = 'organization'` is not used for it.
 
 **Founding.** Any account with a published creative profile can found an
-organisation and becomes its owner. The page enters review before it is public,
+organisation and becomes its founder. The page enters review before it is public,
 as a creative profile does ([0013](./0013-username-password-auth-sprint-1.md)),
 because an organisation name is easier to impersonate than a person's.
 
-**Forte.** The owner picks **one or two** of the nine domains. The domains
-describe what the organisation does — they drive its page and where it appears
-in the directory. They do **not** restrict membership.
+**Forte.** A founder picks **one or two** of the nine domains, and within them
+the sub-domains that name the organisation — Gaming Studios, Film Production
+Companies, Crafts Cooperatives. They describe what the organisation does — they
+drive its page and where it appears in the directory. They do **not** restrict
+membership.
 
-**Membership.** The owner invites creatives by username; any creative with a
+**Membership.** A founder invites creatives by username; any creative with a
 published profile can be invited, whatever their domains. Nobody is listed until
 they accept — an organisation page publishes its members, and RA 10173 needs
-their consent for that. Each member carries a free-text role title ("Full-stack
-developer", "QA") shown on the page, because job titles are not taxonomy and the
-nine domains are not ours to extend. A person may belong to more than one
-organisation.
+their consent for that. An invitation lasts **seven days**; once it expires the
+founder can send it again. Each member carries a free-text role title
+("Full-stack developer", "QA") shown on the page, because job titles are not
+taxonomy and the nine domains are not ours to extend. A person may belong to
+more than one organisation.
 
-**Roles.** Two: **owner** and **member**. The owner edits the page, picks the
-domains, invites and removes members, and can transfer ownership. A member is
-listed and can leave at any time. "Founder" is a label on the page recording who
-started it; ownership is the permission, and it moves.
+**Roles.** Three, and an organisation has exactly one founder:
+
+- **Founder** — edits the page, picks the domains and sub-domains, invites and
+  removes members, and is the only one who can invite **co-founders**.
+- **Co-founder** — runs the team alongside the founder: edits the page and
+  invites members, but cannot invite another co-founder.
+- **Member** — listed on the page, and can leave at any time.
+
+**The founder cannot walk away from a team.** A founder who leaves, or deletes
+their account, must first hand the founder role to one of the organisation's
+co-founders or members. Only an organisation with nobody else in it can lose its
+founder without a handover, and it closes with them. An organisation therefore
+never exists without a founder.
 
 **Scope of the first release.** A public page and a team: name, logo, bio,
 domains, municipality, members with their titles and profile links. A client who
-contacts the organisation reaches the owner in an ordinary conversation.
+contacts the organisation reaches the founder in an ordinary conversation.
 Messaging, posting offers or signing agreements *as* the organisation come later
 and get their own decision.
 
@@ -83,8 +95,17 @@ legitimately span domains; the domains say what the team sells, not who is on it
 one, and a forced second makes the page less true.
 
 **Finer roles from the start** (admin, editor, billing). Rejected until acting
-on behalf of an organisation exists; until then the only privileged actions are
-the owner's.
+on behalf of an organisation exists; until then the founder and co-founder
+split covers every privileged action.
+
+**Several equal founders, each able to add more.** Rejected: whoever can add
+founders controls the organisation, so that power stays with one person.
+Co-founders share the day-to-day work without it, and a team still is not
+blocked when the founder is away.
+
+**An admin reassigns an organisation whose founder deleted their account.**
+Rejected: it leaves a page in limbo and puts a judgement call on admins. Making
+the founder hand over first keeps the decision with the team.
 
 ## Consequences
 
@@ -93,12 +114,12 @@ rather than a second registration path. Creative groups that already work
 together can be found as one. Members control their own listing.
 
 **Bad.** One more public surface to moderate, and one more review queue for
-admins. Ownership transfer and an owner deleting their account both need
-handling: the organisation must not be orphaned, and must not vanish with its
-members' work. `users.account_type` becomes a dead column to remove.
+admins. Account deletion gains a precondition: the founder of an organisation
+with anyone else in it is stopped and sent to hand over first, which the
+deletion flow must explain rather than just refuse. Three roles mean three sets
+of permission checks. `users.account_type` becomes a dead column to remove.
 
-**Open, for the plan.** How long an invitation lasts; whether to cap how many
-organisations one person can join; what happens when the owner deletes their
-account without transferring (hide the page until an admin reassigns it is the
-likely answer); and whether organisations pick sub-domains such as Gaming
-Studios or Film Production Companies within their domains.
+**Open, for the plan.** Whether to cap how many organisations one person can
+join, how many co-founders an organisation can have, and how many sub-domains
+it can pick; whether co-founders can remove members, or change the domains;
+and whether a client's message reaches only the founder or the co-founders too.
