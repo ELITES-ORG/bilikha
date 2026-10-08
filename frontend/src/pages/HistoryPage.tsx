@@ -119,6 +119,7 @@ export function HistoryPage() {
 
           <Tabs
             label="History segments"
+            idPrefix="history"
             className="mt-8"
             value={segment}
             onChange={setSegment}
@@ -129,7 +130,12 @@ export function HistoryPage() {
             ]}
           />
 
-          <div className="mt-8">
+          <div
+            id={`history-panel-${segment}`}
+            role="tabpanel"
+            aria-labelledby={`history-tab-${segment}`}
+            className="mt-8"
+          >
             {segment === 'inquired' && creativeMode && (
               <>
                 {history.isPending && <ListRowsSkeleton lead="avatar" />}

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ButtonLink } from '@/components/ui';
+import { Wordmark } from '@/components/Wordmark';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -29,11 +30,8 @@ function AdminShell() {
         */}
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex min-w-0 items-center px-3 sm:w-56 sm:shrink-0 sm:px-4">
-            <Link
-              to="/"
-              className="u-display text-xl font-semibold text-ink sm:px-3"
-            >
-              Bilikha
+            <Link to="/" className="flex min-h-11 items-center sm:px-3">
+              <Wordmark />
             </Link>
           </div>
           <div className="pr-3 sm:pr-(--gutter)">

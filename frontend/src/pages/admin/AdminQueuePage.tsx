@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Inbox } from 'lucide-react';
 import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
 import type { QueueStatus } from '@/features/admin/types';
-import { Badge, Button, Container, EmptyState, Eyebrow, Skeleton } from '@/components/ui';
-import { cn } from '@/lib/cn';
+import { Badge, Button, Container, EmptyState, Eyebrow, Skeleton, Tabs } from '@/components/ui';
 
 const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
@@ -43,33 +42,36 @@ export function AdminQueuePage() {
         will see.
       </p>
 
-      <div className="mt-8 flex flex-wrap gap-2 border-b border-hairline pb-px">
-        {TABS.map((tab) => {
-          const count = counts.data?.[tab.status] ?? 0;
-          const active = status === tab.status;
-          return (
-            <button
-              key={tab.status}
-              type="button"
-              onClick={() => {
-                setStatus(tab.status);
-                setPage(1);
-              }}
-              className={cn(
-                'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
-                active
-                  ? 'border-lawa-700 text-ink'
-                  : 'border-transparent text-ink-muted hover:text-ink',
-              )}
-            >
+      {/* Four tabs with counts are wider than a phone, so the track scrolls
+          sideways rather than wrapping into what would read as two controls. */}
+      <Tabs
+        label="Queue"
+        idPrefix="queue"
+        className="u-no-scrollbar mt-8 overflow-x-auto *:shrink-0"
+        value={status}
+        onChange={(next) => {
+          setStatus(next);
+          setPage(1);
+        }}
+        items={TABS.map((tab) => ({
+          value: tab.status,
+          label: (
+            <>
               {tab.label}
-              <Badge tone={active ? 'brand' : 'neutral'}>{count}</Badge>
-            </button>
-          );
-        })}
-      </div>
+              <Badge tone={status === tab.status ? 'brand' : 'neutral'} data-numeric>
+                {counts.data?.[tab.status] ?? 0}
+              </Badge>
+            </>
+          ),
+        }))}
+      />
 
-      <div className="mt-8">
+      <div
+        id={`queue-panel-${status}`}
+        role="tabpanel"
+        aria-labelledby={`queue-tab-${status}`}
+        className="mt-8"
+      >
         {list.isPending && (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (

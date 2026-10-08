@@ -233,6 +233,7 @@ export function DirectoryPage() {
               {!creativeHome && (
                 <Tabs
                   label="Directory sections"
+                  idPrefix="directory"
                   value={view}
                   onChange={setView}
                   items={[
@@ -436,7 +437,15 @@ export function DirectoryPage() {
             </div>
           )}
 
-          <div className="mt-10">
+          {/* The tab panel for Offers and Creatives; the postings view has no tabs. */}
+          <div
+            className="mt-10"
+            {...(!creativeHome && {
+              id: `directory-panel-${view}`,
+              role: 'tabpanel',
+              'aria-labelledby': `directory-tab-${view}`,
+            })}
+          >
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
