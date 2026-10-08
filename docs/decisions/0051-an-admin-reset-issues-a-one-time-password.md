@@ -139,7 +139,7 @@ signed in. Reusing the existing one means the temporary password is the proof.
 dies after a day. Genuinely better, and left out deliberately: it needs a
 story for what the person sees when it has expired, and the administrator can
 simply reset again. Noted as a follow-up in
-[plan 0048](../plans/0048-admin-password-reset.md).
+[plan 0049](../plans/0049-admin-password-reset.md).
 
 ## Consequences
 

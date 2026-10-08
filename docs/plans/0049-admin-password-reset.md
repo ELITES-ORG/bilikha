@@ -1,4 +1,4 @@
-# 0048. Let an administrator reset a password from the admin area
+# 0049. Let an administrator reset a password from the admin area
 
 - **Status:** In progress
 - **Owner:** userMarcPaul
