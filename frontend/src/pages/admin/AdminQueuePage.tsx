@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Inbox } from 'lucide-react';
 import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
 import type { QueueStatus } from '@/features/admin/types';
-import { Avatar, Button, Container, EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { Avatar, Button, Container, EmptyState, Skeleton, TabPanels, Tabs } from '@/components/ui';
 import {
   AdminPageHeader,
   AdminPagination,
@@ -76,10 +76,10 @@ export function AdminQueuePage() {
         />
       </AdminToolbar>
 
-      <div
-        id={`queue-panel-${status}`}
-        role="tabpanel"
-        aria-labelledby={`queue-tab-${status}`}
+      <TabPanels
+        idPrefix="queue"
+        values={TABS.map((tab) => tab.status)}
+        value={status}
         className="mt-8"
       >
         {list.isPending && (
@@ -191,7 +191,7 @@ export function AdminQueuePage() {
         )}
 
         <AdminPagination page={page} pages={totalPages} onPage={setPage} />
-      </div>
+      </TabPanels>
     </Container>
   );
 }

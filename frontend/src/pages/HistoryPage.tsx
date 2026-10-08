@@ -9,6 +9,7 @@ import {
   ButtonLink,
   Container,
   SectionHeading,
+  TabPanels,
   Tabs,
   useToast,
 } from '@/components/ui';
@@ -50,6 +51,9 @@ export function HistoryPage() {
   // on the creative side and a stale ?segment=saved falls back to the first tab.
   const requested = parseSegment(params.get('segment'));
   const segment = creativeMode && requested === 'saved' ? 'inquired' : requested;
+  const segments: ReadonlyArray<HistorySegment> = creativeMode
+    ? ['inquired', 'agreements']
+    : ['inquired', 'saved', 'agreements'];
 
   const history = useHistory(mode);
   const saved = useSavedOffers(segment === 'saved' && !creativeMode);
@@ -123,19 +127,20 @@ export function HistoryPage() {
             className="mt-8"
             value={segment}
             onChange={setSegment}
-            items={[
-              { value: 'inquired' as const, label: creativeMode ? 'Replied' : 'Inquired' },
-              ...(creativeMode ? [] : [{ value: 'saved' as const, label: 'Saved' }]),
-              { value: 'agreements' as const, label: 'Agreements' },
-            ]}
+            items={segments.map((value) => ({
+              value,
+              label:
+                value === 'inquired'
+                  ? creativeMode
+                    ? 'Replied'
+                    : 'Inquired'
+                  : value === 'saved'
+                    ? 'Saved'
+                    : 'Agreements',
+            }))}
           />
 
-          <div
-            id={`history-panel-${segment}`}
-            role="tabpanel"
-            aria-labelledby={`history-tab-${segment}`}
-            className="mt-8"
-          >
+          <TabPanels idPrefix="history" values={segments} value={segment} className="mt-8">
             {segment === 'inquired' && creativeMode && (
               <>
                 {history.isPending && <ListRowsSkeleton lead="avatar" />}
@@ -415,7 +420,7 @@ export function HistoryPage() {
                 )}
               </>
             )}
-          </div>
+          </TabPanels>
         </Container>
       </main>
     </>

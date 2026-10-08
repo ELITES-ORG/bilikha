@@ -1,6 +1,6 @@
 import type { AdminMediaRow } from '@contracts/admin';
 import type { Paginated } from '@contracts/pagination';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
@@ -25,6 +25,7 @@ import {
   ProgressiveImage,
   Skeleton,
   StatItem,
+  TabPanels,
   Tabs,
 } from '@/components/ui';
 import {
@@ -36,11 +37,15 @@ import {
   adminTabsClass,
 } from './admin-ui';
 import { formatAdminDate } from './admin-format';
+import {
+  countMedia,
+  filterAndSortMedia,
+  type KindFilter,
+  type SortOrder,
+} from './admin-media-logic';
 
 type MediaKind = AdminMediaRow['kind'];
-type KindFilter = 'all' | MediaKind;
-/** `queue` is the server's own order: flagged offers first, then newest. */
-type SortOrder = 'queue' | 'newest' | 'oldest';
+const KIND_FILTERS: ReadonlyArray<KindFilter> = ['all', 'avatar', 'offer'];
 
 type ListResponse = Paginated<AdminMediaRow>;
 
@@ -66,15 +71,6 @@ function useAdminMedia() {
       }
     },
   });
-}
-
-function matchesSearch(item: AdminMediaRow, query: string): boolean {
-  if (!query) return true;
-  const haystack = [item.ownerName, item.title, item.caption, item.description]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return haystack.includes(query);
 }
 
 export function AdminMediaPage() {
@@ -107,26 +103,12 @@ export function AdminMediaPage() {
   const total = list.data?.meta.total ?? 0;
   // The split is only true when every waiting item is on this page.
   const complete = items.length === total;
-  const counts = useMemo(
-    () => ({
-      avatar: items.filter((item) => item.kind === 'avatar').length,
-      offer: items.filter((item) => item.kind === 'offer').length,
-      flagged: items.filter((item) => item.flaggedAt).length,
-    }),
-    [items],
-  );
+  const counts = useMemo(() => countMedia(items), [items]);
 
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    const filtered = items.filter(
-      (item) => (kind === 'all' || item.kind === kind) && matchesSearch(item, needle),
-    );
-    if (sort === 'queue') return filtered;
-    const direction = sort === 'newest' ? -1 : 1;
-    return [...filtered].sort((a, b) =>
-      a.createdAt === b.createdAt ? 0 : a.createdAt < b.createdAt ? -direction : direction,
-    );
-  }, [items, kind, query, sort]);
+  const visible = useMemo(
+    () => filterAndSortMedia(items, kind, query, sort),
+    [items, kind, query, sort],
+  );
 
   function act(item: AdminMediaRow, action: 'approve' | 'remove') {
     void review.mutateAsync({ kind: item.kind, id: item.id, action }).catch(() => undefined);
@@ -208,14 +190,7 @@ export function AdminMediaPage() {
         </p>
       )}
 
-      <div
-        className="mt-8"
-        {...(list.data && items.length > 0 && {
-          id: `media-panel-${kind}`,
-          role: 'tabpanel',
-          'aria-labelledby': `media-tab-${kind}`,
-        })}
-      >
+      <MediaResultsPanel tabbed={Boolean(list.data && items.length > 0)} kind={kind}>
         {list.isPending && (
           <ul className={gridClass} aria-label="Loading media">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -294,8 +269,25 @@ export function AdminMediaPage() {
             </ul>
           </>
         )}
-      </div>
+      </MediaResultsPanel>
     </Container>
+  );
+}
+
+function MediaResultsPanel({
+  tabbed,
+  kind,
+  children,
+}: {
+  tabbed: boolean;
+  kind: KindFilter;
+  children: ReactNode;
+}) {
+  if (!tabbed) return <div className="mt-8">{children}</div>;
+  return (
+    <TabPanels idPrefix="media" values={KIND_FILTERS} value={kind} className="mt-8">
+      {children}
+    </TabPanels>
   );
 }
 
