@@ -2,7 +2,7 @@ import { ArrowRight, BriefcaseBusiness, Check, Clock, MapPin, MessageSquare } fr
 import { Link } from 'react-router-dom';
 import { Avatar, Badge, Skeleton } from '@/components/ui';
 import type { Posting } from '@/features/postings/types';
-import { formatPriceRange } from '@/lib/money';
+import { formatBudgetRange } from '@/lib/money';
 import { expiryTone, formatTimeLeft } from '@/lib/posting-time';
 
 /**
@@ -50,7 +50,7 @@ export function PostingCatalogCard({ posting }: { posting: Posting }) {
           </div>
 
           <p className="mt-3 text-md font-bold text-ink sm:text-lg" data-numeric>
-            {formatPriceRange(posting.budgetMinCentavos, posting.budgetMaxCentavos)}
+            {formatBudgetRange(posting.budgetMinCentavos, posting.budgetMaxCentavos)}
           </p>
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">

@@ -56,3 +56,16 @@ export function formatPriceRange(
   if (minCentavos === maxCentavos) return formatPesos(minCentavos!);
   return `${formatPesos(minCentavos!)} – ${formatPesos(maxCentavos!)}`;
 }
+
+/**
+ * A client posting's budget. The same ranges as `formatPriceRange`, but a
+ * posting with no budget says so: "Price on request" is a creative's phrase
+ * for an offer, and reads wrong for what a client is willing to pay.
+ */
+export function formatBudgetRange(
+  minCentavos: number | null | undefined,
+  maxCentavos: number | null | undefined,
+): string {
+  if (minCentavos == null && maxCentavos == null) return 'Budget not given';
+  return formatPriceRange(minCentavos, maxCentavos);
+}
