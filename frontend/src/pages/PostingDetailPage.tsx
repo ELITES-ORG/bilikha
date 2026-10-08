@@ -8,7 +8,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useEnsureConversation } from '@/features/conversations/api';
 import { PostingNotFoundError, usePosting } from '@/features/postings/api';
 import { formatTimeLeft } from '@/lib/posting-time';
-import { formatPriceRange } from '@/lib/money';
+import { formatBudgetRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -68,7 +68,7 @@ export function PostingDetailPage() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Badge tone="brand">{posting.data.subdomain.name}</Badge>
                 <p className="text-base font-medium text-ink">
-                  {formatPriceRange(
+                  {formatBudgetRange(
                     posting.data.budgetMinCentavos,
                     posting.data.budgetMaxCentavos,
                   )}
