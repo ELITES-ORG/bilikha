@@ -61,6 +61,15 @@ export function redactText(text: string): string {
 }
 
 /**
+ * Sentry works out a city from the connection's IP address even when the SDK
+ * says not to infer the IP (`infer_ip: never`, which it already sends) and the
+ * project is set not to store it: a report from Taguig was filed as Taguig. It
+ * keeps a location the report already carries, so every report carries this
+ * one. Checked against Sentry: a report with it shows "Not collected".
+ */
+export const NO_LOCATION = { geo: { region: 'Not collected' } };
+
+/**
  * Whatever the SDK collected, only allowlisted fields survive. The browser and
  * OS are read by Sentry from the User-Agent, which is put back on its own — it
  * is how a failure in Facebook's in-app browser is told apart from Chrome's
@@ -92,6 +101,7 @@ export function scrubEvent(event: ErrorEvent, userAgent: string): ErrorEvent {
     }
   }
   scrubbed.request = { headers: { 'User-Agent': userAgent } };
+  scrubbed.user = NO_LOCATION;
   return scrubbed;
 }
 

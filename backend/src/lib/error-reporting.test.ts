@@ -12,6 +12,7 @@ import {
   releaseName,
   reportServerErrors,
   routePattern,
+  NO_LOCATION,
   scrubEvent,
 } from './error-reporting.js';
 import { AppError } from './http-error.js';
@@ -120,8 +121,11 @@ describe('scrubEvent', () => {
     const scrubbed = scrubEvent(event);
 
     expect(Object.keys(scrubbed).sort()).toEqual(
-      ['contexts', 'environment', 'event_id', 'exception', 'tags'].sort(),
+      ['contexts', 'environment', 'event_id', 'exception', 'tags', 'user'].sort(),
     );
+    // The user is replaced, not kept: no id, no email, no IP, and a location
+    // that stops Sentry working one out from the connection.
+    expect(scrubbed.user).toEqual({ geo: { region: 'Not collected' } });
     expect(scrubbed.contexts).toEqual({ runtime: { name: 'node' } });
     expect(scrubbed.exception?.values?.[0]?.stacktrace?.frames?.[0]).toEqual({ filename: 'a.js' });
   });
@@ -217,7 +221,7 @@ describe('reportServerErrors', () => {
     expect(event?.tags).toMatchObject({ method: 'POST', route: '/api/v1/things/:id', status: '500' });
     expect(event?.environment).toBe('local');
     expect(event?.request).toBeUndefined();
-    expect(event?.user).toBeUndefined();
+    expect(event?.user).toEqual(NO_LOCATION);
     for (const secret of SECRETS) expect(sent[0]).not.toContain(secret);
   });
 

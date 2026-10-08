@@ -122,10 +122,20 @@ export function redactText(text: string): string {
   return text.replace(EMAIL, '[email]').replace(PH_MOBILE, '$1[phone]');
 }
 
+/**
+ * Sentry works out a city from the connection's IP address even when told not
+ * to infer the IP and set not to store it: a browser report from Taguig was
+ * filed as Taguig. It keeps a location the report already carries, so every
+ * report carries this one. Here it would only ever be Render's server; it is
+ * set anyway, so both sides follow one rule (ADR 0053).
+ */
+export const NO_LOCATION = { geo: { region: 'Not collected' } };
+
 export function scrubEvent(event: ErrorEvent): ErrorEvent {
   const scrubbed = Object.fromEntries(
     Object.entries(event).filter(([key]) => ALLOWED_EVENT_FIELDS.has(key)),
   ) as ErrorEvent;
+  scrubbed.user = NO_LOCATION;
 
   if (scrubbed.contexts) {
     scrubbed.contexts = Object.fromEntries(
