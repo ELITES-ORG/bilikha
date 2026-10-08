@@ -11,6 +11,10 @@
       "destination": "https://bilikha.onrender.com/api/:path*"
     },
     {
+      "source": "/e/:project(\\d+)",
+      "destination": "https://o4512218682359808.ingest.us.sentry.io/api/:project/envelope/"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
