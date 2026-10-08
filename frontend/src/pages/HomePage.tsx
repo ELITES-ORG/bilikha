@@ -4,6 +4,7 @@ import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type Luci
 import elitesWordmark from '@/assets/elites-wordmark.webp';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
+import { GlitchImage } from '@/components/GlitchImage';
 import { DomainListSkeleton } from '@/components/page-skeleton/parts';
 import { transitionTo, type PageTransitionKind } from '@/components/page-transition/transition-to';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -510,13 +511,12 @@ function SiteFooter() {
               {...externalLink}
               className="u-tap inline-flex transition-opacity hover:opacity-80"
             >
-              <img
+              <GlitchImage
                 src={elitesWordmark}
                 alt="Elites"
                 width={229}
                 height={48}
-                className="h-4 w-auto"
-                draggable={false}
+                className="h-4"
               />
               <span className="sr-only"> (opens in a new tab)</span>
             </a>
