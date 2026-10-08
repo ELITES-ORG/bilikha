@@ -243,6 +243,20 @@ On **both** projects, when they are created:
 - Settings → Security & Privacy → **Data Scrubber** and **Use Default
   Scrubbers**: on (the default). A second net behind the code's own scrubbing.
 
+### `/e` — browser reports through our own domain
+
+Brave and most ad-blockers block `sentry.io`, so the browser posts reports to
+`/e/<project id>` on the site itself, and `frontend/vercel.json` forwards them to
+`o4512218682359808.ingest.us.sentry.io` — the `elites-jh` organisation. **Keep
+this rewrite above the SPA fallback**, or `/e` answers with `index.html` and
+every browser report is lost without an error anywhere.
+
+The organisation is written in two places — the rewrite and `TUNNEL_HOST` in
+`frontend/src/lib/error-reporting-client.ts` — and a test fails if they differ.
+A new DSN from the **same** organisation needs no change. A DSN from a
+**different** organisation is sent straight to Sentry, past nothing, until both
+places are updated.
+
 Not set up: **source maps.** Browser stack traces arrive minified. Uploading
 maps needs an auth token in both Vercel builds; see the ADR's consequences.
 

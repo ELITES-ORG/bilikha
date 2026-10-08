@@ -52,6 +52,26 @@ errors, errors from scripts on other origins, and failed chunks outside the
 error boundary (a tab open across a deploy — ADR 0040). A chunk that still fails
 after the boundary's one reload *is* reported: that is a broken deploy.
 
+### Browser reports go through Bilikha's own domain
+
+Brave blocks requests to `sentry.io` by default, and so do uBlock Origin and
+most ad-blockers. Seen on staging: the report was built and sent, then refused
+by the browser (`ERR_BLOCKED_BY_CLIENT`). So on a deployment the browser posts
+to `/e/<project id>` on its own origin, and a rewrite in `frontend/vercel.json`
+forwards it to Sentry's ingest for the `elites-jh` organisation. To a blocker
+it is a first-party request.
+
+No code runs for it: the SDK's `tunnel` option puts the DSN inside the report,
+and Sentry authenticates from that (checked: accepted with it, `401` without).
+The rewrite takes numeric project ids only and has one fixed destination, so it
+cannot be used to reach anything but Sentry's ingest for this organisation —
+which the public DSN already allows anyone to post to.
+
+Locally, and for a DSN from another Sentry organisation, the browser posts
+straight to Sentry instead: there is no rewrite locally, and the rewrite would
+forward a foreign DSN to the wrong organisation. A test keeps the organisation
+in `vercel.json` and in the code the same.
+
 ### Backend: `@sentry/core` alone, reporting from the error path
 
 `@sentry/node` is ~50 MB installed — OpenTelemetry, a bundler CLI and a native
@@ -122,7 +142,11 @@ frontend's being in the bundle is expected.
   and a third-party script on every page.
 - **Relay browser errors through our API.** Keeps the DSN out of the bundle,
   but adds a public endpoint that must be rate-limited, and on Render's free
-  tier the API is often asleep exactly when a report is sent.
+  tier the API is often asleep exactly when a report is sent. The `/e` rewrite
+  gets past blockers the same way, on Vercel's edge, which never sleeps.
+- **Post straight to `sentry.io` and accept the loss.** Simplest, and it was
+  the first version. It silently drops every report from Brave and from anyone
+  with an ad-blocker.
 - **A self-hosted tracker (GlitchTip, self-hosted Sentry).** Another service to
   run, on a budget that cannot keep one Render instance awake.
 - **Logs only.** Render keeps them briefly, nobody watches them, and the
