@@ -11,15 +11,12 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import {
-  Badge,
   Button,
-  Card,
-  CardBody,
   Container,
   EmptyState,
-  Eyebrow,
   Input,
   Skeleton,
+  StatItem,
   useToast,
 } from '@/components/ui';
 import { relativeTime } from '@/features/conversations/relative-time';
@@ -37,6 +34,14 @@ import {
 } from '@/features/admin/taxonomy-api';
 import { toApiError } from '@/lib/api-client';
 import { canDelete, referencesLabel, reorderWrites } from './taxonomy-page-logic';
+import {
+  AdminPageHeader,
+  AdminPagination,
+  AdminSection,
+  AdminStatusBadge,
+  AdminToolbar,
+  adminListClass,
+} from './admin-ui';
 
 /**
  * The taxonomy editor (plan 0047 phase 4, ADR 0049).
@@ -57,23 +62,67 @@ export function AdminTaxonomyPage() {
   const taxonomy = useAdminTaxonomy();
   const [addingDomain, setAddingDomain] = useState(false);
 
+  const domains = taxonomy.data ?? [];
+  const crafts = domains.reduce((sum, domain) => sum + domain.subdomains.length, 0);
+  const archived =
+    domains.filter((domain) => domain.archivedAt !== null).length +
+    domains.reduce(
+      (sum, domain) => sum + domain.subdomains.filter((sub) => sub.archivedAt !== null).length,
+      0,
+    );
+
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <Eyebrow>Administration</Eyebrow>
-      <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Taxonomy</h1>
-      <p className="mt-3 max-w-xl text-md text-ink-muted">
-        The nine domains and their crafts. The database is the source of truth, so an edit here
-        survives a deploy. Archiving hides an item from pickers while every profile that already
-        names it keeps working — it is the reversible option, and almost always the right one.
-      </p>
+      <AdminPageHeader
+        title="Taxonomy"
+        description="The domains and their crafts. The database is the source of truth, so an edit here survives a deploy. Archiving hides an item from pickers while every profile that already names it keeps working — it is the reversible option, and almost always the right one."
+        aside={
+          taxonomy.data && (
+            <dl className="flex divide-x divide-hairline">
+              <StatItem value={domains.length} label={domains.length === 1 ? 'Domain' : 'Domains'} />
+              <StatItem value={crafts} label={crafts === 1 ? 'Craft' : 'Crafts'} />
+              {archived > 0 && <StatItem value={archived} label="Archived" />}
+            </dl>
+          )
+        }
+      />
 
-      <div className="mt-10 space-y-4">
+      {taxonomy.data && (
+        <AdminToolbar ruled={false} className="xl:flex-row-reverse">
+          {!addingDomain && (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="self-start"
+              iconLeft={<Plus className="size-4" aria-hidden="true" />}
+              onClick={() => setAddingDomain(true)}
+            >
+              Add a domain
+            </Button>
+          )}
+          <p className="text-sm text-ink-muted">
+            Open a domain to rename it, reorder its crafts, or add one.
+          </p>
+        </AdminToolbar>
+      )}
+
+      {addingDomain && (
+        <div className="mt-6">
+          <CreateDomainForm onDone={() => setAddingDomain(false)} />
+        </div>
+      )}
+
+      <div className="mt-8">
         {taxonomy.isPending && (
-          <>
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </>
+          <ul className={adminListClass} aria-label="Loading the taxonomy">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="space-y-2 py-5" aria-hidden="true">
+                <Skeleton className="h-6 w-56" />
+                <Skeleton className="h-3 w-40" />
+              </li>
+            ))}
+          </ul>
         )}
 
         {taxonomy.isError && (
@@ -81,10 +130,13 @@ export function AdminTaxonomyPage() {
             icon={<TriangleAlert className="size-5" />}
             title="Could not load the taxonomy"
             description={taxonomy.error.message}
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void taxonomy.refetch()}>
+                Try again
+              </Button>
+            }
           />
         )}
-
-        {taxonomy.data?.map((domain) => <DomainRow key={domain.id} domain={domain} />)}
 
         {taxonomy.data && taxonomy.data.length === 0 && (
           <EmptyState
@@ -93,20 +145,15 @@ export function AdminTaxonomyPage() {
             description="The seed loads the nine domains RA 11904 defines. If this is empty, the seed has not run."
           />
         )}
-      </div>
 
-      {taxonomy.data && (
-        <div className="mt-6">
-          {addingDomain ? (
-            <CreateDomainForm onDone={() => setAddingDomain(false)} />
-          ) : (
-            <Button type="button" size="sm" variant="secondary" onClick={() => setAddingDomain(true)}>
-              <Plus className="size-4" aria-hidden="true" />
-              Add a domain
-            </Button>
-          )}
-        </div>
-      )}
+        {domains.length > 0 && (
+          <ul className={adminListClass}>
+            {domains.map((domain) => (
+              <DomainRow key={domain.id} domain={domain} />
+            ))}
+          </ul>
+        )}
+      </div>
 
       <ChangeLog />
     </Container>
@@ -120,8 +167,8 @@ function DomainRow({ domain }: { domain: AdminTaxonomyDomain }) {
   const archived = domain.archivedAt !== null;
 
   return (
-    <Card elevation="flat" as="section">
-      <CardBody className="space-y-4">
+    <li className="py-5">
+      <div className="space-y-4">
         {/* Stacked on a phone: sharing one row squeezes the domain name into
             two lines behind the Archive button. Side by side from `sm`. */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -138,7 +185,7 @@ function DomainRow({ domain }: { domain: AdminTaxonomyDomain }) {
             )}
             <span>
               <span className="u-display block text-xl text-ink">{domain.name}</span>
-              <span className="block text-xs text-ink-subtle">
+              <span className="mt-0.5 block text-xs text-ink-subtle">
                 {domain.slug} · {domain.subdomains.length} crafts ·{' '}
                 {referencesLabel(domain.referenceCount)}
               </span>
@@ -152,13 +199,15 @@ function DomainRow({ domain }: { domain: AdminTaxonomyDomain }) {
         </div>
 
         {open && (
-          <div className="space-y-3 border-t border-hairline pt-4">
+          /* The crafts hang off their domain on a rule, so the hierarchy reads
+             without a box around every level. */
+          <div className="ml-2 space-y-4 border-l border-hairline pl-4 sm:ml-2 sm:pl-6">
             <EditForm kind="domains" slug={domain.slug} name={domain.name} />
 
             {domain.subdomains.length === 0 ? (
               <p className="text-sm text-ink-subtle">No crafts in this domain yet.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="divide-y divide-hairline border-y border-hairline">
                 {domain.subdomains.map((sub, index) => (
                   <SubdomainRow
                     key={sub.id}
@@ -188,8 +237,8 @@ function DomainRow({ domain }: { domain: AdminTaxonomyDomain }) {
             )}
           </div>
         )}
-      </CardBody>
-    </Card>
+      </div>
+    </li>
   );
 }
 
@@ -206,7 +255,7 @@ function SubdomainRow({
   const archived = subdomain.archivedAt !== null;
 
   return (
-    <li className="rounded-sm border border-hairline bg-clay-50 p-3">
+    <li className="py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-base text-ink">{subdomain.name}</p>
@@ -231,7 +280,7 @@ function SubdomainRow({
       </div>
 
       {editing && (
-        <div className="mt-3 border-t border-hairline pt-3">
+        <div className="mt-3">
           <EditForm kind="subdomains" slug={subdomain.slug} name={subdomain.name} />
         </div>
       )}
@@ -358,7 +407,7 @@ function ItemActions({
 
   if (confirming) {
     return (
-      <div className="w-full space-y-2 rounded-sm border border-hairline bg-clay-50 p-3">
+      <div className="w-full space-y-2 rounded-sm border border-danger-100 bg-danger-50 p-3">
         <p className="text-sm text-ink">
           Delete <strong className="font-semibold">{item.name}</strong> permanently
           {craftCount > 0 && (
@@ -425,11 +474,7 @@ function ItemActions({
 }
 
 function ArchivedBadge() {
-  return (
-    <Badge tone="warning" icon={<Archive className="size-3" />}>
-      Archived
-    </Badge>
-  );
+  return <AdminStatusBadge status="archived" />;
 }
 
 /** Rename only. There is deliberately no slug field — see the page comment. */
@@ -512,37 +557,35 @@ function CreateDomainForm({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <Card elevation="flat">
-      <CardBody className="space-y-3">
-        <h2 className="u-display text-xl text-ink">Add a domain</h2>
-        <p className="text-sm text-ink-muted">
-          RA 11904 defines nine. Adding a tenth is a decision about the law's scope, not a label
-          fix — archive and replace a wrong one instead.
-        </p>
-        <Input
-          label="Name"
-          maxLength={120}
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <Input
-          label="Slug"
-          hint="Lowercase letters, digits and single hyphens. Chosen once — it cannot be changed."
-          maxLength={64}
-          value={slug}
-          onChange={(event) => setSlug(event.target.value)}
-          error={error ?? undefined}
-        />
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" loading={create.isPending} onClick={() => void submit()}>
-            Add domain
-          </Button>
-          <Button type="button" size="sm" variant="secondary" onClick={onDone}>
-            Cancel
-          </Button>
-        </div>
-      </CardBody>
-    </Card>
+    <div className="space-y-3 rounded-md border border-hairline bg-surface p-5">
+      <h2 className="u-display text-xl text-ink">Add a domain</h2>
+      <p className="text-sm text-ink-muted">
+        RA 11904 defines nine. Adding a tenth is a decision about the law's scope, not a label
+        fix — archive and replace a wrong one instead.
+      </p>
+      <Input
+        label="Name"
+        maxLength={120}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+      />
+      <Input
+        label="Slug"
+        hint="Lowercase letters, digits and single hyphens. Chosen once — it cannot be changed."
+        maxLength={64}
+        value={slug}
+        onChange={(event) => setSlug(event.target.value)}
+        error={error ?? undefined}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" size="sm" loading={create.isPending} onClick={() => void submit()}>
+          Add domain
+        </Button>
+        <Button type="button" size="sm" variant="secondary" onClick={onDone}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -574,7 +617,7 @@ function CreateSubdomainForm({
   }
 
   return (
-    <div className="space-y-3 rounded-sm border border-hairline bg-clay-50 p-3">
+    <div className="space-y-3 rounded-md border border-hairline bg-surface-sunken p-4">
       <Input
         label="Name"
         maxLength={120}
@@ -612,73 +655,49 @@ function ChangeLog() {
   const pages = Math.max(1, Math.ceil(total / 20));
 
   return (
-    <section className="mt-(--section-gap)">
-      <h2 className="u-display text-2xl text-ink">Recent changes</h2>
-      <p className="mt-2 max-w-xl text-sm text-ink-muted">
-        Every edit, with who made it. Newest first.
-      </p>
+    <AdminSection title="Recent changes" description="Every edit, with who made it. Newest first.">
+      {changes.isPending && <Skeleton className="h-28 w-full" />}
 
-      <div className="mt-4 space-y-2">
-        {changes.isPending && <Skeleton className="h-28 w-full" />}
-
-        {changes.isError && (
-          <EmptyState
-            icon={<TriangleAlert className="size-5" />}
-            title="Could not load the history"
-            description={changes.error.message}
-          />
-        )}
-
-        {changes.data?.data.length === 0 && (
-          <EmptyState
-            icon={<CircleCheck className="size-5" />}
-            title="Nothing changed yet"
-            description="The taxonomy is as the seed loaded it."
-          />
-        )}
-
-        {changes.data?.data.map((entry) => (
-          <div
-            key={entry.id}
-            className="flex flex-wrap items-baseline justify-between gap-2 rounded-sm border border-hairline p-3"
-          >
-            <p className="text-sm text-ink">
-              <span className="font-semibold">{entry.adminUsername ?? 'a deleted account'}</span>{' '}
-              {entry.action} the {entry.itemKind}{' '}
-              <span className="text-ink-muted">{entry.itemSlug}</span>
-            </p>
-            <p className="text-xs text-ink-subtle">
-              <time dateTime={entry.createdAt}>{relativeTime(entry.createdAt)}</time>
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {pages > 1 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={page === 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            Newer
-          </Button>
-          <span className="text-sm text-ink-muted">
-            Page {page} of {pages}
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={page >= pages}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            Older
-          </Button>
-        </div>
+      {changes.isError && (
+        <EmptyState
+          icon={<TriangleAlert className="size-5" />}
+          title="Could not load the history"
+          description={changes.error.message}
+        />
       )}
-    </section>
+
+      {changes.data?.data.length === 0 && (
+        <EmptyState
+          icon={<CircleCheck className="size-5" />}
+          title="Nothing changed yet"
+          description="The taxonomy is as the seed loaded it."
+        />
+      )}
+
+      {changes.data && changes.data.data.length > 0 && (
+        <ul className={adminListClass}>
+          {changes.data.data.map((entry) => (
+            <li key={entry.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3">
+              <p className="min-w-0 text-sm break-words text-ink">
+                <span className="font-semibold">{entry.adminUsername ?? 'a deleted account'}</span>{' '}
+                {entry.action} the {entry.itemKind}{' '}
+                <span className="text-ink-muted">{entry.itemSlug}</span>
+              </p>
+              <p className="text-xs text-ink-subtle">
+                <time dateTime={entry.createdAt}>{relativeTime(entry.createdAt)}</time>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <AdminPagination
+        page={page}
+        pages={pages}
+        onPage={setPage}
+        previousLabel="Newer"
+        nextLabel="Older"
+      />
+    </AdminSection>
   );
 }

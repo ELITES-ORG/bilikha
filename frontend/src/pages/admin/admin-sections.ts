@@ -1,3 +1,5 @@
+import { Images, ListChecks, Star, Tags, UserRound } from 'lucide-react';
+
 /**
  * The admin section list — one array, one file. Adding a moderation surface is
  * an entry here plus a route; it must not mean editing every sibling page
@@ -7,11 +9,11 @@
  * here; the review queue stays marked while it is open.
  */
 export const ADMIN_SECTIONS = [
-  { label: 'Review queue', path: '/admin' },
-  { label: 'Media', path: '/admin/media' },
-  { label: 'Accounts', path: '/admin/accounts' },
-  { label: 'Ratings', path: '/admin/ratings' },
-  { label: 'Taxonomy', path: '/admin/taxonomy' },
+  { label: 'Review queue', path: '/admin', icon: ListChecks },
+  { label: 'Media', path: '/admin/media', icon: Images },
+  { label: 'Accounts', path: '/admin/accounts', icon: UserRound },
+  { label: 'Ratings', path: '/admin/ratings', icon: Star },
+  { label: 'Taxonomy', path: '/admin/taxonomy', icon: Tags },
 ] as const;
 
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];
