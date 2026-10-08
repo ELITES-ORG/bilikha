@@ -193,6 +193,17 @@ The single radius is a decision, not a default
 - Every touch target is at least 44px. For a link that must stay visually
   small, add `.u-tap` rather than padding it out.
 
+**Copy**
+
+- User-facing text goes in `src/i18n/catalogs/en.ts` and is read with `useT()`,
+  not written into the component. A string hard-coded in JSX is one no
+  translator will ever find ([ADR 0053](../docs/decisions/0053-copy-is-translated-per-device-never-by-machine.md)).
+- Layouts absorb longer text. Filipino and Waray run longer than English for
+  the same sentence, so no fixed-width text containers and no truncation on
+  anything load-bearing — checked at 360px.
+- **Never machine-translate a catalogue value**, including to preview a
+  layout. See [Translate the interface](../docs/guides/translate-the-interface.md).
+
 **Accessibility**
 
 - One focus treatment, defined once in `base.css`. Don't add per-component focus

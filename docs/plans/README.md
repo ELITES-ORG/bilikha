@@ -109,6 +109,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0047](./0047-admin-managed-taxonomy.md) | Admin-managed taxonomy — create, edit, archive domains and sub-domains | In progress |
 | [0048](./0048-postings-as-a-card-catalog.md) | Client postings as a card catalog | In progress |
 | [0049](./0049-admin-password-reset.md) | Let an administrator reset a password from the admin area | In progress |
+| [0050](./0050-language-choice-and-the-first-translated-screen.md) | Language choice, and the first translated screen | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

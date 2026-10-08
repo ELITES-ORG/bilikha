@@ -15,6 +15,7 @@ import {
   LogOut,
   MapPin,
   PencilLine,
+  Languages,
   SunMoon,
   TrendingUp,
   TriangleAlert,
@@ -55,6 +56,8 @@ import {
   type ThemePreference,
 } from '@/lib/theme-preference';
 import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
+import { LOCALES, type Locale } from '@/lib/locale';
+import { useI18n } from '@/i18n/i18n-context';
 
 function profileStatusLabel(status: ProfileStatus): string {
   switch (status) {
@@ -227,6 +230,60 @@ function AppearanceRow() {
   );
 }
 
+/**
+ * Language. Layout mirrors AppearanceRow exactly (ADR 0053).
+ *
+ * Each option is labelled in its own language, never translated into the
+ * current one: the person who needs this control is the one who cannot read
+ * the English label, so "Filipino" must say Filipino whatever the interface
+ * currently says.
+ *
+ * The description is honest about the state of it — most of the app is still
+ * English, and finding that out by switching is worse than being told.
+ */
+function LanguageRow() {
+  const { locale, choose, t } = useI18n();
+
+  return (
+    <SettingRow
+      icon={<Languages />}
+      label={t('account.language.label')}
+      description={t('account.language.description')}
+    >
+      <div
+        role="radiogroup"
+        aria-label={t('account.language.label')}
+        className={cn(segmentTrackClass, 'flex w-full sm:inline-flex sm:w-auto')}
+      >
+        {LOCALES.map((option) => {
+          const selected = locale === option.value;
+          return (
+            <label
+              key={option.value}
+              lang={option.value}
+              className={cn(
+                segmentItemClass(selected),
+                'flex-1 sm:flex-none',
+                'has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
+              )}
+            >
+              <input
+                type="radio"
+                name="language"
+                value={option.value}
+                checked={selected}
+                onChange={() => choose(option.value as Locale)}
+                className="sr-only"
+              />
+              {option.label}
+            </label>
+          );
+        })}
+      </div>
+    </SettingRow>
+  );
+}
+
 const MODE_OPTIONS: Array<{ value: ViewMode; label: string }> = [
   { value: 'hiring', label: MODE_LABEL.hiring },
   { value: 'creative', label: MODE_LABEL.creative },
@@ -380,6 +437,7 @@ export function AccountPage() {
                 <HubCard title="Settings">
                   <ModeRow />
                   <AppearanceRow />
+                  <LanguageRow />
                   {/*
                     A choice about this device, like Appearance above it. Renders
                     nothing once installed, and nothing in a browser with no

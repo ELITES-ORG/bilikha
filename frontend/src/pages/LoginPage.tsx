@@ -12,8 +12,10 @@ import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
+import { useT } from '@/i18n/i18n-context';
 
 export function LoginPage() {
+  const t = useT();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = safeReturnPath(searchParams.get('next'));
@@ -45,16 +47,14 @@ export function LoginPage() {
           size="sm"
           onClick={transitionTo('bloom')}
         >
-          Register
+          {t('signIn.register')}
         </ButtonLink>
       }
       banner={<RegistrationStatusBanner />}
     >
-      <Eyebrow>Welcome back</Eyebrow>
-      <h1 className="u-serif mt-4 text-4xl text-ink md:text-5xl">Sign in</h1>
-      <p className="mt-3 max-w-md text-md text-ink-muted">
-        Use the username and password you chose at registration.
-      </p>
+      <Eyebrow>{t('signIn.eyebrow')}</Eyebrow>
+      <h1 className="u-serif mt-4 text-4xl text-ink md:text-5xl">{t('signIn.heading')}</h1>
+      <p className="mt-3 max-w-md text-md text-ink-muted">{t('signIn.intro')}</p>
 
       <form onSubmit={(event) => void onSubmit(event)} className="mt-10 max-w-md space-y-5" noValidate>
         {error && (
@@ -67,14 +67,14 @@ export function LoginPage() {
         )}
 
         <Input
-          label="Username"
+          label={t('signIn.username')}
           required
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
         <Input
-          label="Password"
+          label={t('signIn.password')}
           type="password"
           required
           autoComplete="current-password"
@@ -89,13 +89,10 @@ export function LoginPage() {
           loading={login.isPending}
           iconRight={<ArrowRight className="size-4" aria-hidden="true" />}
         >
-          Sign in
+          {t('signIn.submit')}
         </Button>
 
-        <p className="text-sm text-ink-subtle">
-          Forgotten your password? An administrator must reset it — there is no self-service
-          reset in this release.
-        </p>
+        <p className="text-sm text-ink-subtle">{t('signIn.noSelfService')}</p>
       </form>
     </AuthShell>
   );
