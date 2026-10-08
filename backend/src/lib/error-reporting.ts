@@ -108,6 +108,20 @@ const ALLOWED_EVENT_FIELDS = new Set([
 /** Runtime version and trace id. Nothing about the host or the person. */
 const ALLOWED_CONTEXTS = new Set(['runtime', 'trace']);
 
+/**
+ * An error's message is sent as written — it is what identifies the bug — but
+ * a library can quote its input in one: Postgres echoes a malformed value back,
+ * a JSON parser quotes the text it choked on. Anything shaped like an email or
+ * a Philippine mobile number is blanked first. A capture group, not a
+ * lookbehind, to match the browser copy of this rule.
+ */
+const EMAIL = /[^\s@<>"'`()[\],;:]+@[^\s@<>"'`()[\],;:]+\.[a-z]{2,}/gi;
+const PH_MOBILE = /(^|[^\d+])(?:\+?63|0)[\s-]?9\d{2}[\s-]?\d{3}[\s-]?\d{4}(?!\d)/g;
+
+export function redactText(text: string): string {
+  return text.replace(EMAIL, '[email]').replace(PH_MOBILE, '$1[phone]');
+}
+
 export function scrubEvent(event: ErrorEvent): ErrorEvent {
   const scrubbed = Object.fromEntries(
     Object.entries(event).filter(([key]) => ALLOWED_EVENT_FIELDS.has(key)),
@@ -120,7 +134,14 @@ export function scrubEvent(event: ErrorEvent): ErrorEvent {
   }
   // Local variables and source lines are opt-in integrations not installed
   // here. Stripped anyway: a variable is exactly where a phone number lives.
+  if (scrubbed.message) scrubbed.message = redactText(scrubbed.message);
+  if (scrubbed.logentry) {
+    scrubbed.logentry = scrubbed.logentry.message
+      ? { message: redactText(scrubbed.logentry.message) }
+      : {};
+  }
   for (const exception of scrubbed.exception?.values ?? []) {
+    if (exception.value) exception.value = redactText(exception.value);
     for (const frame of exception.stacktrace?.frames ?? []) {
       delete frame.vars;
       delete frame.pre_context;

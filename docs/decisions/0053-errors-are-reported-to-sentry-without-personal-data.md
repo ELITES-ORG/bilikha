@@ -88,6 +88,13 @@ browser, `RENDER_GIT_COMMIT` on the API — so both halves of one deploy line up
 | User, email, phone, IP | User collection off; `user` dropped. Each Sentry project is set to *Prevent storing of IP addresses* when it is created ([deployments](../reference/deployments.md#sentry--error-reports)) |
 | The URL, query string or referrer | The route **pattern** is sent instead: `/api/v1/creatives/:slug`, `/creatives/:param` |
 | Breadcrumbs, local variables, source lines | Not installed; stripped anyway |
+| An email or phone number quoted in an error message | Blanked to `[email]` / `[phone]` before sending. The message itself is kept — it is what identifies the bug — but libraries quote input: Postgres echoes a malformed value, V8's `JSON.parse` error quotes a short input whole |
+
+The message rule recognises shapes, not meaning: an email address and a
+Philippine mobile number in any common spelling. A name quoted in a message
+would still be sent. Nothing here builds a message from a person's data, and
+ids are validated before they reach a query, so that is a residual risk, not
+an expected one.
 
 Two layers, deliberately. Every `dataCollection` switch is off, **and** each
 event passes through `scrubEvent`, which keeps only an allowlist of fields. A

@@ -46,6 +46,21 @@ const ALLOWED_EVENT_FIELDS = new Set([
 const ALLOWED_CONTEXTS = new Set(['react', 'trace']);
 
 /**
+ * An error's message is sent as written — it is what identifies the bug — but
+ * a library can quote its input in one: some browsers' JSON.parse quotes the
+ * text it choked on. Anything shaped like an email or a Philippine mobile
+ * number is blanked first. A capture group rather than a lookbehind: iOS
+ * WebKit before 16.4 cannot parse lookbehind, and a syntax error here would
+ * stop this chunk loading at all — in Facebook's in-app browser on iPhones.
+ */
+const EMAIL = /[^\s@<>"'`()[\],;:]+@[^\s@<>"'`()[\],;:]+\.[a-z]{2,}/gi;
+const PH_MOBILE = /(^|[^\d+])(?:\+?63|0)[\s-]?9\d{2}[\s-]?\d{3}[\s-]?\d{4}(?!\d)/g;
+
+export function redactText(text: string): string {
+  return text.replace(EMAIL, '[email]').replace(PH_MOBILE, '$1[phone]');
+}
+
+/**
  * Whatever the SDK collected, only allowlisted fields survive. The browser and
  * OS are read by Sentry from the User-Agent, which is put back on its own — it
  * is how a failure in Facebook's in-app browser is told apart from Chrome's
@@ -61,7 +76,14 @@ export function scrubEvent(event: ErrorEvent, userAgent: string): ErrorEvent {
       Object.entries(scrubbed.contexts).filter(([key]) => ALLOWED_CONTEXTS.has(key)),
     );
   }
+  if (scrubbed.message) scrubbed.message = redactText(scrubbed.message);
+  if (scrubbed.logentry) {
+    scrubbed.logentry = scrubbed.logentry.message
+      ? { message: redactText(scrubbed.logentry.message) }
+      : {};
+  }
   for (const exception of scrubbed.exception?.values ?? []) {
+    if (exception.value) exception.value = redactText(exception.value);
     for (const frame of exception.stacktrace?.frames ?? []) {
       delete frame.vars;
       delete frame.pre_context;

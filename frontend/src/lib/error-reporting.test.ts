@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 import type { ErrorEvent } from '@sentry/browser';
 import { describe, expect, it } from 'vitest';
 import { isReportable, isReportableUncaught, routePattern } from './error-reporting';
-import { scrubEvent } from './error-reporting-client';
+import { redactText, scrubEvent } from './error-reporting-client';
 
 describe('routePattern', () => {
   it('keeps the words of a route', () => {
@@ -54,6 +54,33 @@ describe('isReportableUncaught', () => {
   });
 });
 
+describe('redactText', () => {
+  it('blanks what the engine quotes back from the text it failed on', () => {
+    // The real message, from V8 — the engine Chrome and Node share. A short
+    // input is quoted whole: `Unexpected token 'j', "juan@example.com" is not valid JSON`.
+    let message = '';
+    try {
+      JSON.parse('juan@example.com');
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain('juan@example.com');
+    expect(redactText(message)).not.toContain('juan@example.com');
+    expect(redactText(message)).toContain('[email]');
+  });
+
+  it('blanks a phone number in any common spelling', () => {
+    for (const phone of ['09171234567', '+639171234567', '0917 123 4567', '+63 917-123-4567']) {
+      expect(redactText(`reply to ${phone} failed`)).toBe('reply to [phone] failed');
+    }
+  });
+
+  it('leaves an ordinary error alone', () => {
+    const message = "Cannot read properties of undefined (reading 'id')";
+    expect(redactText(message)).toBe(message);
+  });
+});
+
 describe('scrubEvent', () => {
   it('keeps the error and the browser, and drops everything about the person', () => {
     const event = {
@@ -68,7 +95,7 @@ describe('scrubEvent', () => {
       breadcrumbs: [{ category: 'ui.input', message: 'typed 09171234567' }],
       extra: { body: 'hello neighbour' },
       contexts: { react: { componentStack: 'at Offer' }, culture: { locale: 'fil-PH' } },
-      exception: { values: [{ value: 'boom', stacktrace: { frames: [{ filename: 'a.js', vars: { q: 'juan' } }] } }] },
+      exception: { values: [{ value: 'boom for +639171234567', stacktrace: { frames: [{ filename: 'a.js', vars: { q: 'juan' } }] } }] },
     } as unknown as ErrorEvent;
 
     const scrubbed = scrubEvent(event, 'Mozilla/5.0 [FBAN/FB4A]');
@@ -78,6 +105,7 @@ describe('scrubEvent', () => {
     );
     expect(scrubbed.request).toEqual({ headers: { 'User-Agent': 'Mozilla/5.0 [FBAN/FB4A]' } });
     expect(scrubbed.contexts).toEqual({ react: { componentStack: 'at Offer' } });
+    expect(scrubbed.exception?.values?.[0]?.value).toBe('boom for [phone]');
     expect(JSON.stringify(scrubbed)).not.toMatch(/juan|09171234567|hello neighbour|fbclid|bilikha\.sid/);
   });
 });

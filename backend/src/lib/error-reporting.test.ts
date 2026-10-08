@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from '../middleware/error-handler.js';
 import {
   deploymentEnvironment,
   errorReportingOptions,
+  redactText,
   releaseName,
   reportServerErrors,
   routePattern,
@@ -63,6 +64,31 @@ describe('routePattern', () => {
   it('falls back when the route does not line up with the URL', () => {
     expect(routePattern('/api/v1/me/profile', '/:id/messages')).toBe('/api/v1/me/…');
     expect(routePattern('/api', '/a/b/c')).toBe('/api');
+  });
+});
+
+describe('redactText', () => {
+  it('blanks Philippine mobile numbers in every common spelling', () => {
+    for (const phone of ['09171234567', '+639171234567', '639171234567', '0917 123 4567', '0917-123-4567', '+63 917 123 4567']) {
+      expect(redactText(`value "${phone}" is invalid`)).toBe('value "[phone]" is invalid');
+    }
+    expect(redactText('09171234567')).toBe('[phone]');
+  });
+
+  it('blanks email addresses', () => {
+    expect(redactText('duplicate juan.cruz+bilikha@example.com.ph found')).toBe('duplicate [email] found');
+  });
+
+  it('leaves the numbers a bug report needs', () => {
+    for (const text of [
+      'Request failed with status code 500',
+      'Unexpected token at position 12345',
+      'timestamp 1709171234567 is out of range',
+      'invalid input syntax for type uuid: "3f2a9c1e-0000-4000-8000-000000000000"',
+      'value 091712345678 has twelve digits',
+    ]) {
+      expect(redactText(text)).toBe(text);
+    }
   });
 });
 
@@ -137,6 +163,10 @@ describe('reportServerErrors', () => {
     });
     // Used only by the 4xx test: the dedupe integration drops an event identical
     // to the one before it, so that test needs a failure no other test sends.
+    // How Postgres reports a malformed value: by quoting it.
+    things.get('/:id/echo', (req) => {
+      throw new Error(`invalid input syntax for type uuid: "${req.params.id}"`);
+    });
     things.get('/:id/gateway', (_req, res) => {
       res.status(504).end();
     });
@@ -207,6 +237,15 @@ describe('reportServerErrors', () => {
     const [event] = events();
     expect(event?.message).toBe('GET /api/v1/things/:id/ready answered 503');
     expect(sent[0]).not.toContain('juan-cruz');
+  });
+
+  it('blanks a phone number an error message quotes back', async () => {
+    await fetch(`${base}/api/v1/things/09171234567/echo`);
+
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    const [event] = events();
+    expect(event?.exception?.values?.[0]?.value).toBe('invalid input syntax for type uuid: "[phone]"');
+    expect(sent[0]).not.toContain('09171234567');
   });
 
   it('does not report a 4xx', async () => {
