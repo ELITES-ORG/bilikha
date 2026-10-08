@@ -95,6 +95,34 @@ export function scrubEvent(event: ErrorEvent, userAgent: string): ErrorEvent {
   return scrubbed;
 }
 
+/**
+ * The Sentry organisation `frontend/vercel.json` forwards `/e/:project` to.
+ * Kept equal to that rewrite by a test.
+ */
+export const TUNNEL_HOST = 'o4512218682359808.ingest.us.sentry.io';
+
+/**
+ * Where reports are posted. Brave, uBlock Origin and most ad-blockers block
+ * requests to `sentry.io` outright, so on a deployment reports go to this
+ * site's own `/e/<project>`, which Vercel forwards to Sentry (ADR 0053). The
+ * DSN travels inside the report, which is what Sentry authenticates.
+ *
+ * Direct to Sentry instead — undefined — in the two cases the rewrite cannot
+ * serve: locally, where there is no Vercel, and a DSN from another Sentry
+ * organisation, which the rewrite would forward to the wrong one.
+ */
+export function tunnelFor(dsn: string, environment: DeploymentEnvironment): string | undefined {
+  if (environment === 'local') return undefined;
+  try {
+    const url = new URL(dsn);
+    const project = url.pathname.split('/').filter(Boolean).pop() ?? '';
+    if (url.hostname !== TUNNEL_HOST || !/^\d+$/.test(project)) return undefined;
+    return `/e/${project}`;
+  } catch {
+    return undefined;
+  }
+}
+
 interface CaptureOptions {
   dsn: string;
   environment: DeploymentEnvironment;
@@ -111,6 +139,7 @@ export function createCapture({ dsn, environment, release, origin }: CaptureOpti
     dsn,
     environment,
     release,
+    tunnel: tunnelFor(dsn, environment),
     transport: makeFetchTransport,
     stackParser: defaultStackParser,
     integrations: [

@@ -2,7 +2,8 @@ import { AxiosError } from 'axios';
 import type { ErrorEvent } from '@sentry/browser';
 import { describe, expect, it } from 'vitest';
 import { isReportable, isReportableUncaught, routePattern } from './error-reporting';
-import { redactText, scrubEvent } from './error-reporting-client';
+import { redactText, scrubEvent, TUNNEL_HOST, tunnelFor } from './error-reporting-client';
+import vercelJson from '../../vercel.json?raw';
 
 describe('routePattern', () => {
   it('keeps the words of a route', () => {
@@ -107,5 +108,43 @@ describe('scrubEvent', () => {
     expect(scrubbed.contexts).toEqual({ react: { componentStack: 'at Offer' } });
     expect(scrubbed.exception?.values?.[0]?.value).toBe('boom for [phone]');
     expect(JSON.stringify(scrubbed)).not.toMatch(/juan|09171234567|hello neighbour|fbclid|bilikha\.sid/);
+  });
+});
+
+describe('tunnelFor', () => {
+  const DSN = `https://abc123@${TUNNEL_HOST}/4512218697826304`;
+
+  it('sends a deployed site through its own /e/<project>, past ad-blockers', () => {
+    expect(tunnelFor(DSN, 'staging')).toBe('/e/4512218697826304');
+    expect(tunnelFor(DSN, 'production')).toBe('/e/4512218697826304');
+  });
+
+  it('goes direct locally, where there is no Vercel rewrite', () => {
+    expect(tunnelFor(DSN, 'local')).toBeUndefined();
+  });
+
+  it('goes direct for a DSN the rewrite would forward to the wrong organisation', () => {
+    expect(tunnelFor('https://abc123@o1.ingest.us.sentry.io/42', 'production')).toBeUndefined();
+    expect(tunnelFor('not a url', 'production')).toBeUndefined();
+  });
+});
+
+describe('the /e rewrite in vercel.json', () => {
+  const rewrites = (JSON.parse(vercelJson) as { rewrites: { source: string; destination: string }[] })
+    .rewrites;
+  const tunnel = rewrites.findIndex((rule) => rule.source.startsWith('/e/'));
+  const spaFallback = rewrites.findIndex((rule) => rule.destination === '/index.html');
+
+  it('forwards to the organisation tunnelFor assumes', () => {
+    expect(tunnel).toBeGreaterThanOrEqual(0);
+    expect(new URL(rewrites[tunnel]!.destination.replace(':project', '1')).hostname).toBe(TUNNEL_HOST);
+  });
+
+  it('accepts only a numeric project, so it cannot be pointed anywhere else', () => {
+    expect(rewrites[tunnel]!.source).toBe(String.raw`/e/:project(\d+)`);
+  });
+
+  it('comes before the SPA fallback, which would otherwise answer with index.html', () => {
+    expect(tunnel).toBeLessThan(spaFallback);
   });
 });
