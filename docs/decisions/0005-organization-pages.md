@@ -1,6 +1,6 @@
 # 0005. Public pages for organisations, private trust signals for individuals
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-08)
 - **Date:** 2026-09-15
 
 ## Context
