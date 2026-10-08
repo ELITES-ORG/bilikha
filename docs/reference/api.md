@@ -423,6 +423,15 @@ edit clears `editedSinceReviewAt` without changing the published status.
 
 ---
 
+### `POST /api/v1/admin/error-check`
+
+No body. Throws on purpose and answers the same generic `500
+INTERNAL_SERVER_ERROR` as any bug, so error reporting can be checked on a live
+environment without breaking anything real
+([ADR 0053](../decisions/0053-errors-are-reported-to-sentry-without-personal-data.md)).
+The report arrives as `Deliberate error check, sent by an administrator`, tagged
+with the route `/api/v1/admin/error-check` and that environment.
+
 ## Creatives (public)
 
 Published profiles only. Unpublished or pending profiles return 404 — the same

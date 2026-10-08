@@ -34,6 +34,13 @@ adminRouter.use(requireAdmin);
 // is already 673 lines, and the taxonomy write rules are a self-contained set.
 adminRouter.use(taxonomyAdminRouter);
 
+// Throws on purpose, so error reporting can be checked on a live environment
+// without breaking anything real (ADR 0053). Render's free tier has no shell,
+// and nothing else fails on demand.
+adminRouter.post('/error-check', () => {
+  throw new Error('Deliberate error check, sent by an administrator');
+});
+
 adminRouter.get('/profiles', async (req, res) => {
   const query = listQuerySchema.parse(req.query);
   const { rows, total } = await listProfiles(query);

@@ -5,6 +5,7 @@ import compression from 'compression';
 import session from 'express-session';
 import { pinoHttp } from 'pino-http';
 import { env, isProduction } from './config/env.js';
+import { reportServerErrors } from './lib/error-reporting.js';
 import { logger } from './lib/logger.js';
 import { DrizzleSessionStore } from './lib/session-store.js';
 import { apiRouter } from './routes/index.js';
@@ -18,6 +19,9 @@ export function createApp(): Express {
   // spoof its address and bypass rate limiting entirely.
   app.set('trust proxy', isProduction ? 2 : 1);
 
+  // First, so a 5xx from any layer below — the session store included — is
+  // reported. Does nothing when SENTRY_DSN is unset.
+  app.use(reportServerErrors);
   app.use(helmet());
   app.use(
     cors({

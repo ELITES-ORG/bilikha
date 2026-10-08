@@ -27,6 +27,9 @@ confusing runtime error inside a request handler.
 | `SUPABASE_URL` | **yes** | — | Project URL, e.g. `https://abc.supabase.co`. Used only by the backend storage client |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | — | Service role secret from Settings → API. **Never** put this in `frontend/` or a `VITE_` variable |
 | `SUPABASE_STORAGE_BUCKET` | no | `media` | Public bucket for avatars and offer images |
+| `SENTRY_DSN` | no | — | Sentry DSN for the API's error reports ([ADR 0053](../decisions/0053-errors-are-reported-to-sentry-without-personal-data.md)). Empty or absent: nothing is reported, everything else works |
+| `RENDER_GIT_BRANCH` | no | — | **Set by Render, never by hand.** Names the environment errors are reported under: `production` branch → production, any other → staging, absent → local |
+| `RENDER_GIT_COMMIT` | no | — | **Set by Render, never by hand.** Its first 12 characters are the release in error reports, matching the frontend's build id |
 
 Local default:
 
@@ -41,6 +44,7 @@ SESSION_TTL_DAYS=30
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=replace-me-with-service-role-key
 SUPABASE_STORAGE_BUCKET=media
+SENTRY_DSN=
 ```
 
 ### Production notes
@@ -67,11 +71,13 @@ at build time**. Anything here is public. Never put a secret in this file.
 | Variable | Required | Default | Notes |
 |---|---|---|---|
 | `VITE_API_BASE_URL` | no | `/api/v1` | Relative by default so the Vite dev proxy and same-origin production both work |
+| `VITE_SENTRY_DSN` | no | — | Sentry DSN for browser error reports ([ADR 0053](../decisions/0053-errors-are-reported-to-sentry-without-personal-data.md)). Empty: the reporting code never loads. Public by design — a DSN can submit events, not read them. The environment comes from the hostname, not from here |
 
 Local default:
 
 ```bash
 VITE_API_BASE_URL=/api/v1
+VITE_SENTRY_DSN=
 ```
 
 ### When to change it
