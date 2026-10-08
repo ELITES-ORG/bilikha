@@ -128,6 +128,12 @@ The single radius is a decision, not a default
   no image, so the card leads with a soft band naming the domain — never a
   placeholder image that would be identical on every card. Grid columns come
   from an 18rem minimum card width (`postingGridClass`), not from breakpoints.
+- Admin pages build from `pages/admin/admin-ui.tsx`: `AdminPageHeader`
+  (eyebrow, serif title, optional figures), `AdminToolbar`, `adminListClass`
+  (hairline-divided rows, not a box per item), `AdminStatusBadge` (a word and
+  an icon per status), `AdminFact` and `AdminPagination`. Buttons, inputs, tabs
+  and empty states stay the shared primitives. Tables become rows that stack on
+  a phone rather than scrolling sideways.
 - `OfferCard` (`features/offers/`) is the one way an offer is shown in a grid:
   4:3 image, the craft as a badge over its corner, price pinned to the bottom so
   a row lines up. Hover is a border shift and a 3% image zoom — no lift, no

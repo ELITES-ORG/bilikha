@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
 import { ModeNotice } from '@/components/ModeNotice';
@@ -13,6 +13,7 @@ import {
   SectionHeading,
   Select,
   Skeleton,
+  TabPanels,
   Tabs,
   segmentItemClass,
   segmentTrackClass,
@@ -35,6 +36,7 @@ import { formatPriceRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
 
 type DirectoryView = 'offers' | 'creatives';
+const DIRECTORY_VIEWS: ReadonlyArray<DirectoryView> = ['offers', 'creatives'];
 
 function parseBudget(raw: string | null): number | undefined {
   if (!raw) return undefined;
@@ -233,6 +235,7 @@ export function DirectoryPage() {
               {!creativeHome && (
                 <Tabs
                   label="Directory sections"
+                  idPrefix="directory"
                   value={view}
                   onChange={setView}
                   items={[
@@ -436,7 +439,8 @@ export function DirectoryPage() {
             </div>
           )}
 
-          <div className="mt-10">
+          {/* The tab panel for Offers and Creatives; the postings view has no tabs. */}
+          <DirectoryResultsPanel tabbed={!creativeHome} view={view}>
             {nearbyMunicipalityName && !municipality && !creativeHome && (
               <p className="mb-6 text-sm text-ink-muted">
                 {view === 'offers'
@@ -713,9 +717,31 @@ export function DirectoryPage() {
                 </Button>
               </div>
             )}
-          </div>
+          </DirectoryResultsPanel>
         </Container>
       </main>
     </>
+  );
+}
+
+function DirectoryResultsPanel({
+  tabbed,
+  view,
+  children,
+}: {
+  tabbed: boolean;
+  view: DirectoryView;
+  children: ReactNode;
+}) {
+  if (!tabbed) return <div className="mt-10">{children}</div>;
+  return (
+    <TabPanels
+      idPrefix="directory"
+      values={DIRECTORY_VIEWS}
+      value={view}
+      className="mt-10"
+    >
+      {children}
+    </TabPanels>
   );
 }

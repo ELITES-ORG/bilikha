@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, type HTMLAttributes, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { segmentItemClass, segmentTrackClass } from './segment-styles';
 
@@ -24,6 +24,17 @@ export interface TabsProps<T extends string> {
    */
   idPrefix?: string;
   className?: string;
+}
+
+export interface TabPanelsProps<T extends string>
+  extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    'aria-labelledby' | 'children' | 'hidden' | 'id' | 'role'
+  > {
+  idPrefix: string;
+  values: ReadonlyArray<T>;
+  value: T;
+  children?: ReactNode;
 }
 
 /**
@@ -98,4 +109,32 @@ export function Tabs<T extends string>({
       })}
     </div>
   );
+}
+
+/**
+ * The panels controlled by `Tabs`. Every target stays mounted so each tab's
+ * `aria-controls` always resolves; only the selected panel exposes content.
+ */
+export function TabPanels<T extends string>({
+  idPrefix,
+  values,
+  value,
+  children,
+  ...props
+}: TabPanelsProps<T>) {
+  return values.map((panelValue) => {
+    const selected = panelValue === value;
+    return (
+      <div
+        {...props}
+        key={panelValue}
+        id={`${idPrefix}-panel-${panelValue}`}
+        role="tabpanel"
+        aria-labelledby={`${idPrefix}-tab-${panelValue}`}
+        hidden={!selected}
+      >
+        {selected ? children : null}
+      </div>
+    );
+  });
 }

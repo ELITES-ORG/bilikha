@@ -33,7 +33,7 @@ state or component behaviour.
 | 1. Tokens, fonts, literals | 3 / 3 | Done |
 | 2. Primitives | 1 / 1 | Done |
 | 3. Priority screens | 1 / 1 | Done |
-| 4. Remaining screens | 1 / 2 | Partial — the admin layout keeps the old header and tabs |
+| 4. Remaining screens | 2 / 2 | Done |
 
 ---
 
@@ -90,9 +90,12 @@ state or component behaviour.
 
 ### Step 4.2 — The admin layout
 
-- [ ] **Action.** `AdminLayout` still shows the plain-text "Bilikha" header,
-  and the review queue's tabs keep the old underline style. Restyle both to
-  match — found in review, left for the next pull request.
+- [x] **Action.** Replace `AdminLayout`'s plain-text "Bilikha" header with the
+  `Wordmark`, and move the review queue from its old underline tabs to the
+  shared admin tab treatment.
+- [x] **Verify.** The header uses `Wordmark`; the queue uses `Tabs` with its
+  counts, scrolling sideways on a phone. Every admin page seen at 1280px in
+  light and dark, and the queue at 320 and 375px (issue #12).
 
 ---
 
@@ -109,8 +112,12 @@ state or component behaviour.
 - Ramp rename (`clay` is slate, `lawa` navy, `palayok` red).
 - ~~A real favicon.~~ Done: the navy B, described in plan 0036 under "How the
   icons were made".
-- The admin layout (Step 4.2).
-- `Tabs` uses `role="tab"` without arrow-key navigation or panel links: add
-  both, or render it as `aria-pressed` buttons, as a segmented control.
-- Bundle growth from this restyle: initial JS 91.61 → 93.54 kB gzip (+2.1%),
-  CSS 13.30 → 16.21 kB gzip (+22%). Issue #10 asks for no growth by the end.
+- ~~The admin layout (Step 4.2).~~ Done in issue #12.
+- ~~`Tabs` uses `role="tab"` without arrow-key navigation or panel links.~~
+  Done: arrows, Home and End move and select, only the selected tab is in the
+  Tab order, and Directory, History, the profile and the admin queue each link
+  their tabs to a `role="tabpanel"` through `idPrefix`.
+- ~~Bundle growth from this restyle: initial JS 91.61 → 93.54 kB gzip (+2.1%),
+  CSS 13.30 → 16.21 kB gzip (+22%).~~ Decided on 2026-10-07 by reyxdz in issue
+  #12: the growth is accepted and the raised budget in
+  `frontend/bundle-budget.json` is the ceiling.

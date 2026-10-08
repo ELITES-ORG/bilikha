@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Inbox } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Inbox } from 'lucide-react';
 import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
 import type { QueueStatus } from '@/features/admin/types';
-import { Badge, Button, Container, EmptyState, Eyebrow, Skeleton } from '@/components/ui';
-import { cn } from '@/lib/cn';
+import { Avatar, Button, Container, EmptyState, Skeleton, TabPanels, Tabs } from '@/components/ui';
+import {
+  AdminPageHeader,
+  AdminPagination,
+  AdminStatusBadge,
+  AdminTabLabel,
+  AdminToolbar,
+  adminListClass,
+  adminRowLinkClass,
+  adminTabsClass,
+} from './admin-ui';
 
 const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
@@ -12,6 +21,9 @@ const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'published', label: 'Published' },
   { status: 'suspended', label: 'Suspended' },
 ];
+
+/** Registrant, municipality, crafts, waiting, arrow — one column on a phone. */
+const rowGrid = 'md:grid-cols-[minmax(0,2.4fr)_minmax(0,1.2fr)_4.5rem_7rem_1rem]';
 
 function waitingLabel(createdAt: string): string {
   const ms = Date.now() - new Date(createdAt).getTime();
@@ -36,46 +48,52 @@ export function AdminQueuePage() {
 
   return (
     <Container width="wide" className="py-(--section-gap)">
-      <Eyebrow>Administration</Eyebrow>
-      <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">Review queue</h1>
-      <p className="mt-3 max-w-xl text-md text-ink-muted">
-        Oldest registrations first. Approve to publish, or reject with a reason the registrant
-        will see.
-      </p>
+      <AdminPageHeader
+        title="Review queue"
+        description="Oldest registrations first. Open one to approve it, or reject it with a reason the registrant will see."
+      />
 
-      <div className="mt-8 flex flex-wrap gap-2 border-b border-hairline pb-px">
-        {TABS.map((tab) => {
-          const count = counts.data?.[tab.status] ?? 0;
-          const active = status === tab.status;
-          return (
-            <button
-              key={tab.status}
-              type="button"
-              onClick={() => {
-                setStatus(tab.status);
-                setPage(1);
-              }}
-              className={cn(
-                'inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium transition-colors',
-                active
-                  ? 'border-lawa-700 text-ink'
-                  : 'border-transparent text-ink-muted hover:text-ink',
-              )}
-            >
-              {tab.label}
-              <Badge tone={active ? 'brand' : 'neutral'}>{count}</Badge>
-            </button>
-          );
-        })}
-      </div>
+      <AdminToolbar ruled={false}>
+        <Tabs
+          label="Queue"
+          idPrefix="queue"
+          className={adminTabsClass}
+          value={status}
+          onChange={(next) => {
+            setStatus(next);
+            setPage(1);
+          }}
+          items={TABS.map((tab) => ({
+            value: tab.status,
+            label: (
+              <AdminTabLabel
+                text={tab.label}
+                count={counts.data?.[tab.status] ?? 0}
+                active={status === tab.status}
+              />
+            ),
+          }))}
+        />
+      </AdminToolbar>
 
-      <div className="mt-8">
+      <TabPanels
+        idPrefix="queue"
+        values={TABS.map((tab) => tab.status)}
+        value={status}
+        className="mt-8"
+      >
         {list.isPending && (
-          <div className="space-y-3">
+          <ul className={adminListClass} aria-label="Loading the queue">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
+              <li key={i} className="flex items-center gap-4 py-4" aria-hidden="true">
+                <Skeleton radius="full" className="size-10" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         {list.isError && (
@@ -83,6 +101,11 @@ export function AdminQueuePage() {
             icon={<Inbox className="size-5" />}
             title="Could not load the queue"
             description={list.error.message}
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                Try again
+              </Button>
+            }
           />
         )}
 
@@ -103,71 +126,72 @@ export function AdminQueuePage() {
         )}
 
         {list.data && list.data.data.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[40rem] text-left text-sm">
-              <thead>
-                <tr className="border-b border-hairline text-ink-subtle">
-                  <th className="py-3 pr-4 font-medium">Name</th>
-                  <th className="py-3 pr-4 font-medium">Username</th>
-                  <th className="py-3 pr-4 font-medium">Municipality</th>
-                  <th className="py-3 pr-4 font-medium">Crafts</th>
-                  <th className="py-3 font-medium">Waiting</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.data.map((row) => (
-                  <tr key={row.id} className="border-b border-hairline">
-                    <td className="py-3 pr-4">
-                      <Link
-                        to={`/admin/profiles/${row.id}`}
-                        className="font-medium text-lawa-800 link-underline"
-                      >
-                        {row.firstName} {row.lastName}
-                      </Link>
-                    </td>
-                    <td className="py-3 pr-4 text-ink-muted">{row.username}</td>
-                    <td className="py-3 pr-4 text-ink-muted">{row.municipality}</td>
-                    <td className="py-3 pr-4 text-ink-muted">{row.subdomainCount}</td>
-                    <td className="py-3 text-ink-muted">
-                      {waitingLabel(
-                        status === 'edited'
-                          ? (row.editedSinceReviewAt ?? row.createdAt)
-                          : row.createdAt,
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            {/* Column heads for the desktop grid; a phone reads each row as a
+                stack, so the heads would only label nothing there. */}
+            <div
+              className={`mt-2 hidden gap-x-4 px-2 pb-3 text-xs font-semibold tracking-wider text-ink-subtle uppercase md:grid ${rowGrid}`}
+              aria-hidden="true"
+            >
+              <span>Registrant</span>
+              <span>Municipality</span>
+              <span>Crafts</span>
+              <span>Waiting</span>
+              <span />
+            </div>
+            <ul className={adminListClass}>
+              {list.data.data.map((row) => {
+                const name = `${row.firstName} ${row.lastName}`;
+                const waiting = waitingLabel(
+                  status === 'edited' ? (row.editedSinceReviewAt ?? row.createdAt) : row.createdAt,
+                );
+                return (
+                  <li key={row.id} className={adminRowLinkClass}>
+                    <div className={`grid items-center gap-x-4 gap-y-1 px-1 py-4 md:px-2 ${rowGrid}`}>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Avatar src={null} name={name} size="md" />
+                        <div className="min-w-0">
+                          <Link
+                            to={`/admin/profiles/${row.id}`}
+                            className="font-semibold break-words text-ink after:absolute after:inset-0"
+                          >
+                            {name}
+                          </Link>
+                          <p className="text-sm break-words text-ink-muted">@{row.username}</p>
+                          {/* The desktop columns, folded into one line on a phone. */}
+                          <p className="mt-1 text-sm text-ink-muted md:hidden" data-numeric>
+                            {row.municipality} · {row.subdomainCount}{' '}
+                            {row.subdomainCount === 1 ? 'craft' : 'crafts'} · waiting {waiting}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="hidden text-sm text-ink md:block">{row.municipality}</p>
+                      <p className="hidden text-sm text-ink md:block" data-numeric>
+                        {row.subdomainCount}
+                      </p>
+                      <p className="hidden md:block">
+                        {status === 'edited' ? (
+                          <AdminStatusBadge status="edited" label={waiting} />
+                        ) : (
+                          <span className="text-sm text-ink" data-numeric>
+                            {waiting}
+                          </span>
+                        )}
+                      </p>
+                      <ArrowRight
+                        className="hidden size-4 text-ink-subtle transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-ink md:block"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
 
-        {list.data && list.data.meta.total > list.data.meta.limit && (
-          <div className="mt-6 flex items-center justify-between gap-3">
-            <p className="text-sm text-ink-subtle">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+        <AdminPagination page={page} pages={totalPages} onPage={setPage} />
+      </TabPanels>
     </Container>
   );
 }
