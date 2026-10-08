@@ -1,6 +1,6 @@
 # 0051. An admin reset issues a one-time password, revokes every session, and forces a change
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-08)
 - **Date:** 2026-10-08
 - **Related:** [0013](./0013-username-password-auth-sprint-1.md) ·
   [0028](./0028-suspension-is-enforced-per-request.md) ·
@@ -74,6 +74,16 @@ for resets" is a standing credential for every account they have ever touched.
 `sessions` gains `user_id uuid references users(id) on delete cascade`,
 indexed, written by `DrizzleSessionStore` from the session data it already
 serialises. Revocation becomes one delete.
+
+Sessions that already exist when this ships have no `user_id`, and a session
+that is only being used is touched, not saved (`rolling`, no `resave`), so
+nothing would ever fill it in. A missed session would survive a reset, sit
+locked while the flag is set, and get its access back once the owner chose a new
+password. Three things close that: migration `0028` backfills `user_id` from
+the serialised session; `touch` writes `user_id` as well as the expiry, which
+covers sessions signed in by the previous build during the deploy; and the
+reset also deletes any session still without `user_id` whose data names the
+account.
 
 The cascade is worth having on its own: a deleted account's sessions currently
 linger until they expire or the pruner reaches them.

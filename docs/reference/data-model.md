@@ -527,7 +527,7 @@ table.
 | `sid` | `text` PK | |
 | `data` | `text` | JSON session payload |
 | `expires_at` | `timestamptz` | Indexed for prune |
-| `user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`, indexed. Denormalised out of `data` so revoking every session an account holds is one delete ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)). Null until the session carries a signed-in user |
+| `user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`, indexed. Denormalised out of `data` so revoking every session an account holds is one delete ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)). Null until the session carries a signed-in user. Written on `set` and on `touch`; migration `0028` backfilled sessions that predate it |
 
 ---
 

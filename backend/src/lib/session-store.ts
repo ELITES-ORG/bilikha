@@ -98,9 +98,12 @@ export class DrizzleSessionStore extends Store {
   override touch(sid: string, session: SessionData, callback?: () => void): void {
     void (async () => {
       try {
+        // `userId` too: with `rolling` and no `resave`, a session that is only
+        // being used is touched, never set, so this is what keeps `user_id`
+        // current for a session signed in by an older build (ADR 0051).
         await db
           .update(sessions)
-          .set({ expiresAt: this.expiryFor(session) })
+          .set({ expiresAt: this.expiryFor(session), userId: session.userId ?? null })
           .where(eq(sessions.sid, sid));
       } catch (error) {
         logger.warn({ err: error }, 'Session touch failed');

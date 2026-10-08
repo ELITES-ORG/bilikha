@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { moderationActions, sessions, users } from '../../db/schema/index.js';
 import { makeAdmin, makeUser } from '../../test/factories.js';
 import { verifyPassword } from '../../lib/password.js';
 import { changePassword } from '../me/me.service.js';
 import { resetAccountPassword } from './admin.service.js';
+import { DrizzleSessionStore } from '../../lib/session-store.js';
 
 /** A session row as express-session would leave one, so revocation has something real to delete. */
 async function giveSession(userId: string, sid: string) {
@@ -64,6 +65,44 @@ describe('an administrator resetting a password', () => {
 
     expect(theirs).toHaveLength(0);
     expect(others).toHaveLength(1);
+  });
+
+  it('revokes a session signed in before user_id existed, which carries the user only in its data', async () => {
+    const admin = await makeAdmin();
+    const target = await makeUser();
+    const bystander = await makeUser();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    // What a session written by the previous build looks like, and what a
+    // session signed in during the deploy looks like until it is next used.
+    await db.insert(sessions).values([
+      { sid: 'sid-legacy-target', data: JSON.stringify({ cookie: {}, userId: target.id }), expiresAt },
+      { sid: 'sid-legacy-bystander', data: JSON.stringify({ cookie: {}, userId: bystander.id }), expiresAt },
+    ]);
+
+    await resetAccountPassword({ adminId: admin.id, userId: target.id });
+
+    const left = await db.select({ sid: sessions.sid }).from(sessions).where(isNull(sessions.userId));
+    const sids = left.map((row) => row.sid);
+    expect(sids).not.toContain('sid-legacy-target');
+    expect(sids).toContain('sid-legacy-bystander');
+  });
+
+  it('fills in user_id when a legacy session is next used, so later resets find it directly', async () => {
+    const target = await makeUser();
+    const store = new DrizzleSessionStore();
+    const cookie = { originalMaxAge: 60 * 60 * 1000, expires: new Date(Date.now() + 60 * 60 * 1000) };
+    await db.insert(sessions).values({
+      sid: 'sid-legacy-touched',
+      data: JSON.stringify({ cookie, userId: target.id }),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    await new Promise<void>((resolve) => {
+      store.touch('sid-legacy-touched', { cookie, userId: target.id } as never, () => resolve());
+    });
+
+    const [row] = await db.select().from(sessions).where(eq(sessions.sid, 'sid-legacy-touched'));
+    expect(row!.userId).toBe(target.id);
   });
 
   it('records the reset without recording the password', async () => {

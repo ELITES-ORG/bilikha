@@ -35,9 +35,8 @@ until it sets a new password. The reset is on the record; the password is not.
 - [x] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`
       → `domains: 9  subdomains: 81`.
-- [ ] ADR 0051 Accepted. It is **Proposed**; only reyxdz accepts. Execution went
-      ahead on userMarcPaul's instruction, and nothing is merged, so the
-      decision is still reversible by discarding this branch.
+- [x] ADR 0051 Accepted — by reyxdz on 2026-10-08. (Execution had already gone
+      ahead on userMarcPaul's instruction; the acceptance covers it.)
 
 ## Progress
 
