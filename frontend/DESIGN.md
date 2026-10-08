@@ -178,8 +178,10 @@ The single radius is a decision, not a default
   [ADR 0034 amendments](../docs/decisions/0034-navigation-transitions.md), plus
   the browser's back and forward buttons — never on tabs, filters, in-app back
   links or the phone tab bar.
-- The Elites wordmark in the landing footer glitches every three seconds while
-  on screen (`GlitchImage`, after the Elites site's headings). It is the
+- The credits strip (`CreditsBar`: operator, RA 11904, developer) closes the
+  landing footer and the Account page; only the landing adds the map credit.
+  Its Elites wordmark glitches every three seconds while on screen
+  (`GlitchImage`, after the Elites site's headings). It is the
   developer's mark, not Bilikha's, so the effect stays there — never on
   Bilikha's own headings or controls.
 - Everything collapses under `prefers-reduced-motion`: movement is removed,
