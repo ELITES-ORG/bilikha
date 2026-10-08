@@ -102,8 +102,11 @@ describe('scrubEvent', () => {
     const scrubbed = scrubEvent(event, 'Mozilla/5.0 [FBAN/FB4A]');
 
     expect(Object.keys(scrubbed).sort()).toEqual(
-      ['contexts', 'event_id', 'exception', 'release', 'request', 'tags'].sort(),
+      ['contexts', 'event_id', 'exception', 'release', 'request', 'tags', 'user'].sort(),
     );
+    // Replaced, not kept: no IP, and a location that stops Sentry working out
+    // the person's city from the connection (it did: Taguig).
+    expect(scrubbed.user).toEqual({ geo: { region: 'Not collected' } });
     expect(scrubbed.request).toEqual({ headers: { 'User-Agent': 'Mozilla/5.0 [FBAN/FB4A]' } });
     expect(scrubbed.contexts).toEqual({ react: { componentStack: 'at Offer' } });
     expect(scrubbed.exception?.values?.[0]?.value).toBe('boom for [phone]');

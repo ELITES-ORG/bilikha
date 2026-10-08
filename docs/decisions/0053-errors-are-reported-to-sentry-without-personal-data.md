@@ -105,7 +105,8 @@ browser, `RENDER_GIT_COMMIT` on the API — so both halves of one deploy line up
 | Request bodies, form contents, message text | Body collection off; `request` dropped from every event |
 | Cookies, the session cookie included | Cookie collection off; `request` dropped |
 | Headers | Off; the browser sends back only `User-Agent`, to tell Facebook's in-app browser from Chrome |
-| User, email, phone, IP | User collection off; `user` dropped. Each Sentry project is set to *Prevent storing of IP addresses* when it is created ([deployments](../reference/deployments.md#sentry--error-reports)) |
+| User, email, phone, IP | User collection off; `user` replaced. Each Sentry project is set to *Prevent storing of IP addresses* when it is created ([deployments](../reference/deployments.md#sentry--error-reports)) |
+| The person's city | Sentry works out a city from the connection's IP even with `infer_ip: never` (which the browser SDK sends) and IP storage off — a report from Taguig was filed as Taguig. It keeps a location a report already carries, so `user` is replaced by `{ geo: { region: 'Not collected' } }` on every report, and Sentry shows *Not collected*. Checked against Sentry: setting `user.ip_address` to null did not stop it |
 | The URL, query string or referrer | The route **pattern** is sent instead: `/api/v1/creatives/:slug`, `/creatives/:param` |
 | Breadcrumbs, local variables, source lines | Not installed; stripped anyway |
 | An email or phone number quoted in an error message | Blanked to `[email]` / `[phone]` before sending. The message itself is kept — it is what identifies the bug — but libraries quote input: Postgres echoes a malformed value, V8's `JSON.parse` error quotes a short input whole |

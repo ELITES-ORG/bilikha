@@ -273,8 +273,10 @@ browser console:
   or an id. Reload before checking again: identical consecutive errors are
   deduplicated.
 
-Each should arrive under the right environment, with no user, no cookie, no
-request body and no URL — only the route pattern.
+Each should arrive under the right environment, with no cookie, no request
+body and no URL — only the route pattern. **Contexts → User** shows only
+*Geography: Not collected*. A real city there means the location placeholder
+has stopped working (ADR 0053).
 
 ---
 
