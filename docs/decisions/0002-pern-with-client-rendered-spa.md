@@ -67,4 +67,3 @@ The sharing half of the launch blocker is resolved by
 link-preview crawlers asking for a profile or an offer get a small HTML page
 with that item's own Open Graph tags, while people keep the SPA. Indexing by
 search engines is not covered by it and remains open.
-
