@@ -178,9 +178,11 @@
     />
 
     <!--
-      Static Open Graph tags so shared links render a card on Facebook and
-      Messenger. Per-profile tags need server-rendered HTML; Facebook's scraper
-      does not execute JavaScript, so these remain generic until that lands.
+      Site-wide Open Graph tags: the card for every link that is not a profile
+      or an offer. Those two get their own card — a crawler asking for them is
+      rewritten to the API's /share pages (frontend/vercel.json, ADR 0056).
+      The image is absolute because crawlers do not resolve relative URLs; it
+      names production, and staging serves the same file.
     -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Bilikha" />
@@ -189,7 +191,11 @@
       property="og:description"
       content="Find and connect with creative talent across Biliran."
     />
+    <meta property="og:image" content="https://bilikha.vercel.app/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://bilikha.vercel.app/og-default.png" />
   </head>
   <body>
     <!-- Existing application and fallback copy is English. Catalogue values

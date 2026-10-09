@@ -59,3 +59,11 @@ not solved.
 
 **Watch for.** The longer the SPA grows, the more expensive option three becomes.
 Keep public routes thin and data-driven so that migration stays cheap.
+
+## Amendment — 2026-10-10: link previews resolved
+
+The sharing half of the launch blocker is resolved by
+[ADR 0056](./0056-link-previews-come-from-a-crawler-only-html-endpoint.md):
+link-preview crawlers asking for a profile or an offer get a small HTML page
+with that item's own Open Graph tags, while people keep the SPA. Indexing by
+search engines is not covered by it and remains open.

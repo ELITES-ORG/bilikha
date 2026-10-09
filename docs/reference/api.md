@@ -465,6 +465,38 @@ see the previous recency order and no `isNearby` field.
 
 ---
 
+## Link previews (crawlers)
+
+Public, no session. They answer **HTML, not JSON**: the `<head>` a
+link-preview crawler reads, and a single link in the body. `frontend/vercel.json`
+sends crawlers here by `User-Agent`; people never reach them
+([ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+
+Always `200` with `Content-Type: text/html`, `Cache-Control: public, max-age=600`
+and `Vary: User-Agent`. Tags: `<title>`, `description`, `canonical`,
+`og:site_name`, `og:type`, `og:url`, `og:title`, `og:description`,
+`og:image` (absolute; `og:image:width`/`height` for the default image), and
+`twitter:card`/`title`/`description`/`image`. `og:url` is the page on this
+deployment's site.
+
+Anything the public page would 404 — unpublished, suspended, unknown, or a
+malformed offer id — gets the generic Bilikha card, which names nothing about
+the item. An unexpected error gets the same card with `Cache-Control: no-store`.
+
+### `GET /api/v1/share/creatives/:slug`
+
+Title `{name} · {primary craft} in {municipality}`; description the bio
+(clipped), or the crafts and municipality; image the avatar (`summary` card) or
+`/og-default.png`.
+
+### `GET /api/v1/share/offers/:id`
+
+Title the offer's; description `{price} · {creative}, {municipality}` and the
+offer's description (clipped); image the first photo (`summary_large_image`) or
+`/og-default.png`.
+
+---
+
 ## Conversations
 
 All routes require a signed-in session. Authorisation is by participation: the
