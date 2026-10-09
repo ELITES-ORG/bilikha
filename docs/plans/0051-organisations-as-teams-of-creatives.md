@@ -1,6 +1,6 @@
 # 0051. Organisations as teams of creatives
 
-- **Status:** Blocked
+- **Status:** In progress
 - **Owner:** userMarcPaul
 - **Related:** [ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md) ·
   [ADR 0005](../decisions/0005-organization-pages.md) ·
@@ -19,36 +19,25 @@ creatives into it, and have the team appear as one reviewed, public page in the
 directory. Nobody signs in as an organisation; nobody is listed without
 accepting.
 
-## Blockers
+## Decisions
 
-**[ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md) is
-`Proposed`, not `Accepted`.** It is merged, and it answers all three questions
-issue #25 left open, but in this repository merging an ADR and accepting it are
-separate acts: ADR 0005 sat merged as Proposed from 2026-09-15 until PR #58
-accepted it on 2026-10-08, and that pull request changed nothing but the status
-line. Only reyxdz accepts
-([ADR 0043](../decisions/0043-only-reyxdz-merges-and-releases.md)).
+[ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md) was
+**Accepted by reyxdz on 2026-10-09** (PR #61). That pull request changed only
+the status line, so three details this plan needed were settled separately by
+userMarcPaul on 2026-10-09, and are recorded here:
 
-Phase 1 writes tables. A migration against real personal data is the single
-most expensive thing here to get wrong, so no step below runs until the status
-line reads Accepted.
+| Question | Answer | What it does to the schema |
+|---|---|---|
+| Is the seven-day invitation expiry a decision? | **Yes — it expires automatically.** Already in ADR 0054's text. | `expires_at` is stored; expiry is computed on read (`expires_at < now()`). No scheduled job. |
+| Does the five-organisation cap count invitations? | **No — it counts organisations a creative has joined.** Consistent with ADR 0054. | The cap counts `organization_members` rows, never invitations. |
+| Does a rejected page block founding another? | **No — the founder can submit a new registration.** **Not in ADR 0054.** | A dedicated `organization_status` enum with a real `rejected` value, and rejected organisations stop counting toward the cap. |
 
-**Verify:**
-
-```bash
-grep -m1 'Status' docs/decisions/0054-organisations-are-teams-of-creatives.md
-```
-
-Three details in ADR 0054 are worth confirming at the same time, because each
-one changes a column rather than a screen:
-
-1. **Is the seven-day invitation expiry a decision or a placeholder?** It sets
-   `expires_at` semantics and whether expiry is a stored state or computed.
-2. **Does the five-organisation cap per person count invitations, or only
-   accepted memberships?** The difference is whether a pending invitation
-   consumes a slot.
-3. **Does a rejected organisation page block the founder from founding
-   another?** Nothing says, and the review queue will meet this on day one.
+The third answer **extends an accepted ADR**. It is recorded here rather than
+written into ADR 0054, because amending an accepted decision is reyxdz's call.
+It is also why phase 1 departs from reusing `profile_status`: profiles record a
+rejection as `suspended` plus a reason, and for an organisation a rejected page
+(which should free a cap slot) and an abuse suspension (which should not) cannot
+share one value.
 
 ## Rules for whoever executes this
 
@@ -66,18 +55,18 @@ one changes a column rather than a screen:
 ## Prerequisites
 
 - [x] Branch cut fresh from `origin/main` ([ADR 0052](../decisions/0052-pull-requests-merge-by-squash-only.md)).
-- [ ] ADR 0054 Accepted, and the three questions above answered.
-- [ ] Database running and current: `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
+- [x] ADR 0054 Accepted (reyxdz, 2026-10-09), and the three questions answered — see Decisions.
+- [x] Database running and current: `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
 
 ## Progress
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Data model | 0 / 5 | Blocked |
-| 2. Founding and review | 0 / 4 | Blocked |
-| 3. Membership and invitations | 0 / 5 | Blocked |
-| 4. The public page | 0 / 4 | Blocked |
-| 5. Documentation | 0 / 3 | Blocked |
+| 1. Data model | 5 / 5 | Done |
+| 2. Founding and review | 0 / 4 | Not started |
+| 3. Membership and invitations | 0 / 5 | Not started |
+| 4. The public page | 0 / 4 | Not started |
+| 5. Documentation | 0 / 3 | Not started |
 
 ---
 
@@ -87,48 +76,53 @@ one changes a column rather than a screen:
 
 ### Step 1.1 — `organizations`
 
-- [ ] **Action.** Create `backend/src/db/schema/organizations.ts`. Mirror
+- [x] **Action.** Create `backend/src/db/schema/organizations.ts`. Mirror
       `creative_profiles`: `id`, `slug` (unique, permanent — it is a public URL,
       the rule [ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)
       sets for the taxonomy applies for the same reason), `name`, `bio`,
-      `logoKey`, `municipalityId`, `status` reusing `profileStatusEnum`,
+      `logoKey`, `municipalityId`, `status` on a **dedicated
+      `organizationStatusEnum`** (`pending_review | published | rejected |
+      suspended`) — not `profileStatusEnum`; see Decisions,
       `rejectionReason`, `reviewedAt`, `reviewedBy`, `editedSinceReviewAt`,
       timestamps. No `userId` — the founder is a membership row, not a column,
       so the handover rule has one place to write.
-- [ ] **Verify.** `npm --prefix backend run typecheck` passes.
+- [x] **Verify.** `npm --prefix backend run typecheck` passes.
 
 ### Step 1.2 — `organization_members`
 
-- [ ] **Action.** In the same file: `organizationId`, `userId`, a
+- [x] **Action.** In the same file: `organizationId`, `userId` (**`onDelete:
+      'restrict'`** — there is no account-deletion feature, so this is the only
+      thing stopping a founder's deletion from orphaning an organisation), a
       `organizationRoleEnum` of `founder | co_founder | member`, free-text
       `title`, `joinedAt`. Unique on `(organizationId, userId)`. A **partial
       unique index** on `organizationId` where `role = 'founder'` — exactly one
       founder is an invariant the database should hold, not a service rule
       somebody can forget.
-- [ ] **Verify.** The generated SQL contains that partial unique index.
+- [x] **Verify.** The generated SQL contains that partial unique index.
 
 ### Step 1.3 — `organization_invitations`
 
-- [ ] **Action.** `organizationId`, `invitedUserId`, `invitedBy`, `role` (the
+- [x] **Action.** `organizationId`, `invitedUserId`, `invitedBy`, `role` (the
       role they are invited into), `title`, `createdAt`, `expiresAt`,
       `acceptedAt`, `declinedAt`. Unique on `(organizationId, invitedUserId)`
       where unanswered, so one pending invitation per person per organisation.
-- [ ] **Verify.** `npm --prefix backend run typecheck` passes.
+- [x] **Verify.** `npm --prefix backend run typecheck` passes.
 
 ### Step 1.4 — `organization_subdomains`
 
-- [ ] **Action.** Join table to `creative_subdomains`, `onDelete: 'restrict'`
+- [x] **Action.** Join table to `creative_subdomains`, `onDelete: 'restrict'`
       as the profile one is, with `isPrimary`. The caps — one or two domains,
       five sub-domains — are service rules, not constraints; record that in a
       comment so nobody adds a check constraint that fights an admin fixing
       data.
-- [ ] **Verify.** `npm --prefix backend run typecheck` passes.
+- [x] **Verify.** `npm --prefix backend run typecheck` passes.
 
 ### Step 1.5 — Generate, read and apply the migration
 
-- [ ] **Action.** `npm --prefix backend run db:generate`, read the SQL line by
-      line, then `npm --prefix backend run db:migrate`.
-- [ ] **Verify.** Four `CREATE TABLE`, two `CREATE TYPE`, the partial unique
+- [x] **Action.** `npm --prefix backend run db:generate` →
+      `backend/drizzle/0029_crazy_thundra.sql`, read the SQL line by line, then
+      `npm --prefix backend run db:migrate`.
+- [x] **Verify.** Four `CREATE TABLE`, two `CREATE TYPE`, the partial unique
       indexes. **No `DROP`** — `users.account_type` is dead but is not dropped
       here; that is its own change, after nothing references it.
 
@@ -142,7 +136,8 @@ one changes a column rather than a screen:
 
 - [ ] **Action.** `backend/src/modules/organizations/organizations.service.ts`.
       `foundOrganization` refuses an account with no **published** creative
-      profile, refuses a sixth organisation, creates the row at
+      profile, refuses a sixth organisation — counting memberships, **excluding
+      organisations whose status is `rejected`** — creates the row at
       `pending_review`, and writes the founder membership **in the same
       transaction** — an organisation without a founder must never exist, not
       even briefly.
@@ -184,7 +179,13 @@ one changes a column rather than a screen:
 - [ ] **Action.** `POST /api/v1/organizations/:slug/invitations` — founder or
       co-founder, by username. Only a founder may invite a co-founder. The
       invitee must have a published profile. Expires seven days out.
-- [ ] **Verify.** A co-founder inviting a co-founder is refused.
+      **Re-inviting after expiry must update the existing row's `expires_at`,
+      not insert a new one.** The pending index cannot see expiry (`now()` is
+      not allowed in an index predicate), so an expired, unanswered invitation
+      still occupies the slot and a second insert is a unique violation.
+      `organizations.integrity.test.ts` pins this.
+- [ ] **Verify.** A co-founder inviting a co-founder is refused, and
+      re-inviting someone whose invitation expired succeeds.
 
 ### Step 3.2 — Accept and decline
 
