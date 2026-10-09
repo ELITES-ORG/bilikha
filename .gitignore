@@ -29,3 +29,6 @@ cookies.txt
 
 # Local Supabase CLI scratch
 supabase/.temp/
+
+# Issues
+issue.md
