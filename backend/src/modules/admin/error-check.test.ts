@@ -29,6 +29,11 @@ describe('POST /api/v1/admin/error-check', () => {
       body: JSON.stringify({ username, password: PASSWORD }),
     });
     expect(response.status).toBe(200);
+    // express-session holds back the last byte of the body until the session
+    // row is written. fetch resolves on the headers, so without reading the
+    // body to the end the next request could arrive before the session exists
+    // and the admin guard would answer 404 — which CI hit now and then.
+    await response.text();
     return response.headers.get('set-cookie')!.split(';')[0]!;
   }
 
