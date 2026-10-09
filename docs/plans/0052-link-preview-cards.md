@@ -1,4 +1,4 @@
-# 0051. Link preview cards for shared profiles and offers
+# 0052. Link preview cards for shared profiles and offers
 
 - **Status:** In progress
 - **Owner:** emanuel

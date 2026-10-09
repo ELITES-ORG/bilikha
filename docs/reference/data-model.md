@@ -531,6 +531,132 @@ table.
 
 ---
 
+## `organizations`
+
+A team of creatives with a public page
+([ADR 0005](../decisions/0005-organization-pages.md),
+[ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)). **Not an
+account type** — nobody signs in as one, and `users.account_type` is not used
+for it. Shaped after `creative_profiles` so it joins the existing review queue.
+
+There is **no founder column**. The founder is a row in `organization_members`,
+so handing the role over is one write rather than two that can disagree.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `slug` | `text` | **Unique.** A public URL — permanent, for the reason ADR 0049 gives for taxonomy slugs |
+| `name` | `text` | |
+| `bio` | `text` null | |
+| `logo_key` | `text` null | Storage key, as `users.avatar_key` |
+| `municipality_id` | `uuid` FK → `municipalities.id` | `ON DELETE RESTRICT` |
+| `status` | `organization_status` | `pending_review` \| `published` \| `rejected` \| `suspended`. Default `pending_review` |
+| `rejection_reason` | `text` null | Shown to the founder verbatim |
+| `reviewed_at` | `timestamptz` null | |
+| `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
+| `edited_since_review_at` | `timestamptz` null | A public edit on a published page; [ADR 0016](../decisions/0016-edits-never-unpublish.md) |
+| `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes: `slug` (unique), `(status, created_at)`.
+
+**Why its own status enum** rather than `profile_status`: profiles record a
+rejection as `suspended` plus a reason. For an organisation those must behave
+differently — a **rejected** page stops counting toward the five-organisation
+cap so the founder can submit a new one, while an organisation **suspended** for
+abuse keeps counting, or suspension becomes a way to spin up a replacement.
+
+---
+
+## `organization_members`
+
+Who is in a team. A row exists only after somebody founds the organisation or
+accepts an invitation — nobody is listed on a public page without consenting to
+it (RA 10173).
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `organization_id` | `uuid` FK → `organizations.id` | `ON DELETE CASCADE` |
+| `user_id` | `uuid` FK → `users.id` | **`ON DELETE RESTRICT`** — see below |
+| `role` | `organization_role` | `founder` \| `co_founder` \| `member` |
+| `title` | `text` null | Free text — "QA", "Full-stack developer". Job titles are not taxonomy |
+| `joined_at` | `timestamptz` | |
+
+Indexes:
+- `(organization_id, user_id)` unique — nobody twice in one team
+- `organization_id` unique **where `role = 'founder'`** — at most one founder,
+  held by the database rather than by service code
+- `user_id` — keeps the five-organisation cap count an index lookup
+
+**`user_id` is `RESTRICT` on purpose.** There is no account-deletion feature
+yet, so ADR 0054's rule that a founder hands over before deleting their account
+has no flow to attach to. With `CASCADE`, deleting a founder at the database
+would leave an organisation with no founder. `RESTRICT` makes that impossible:
+nobody in an organisation can be deleted until they have left it. Whatever
+deletion flow is built later must take a person out of their organisations
+first, which ADR 0054 requires anyway.
+
+The five-organisation cap counts **memberships**, never invitations, and
+excludes organisations whose status is `rejected`. It is a service rule.
+
+---
+
+## `organization_invitations`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `organization_id` | `uuid` FK → `organizations.id` | `ON DELETE CASCADE` |
+| `invited_user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `invited_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` — the record survives the inviter |
+| `role` | `organization_role` | `co_founder` or `member`; never `founder`, which is founded or handed over. **Check constraint** `organization_invitations_not_founder` |
+| `title` | `text` null | |
+| `created_at` | `timestamptz` | |
+| `expires_at` | `timestamptz` | Seven days after sending |
+| `accepted_at` | `timestamptz` null | |
+| `declined_at` | `timestamptz` null | |
+
+Indexes: `(organization_id, invited_user_id)` unique **where `accepted_at` and
+`declined_at` are both null** — one unanswered invitation per person per
+organisation; `invited_user_id`.
+
+Check constraints: `organization_invitations_one_answer` — `accepted_at` and
+`declined_at` are never both set; `organization_invitations_not_founder` — no
+invitation into the founder role.
+
+**Expiry is computed, not stored.** An invitation expires on its own seven days
+after sending: `expires_at < now()` is checked when it is read, so there is no
+scheduled job.
+
+**Re-inviting after expiry must update the row, not insert one.** `now()` is not
+allowed in an index predicate, so the pending index cannot see expiry and an
+expired, unanswered invitation still occupies the slot. A second insert fails
+with a unique violation; refreshing the existing row's `expires_at` is the
+supported path. `organizations.integrity.test.ts` pins this behaviour.
+
+---
+
+## `organization_subdomains`
+
+What the organisation does. Mirrors `creative_profile_subdomains` exactly.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `organization_id` | `uuid` FK → `organizations.id` | `ON DELETE CASCADE` |
+| `subdomain_id` | `uuid` FK → `creative_subdomains.id` | `ON DELETE RESTRICT` |
+| `is_primary` | `boolean` | Default false |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(organization_id, subdomain_id)` unique; `organization_id` unique
+where `is_primary` — one primary; `subdomain_id`.
+
+The caps — **one or two** domains, **up to five** sub-domains — are service
+rules, not constraints. They are counts across rows, and a check constraint
+would fight an administrator correcting data.
+
+---
+
 ## Seeding
 
 `backend/src/db/seed/` — data in `taxonomy-data.ts`, runner in `index.ts`,
@@ -556,8 +682,6 @@ Sketched only. Nothing below is built, and the shapes will change.
 
 | Table | Holds | Decided in |
 |---|---|---|
-| `organizations` | Public pages for teams of creatives: one or two domains, up to five sub-domains, exactly one founder | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
-| `organization_members` | Creatives in an organisation: founder, co-founder or member, a role title, a seven-day invitation; up to five organisations per person | [ADR 0005](../decisions/0005-organization-pages.md) · [0054](../decisions/0054-organisations-are-teams-of-creatives.md) |
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
 

@@ -2,6 +2,12 @@
 
 - **Status:** Accepted (reyxdz, 2026-10-09)
 - **Date:** 2026-10-08
+- **Clarified:** 2026-10-10 (reyxdz) — organisations are for creatives only.
+  This record first called client organisations "deferred", which read as
+  planned work. They are not: there are none, and there will not be.
+- **Amended:** 2026-10-10 (reyxdz) — a rejected organisation stops counting
+  toward the five-organisation cap; a suspended one keeps counting. See
+  Membership.
 - **Amends:** [0005](./0005-organization-pages.md), which framed organisations
   mainly as client institutions and forked registration on "yourself, or a
   group/business?"
@@ -16,7 +22,8 @@
 entity — `organizations` with public pages, `organization_members` for staff —
 and not a flag on `users`. It left open who creates one, how it is verified,
 what members can do, and whether creative organisations (studios, cooperatives)
-and client organisations (LGUs, schools) are the same thing.
+and client organisations (LGUs, schools) are the same thing. The answer below is
+that only the first exists.
 
 Two things it assumed no longer hold. Registration no longer forks: since
 [0019](./0019-one-account-creative-as-attachable-role.md) there is one account,
@@ -56,6 +63,12 @@ founder can send it again. Each member carries a free-text role title
 taxonomy and the nine domains are not ours to extend. A person may belong to
 **up to five** organisations, counting the ones they founded.
 
+An organisation counts toward those five from the moment it is registered,
+while it waits for review. If its page is **rejected**, it stops counting, so
+the founder can submit a new registration. If it is **suspended** for abuse, it
+keeps counting — otherwise suspension would become a way to spin up a
+replacement. Invitations never count; only organisations a person is in.
+
 **Roles.** Three, and an organisation has exactly one founder:
 
 - **Founder** — edits the page, picks the domains and sub-domains, invites and
@@ -78,10 +91,12 @@ conversation; co-founders do not see it.
 Messaging, posting offers or signing agreements *as* the organisation come later
 and get their own decision.
 
-**Client organisations are deferred.** An LGU or school sharing one account
-across its staff is a different problem with a different verification bar —
-impersonating "Municipality of Naval" is worse than impersonating a studio. It
-is not built on this model by default.
+**Organisations are for creatives only. There are no client organisations, and
+there will not be.** An LGU, school, festival committee or resort that hires
+creatives does so as an ordinary client. It never gets an organisation page, a
+shared staff account, or an organisation of its own. This is a settled scope
+decision, not a deferral — do not plan, schema or build for client
+organisations.
 
 ## Alternatives considered
 

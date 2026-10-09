@@ -6,9 +6,14 @@
 > **Amended by [0054](./0054-organisations-are-teams-of-creatives.md).** The
 > three entity shapes stand. What changed: organisations are teams of creatives,
 > founded by one and joined by invitation; registration does not fork, since
-> [0019](./0019-one-account-creative-as-attachable-role.md); and client
-> organisations such as LGUs are deferred. Read "inquiry" below as
-> "conversation" ([0018](./0018-conversations-replace-one-shot-inquiries.md)).
+> [0019](./0019-one-account-creative-as-attachable-role.md); and
+> organisations are for creatives only. **There are no client organisations,
+> and there will not be** — an LGU, school or other institution that hires
+> creatives is an ordinary client. Where the text below gives institutional
+> buyers a multi-member account or an organisation page (Alternatives,
+> Consequences), it no longer holds; it is kept as the original reasoning. Read
+> "inquiry" below as "conversation"
+> ([0018](./0018-conversations-replace-one-shot-inquiries.md)).
 
 ## Context
 
