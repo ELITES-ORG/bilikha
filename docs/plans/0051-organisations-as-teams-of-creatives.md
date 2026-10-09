@@ -293,11 +293,10 @@ share one value.
 - **Acting as an organisation** — messaging, posting offers, signing
   agreements. ADR 0054 defers these and says they get their own decision. The
   founder is a bottleneck until then, which is the known cost.
-- **Client organisations** — LGUs and schools, the original framing of issue
-  #25 and of ADR 0005. Deferred by ADR 0054 on the grounds that impersonating
-  "Municipality of Naval" needs a higher verification bar than impersonating a
-  studio. **Issue #25's title still describes this**, so the issue is only
-  partly closed by this plan.
+- **Not a follow-up: client organisations.** There are none, and there will
+  not be — organisations are for creatives only, and an LGU or school that hires
+  creatives is an ordinary client (ADR 0054, clarified in #65). Issue #25 is
+  retitled to match and closes with this plan.
 - **Dropping `users.account_type`** once nothing reads it.
 - **Sharing a client's message with co-founders**, which ADR 0054 calls the
   likely next step.
