@@ -609,7 +609,7 @@ excludes organisations whose status is `rejected`. It is a service rule.
 | `organization_id` | `uuid` FK → `organizations.id` | `ON DELETE CASCADE` |
 | `invited_user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
 | `invited_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` — the record survives the inviter |
-| `role` | `organization_role` | `co_founder` or `member`; never `founder`, which is founded or handed over (service rule) |
+| `role` | `organization_role` | `co_founder` or `member`; never `founder`, which is founded or handed over. **Check constraint** `organization_invitations_not_founder` |
 | `title` | `text` null | |
 | `created_at` | `timestamptz` | |
 | `expires_at` | `timestamptz` | Seven days after sending |
@@ -619,6 +619,10 @@ excludes organisations whose status is `rejected`. It is a service rule.
 Indexes: `(organization_id, invited_user_id)` unique **where `accepted_at` and
 `declined_at` are both null** — one unanswered invitation per person per
 organisation; `invited_user_id`.
+
+Check constraints: `organization_invitations_one_answer` — `accepted_at` and
+`declined_at` are never both set; `organization_invitations_not_founder` — no
+invitation into the founder role.
 
 **Expiry is computed, not stored.** An invitation expires on its own seven days
 after sending: `expires_at < now()` is checked when it is read, so there is no

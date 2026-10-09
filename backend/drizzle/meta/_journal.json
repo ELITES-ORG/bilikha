@@ -211,6 +211,13 @@
       "when": 1791559400314,
       "tag": "0029_crazy_thundra",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791576061573,
+      "tag": "0030_lumpy_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }

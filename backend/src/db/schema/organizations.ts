@@ -1,4 +1,14 @@
-import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  text,
+  boolean,
+  timestamp,
+  uniqueIndex,
+  index,
+  check,
+} from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { municipalities } from './geography.js';
@@ -149,7 +159,7 @@ export const organizationInvitations = pgTable(
     // Nullable so the record survives the inviter's account being deleted.
     invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
     // Never `founder` — the founder role is founded or handed over, not
-    // invited into. Enforced by the service.
+    // invited into. Held by a check constraint below.
     role: organizationRoleEnum('role').notNull(),
     title: text('title'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -163,6 +173,13 @@ export const organizationInvitations = pgTable(
       .where(sql`accepted_at is null and declined_at is null`),
     // "What is waiting for me" in the account hub.
     index('organization_invitations_invited_idx').on(table.invitedUserId),
+    // An answer is one or the other. Both set would make the invitation
+    // neither pending nor clearly answered.
+    check(
+      'organization_invitations_one_answer',
+      sql`${table.acceptedAt} is null or ${table.declinedAt} is null`,
+    ),
+    check('organization_invitations_not_founder', sql`${table.role} <> 'founder'`),
   ],
 );
 

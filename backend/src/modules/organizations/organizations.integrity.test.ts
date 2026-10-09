@@ -21,6 +21,7 @@ import { makeCreative, makeUser, municipalityIdAt } from '../../test/factories.j
 
 const UNIQUE_VIOLATION = '23505';
 const FOREIGN_KEY_VIOLATION = '23503';
+const CHECK_VIOLATION = '23514';
 
 /**
  * Drizzle does not rethrow the driver's error: it wraps it in a plain `Error`
@@ -267,6 +268,39 @@ describe('organisations — invitations', () => {
       .from(organizationInvitations)
       .where(eq(organizationInvitations.id, expired!.id));
     expect(refreshed!.expiresAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('refuses an invitation that is both accepted and declined', async () => {
+    const org = await makeOrganization();
+    const { user: invitee } = await makeCreative();
+
+    await expectPgError(
+      db.insert(organizationInvitations).values({
+        organizationId: org.id,
+        invitedUserId: invitee.id,
+        role: 'member',
+        expiresAt: inSevenDays(),
+        acceptedAt: new Date(),
+        declinedAt: new Date(),
+      }),
+      CHECK_VIOLATION,
+    );
+  });
+
+  it('refuses an invitation into the founder role', async () => {
+    // The founder role is founded or handed over, never invited into.
+    const org = await makeOrganization();
+    const { user: invitee } = await makeCreative();
+
+    await expectPgError(
+      db.insert(organizationInvitations).values({
+        organizationId: org.id,
+        invitedUserId: invitee.id,
+        role: 'founder',
+        expiresAt: inSevenDays(),
+      }),
+      CHECK_VIOLATION,
+    );
   });
 });
 
