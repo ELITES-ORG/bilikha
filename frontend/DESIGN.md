@@ -16,7 +16,7 @@ and what not to do.
 | `src/components/ui/` | Primitives. Import from `@/components/ui`. |
 
 `@theme static` is deliberate — it emits all tokens to `:root` instead of only
-those Tailwind sees in a class name, so `var(--color-clay-950)` works from
+those Tailwind sees in a class name, so `var(--color-slate-950)` works from
 inline styles and the style guide. Dropping `static` silently breaks those.
 
 ---
@@ -35,9 +35,10 @@ Roles, with the size always chosen at the call site: display `text-5xl`/`6xl`
 small `text-base`/`text-sm` · caption `text-xs`.
 
 **Palette — navy and red** ([ADR 0044](../docs/decisions/0044-navy-and-red-identity.md)).
-Neutrals are cool slate on white. `lawa` (navy, `#032B61`) is the primary;
-`palayok` (red) is the accent for calls to action and badges. The ramp names
-predate the palette: `clay` is slate, `lawa` is navy, `palayok` is red.
+Neutrals are the cool `slate` ramp on white. `navy` (`#032B61` at step 700) is
+the primary; `red` is the accent for calls to action and badges. These replace
+Tailwind's own `slate` and `red` ramps, so never reach for a Tailwind default
+colour expecting its stock value.
 
 **Why not the obvious defaults.** Neutral-black shadows are what a framework
 gives you before anyone has made a decision, and are replaced here on purpose.
@@ -50,7 +51,7 @@ The single radius is a decision, not a default
 
 **Colour**
 
-- Red is for calls to action, badges and rules. `palayok-500` (`#E63946`) is 4.17:1
+- Red is for calls to action, badges and rules. `red-500` (`#E63946`) is 4.17:1
   on white, so it is for decoration and large text only; filled buttons and
   badges use `accent-solid` (4.8:1 with white text). Red is never a status
   colour — errors use `danger`, which is deliberately deeper and browner.
@@ -175,7 +176,7 @@ The single radius is a decision, not a default
   ([ADR 0047](../docs/decisions/0047-animated-icons-load-lazily-with-motion.md)).
   They loop only while on screen, take turns rather than move together, and
   stay still under reduced motion. Decorative icons only — never on controls.
-- Changes of page get the tide line and the new `main` sliding in
+- Changes of page get the tide line and the new `main` fading in
   (`PageTransitions`). A slow first load shows the navy opening curtain, which
   lifts with the wave (`BootCurtain`); never add a spinner of your own to the
   boot path. The branded overlays

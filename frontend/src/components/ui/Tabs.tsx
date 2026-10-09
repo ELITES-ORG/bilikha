@@ -96,7 +96,7 @@ export function Tabs<T extends string>({
                 ? cn(
                     '-mb-px min-h-11 shrink-0 border-b-2 text-sm whitespace-nowrap transition-colors',
                     selected
-                      ? 'border-lawa-700 font-semibold text-ink'
+                      ? 'border-navy-700 font-semibold text-ink'
                       : 'border-transparent font-medium text-ink-muted hover:text-ink',
                   )
                 : segmentItemClass(selected)

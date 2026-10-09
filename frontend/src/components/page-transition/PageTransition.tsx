@@ -41,7 +41,7 @@ import {
  * in or out (`overlay.signedIn`).
  *
  * Every other change of page gets the tide, a red line across the top, and the
- * new `main` sliding in, inside the 200ms rule. That stands in for ADR 0034's
+ * new `main` fading in, inside the 200ms rule. That stands in for ADR 0034's
  * view transition, which the declarative <BrowserRouter> never starts.
  */
 type Run = Omit<PageTransitionRun, 'phase'> & {
@@ -315,7 +315,7 @@ export function PageTransitions() {
       <div
         ref={tideRef}
         aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-(--staging-banner-h) z-50 h-0.5 origin-left bg-palayok-500 opacity-0"
+        className="pointer-events-none fixed inset-x-0 top-(--staging-banner-h) z-50 h-0.5 origin-left bg-red-500 opacity-0"
       />
 
       {shown && (
@@ -382,7 +382,7 @@ export function BootCurtain() {
         <WaveEdge className="absolute top-full left-0 h-12 w-full rotate-180" />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-(--gutter)">
           <p className="u-serif text-4xl text-on-primary sm:text-5xl">
-            <span aria-hidden="true" className="boot-spark mr-3 inline-block text-palayok-500">
+            <span aria-hidden="true" className="boot-spark mr-3 inline-block text-red-500">
               ✦
             </span>
             Bilikha
@@ -411,7 +411,7 @@ function Destination({ label }: { label: string }) {
   return (
     <div className="page-label absolute inset-0 flex items-center justify-center px-(--gutter)">
       <p className="u-serif text-center text-4xl text-on-primary sm:text-5xl">
-        <span className="mr-3 text-palayok-500">✦</span>
+        <span className="mr-3 text-red-500">✦</span>
         {label}
       </p>
     </div>
@@ -422,7 +422,7 @@ function Destination({ label }: { label: string }) {
 function WaveEdge({ className }: { className: string }) {
   return (
     <svg viewBox="0 0 400 48" preserveAspectRatio="none" focusable="false" className={className}>
-      <path className="fill-palayok-500" d="M0 48V18C70 0 130 2 200 14s130 24 200 4v30Z" />
+      <path className="fill-red-500" d="M0 48V18C70 0 130 2 200 14s130 24 200 4v30Z" />
       <path className="fill-primary" d="M0 48V28C60 12 120 12 200 26s140 26 200 6v16Z" />
     </svg>
   );
@@ -464,7 +464,7 @@ function Bloom({ run }: { run: ShownRun }) {
       )}
     >
       <div
-        className="page-bloom-cover absolute rounded-full bg-primary ring-4 ring-palayok-500"
+        className="page-bloom-cover absolute rounded-full bg-primary ring-4 ring-red-500"
         style={{ left: x - radius, top: y - radius, width: radius * 2, height: radius * 2 }}
       />
       <Destination label={run.label} />
@@ -486,7 +486,7 @@ function Panel({ run }: { run: ShownRun }) {
           }),
         )}
       >
-        <div className="absolute inset-x-0 top-0 h-1 bg-palayok-500" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-red-500" />
         <Destination label={run.label} />
       </div>
     </div>

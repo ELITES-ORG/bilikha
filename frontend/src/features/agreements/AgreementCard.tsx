@@ -68,7 +68,7 @@ export function AgreementCard({
       className={cn(
         'overflow-hidden rounded-sm border',
         onPrimary && 'border-primary/40 bg-primary-active/40',
-        tone === 'onSurface' && 'border-hairline bg-clay-50',
+        tone === 'onSurface' && 'border-hairline bg-slate-50',
         tone === 'default' && 'border-hairline bg-surface',
         className,
       )}

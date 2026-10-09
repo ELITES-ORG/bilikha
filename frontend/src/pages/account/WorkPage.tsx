@@ -285,7 +285,7 @@ export function WorkPage() {
               {agreementsCopy(work.data)}
               {work.data.agreements.total > 0 && (
                 <p className="mt-2">
-                  <Link to="/history?segment=agreements" className="link-underline text-lawa-700">
+                  <Link to="/history?segment=agreements" className="link-underline text-navy-700">
                     See agreements in History
                   </Link>
                 </p>

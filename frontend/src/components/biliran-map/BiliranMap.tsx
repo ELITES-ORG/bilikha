@@ -96,7 +96,7 @@ export default function BiliranMap({ municipalities, className }: BiliranMapProp
             <span className="relative size-3 rounded-full bg-primary ring-4 ring-primary/20 transition-transform group-hover:scale-125" />
             <span
               className={cn(
-                'absolute text-xs font-medium whitespace-nowrap text-ink-muted transition-colors group-hover:text-lawa-700',
+                'absolute text-xs font-medium whitespace-nowrap text-ink-muted transition-colors group-hover:text-navy-700',
                 LABEL_SIDE[town.label],
               )}
             >

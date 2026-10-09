@@ -79,3 +79,12 @@ exists and would regress to the old teal palette.
 neighbours on the hue wheel, separated by lightness and chroma rather than hue,
 so they lean on the icon-or-label rule more than before. Plus Jakarta Sans sets
 slightly wider than Archivo, so some tight layouts may wrap earlier.
+
+## Amendment — 2026-10-08: the ramps are renamed
+
+The rename this record deferred has happened (issue #12): `clay` is now
+`slate`, `lawa` is `navy` and `palayok` is `red`, in `theme.css`, every class
+in `frontend/src`, `DESIGN.md` and the style guide. The values did not change;
+the built CSS defines the same 301 tokens with the same values. The new names
+replace Tailwind's own `slate` and `red` ramps, which the app never used.
+Earlier plans and records keep the old names as history.

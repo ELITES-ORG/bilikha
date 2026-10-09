@@ -60,8 +60,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             trailing && 'pr-14',
             error
               ? 'border-danger-500 focus:border-danger-600 focus:ring-4 focus:ring-danger-100'
-              : 'border-hairline-strong hover:border-clay-400 focus:border-ring focus:ring-4 focus:ring-lawa-100',
-            'disabled:cursor-not-allowed disabled:bg-clay-100 disabled:text-clay-500',
+              : 'border-hairline-strong hover:border-slate-400 focus:border-ring focus:ring-4 focus:ring-navy-100',
+            'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
             className,
           )}
           style={{ transitionDuration: 'var(--duration-fast)' }}

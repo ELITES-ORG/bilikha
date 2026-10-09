@@ -109,7 +109,7 @@ export function ReportRatingControl({ ratingId }: { ratingId: string }) {
                   onChange={(event) => setReason(event.target.value)}
                   aria-invalid={error ? true : undefined}
                   aria-describedby={error ? `report-error-${ratingId}` : undefined}
-                  className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
+                  className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-navy-100 focus:outline-none"
                 />
                 {error && (
                   <p id={`report-error-${ratingId}`} className="text-xs text-danger-700">

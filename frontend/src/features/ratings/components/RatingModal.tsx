@@ -127,7 +127,7 @@ export function RatingModal({
               value={comment}
               disabled={pending}
               onChange={(event) => setComment(event.target.value)}
-              className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-lawa-100 focus:outline-none"
+              className="w-full rounded-sm border border-hairline-strong bg-surface px-3 py-2 text-base text-ink focus:border-ring focus:ring-4 focus:ring-navy-100 focus:outline-none"
             />
             <div className="flex justify-between text-xs text-ink-subtle">
               <span>This appears on their public profile, with your name.</span>

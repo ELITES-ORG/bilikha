@@ -94,13 +94,13 @@ export function HomePage() {
                       {/* Oldstyle numerals in the display face read as an index,
                           not a list of feature cards. */}
                       <span
-                        className="u-display text-2xl text-palayok-600/80 tabular-nums md:text-3xl"
+                        className="u-display text-2xl text-red-600/80 tabular-nums md:text-3xl"
                         aria-hidden="true"
                       >
                         {String(domain.displayOrder).padStart(2, '0')}
                       </span>
 
-                      <h3 className="u-display text-xl text-ink transition-colors group-hover:text-lawa-700 md:text-2xl">
+                      <h3 className="u-display text-xl text-ink transition-colors group-hover:text-navy-700 md:text-2xl">
                         {domain.name}
                       </h3>
 
@@ -119,7 +119,7 @@ export function HomePage() {
 
                       <span className="col-start-2 mt-3 flex items-center gap-3 md:col-start-4 md:mt-0">
                         <Badge tone="neutral">{domain.subdomains.length}</Badge>
-                        <ArrowUpRight className="size-4 text-ink-subtle transition-[transform,color] duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lawa-700" />
+                        <ArrowUpRight className="size-4 text-ink-subtle transition-[transform,color] duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-navy-700" />
                       </span>
                     </Link>
                   </li>
@@ -163,11 +163,11 @@ export function HomePage() {
                     <Link
                       key={municipality.id}
                       to={`/directory?municipality=${municipality.slug}`}
-                      className="group anim-scale-in interactive-press inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-hairline-strong bg-surface px-4 text-sm text-ink-muted shadow-xs hover:border-lawa-300 hover:bg-lawa-50 hover:text-lawa-800"
+                      className="group anim-scale-in interactive-press inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-hairline-strong bg-surface px-4 text-sm text-ink-muted shadow-xs hover:border-navy-300 hover:bg-navy-50 hover:text-navy-800"
                       style={{ '--i': index } as CSSProperties}
                     >
                       <MapPin
-                        className="size-3.5 shrink-0 text-ink-subtle transition-colors group-hover:text-lawa-700"
+                        className="size-3.5 shrink-0 text-ink-subtle transition-colors group-hover:text-navy-700"
                         aria-hidden="true"
                       />
                       <span className="truncate">{municipality.name}</span>
@@ -301,7 +301,7 @@ function Hero() {
               className="u-serif anim-rise-in mt-4 text-3xl text-ink sm:mt-6 sm:text-5xl md:text-6xl"
               style={{ '--i': 1 } as CSSProperties}
             >
-              Every creative in <em className="text-palayok-500">Biliran</em>, in one place.
+              Every creative in <em className="text-red-500">Biliran</em>, in one place.
             </h1>
 
             <p
@@ -346,7 +346,7 @@ function Hero() {
                   value={statFigure(stat)}
                   label={stat.label}
                   shortLabel={stat.shortLabel}
-                  icon={statIcon(stat, index, 'size-5 text-lawa-600')}
+                  icon={statIcon(stat, index, 'size-5 text-navy-600')}
                 />
               ))}
             </dl>

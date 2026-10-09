@@ -62,14 +62,14 @@ function AdminShell() {
                       className={cn(
                         'group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors',
                         active
-                          ? 'bg-clay-100 text-ink'
-                          : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                          ? 'bg-slate-100 text-ink'
+                          : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
                       )}
                     >
                       <section.icon
                         className={cn(
                           'size-5 shrink-0 transition-colors',
-                          active ? 'text-lawa-700' : 'text-ink-subtle group-hover:text-ink',
+                          active ? 'text-navy-700' : 'text-ink-subtle group-hover:text-ink',
                         )}
                         aria-hidden="true"
                       />
@@ -122,12 +122,12 @@ function AdminPhoneNav({ pathname }: { pathname: string }) {
               className={cn(
                 'inline-flex h-11 shrink-0 items-center gap-2 rounded-sm px-3 text-sm font-medium whitespace-nowrap transition-colors',
                 active
-                  ? 'bg-clay-100 text-ink'
-                  : 'text-ink-muted hover:bg-clay-50 hover:text-ink',
+                  ? 'bg-slate-100 text-ink'
+                  : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
               )}
             >
               <section.icon
-                className={cn('size-4 shrink-0', active ? 'text-lawa-700' : 'text-ink-subtle')}
+                className={cn('size-4 shrink-0', active ? 'text-navy-700' : 'text-ink-subtle')}
                 aria-hidden="true"
               />
               {section.label}

@@ -144,10 +144,15 @@
     50% { opacity: 0.45; }
   }
 
-  /* The page arriving after a plain link. */
+  /* The page arriving after a plain link. Opacity only: any transform on
+     `main` makes it the containing block of the fixed bars inside it (the
+     reply composer, the offer dock, the profile save bar), so for the length
+     of the animation they dropped out of place above the tab bar and snapped
+     back. A sideways slide also widened the page past the screen for a moment,
+     which some in-app browsers answer by rescaling it, tab bar included. */
   @keyframes bk-page-enter {
-    from { opacity: 0; transform: translate3d(1rem, 0, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   /* ------------------------------------------------------------- utilities */
@@ -256,9 +261,7 @@
     animation: bk-tide var(--duration-base) var(--ease-out-quart);
   }
 
-  /* `backwards` for the reason given at .anim-scale-in, and because a filled
-     transform on `main` would become the containing block of every fixed bar
-     inside it. */
+  /* `backwards` for the reason given at .anim-scale-in. */
   .page-enter {
     animation: bk-page-enter var(--duration-base) var(--ease-out-quart) backwards;
   }
@@ -347,7 +350,7 @@
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: var(--color-clay-200);
+    background-color: var(--color-slate-200);
   }
 
   .skeleton::after {
@@ -373,7 +376,7 @@
     overflow: hidden;
     width: var(--progressive-media-width);
     height: var(--progressive-media-height);
-    background-color: var(--color-clay-200);
+    background-color: var(--color-slate-200);
     isolation: isolate;
   }
 
@@ -457,7 +460,7 @@
   }
 
   .bk-glitch-layer-a {
-    background-color: var(--color-palayok-500);
+    background-color: var(--color-red-500);
   }
 
   .bk-glitch-layer-b {

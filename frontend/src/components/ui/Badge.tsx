@@ -9,9 +9,9 @@ type Variant = 'soft' | 'solid';
  * from dissolving into the page the way flat pastel fills do.
  */
 const SOFT: Record<Tone, string> = {
-  neutral: 'bg-clay-100 text-clay-700 ring-clay-200',
-  brand: 'bg-lawa-50 text-lawa-800 ring-lawa-200',
-  accent: 'bg-palayok-50 text-palayok-800 ring-palayok-200',
+  neutral: 'bg-slate-100 text-slate-700 ring-slate-200',
+  brand: 'bg-navy-50 text-navy-800 ring-navy-200',
+  accent: 'bg-red-50 text-red-800 ring-red-200',
   success: 'bg-success-50 text-success-700 ring-success-100',
   warning: 'bg-warning-50 text-warning-700 ring-warning-100',
   danger: 'bg-danger-50 text-danger-700 ring-danger-100',

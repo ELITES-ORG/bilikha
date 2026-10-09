@@ -274,7 +274,7 @@ export function OfferDetailPage() {
                     </div>
                     <dl className="mt-5 hidden space-y-3 border-t border-hairline pt-5 text-sm lg:block">
                       <div className="flex items-center gap-2.5">
-                        <MapPin className="size-4 shrink-0 text-palayok-500" aria-hidden="true" />
+                        <MapPin className="size-4 shrink-0 text-red-500" aria-hidden="true" />
                         <dt className="font-semibold text-ink">Location</dt>
                         <dd className="text-ink-muted">{data.creative.municipality}</dd>
                       </div>
@@ -311,7 +311,7 @@ export function OfferDetailPage() {
                     </div>
                     <Link
                       to={profilePath}
-                      className="link-underline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-lawa-700"
+                      className="link-underline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-navy-700"
                     >
                       View profile
                       <ArrowRight className="size-4" aria-hidden="true" />
@@ -387,7 +387,7 @@ function SimilarOffers({
         </h2>
         <Link
           to={`/directory?subdomain=${encodeURIComponent(offer.subdomain.slug)}`}
-          className="link-underline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-lawa-700"
+          className="link-underline inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-navy-700"
         >
           View all
           <ArrowRight className="size-4" aria-hidden="true" />

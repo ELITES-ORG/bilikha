@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 // Never wraps: a track that breaks onto two lines reads as two controls. Items
 // tighten their padding on small screens instead.
 export const segmentTrackClass =
-  'inline-flex max-w-full gap-1 rounded-sm bg-clay-100 p-1';
+  'inline-flex max-w-full gap-1 rounded-sm bg-slate-100 p-1';
 
 export function segmentItemClass(selected: boolean): string {
   return cn(

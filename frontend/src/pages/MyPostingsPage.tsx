@@ -93,7 +93,7 @@ export function MyPostingsPage() {
                         <div className="min-w-0">
                           <Link
                             to={`/postings/${row.id}`}
-                            className="u-display text-lg text-ink hover:text-lawa-700"
+                            className="u-display text-lg text-ink hover:text-navy-700"
                           >
                             {row.title}
                           </Link>

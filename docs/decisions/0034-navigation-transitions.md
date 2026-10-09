@@ -239,3 +239,21 @@ After that it never returns; later loading states are page skeletons
 literals in `index.html` beside the paper pair, converted from the tokens
 because the stylesheet has not arrived. On a slow first load the wordmark is
 set in Georgia until Fraunces arrives.
+
+## Amendment — 2026-10-09: the entrance fades instead of sliding
+
+**Context.** On phones the bars fixed above the tab bar — the reply composer,
+the offer dock, the profile save bar — jumped out of place for the length of
+every entrance and snapped back, and in Messenger's in-app browser the tab bar
+itself shrank and recovered. Both came from the slide. A transform on `main`,
+even mid-animation, makes it the containing block of every fixed element
+inside it; and starting the page 1rem to the right made it wider than the
+screen for a moment, which some in-app browsers answer by rescaling the page.
+
+**Decision.** The entrance animates opacity only, at the same 200ms beside the
+tide. Opacity creates no containing block and never changes the page's width.
+
+**Rejected: sliding a wrapper inside `main` instead.** The fixed bars are
+rendered by each page inside its own content, so any wrapper that moves the
+content moves them with it.
+

@@ -86,8 +86,8 @@ export function ConversationList() {
                     className={cn(
                       'relative flex min-h-16 items-center gap-3.5 px-4 py-4 transition-colors sm:px-5',
                       active
-                        ? 'bg-primary-soft before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-lawa-700'
-                        : 'hover:bg-clay-50',
+                        ? 'bg-primary-soft before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-navy-700'
+                        : 'hover:bg-slate-50',
                     )}
                   >
                     <Avatar src={row.otherPartyAvatarUrl} name={row.otherPartyName} size="md" />

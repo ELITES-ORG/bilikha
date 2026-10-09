@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 export function Eyebrow({ className, children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p className={cn('u-eyebrow flex items-center gap-2.5', className)} {...props}>
-      <span className="inline-block h-0.5 w-6 shrink-0 rounded-full bg-palayok-500" aria-hidden="true" />
+      <span className="inline-block h-0.5 w-6 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
       {children}
     </p>
   );

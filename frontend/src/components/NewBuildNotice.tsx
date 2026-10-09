@@ -43,7 +43,7 @@ export function NewBuildNotice() {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="shrink-0 text-sm font-medium text-lawa-700 hover:text-lawa-800"
+          className="shrink-0 text-sm font-medium text-navy-700 hover:text-navy-800"
         >
           Reload
         </button>

@@ -232,7 +232,7 @@ export function CreativeProfilePage() {
                   )}
                   <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-ink-muted lg:justify-start">
                     <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="size-4 text-palayok-500" aria-hidden="true" />
+                      <MapPin className="size-4 text-red-500" aria-hidden="true" />
                       {data.municipality}, Biliran
                       {data.isNearby && <Badge tone="accent">Nearby</Badge>}
                     </span>
@@ -400,7 +400,7 @@ export function CreativeProfilePage() {
                       <SidebarBlock title="Quick info">
                         <ul className="space-y-3 text-sm">
                           <li className="flex items-start gap-3">
-                            <LayoutGrid className="mt-0.5 size-4 shrink-0 text-lawa-700" aria-hidden="true" />
+                            <LayoutGrid className="mt-0.5 size-4 shrink-0 text-navy-700" aria-hidden="true" />
                             <span>
                               <span className="block font-semibold text-ink">
                                 {groups.size === 1 ? 'Creative domain' : 'Creative domains'}
@@ -409,7 +409,7 @@ export function CreativeProfilePage() {
                             </span>
                           </li>
                           <li className="flex items-start gap-3">
-                            <MapPin className="mt-0.5 size-4 shrink-0 text-lawa-700" aria-hidden="true" />
+                            <MapPin className="mt-0.5 size-4 shrink-0 text-navy-700" aria-hidden="true" />
                             <span>
                               <span className="block font-semibold text-ink">Location</span>
                               <span className="text-ink-muted">{data.municipality}, Biliran</span>

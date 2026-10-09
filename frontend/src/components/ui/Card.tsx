@@ -33,7 +33,7 @@ export function Card({
       className={cn(
         'rounded-md border border-hairline bg-surface',
         ELEVATIONS[elevation],
-        interactive && 'interactive-lift hover:border-clay-300 hover:shadow-md',
+        interactive && 'interactive-lift hover:border-slate-300 hover:shadow-md',
         className,
       )}
       {...props}
@@ -50,7 +50,7 @@ export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('border-t border-hairline px-5 py-3.5 bg-clay-50/60 rounded-b-md', className)}
+      className={cn('border-t border-hairline px-5 py-3.5 bg-slate-50/60 rounded-b-md', className)}
       {...props}
     />
   );

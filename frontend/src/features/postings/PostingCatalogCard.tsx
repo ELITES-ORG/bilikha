@@ -24,17 +24,17 @@ export function PostingCatalogCard({ posting }: { posting: Posting }) {
     <li>
       <Link
         to={`/postings/${posting.id}`}
-        className="group flex h-full flex-col overflow-hidden rounded-md border border-hairline bg-surface transition-[border-color,box-shadow] duration-200 hover:border-lawa-300 hover:shadow-sm"
+        className="group flex h-full flex-col overflow-hidden rounded-md border border-hairline bg-surface transition-[border-color,box-shadow] duration-200 hover:border-navy-300 hover:shadow-sm"
       >
         <div className="flex items-center gap-2 bg-primary-soft px-4 py-3 sm:px-5">
-          <BriefcaseBusiness className="size-4 shrink-0 text-lawa-700" aria-hidden="true" />
-          <span className="min-w-0 text-xs font-semibold tracking-widest break-words text-lawa-700 uppercase">
+          <BriefcaseBusiness className="size-4 shrink-0 text-navy-700" aria-hidden="true" />
+          <span className="min-w-0 text-xs font-semibold tracking-widest break-words text-navy-700 uppercase">
             {posting.subdomain.domain}
           </span>
         </div>
 
         <div className="flex flex-1 flex-col p-4 sm:p-5">
-          <h2 className="u-display text-xl break-words text-ink transition-colors group-hover:text-lawa-700 sm:text-2xl">
+          <h2 className="u-display text-xl break-words text-ink transition-colors group-hover:text-navy-700 sm:text-2xl">
             {posting.title}
           </h2>
 
@@ -78,7 +78,7 @@ export function PostingCatalogCard({ posting }: { posting: Posting }) {
                 </p>
               </div>
               <ArrowRight
-                className="size-4 shrink-0 text-lawa-700 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
+                className="size-4 shrink-0 text-navy-700 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5"
                 aria-hidden="true"
               />
             </div>

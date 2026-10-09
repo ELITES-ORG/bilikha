@@ -79,7 +79,7 @@ function ConversationMenu({
     <div className="relative shrink-0">
       <button
         type="button"
-        className="inline-flex size-11 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+        className="inline-flex size-11 items-center justify-center rounded-sm text-ink-muted hover:bg-slate-100 hover:text-ink"
         aria-label="Conversation options"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -102,7 +102,7 @@ function ConversationMenu({
               <button
                 type="button"
                 role="menuitem"
-                className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-clay-50"
+                className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-slate-50"
                 onClick={draft.onSelect}
               >
                 {draft.label}
@@ -113,7 +113,7 @@ function ConversationMenu({
           <button
             type="button"
             role="menuitem"
-            className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-clay-50"
+            className="block w-full px-3 py-2 text-left text-sm text-ink hover:bg-slate-50"
             onClick={onReport}
           >
             Report conversation
@@ -121,7 +121,7 @@ function ConversationMenu({
           <button
             type="button"
             role="menuitem"
-            className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-clay-50"
+            className="block w-full px-3 py-2 text-left text-sm text-danger-700 hover:bg-slate-50"
             onClick={onBlock}
           >
             Block this person
@@ -310,7 +310,7 @@ export function ConversationPage() {
           to="/messages"
           viewTransition
           aria-label="Back to messages"
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-clay-100"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink hover:bg-slate-100"
         >
           <ArrowLeft className="size-5" aria-hidden />
         </Link>
@@ -350,7 +350,7 @@ export function ConversationPage() {
                 to="/messages"
                 viewTransition
                 aria-label="Back to messages"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink lg:hidden"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-slate-100 hover:text-ink lg:hidden"
               >
                 <ArrowLeft className="size-5" aria-hidden />
               </Link>
@@ -560,7 +560,7 @@ export function ConversationPage() {
                   ) : (
                     <div className="space-y-3">
                       {openRecord?.revisionRequestedAt && (
-                        <div className="rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                        <div className="rounded-sm border border-hairline bg-slate-50 px-3 py-2">
                           <p className="text-sm font-medium text-ink">
                             {thread.data.otherPartyName} asked for changes to version{' '}
                             {openRecord.version}
@@ -628,7 +628,7 @@ export function ConversationPage() {
                         <Skeleton className="h-14 w-full" />
                       )}
                       {attachmentUnavailable && (
-                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-slate-50 px-3 py-2">
                           <OfferUnavailableNotice />
                           <button
                             type="button"
@@ -640,7 +640,7 @@ export function ConversationPage() {
                         </div>
                       )}
                       {postingAttachmentUnavailable && (
-                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-clay-50 px-3 py-2">
+                        <div className="flex items-start justify-between gap-3 rounded-sm border border-hairline bg-slate-50 px-3 py-2">
                           <PostingUnavailableNotice />
                           <button
                             type="button"
@@ -710,7 +710,7 @@ export function ConversationPage() {
                   )}
                   {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
                   {/* One field: the textarea and the send button share a border. */}
-                  <div className="flex flex-row items-end gap-2 rounded-md border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-lawa-100">
+                  <div className="flex flex-row items-end gap-2 rounded-md border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-navy-100">
                     <label htmlFor="reply-body" className="sr-only">
                       Reply
                     </label>

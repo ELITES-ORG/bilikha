@@ -45,7 +45,7 @@ function Row({
       </div>
       {unread && (
         <span
-          className="mt-1.5 size-2 shrink-0 rounded-full bg-lawa-600"
+          className="mt-1.5 size-2 shrink-0 rounded-full bg-navy-600"
           aria-label="Unread"
         />
       )}
@@ -59,7 +59,7 @@ function Row({
       <button
         type="button"
         onClick={() => onOpen(row)}
-        className="w-full rounded-lg px-3 py-3 text-left opacity-60 transition-colors hover:bg-clay-50"
+        className="w-full rounded-lg px-3 py-3 text-left opacity-60 transition-colors hover:bg-slate-50"
       >
         {body}
       </button>
@@ -70,7 +70,7 @@ function Row({
     <Link
       to={row.link}
       onClick={() => onOpen(row)}
-      className="block rounded-lg px-3 py-3 transition-colors hover:bg-clay-50"
+      className="block rounded-lg px-3 py-3 transition-colors hover:bg-slate-50"
     >
       {body}
     </Link>

@@ -109,7 +109,8 @@ state or component behaviour.
 
 ## Follow-ups
 
-- Ramp rename (`clay` is slate, `lawa` navy, `palayok` red).
+- ~~Ramp rename (`clay` is slate, `lawa` navy, `palayok` red).~~ Done in
+  issue #12: the ramps are now `slate`, `navy` and `red`.
 - ~~A real favicon.~~ Done: the navy B, described in plan 0036 under "How the
   icons were made".
 - ~~The admin layout (Step 4.2).~~ Done in issue #12.

@@ -106,7 +106,7 @@ function HubRow({
     <li>
       <Link
         to={to}
-        className="group flex min-h-14 items-center gap-4 px-5 py-4 transition-colors hover:bg-clay-50"
+        className="group flex min-h-14 items-center gap-4 px-5 py-4 transition-colors hover:bg-slate-50"
       >
         <RowIcon>{icon}</RowIcon>
         <span className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ function HubRow({
 function RowIcon({ children }: { children: ReactNode }) {
   return (
     <span
-      className="grid size-9 shrink-0 place-items-center rounded-sm bg-primary-soft text-lawa-700 [&_svg]:size-4"
+      className="grid size-9 shrink-0 place-items-center rounded-sm bg-primary-soft text-navy-700 [&_svg]:size-4"
       aria-hidden="true"
     >
       {children}
@@ -584,7 +584,7 @@ function ProfileSummary({
         )}
         {user.municipalityName && (
           <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-muted">
-            <MapPin className="size-4 text-palayok-500" aria-hidden="true" />
+            <MapPin className="size-4 text-red-500" aria-hidden="true" />
             {user.municipalityName}, Biliran
           </p>
         )}

@@ -84,7 +84,7 @@ export function useOfferLightbox(images: OfferImage[]) {
             <button
               ref={closeRef}
               type="button"
-              className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-clay-100 hover:text-ink"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-slate-100 hover:text-ink"
               aria-label="Close"
               onClick={closeLightbox}
             >
@@ -108,7 +108,7 @@ export function useOfferLightbox(images: OfferImage[]) {
             <div className="flex items-center justify-between gap-3">
               <button
                 type="button"
-                className="inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-sm font-medium text-ink hover:bg-clay-100"
+                className="inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-sm font-medium text-ink hover:bg-slate-100"
                 onClick={() => go('previous')}
               >
                 <ChevronLeft className="size-4" aria-hidden />
@@ -116,7 +116,7 @@ export function useOfferLightbox(images: OfferImage[]) {
               </button>
               <button
                 type="button"
-                className="inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-sm font-medium text-ink hover:bg-clay-100"
+                className="inline-flex h-11 items-center gap-1.5 rounded-sm px-3 text-sm font-medium text-ink hover:bg-slate-100"
                 onClick={() => go('next')}
               >
                 Next

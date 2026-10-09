@@ -35,7 +35,7 @@ export function IntentPage() {
           <div className="mt-10 grid gap-4">
             <Link
               to={hireTo}
-              className="block rounded-sm border border-hairline-strong bg-surface px-6 py-5 transition-colors hover:border-lawa-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lawa-100"
+              className="block rounded-sm border border-hairline-strong bg-surface px-6 py-5 transition-colors hover:border-navy-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-100"
             >
               <span className="block text-lg font-medium text-ink">I&apos;m looking to hire</span>
               <span className="mt-1 block text-sm text-ink-muted">
@@ -46,7 +46,7 @@ export function IntentPage() {
             </Link>
             <Link
               to={offerTo}
-              className="block rounded-sm border border-hairline-strong bg-surface px-6 py-5 transition-colors hover:border-lawa-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lawa-100"
+              className="block rounded-sm border border-hairline-strong bg-surface px-6 py-5 transition-colors hover:border-navy-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-100"
             >
               <span className="block text-lg font-medium text-ink">
                 I want to offer my creative work

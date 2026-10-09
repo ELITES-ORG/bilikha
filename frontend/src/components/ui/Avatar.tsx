@@ -27,7 +27,7 @@ export function Avatar({ src, name, size = 'md', className, ...props }: AvatarPr
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full',
-        'bg-lawa-100 text-lawa-800 ring-1 ring-inset ring-lawa-200',
+        'bg-navy-100 text-navy-800 ring-1 ring-inset ring-navy-200',
         dims.box,
         className,
       )}
@@ -41,7 +41,7 @@ export function Avatar({ src, name, size = 'md', className, ...props }: AvatarPr
           alt=""
           width={dims.px}
           height={dims.px}
-          className="size-full rounded-full bg-lawa-100"
+          className="size-full rounded-full bg-navy-100"
           imageClassName="object-cover"
           fallback={
             <span className={cn('font-semibold tabular-nums', dims.text)}>{initials}</span>
