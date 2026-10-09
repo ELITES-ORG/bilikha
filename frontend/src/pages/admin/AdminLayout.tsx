@@ -69,7 +69,7 @@ function AdminShell() {
                       <section.icon
                         className={cn(
                           'size-5 shrink-0 transition-colors',
-                          active ? 'text-lawa-700' : 'text-ink-subtle group-hover:text-ink',
+                          active ? 'text-navy-700' : 'text-ink-subtle group-hover:text-ink',
                         )}
                         aria-hidden="true"
                       />
@@ -127,7 +127,7 @@ function AdminPhoneNav({ pathname }: { pathname: string }) {
               )}
             >
               <section.icon
-                className={cn('size-4 shrink-0', active ? 'text-lawa-700' : 'text-ink-subtle')}
+                className={cn('size-4 shrink-0', active ? 'text-navy-700' : 'text-ink-subtle')}
                 aria-hidden="true"
               />
               {section.label}
