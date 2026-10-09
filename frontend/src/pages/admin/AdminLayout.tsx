@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ButtonLink } from '@/components/ui';
+import { Wordmark } from '@/components/Wordmark';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -29,11 +30,8 @@ function AdminShell() {
         */}
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex min-w-0 items-center px-3 sm:w-56 sm:shrink-0 sm:px-4">
-            <Link
-              to="/"
-              className="u-display text-xl font-semibold text-ink sm:px-3"
-            >
-              Bilikha
+            <Link to="/" className="flex min-h-11 items-center sm:px-3">
+              <Wordmark />
             </Link>
           </div>
           <div className="pr-3 sm:pr-(--gutter)">
@@ -62,12 +60,19 @@ function AdminShell() {
                       to={section.path}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'block rounded-sm px-3 py-2 text-sm font-medium transition-colors',
+                        'group flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors',
                         active
                           ? 'bg-slate-100 text-ink'
                           : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
                       )}
                     >
+                      <section.icon
+                        className={cn(
+                          'size-5 shrink-0 transition-colors',
+                          active ? 'text-lawa-700' : 'text-ink-subtle group-hover:text-ink',
+                        )}
+                        aria-hidden="true"
+                      />
                       {section.label}
                     </Link>
                   </li>
@@ -115,12 +120,16 @@ function AdminPhoneNav({ pathname }: { pathname: string }) {
               to={section.path}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'inline-flex h-11 shrink-0 items-center rounded-sm px-3 text-sm font-medium whitespace-nowrap transition-colors',
+                'inline-flex h-11 shrink-0 items-center gap-2 rounded-sm px-3 text-sm font-medium whitespace-nowrap transition-colors',
                 active
                   ? 'bg-slate-100 text-ink'
                   : 'text-ink-muted hover:bg-slate-50 hover:text-ink',
               )}
             >
+              <section.icon
+                className={cn('size-4 shrink-0', active ? 'text-lawa-700' : 'text-ink-subtle')}
+                aria-hidden="true"
+              />
               {section.label}
             </Link>
           );

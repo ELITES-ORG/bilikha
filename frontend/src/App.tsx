@@ -13,6 +13,7 @@ import { ScrollOnNavigate } from '@/components/ScrollOnNavigate';
 import { SiteLayout } from '@/components/SiteLayout';
 import { StagingBanner } from '@/components/StagingBanner';
 import { ToastProvider } from '@/components/ui';
+import { I18nProvider } from '@/i18n/I18nProvider';
 import { queryClient } from '@/lib/query-client';
 import { useRememberSession } from '@/features/auth/api';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
@@ -140,7 +141,13 @@ function SessionMemory() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
+      {/*
+        Above the router so a language change re-renders every screen, and
+        outside ToastProvider for no reason beyond reading order — neither
+        depends on the other (ADR 0055).
+      */}
+      <I18nProvider>
+        <ToastProvider>
         <BrowserRouter>
           <ScrollOnNavigate />
           <StagingBanner />
@@ -351,7 +358,8 @@ export default function App() {
           <NewBuildNotice />
           <SessionMemory />
         </BrowserRouter>
-      </ToastProvider>
+        </ToastProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

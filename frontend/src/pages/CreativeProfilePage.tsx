@@ -21,6 +21,7 @@ import {
   EmptyState,
   Skeleton,
   StatItem,
+  TabPanels,
   Tabs,
 } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
@@ -269,12 +270,7 @@ export function CreativeProfilePage() {
                       items={TABS.map((value) => ({ value, label: TAB_LABEL[value] }))}
                     />
 
-                    <section
-                      id={`profile-panel-${tab}`}
-                      role="tabpanel"
-                      aria-labelledby={`profile-tab-${tab}`}
-                      className="pt-8"
-                    >
+                    <TabPanels idPrefix="profile" values={TABS} value={tab} className="pt-8">
                       {tab === 'services' && (
                         <>
                           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -388,7 +384,7 @@ export function CreativeProfilePage() {
                           </AboutBlock>
                         </div>
                       )}
-                    </section>
+                    </TabPanels>
                   </div>
 
                   {/* The sidebar from lg; below the content, as ordinary

@@ -129,6 +129,12 @@ The single radius is a decision, not a default
   no image, so the card leads with a soft band naming the domain — never a
   placeholder image that would be identical on every card. Grid columns come
   from an 18rem minimum card width (`postingGridClass`), not from breakpoints.
+- Admin pages build from `pages/admin/admin-ui.tsx`: `AdminPageHeader`
+  (eyebrow, serif title, optional figures), `AdminToolbar`, `adminListClass`
+  (hairline-divided rows, not a box per item), `AdminStatusBadge` (a word and
+  an icon per status), `AdminFact` and `AdminPagination`. Buttons, inputs, tabs
+  and empty states stay the shared primitives. Tables become rows that stack on
+  a phone rather than scrolling sideways.
 - `OfferCard` (`features/offers/`) is the one way an offer is shown in a grid:
   4:3 image, the craft as a badge over its corner, price pinned to the bottom so
   a row lines up. Hover is a border shift and a 3% image zoom — no lift, no
@@ -179,6 +185,12 @@ The single radius is a decision, not a default
   [ADR 0034 amendments](../docs/decisions/0034-navigation-transitions.md), plus
   the browser's back and forward buttons — never on tabs, filters, in-app back
   links or the phone tab bar.
+- The credits strip (`CreditsBar`: operator, RA 11904, developer) closes the
+  landing footer and the Account page; only the landing adds the map credit.
+  Its Elites wordmark glitches every three seconds while on screen
+  (`GlitchImage`, after the Elites site's headings). It is the
+  developer's mark, not Bilikha's, so the effect stays there — never on
+  Bilikha's own headings or controls.
 - Everything collapses under `prefers-reduced-motion`: movement is removed,
   opacity survives so state stays legible.
 
@@ -193,6 +205,17 @@ The single radius is a decision, not a default
   in landscape is wider than `sm` and still a touch screen.
 - Every touch target is at least 44px. For a link that must stay visually
   small, add `.u-tap` rather than padding it out.
+
+**Copy**
+
+- User-facing text goes in `src/i18n/catalogs/en.ts` and is read with `useT()`,
+  not written into the component. A string hard-coded in JSX is one no
+  translator will ever find ([ADR 0055](../docs/decisions/0055-copy-is-translated-per-device-never-by-machine.md)).
+- Layouts absorb longer text. Filipino and Waray run longer than English for
+  the same sentence, so no fixed-width text containers and no truncation on
+  anything load-bearing — checked at 360px.
+- **Never machine-translate a catalogue value**, including to preview a
+  layout. See [Translate the interface](../docs/guides/translate-the-interface.md).
 
 **Accessibility**
 

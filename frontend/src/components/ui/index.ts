@@ -12,7 +12,7 @@ export { Container, type ContainerProps } from './Container';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Input, type InputProps } from './Input';
 export { Textarea, type TextareaProps } from './Textarea';
-export { Tabs, type TabsProps, type TabItem } from './Tabs';
+export { TabPanels, Tabs, type TabPanelsProps, type TabsProps, type TabItem } from './Tabs';
 export { segmentItemClass, segmentTrackClass } from './segment-styles';
 export { Eyebrow } from './Eyebrow';
 export { StatItem, type StatItemProps } from './StatItem';

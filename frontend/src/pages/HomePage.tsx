@@ -1,9 +1,9 @@
 import { lazy, Suspense, useRef, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type LucideIcon } from 'lucide-react';
-import elitesWordmark from '@/assets/elites-wordmark.webp';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
+import { CreditsBar } from '@/components/CreditsBar';
 import { DomainListSkeleton } from '@/components/page-skeleton/parts';
 import { transitionTo, type PageTransitionKind } from '@/components/page-transition/transition-to';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
-import { LEGAL_CONTACT, LEGAL_OPERATOR } from '@/lib/legal';
+import { LEGAL_CONTACT } from '@/lib/legal';
 import { useRevealOnScroll } from '@/lib/use-reveal-on-scroll';
 
 const AnimatedStatIcon = lazy(() => import('@/components/animated-icons/AnimatedStatIcon'));
@@ -418,10 +418,6 @@ function JoinCallout() {
   );
 }
 
-const RA_11904_URL = 'https://lawphil.net/statutes/repacts/ra2022/ra_11904_2022.html';
-
-const externalLink = { target: '_blank', rel: 'noopener noreferrer' } as const;
-
 function SiteFooter() {
   const { data: user } = useCurrentUser();
   // Register and Sign in bloom, as they do from the header: the same
@@ -477,51 +473,7 @@ function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-10 flex flex-col gap-3 border-t border-hairline pt-6 text-xs text-ink-subtle sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-1">
-            <p className="text-ink-muted">
-              © {new Date().getFullYear()} {LEGAL_OPERATOR}
-            </p>
-            <p>
-              <span className="block sm:inline">
-                Creative domains follow{' '}
-                <a href={RA_11904_URL} {...externalLink} className="u-tap link-underline">
-                  RA 11904
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </span>
-              <span className="hidden sm:inline" aria-hidden="true">
-                {' · '}
-              </span>
-              {/* The ODbL requires this wherever the map's coastline is shown. */}
-              <span className="mt-1 block sm:mt-0 sm:inline">
-                Map data ©{' '}
-                <a href="https://www.openstreetmap.org/copyright" {...externalLink} className="u-tap link-underline">
-                  OpenStreetMap contributors
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </span>
-            </p>
-          </div>
-          <p className="flex items-center gap-1.5">
-            Developed and maintained by
-            <a
-              href="https://elitesys.org"
-              {...externalLink}
-              className="u-tap inline-flex transition-opacity hover:opacity-80"
-            >
-              <img
-                src={elitesWordmark}
-                alt="Elites"
-                width={229}
-                height={48}
-                className="h-4 w-auto"
-                draggable={false}
-              />
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </p>
-        </div>
+        <CreditsBar mapCredit className="mt-10 border-t border-hairline pt-6" />
       </Container>
     </footer>
   );

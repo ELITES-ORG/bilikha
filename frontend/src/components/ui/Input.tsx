@@ -2,7 +2,7 @@ import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from 'rea
 import { cn } from '@/lib/cn';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  label?: string;
+  label?: ReactNode;
   /** Persistent helper text. Replaced by `error` when one is present. */
   hint?: string;
   error?: string;

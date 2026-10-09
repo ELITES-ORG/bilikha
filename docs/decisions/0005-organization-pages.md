@@ -1,7 +1,14 @@
 # 0005. Public pages for organisations, private trust signals for individuals
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-08)
 - **Date:** 2026-09-15
+
+> **Amended by [0054](./0054-organisations-are-teams-of-creatives.md).** The
+> three entity shapes stand. What changed: organisations are teams of creatives,
+> founded by one and joined by invitation; registration does not fork, since
+> [0019](./0019-one-account-creative-as-attachable-role.md); and client
+> organisations such as LGUs are deferred. Read "inquiry" below as
+> "conversation" ([0018](./0018-conversations-replace-one-shot-inquiries.md)).
 
 ## Context
 

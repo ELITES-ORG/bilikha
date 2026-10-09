@@ -192,7 +192,9 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <div id="root">
+    <!-- Existing application and fallback copy is English. Catalogue values
+         override this nearest language ancestor when a human translation exists. -->
+    <div id="root" lang="en">
       <!--
         Replaced wholesale when React mounts — do not remove() this (plan 0030).
         A brand mark, not a fake layout: the router does not exist yet.
