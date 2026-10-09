@@ -112,6 +112,14 @@ The cards' canonical URLs are written per deployment in
 `backend/src/modules/share/share.service.ts`, so a new production domain goes
 there too. To check one: `curl -A "facebookexternalhit/1.1" <site>/creatives/<slug>`.
 
+Vercel and Render deploy separately, so for a few minutes after a release the
+rewrites can be live while the API is still on its previous version. A crawler
+in that window gets an error, and Facebook keeps a bad scrape for weeks. After
+a release that changes these rewrites or the `/share` routes, run any link that
+was shared during the deploy through Facebook's
+[Sharing Debugger](https://developers.facebook.com/tools/debug/) and press
+**Scrape Again**.
+
 ---
 
 ## Vercel — frontend
