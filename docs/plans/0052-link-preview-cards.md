@@ -77,6 +77,12 @@ rather than editing pixels.
 
 ## Phase 4 — Check on staging
 
+**Before releasing to production:** `bilikha-production` must be on an
+always-on Render instance. On the free tier it sleeps overnight, and a crawler
+that meets a cold start most likely gives up — worse than the static card it
+got before. After the release, re-scrape anything shared while it deployed
+([deployments](../reference/deployments.md)).
+
 ### Step 4.1 — Ask the crawlers
 
 - [ ] **Action.** After the merge, run a staging profile URL and an offer URL
