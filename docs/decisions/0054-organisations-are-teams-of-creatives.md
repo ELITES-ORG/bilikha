@@ -1,6 +1,6 @@
 # 0054. Organisations are teams of creatives, founded by one of them
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-09)
 - **Date:** 2026-10-08
 - **Amends:** [0005](./0005-organization-pages.md), which framed organisations
   mainly as client institutions and forked registration on "yourself, or a
