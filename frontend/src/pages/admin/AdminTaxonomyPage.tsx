@@ -49,8 +49,8 @@ import {
  * Three rules shape this screen rather than the usual CRUD table:
  *
  * 1. **Archiving is the primary action, deletion is the exception.** A
- *    sub-domain that any profile, offer or posting points at is archived, never
- *    deleted — the reference has to keep resolving. Delete is only offered at a
+ *    sub-domain that any profile, offer, posting or organisation points at is
+ *    archived, never deleted — the reference has to keep resolving. Delete is only offered at a
  *    reference count of zero, and says so.
  * 2. **Archived items stay visible.** Hiding them would leave an administrator
  *    no way to find what they archived in order to restore it.
