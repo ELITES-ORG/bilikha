@@ -110,6 +110,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0048](./0048-postings-as-a-card-catalog.md) | Client postings as a card catalog | In progress |
 | [0049](./0049-admin-password-reset.md) | Let an administrator reset a password from the admin area | In progress |
 | [0050](./0050-language-choice-and-the-first-translated-screen.md) | Language choice, and the first translation-ready screen | Complete |
+| [0051](./0051-link-preview-cards.md) | Link preview cards for shared profiles and offers | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

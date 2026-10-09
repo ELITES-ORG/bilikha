@@ -99,6 +99,19 @@ The app applies the rule too: every non-production host shows a "Staging" banner
 above each page, decided in the browser by `frontend/src/lib/site-host.ts`. A
 new production domain goes there as well, or production shows the banner.
 
+### Link previews for crawlers
+
+`vercel.json` also rewrites `/creatives/:slug` and `/offers/:id` to the API's
+`/api/v1/share/...` pages, **only** when the `User-Agent` names a preview
+crawler (`facebookexternalhit`, `Facebot`, `Twitterbot`, `Slackbot`,
+`WhatsApp`, `TelegramBot`, `Discordbot`, `LinkedInBot`), with the same
+production/staging hostname split as `/api`. People, including Messenger's
+in-app browser, still get the SPA
+([ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+The cards' canonical URLs are written per deployment in
+`backend/src/modules/share/share.service.ts`, so a new production domain goes
+there too. To check one: `curl -A "facebookexternalhit/1.1" <site>/creatives/<slug>`.
+
 ---
 
 ## Vercel — frontend

@@ -92,3 +92,4 @@ Number sequentially. Never renumber.
 | [0053](./0053-errors-are-reported-to-sentry-without-personal-data.md) | Errors are reported to Sentry, without personal data | Proposed |
 | [0054](./0054-organisations-are-teams-of-creatives.md) | Organisations are teams of creatives, founded by one of them | Proposed |
 | [0055](./0055-copy-is-translated-per-device-never-by-machine.md) | Language is a per-device choice, catalogues load on demand, and no string ships machine-translated | Accepted |
+| [0056](./0056-link-previews-come-from-a-crawler-only-html-endpoint.md) | Link previews come from a crawler-only HTML endpoint | Accepted |

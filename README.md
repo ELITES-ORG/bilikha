@@ -116,8 +116,9 @@ Live on production since 2026-10-03, with staging running ahead of it on
 Not built: organisation accounts, free-text search, and web push
 ([plan 0018](./docs/plans/0018-web-push.md), deferred).
 
-**Known launch blocker:** shared links have no preview card. Facebook's scraper
-does not execute JavaScript, so a shared profile or offer shows the same generic
-card as every other link — and sharing is the product's main discovery path.
-See [ADR 0002](./docs/decisions/0002-pern-with-client-rendered-spa.md); the fix
-is tracked in [#18](https://github.com/ELITES-ORG/bilikha/issues/18).
+**Shared links get their own preview card.** A shared profile or offer shows
+its name, details and photo on Facebook, Messenger and other apps: preview
+crawlers are sent to a small HTML page while people keep the SPA
+([ADR 0056](./docs/decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+Search-engine indexing is still open
+([ADR 0002](./docs/decisions/0002-pern-with-client-rendered-spa.md)).
