@@ -5,6 +5,9 @@ import type { PublishedOfferDetail } from '../../contracts/offers.js';
 import type { PublicProfileDetail } from '../../contracts/profiles.js';
 import { getPublishedOfferById } from '../offers/offers.service.js';
 import { getPublishedBySlug } from '../profiles/profiles.service.js';
+import { formatPriceRange } from './share-price.js';
+
+export { formatPriceRange };
 
 /**
  * Link-preview cards (ADR 0056). A crawler asking for a shared profile or offer
@@ -49,23 +52,6 @@ export interface ShareCard {
   /** The canonical page URL. */
   url: string;
   type: 'website' | 'profile';
-}
-
-/**
- * Same rules as `formatPriceRange` in `frontend/src/lib/money.ts`, so the card
- * and the page never word a price differently. Keep the two in step.
- */
-export function formatPriceRange(
-  minCentavos: number | null | undefined,
-  maxCentavos: number | null | undefined,
-): string {
-  const pesos = (centavos: number) =>
-    `₱${(Math.round(centavos) / 100).toLocaleString('en-PH', { maximumFractionDigits: 0 })}`;
-  if (minCentavos == null && maxCentavos == null) return 'Price on request';
-  if (minCentavos != null && maxCentavos == null) return `From ${pesos(minCentavos)}`;
-  if (minCentavos == null && maxCentavos != null) return pesos(maxCentavos);
-  if (minCentavos === maxCentavos) return pesos(minCentavos!);
-  return `${pesos(minCentavos!)} – ${pesos(maxCentavos!)}`;
 }
 
 /** Collapses whitespace and cuts at a word boundary, so a card never ends mid-word. */
