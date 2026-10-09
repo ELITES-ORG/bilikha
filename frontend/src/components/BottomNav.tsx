@@ -69,6 +69,13 @@ export function BottomNav() {
                 to={to}
                 viewTransition
                 aria-current={active ? 'page' : undefined}
+                // The bar stays mounted while the page changes under it, so a
+                // tapped tab would keep focus, and some in-app browsers then
+                // draw the keyboard focus ring around it. A tap lets go of
+                // focus; Enter from a keyboard (detail 0) keeps it.
+                onClick={(event) => {
+                  if (event.detail > 0) event.currentTarget.blur();
+                }}
                 className={cn(
                   'flex h-full flex-col items-center justify-center gap-0.5 px-1 py-1.5',
                   'text-2xs tracking-wide transition-colors',

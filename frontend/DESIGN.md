@@ -176,7 +176,7 @@ The single radius is a decision, not a default
   ([ADR 0047](../docs/decisions/0047-animated-icons-load-lazily-with-motion.md)).
   They loop only while on screen, take turns rather than move together, and
   stay still under reduced motion. Decorative icons only — never on controls.
-- Changes of page get the tide line and the new `main` sliding in
+- Changes of page get the tide line and the new `main` fading in
   (`PageTransitions`). A slow first load shows the navy opening curtain, which
   lifts with the wave (`BootCurtain`); never add a spinner of your own to the
   boot path. The branded overlays

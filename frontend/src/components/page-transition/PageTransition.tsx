@@ -41,7 +41,7 @@ import {
  * in or out (`overlay.signedIn`).
  *
  * Every other change of page gets the tide, a red line across the top, and the
- * new `main` sliding in, inside the 200ms rule. That stands in for ADR 0034's
+ * new `main` fading in, inside the 200ms rule. That stands in for ADR 0034's
  * view transition, which the declarative <BrowserRouter> never starts.
  */
 type Run = Omit<PageTransitionRun, 'phase'> & {
