@@ -698,7 +698,8 @@ straight to the change form instead of discovering this on the next tap.
 ### `GET /api/v1/admin/taxonomy`
 
 The full domain tree **including archived items**, each with a
-`referenceCount` — how many profile, offer and posting rows point at it. The
+`referenceCount` — how many profile, offer, posting and organisation rows point
+at it. The
 only surface that sees either; the public
 [`GET /api/v1/taxonomy/domains`](#get-apiv1taxonomydomains) serves active items
 only (ADR 0049).
@@ -735,7 +736,8 @@ archiving the item and creating a replacement.
 ### `POST /api/v1/admin/taxonomy/:kind/:slug/archive`
 
 Takes the item out of every picker and browse surface while leaving the
-profiles, offers and postings that reference it intact, and leaving its slug
+profiles, offers, postings and organisations that reference it intact, and
+leaving its slug
 resolvable. **Archiving a domain archives its sub-domains with it**, in one
 transaction, each with its own audit row.
 

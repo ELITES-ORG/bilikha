@@ -6,10 +6,19 @@ import {
   creativeProfileSubdomains,
   creativeSubdomains,
   offers,
+  organizationSubdomains,
+  organizations,
   postings,
   taxonomyChanges,
 } from '../../db/schema/index.js';
-import { makeAdmin, makeCreative, makeOffer, makePosting, makeUser } from '../../test/factories.js';
+import {
+  makeAdmin,
+  makeCreative,
+  makeOffer,
+  makePosting,
+  makeUser,
+  municipalityIdAt,
+} from '../../test/factories.js';
 import { createOffer, updateOffer } from '../offers/offers.service.js';
 import { createPosting, updatePosting } from '../postings/postings.service.js';
 import { AppError } from '../../lib/http-error.js';
@@ -49,6 +58,9 @@ afterEach(async () => {
     await db.delete(postings).where(inArray(postings.subdomainId, ids));
     await db.delete(creativeProfileSubdomains).where(
       inArray(creativeProfileSubdomains.subdomainId, ids),
+    );
+    await db.delete(organizationSubdomains).where(
+      inArray(organizationSubdomains.subdomainId, ids),
     );
   }
 
@@ -317,6 +329,32 @@ describe('admin taxonomy — deleting', () => {
       .from(creativeSubdomains)
       .where(eq(creativeSubdomains.id, sub.id));
     expect(still).toBeDefined();
+  });
+
+  it('counts an organisation as a reference, so delete is neither offered nor misreported', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+    const [org] = await db
+      .insert(organizations)
+      .values({
+        slug: `${TEST_PREFIX}org`,
+        name: 'ZZ Test Studio',
+        municipalityId: await municipalityIdAt(0),
+      })
+      .returning();
+    await db.insert(organizationSubdomains).values({ organizationId: org!.id, subdomainId: sub.id });
+
+    // The admin page offers Delete only at zero references.
+    const tree = await listTaxonomyForAdmin();
+    const listed = tree
+      .find((item) => item.slug === domain.slug)
+      ?.subdomains.find((item) => item.slug === sub.slug);
+    expect(listed?.referenceCount).toBe(1);
+
+    await expect(
+      deleteTaxonomyItem({ kind: 'subdomains', slug: sub.slug, adminId: admin.id }),
+    ).rejects.toMatchObject({ status: 409, message: expect.stringMatching(/used by 1 /) });
   });
 
   it('deletes an unreferenced sub-domain and keeps its history', async () => {

@@ -21,7 +21,8 @@ import { users } from './users.js';
  *
  * `slug` is the stable public identifier used in URLs; renaming a label must
  * never change a slug. `archived_at` takes an item out of circulation without
- * deleting it, because profiles, offers and postings reference these rows.
+ * deleting it, because profiles, offers, postings and organisations reference
+ * these rows.
  */
 export const creativeDomains = pgTable(
   'creative_domains',
