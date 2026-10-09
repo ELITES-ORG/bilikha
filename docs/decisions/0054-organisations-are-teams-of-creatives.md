@@ -5,6 +5,9 @@
 - **Clarified:** 2026-10-10 (reyxdz) — organisations are for creatives only.
   This record first called client organisations "deferred", which read as
   planned work. They are not: there are none, and there will not be.
+- **Amended:** 2026-10-10 (reyxdz) — a rejected organisation stops counting
+  toward the five-organisation cap; a suspended one keeps counting. See
+  Membership.
 - **Amends:** [0005](./0005-organization-pages.md), which framed organisations
   mainly as client institutions and forked registration on "yourself, or a
   group/business?"
@@ -59,6 +62,12 @@ founder can send it again. Each member carries a free-text role title
 ("Full-stack developer", "QA") shown on the page, because job titles are not
 taxonomy and the nine domains are not ours to extend. A person may belong to
 **up to five** organisations, counting the ones they founded.
+
+An organisation counts toward those five from the moment it is registered,
+while it waits for review. If its page is **rejected**, it stops counting, so
+the founder can submit a new registration. If it is **suspended** for abuse, it
+keeps counting — otherwise suspension would become a way to spin up a
+replacement. Invitations never count; only organisations a person is in.
 
 **Roles.** Three, and an organisation has exactly one founder:
 

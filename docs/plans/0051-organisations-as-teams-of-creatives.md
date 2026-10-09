@@ -30,10 +30,11 @@ userMarcPaul on 2026-10-09, and are recorded here:
 |---|---|---|
 | Is the seven-day invitation expiry a decision? | **Yes — it expires automatically.** Already in ADR 0054's text. | `expires_at` is stored; expiry is computed on read (`expires_at < now()`). No scheduled job. |
 | Does the five-organisation cap count invitations? | **No — it counts organisations a creative has joined.** Consistent with ADR 0054. | The cap counts `organization_members` rows, never invitations. |
-| Does a rejected page block founding another? | **No — the founder can submit a new registration.** **Not in ADR 0054.** | A dedicated `organization_status` enum with a real `rejected` value, and rejected organisations stop counting toward the cap. |
+| Does a rejected page block founding another? | **No — the founder can submit a new registration.** Written into ADR 0054 by reyxdz on 2026-10-10. | A dedicated `organization_status` enum with a real `rejected` value, and rejected organisations stop counting toward the cap. |
 
-The third answer **extends an accepted ADR**. It is recorded here rather than
-written into ADR 0054, because amending an accepted decision is reyxdz's call.
+The third answer **extended an accepted ADR**, so it waited for reyxdz, who
+wrote it into ADR 0054 on 2026-10-10: a rejected organisation stops counting
+toward the cap, and a suspended one keeps counting.
 It is also why phase 1 departs from reusing `profile_status`: profiles record a
 rejection as `suspended` plus a reason, and for an organisation a rejected page
 (which should free a cap slot) and an abuse suspension (which should not) cannot
