@@ -7,6 +7,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useEnsureConversation } from '@/features/conversations/api';
 import { PostingNotFoundError, usePosting } from '@/features/postings/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import { formatTimeLeft } from '@/lib/posting-time';
 import { formatBudgetRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
@@ -66,7 +67,7 @@ export function PostingDetailPage() {
               <Eyebrow>{posting.data.subdomain.domain}</Eyebrow>
               <h1 className="u-display mt-3 text-4xl text-ink">{posting.data.title}</h1>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Badge tone="brand">{posting.data.subdomain.name}</Badge>
+                <Badge tone="brand">{subdomainLabel(posting.data.subdomain)}</Badge>
                 <p className="text-base font-medium text-ink">
                   {formatBudgetRange(
                     posting.data.budgetMinCentavos,

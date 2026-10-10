@@ -22,6 +22,7 @@ import { useEnsureConversation } from '@/features/conversations/api';
 import { OfferCard, OfferImageFallback, SaveHeart } from '@/features/offers/OfferCard';
 import { OfferGalleryGrid } from '@/features/offers/OfferGallery';
 import { useOfferLightbox } from '@/features/offers/use-offer-lightbox';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import {
   OfferNotFoundError,
   usePublishedOffer,
@@ -237,7 +238,7 @@ export function OfferDetailPage() {
 
                 <div className="absolute inset-x-3 bottom-3 flex">
                   <Badge tone="brand" variant={cover ? 'solid' : 'soft'} className="truncate">
-                    {data.subdomain.name}
+                    {subdomainLabel(data.subdomain)}
                   </Badge>
                 </div>
               </div>
