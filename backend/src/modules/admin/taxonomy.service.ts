@@ -71,6 +71,7 @@ function serializeSubdomain(row: typeof creativeSubdomains.$inferSelect) {
     domainId: row.domainId,
     slug: row.slug,
     name: row.name,
+    singularName: row.singularName,
     displayOrder: row.displayOrder,
     archivedAt: row.archivedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -243,6 +244,7 @@ export async function createSubdomain({
         domainId: domain.id,
         slug: input.slug,
         name: input.name,
+        singularName: input.singularName,
         displayOrder,
       })
       .returning();
@@ -252,7 +254,12 @@ export async function createSubdomain({
       itemSlug: input.slug,
       action: 'created',
       adminId,
-      after: { name: input.name, displayOrder, domainSlug: input.domainSlug },
+      after: {
+        name: input.name,
+        singularName: input.singularName,
+        displayOrder,
+        domainSlug: input.domainSlug,
+      },
     });
 
     return serializeSubdomain(row!);
@@ -272,7 +279,8 @@ async function findSubdomain(slug: string) {
 }
 
 /**
- * Name, description and display order. Never the slug — see
+ * Name, singular label (sub-domains only), description and display order.
+ * Never the slug — see
  * `updateTaxonomySchema`, which is the enforcement; this function simply has
  * nowhere to put one.
  */
@@ -280,6 +288,9 @@ export async function updateTaxonomyItem({ kind, slug, adminId, input }: ItemRef
   input: UpdateTaxonomyInput;
 }) {
   if (kind === 'domains') {
+    if (input.singularName !== undefined) {
+      throw AppError.badRequest('Only a sub-domain has a singular label.');
+    }
     const current = await findDomain(slug);
     const before = {
       name: current.name,
@@ -313,9 +324,14 @@ export async function updateTaxonomyItem({ kind, slug, adminId, input }: ItemRef
   }
 
   const current = await findSubdomain(slug);
-  const before = { name: current.name, displayOrder: current.displayOrder };
+  const before = {
+    name: current.name,
+    singularName: current.singularName,
+    displayOrder: current.displayOrder,
+  };
   const after = {
     name: input.name ?? current.name,
+    singularName: input.singularName ?? current.singularName,
     displayOrder: input.displayOrder ?? current.displayOrder,
   };
 

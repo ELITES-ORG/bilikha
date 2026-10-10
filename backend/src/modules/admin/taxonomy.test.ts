@@ -22,7 +22,7 @@ import {
 import { createOffer, updateOffer } from '../offers/offers.service.js';
 import { createPosting, updatePosting } from '../postings/postings.service.js';
 import { AppError } from '../../lib/http-error.js';
-import { updateTaxonomySchema } from './taxonomy.schema.js';
+import { createSubdomainSchema, updateTaxonomySchema } from './taxonomy.schema.js';
 import {
   archiveTaxonomyItem,
   createDomain,
@@ -83,6 +83,7 @@ async function makeTestSubdomain(adminId: string, domainSlug: string, suffix = '
       domainSlug,
       slug: `${TEST_PREFIX}${suffix}`,
       name: 'ZZ Test Sub-domain',
+      singularName: 'ZZ Test Sub-domain Singular',
     },
   });
 }
@@ -168,6 +169,74 @@ describe('admin taxonomy — editing', () => {
 
   it('refuses an empty update', () => {
     expect(() => updateTaxonomySchema.parse({})).toThrow();
+  });
+});
+
+describe('admin taxonomy — singular labels (issue #17)', () => {
+  it('requires a singular label to create a sub-domain', () => {
+    const parsed = createSubdomainSchema.safeParse({
+      domainSlug: 'design',
+      slug: `${TEST_PREFIX}no-singular`,
+      name: 'ZZ No Singular',
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('stores the singular label on create and records it in the history', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+
+    expect(sub.singularName).toBe('ZZ Test Sub-domain Singular');
+
+    const audit = await auditFor(sub.slug);
+    expect(audit.at(-1)?.after).toMatchObject({ singularName: 'ZZ Test Sub-domain Singular' });
+  });
+
+  it('edits a sub-domain\'s singular label and records the old and new values', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+
+    const updated = await updateTaxonomyItem({
+      kind: 'subdomains',
+      slug: sub.slug,
+      adminId: admin.id,
+      input: { singularName: 'ZZ Renamed Singular' },
+    });
+    expect(updated).toMatchObject({ singularName: 'ZZ Renamed Singular' });
+
+    const [stored] = await db
+      .select({ singularName: creativeSubdomains.singularName })
+      .from(creativeSubdomains)
+      .where(eq(creativeSubdomains.id, sub.id));
+    expect(stored?.singularName).toBe('ZZ Renamed Singular');
+
+    const audit = await auditFor(sub.slug);
+    expect(audit[1]?.before).toMatchObject({ singularName: 'ZZ Test Sub-domain Singular' });
+    expect(audit[1]?.after).toMatchObject({ singularName: 'ZZ Renamed Singular' });
+  });
+
+  it('refuses a singular label on a domain', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+
+    await expect(
+      updateTaxonomyItem({
+        kind: 'domains',
+        slug: domain.slug,
+        adminId: admin.id,
+        input: { singularName: 'x x' },
+      }),
+    ).rejects.toMatchObject({ status: 400, message: 'Only a sub-domain has a singular label.' });
+
+    const audit = await auditFor(domain.slug);
+    expect(audit.map((row) => row.action)).toEqual(['created']);
+  });
+
+  it('still refuses a slug in an edit', () => {
+    expect(updateTaxonomySchema.safeParse({ slug: 'x' }).success).toBe(false);
   });
 });
 
