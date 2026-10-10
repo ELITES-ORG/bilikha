@@ -481,7 +481,10 @@ deployment's site.
 
 Anything the public page would 404 — unpublished, suspended, unknown, or a
 malformed offer id — gets the generic Bilikha card, which names nothing about
-the item. An unexpected error gets the same card with `Cache-Control: no-store`.
+the item. Its `og:url` and `canonical` stay the shared link itself, never the
+home page: Facebook scrapes whatever `og:url` names, so the home page would
+replace this card with the SPA's site-wide tags. An unexpected error gets the
+same card with `Cache-Control: no-store`.
 
 ### `GET /api/v1/share/creatives/:slug`
 

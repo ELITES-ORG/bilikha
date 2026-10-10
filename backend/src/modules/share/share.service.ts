@@ -71,13 +71,28 @@ function defaultImage(site: string) {
   };
 }
 
-/** What a hidden, missing or broken link shares: the site, never the item. */
-export function genericCard(site: string): ShareCard {
+export function profileUrl(site: string, slug: string): string {
+  return `${site}/creatives/${encodeURIComponent(slug)}`;
+}
+
+export function offerUrl(site: string, id: string): string {
+  return `${site}/offers/${encodeURIComponent(id)}`;
+}
+
+/**
+ * What a hidden, missing or broken link shares: the site, never the item.
+ *
+ * `url` is the link that was shared, not the home page. Facebook treats
+ * `og:url` as the page to scrape, so pointing it at the home page made the
+ * crawler leave this card for the SPA's site-wide tags. The link names nothing
+ * the person sharing it had not already pasted.
+ */
+export function genericCard(site: string, url = `${site}/`): ShareCard {
   return {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     ...defaultImage(site),
-    url: `${site}/`,
+    url,
     type: 'website',
   };
 }
@@ -96,7 +111,7 @@ export function profileCard(profile: PublicProfileDetail, site: string): ShareCa
     ...(profile.avatarUrl
       ? { image: profile.avatarUrl, imageSize: null, largeImage: false }
       : defaultImage(site)),
-    url: `${site}/creatives/${encodeURIComponent(profile.slug)}`,
+    url: profileUrl(site, profile.slug),
     type: 'profile',
   };
 }
@@ -109,7 +124,7 @@ export function offerCard(offer: PublishedOfferDetail, site: string): ShareCard 
     title: offer.title,
     description: offer.description?.trim() ? `${facts} — ${clip(offer.description, 160)}` : facts,
     ...(cover ? { image: cover.url, imageSize: null, largeImage: true } : defaultImage(site)),
-    url: `${site}/offers/${encodeURIComponent(offer.id)}`,
+    url: offerUrl(site, offer.id),
     type: 'website',
   };
 }
@@ -119,7 +134,9 @@ export async function cardForProfile(slug: string, site = siteOrigin()): Promise
   try {
     return profileCard(await getPublishedBySlug(slug), site);
   } catch (error) {
-    if (error instanceof AppError && error.status === 404) return genericCard(site);
+    if (error instanceof AppError && error.status === 404) {
+      return genericCard(site, profileUrl(site, slug));
+    }
     throw error;
   }
 }
@@ -128,7 +145,9 @@ export async function cardForOffer(id: string, site = siteOrigin()): Promise<Sha
   try {
     return offerCard(await getPublishedOfferById(id), site);
   } catch (error) {
-    if (error instanceof AppError && error.status === 404) return genericCard(site);
+    if (error instanceof AppError && error.status === 404) {
+      return genericCard(site, offerUrl(site, id));
+    }
     throw error;
   }
 }

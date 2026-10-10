@@ -75,3 +75,14 @@ indexing, which ADR 0002's debt also covered.
 **Watch for.** Facebook caches a scrape for weeks. A profile that changes its
 photo or name keeps the old card until someone asks the Sharing Debugger to
 scrape it again.
+
+## Amendment — 2026-10-10: the generic card keeps the shared URL
+
+The generic card first set `og:url` to the site's home page. In Facebook's
+Sharing Debugger on staging, the crawler treated that as the page to scrape:
+it followed `og:url` to the home page, read the SPA's site-wide tags instead of
+this card, and showed no image while production lacked `og-default.png`. The
+generic card now keeps the link that was shared as its `og:url` and
+`canonical`. Its title, description and image stay generic, so it still names
+nothing about a hidden item; the URL holds only what the person sharing it had
+already pasted.

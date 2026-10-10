@@ -5,6 +5,8 @@ import {
   cardForOffer,
   cardForProfile,
   genericCard,
+  offerUrl,
+  profileUrl,
   renderCardHtml,
   siteOrigin,
   type ShareCard,
@@ -35,21 +37,26 @@ function send(res: Response, card: ShareCard, cache: string) {
     .send(renderCardHtml(card));
 }
 
-async function respond(res: Response, load: () => Promise<ShareCard>) {
+/** `sharedUrl` is the page the link names, kept even when the card falls back. */
+async function respond(res: Response, sharedUrl: string, load: () => Promise<ShareCard>) {
   try {
     send(res, await load(), CACHE);
   } catch (error) {
     logger.warn({ err: error }, 'Link preview fell back to the generic card');
-    send(res, genericCard(siteOrigin()), 'no-store');
+    send(res, genericCard(siteOrigin(), sharedUrl), 'no-store');
   }
 }
 
 shareRouter.get('/creatives/:slug', async (req, res) => {
-  await respond(res, () => cardForProfile(req.params.slug!));
+  const slug = req.params.slug!;
+  await respond(res, profileUrl(siteOrigin(), slug), () => cardForProfile(slug));
 });
 
 shareRouter.get('/offers/:id', async (req, res) => {
+  const sharedUrl = offerUrl(siteOrigin(), req.params.id!);
   const id = offerIdSchema.safeParse(req.params.id);
   // A malformed id is a link that never pointed at anything, not an error.
-  await respond(res, async () => (id.success ? cardForOffer(id.data) : genericCard(siteOrigin())));
+  await respond(res, sharedUrl, async () =>
+    id.success ? cardForOffer(id.data) : genericCard(siteOrigin(), sharedUrl),
+  );
 });
