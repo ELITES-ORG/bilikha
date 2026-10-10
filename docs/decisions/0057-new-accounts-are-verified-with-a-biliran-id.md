@@ -117,7 +117,7 @@ development needs a private `ids` bucket, or new registrations stop at the ID
 step.
 
 **Decided by reyxdz (2026-10-10):** reyxdz creates the private `ids` bucket on
-staging and production, with a 3 MB limit and WebP and JPEG only; the 7 days
+staging and production, with a 10 MB limit and WebP and JPEG only; the 7 days
 start when the decision is made, which is when the person is told; decisions
 can be reversed, and appealed, within the 7 days; `CONSENT_VERSION` is bumped
 with the privacy notice's ID section.

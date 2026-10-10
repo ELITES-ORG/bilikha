@@ -80,10 +80,12 @@ as long as it takes, and its images are kept while it waits.
 - [ ] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
 - [ ] A local private bucket `ids` in Supabase Studio (`http://127.0.0.1:54323`):
-      Public **off**, file size limit **3 MB**, allowed MIME types
+      Public **off**, file size limit **10 MB**, allowed MIME types
       `image/webp, image/jpeg`.
-- [ ] **Before Phase 5 merges:** the same private bucket on staging and
+- [x] **Before Phase 5 merges:** the same private bucket on staging and
       production, created by reyxdz in each Supabase dashboard (Decided 1).
+      Done 2026-10-10 on `bilikha-staging` and `bilikha-production`: private,
+      no policies, 10 MB, `image/webp, image/jpeg`.
 - [ ] **Before Phase 5 merges:** `bilikha-production` on an always-on Render
       instance (Starter), so the hourly sweep deletes images on time. On the
       free tier it runs only when traffic wakes the server.
@@ -609,7 +611,7 @@ always-on Render instance** (Prerequisites).
 ## Decided (reyxdz, 2026-10-10)
 
 1. **The private `ids` bucket:** reyxdz creates it on staging and production
-   before Phase 5 merges, with a **3 MB** limit and **WebP and JPEG** only.
+   before Phase 5 merges, with a **10 MB** limit and **WebP and JPEG** only.
 2. **The 7 days start when the decision is made** — the moment the person is
    told, by notification or decline notice. There is **no deadline for the
    review itself**: a pending submission waits as long as it takes.
