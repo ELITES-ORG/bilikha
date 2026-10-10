@@ -33,7 +33,8 @@ exists.
 ## Fixing a label
 
 `/admin/taxonomy` → the domain → **Rename**. Done. It is recorded in
-`taxonomy_changes` with your account against it.
+`taxonomy_changes` with your account against it. On a sub-domain, Rename also
+edits its singular label, so a fix to the plural can fix the singular with it.
 
 Do **not** edit `taxonomy-data.ts` for this. The seed no longer updates
 existing rows, so an edit there changes nothing in any environment that has
@@ -48,6 +49,14 @@ abbreviations.
 **Before adding one, check it is genuinely missing rather than badly named.**
 The most common real problem is not an absent category but a category people
 cannot find. That is an alias problem, not a taxonomy problem.
+
+Every sub-domain also has a **singular label**, used wherever one offer,
+posting or creative is labelled — "Mobile App Developer" for "Mobile App
+Developers" (issue #17). The plural `name` stays on filters, pickers and domain
+listings. The singular label is required in the create form. It is written by a
+person, not derived, because the 81 names include organisations, things and
+compounds that no rule turns singular: "Dancers and Dance Troupes" becomes
+"Dancer or Dance Troupe".
 
 Add it to `taxonomy-data.ts` as well **only** if a brand-new environment should
 start with it. The two are no longer kept in step automatically, and nothing
@@ -136,6 +145,8 @@ external data exchange.
 - [ ] Slug is permanent-quality: kebab-case, spelled out, no abbreviations
 - [ ] Adding a sub-domain, not an alias in disguise
 - [ ] A label fix went through `/admin/taxonomy`, not through `taxonomy-data.ts`
+- [ ] A new sub-domain has a singular label, and a label fix updated both
+      forms if needed
 - [ ] If `taxonomy-data.ts` changed, a fresh `db:reset && db:migrate && db:seed`
       still reports `domains: 9  subdomains: N`
 - [ ] Removal was an archive, unless nothing referenced the item

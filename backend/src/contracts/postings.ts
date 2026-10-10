@@ -10,6 +10,10 @@ export type PostingStatus = 'open' | 'closed' | 'expired';
 export interface PostingSubdomain {
   slug: string;
   name: string;
+  /** Singular label for one offer, posting or creative (issue #17). Optional only
+   *  for deployment skew: an API deployed before #17 omits it. Read it through
+   *  `subdomainLabel()` on the frontend, which falls back to `name`. */
+  singularName?: string;
   domain: string;
 }
 

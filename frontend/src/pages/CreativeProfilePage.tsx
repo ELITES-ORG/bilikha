@@ -30,6 +30,7 @@ import { ContactComposer } from '@/features/conversations/ContactComposer';
 import type { OfferImage } from '@/features/offers/api';
 import { OfferCard } from '@/features/offers/OfferCard';
 import { ProfileNotFoundError, usePublishedProfile } from '@/features/profiles/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import type { PublicProfile } from '@contracts/profiles';
 import { useRatingSummary } from '@/features/ratings/api';
 import { ProfileRatings } from '@/features/ratings/components/ProfileRatings';
@@ -61,7 +62,9 @@ function joinedLabel(iso: string) {
 function craftsByDomain(profile: PublicProfile) {
   const sorted = [...profile.subdomains].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
   const groups = new Map<string, string[]>();
-  for (const s of sorted) groups.set(s.domain, [...(groups.get(s.domain) ?? []), s.name]);
+  for (const s of sorted) {
+    groups.set(s.domain, [...(groups.get(s.domain) ?? []), subdomainLabel(s)]);
+  }
   return { sorted, groups };
 }
 
@@ -227,7 +230,7 @@ export function CreativeProfilePage() {
                 <div className="mt-5 flex flex-col items-center text-center lg:items-start lg:px-8 lg:text-left">
                   {sorted.length > 0 && (
                     <p className="font-semibold text-ink">
-                      {sorted.map((s) => s.name).join(' · ')}
+                      {sorted.map((s) => subdomainLabel(s)).join(' · ')}
                     </p>
                   )}
                   <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-ink-muted lg:justify-start">
@@ -296,7 +299,7 @@ export function CreativeProfilePage() {
                                   title={offer.title}
                                   description={offer.description}
                                   eyebrow={offer.subdomain.domain}
-                                  category={offer.subdomain.name}
+                                  category={subdomainLabel(offer.subdomain)}
                                   price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
                                   fallbackName={name}
                                 />
@@ -423,7 +426,7 @@ export function CreativeProfilePage() {
                           <ul className="flex flex-wrap gap-2">
                             {sorted.map((s) => (
                               <li key={s.slug}>
-                                <Badge tone={s.isPrimary ? 'brand' : 'neutral'}>{s.name}</Badge>
+                                <Badge tone={s.isPrimary ? 'brand' : 'neutral'}>{subdomainLabel(s)}</Badge>
                               </li>
                             ))}
                           </ul>

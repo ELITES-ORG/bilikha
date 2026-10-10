@@ -104,6 +104,7 @@ Served in one round trip rather than as nested lookups.
           "domainId": "c36524bd-…",
           "slug": "music-composers",
           "name": "Music Composers",
+          "singularName": "Music Composer",
           "displayOrder": 1,
           "createdAt": "…",
           "updatedAt": "…"
@@ -115,6 +116,12 @@ Served in one round trip rather than as nested lookups.
 ```
 
 Currently returns 9 domains and 81 sub-domains.
+
+`name` is the official RA 11904 plural, used wherever the category itself is
+meant — filters, pickers, domain listings. `singularName` is the curated label
+for **one** offer, posting or creative ("Mobile App Developer"), issue #17.
+Every sub-domain object in the API — here, and nested in offers, postings,
+profiles and the admin responses — carries both.
 
 ### `GET /api/v1/taxonomy/domains/:slug`
 
@@ -457,9 +464,10 @@ see the previous recency order and no `isNearby` field.
 `200` — `{ data: PublicProfile }`. `404` when missing or not published.
 
 `PublicProfile`: `slug`, `displayName`, `fullName`, `bio`, `avatarUrl`,
-`municipality`, optional `isNearby`, `subdomains[]` (`slug`, `name`, `domain`,
-`isPrimary`), `offers[]` (`id`, `title`, `description`, `priceMinCentavos`,
-`priceMaxCentavos`, `subdomainSlug`, `subdomainName`, `images[]` with
+`municipality`, optional `isNearby`, `subdomains[]` (`slug`, `name`,
+`singularName`, `domain`, `isPrimary`), `offers[]` (`id`, `title`,
+`description`, `priceMinCentavos`, `priceMaxCentavos`, `subdomain` (`slug`,
+`name`, `singularName`, `domain`), `images[]` with
 `id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
 `GET /creatives` omit `offers` — the offer listing is `GET /offers`.
 
@@ -595,7 +603,9 @@ row), newest `lastAskedAt` first. Each row:
 
 Thread + messages. Includes `otherPartyUserId` and `otherPartyName`. Each
 message may include `offer` and/or `posting` (card or `null`), plus
-`offerRemoved` / `postingRemoved` when the FK was set but the row is gone.
+`offerRemoved` / `postingRemoved` when the FK was set but the row is gone. A
+posting card carries `subdomainName` (the official plural) and
+`subdomainSingularName` (the singular label for one posting, issue #17).
 Query: `after` (message uuid, for
 polling), `limit`. Non-participants → `404`. No subject.
 
@@ -752,14 +762,19 @@ not for routine use.
 
 ### `POST /api/v1/admin/taxonomy/subdomains`
 
-Body `{ "domainSlug", "slug", "name", "displayOrder"? }`. `201` with the created
-sub-domain. Unknown `domainSlug` → `404`; duplicate `slug` → `409`.
-`displayOrder` defaults to the end of that domain's list.
+Body `{ "domainSlug", "slug", "name", "singularName", "displayOrder"? }`. `201`
+with the created sub-domain. Unknown `domainSlug` → `404`; duplicate `slug` →
+`409`. `displayOrder` defaults to the end of that domain's list.
+`singularName` is required, 2–120 characters after trimming, like `name`: the
+label for one offer, posting or creative in the sub-domain (issue #17).
 
 ### `PATCH /api/v1/admin/taxonomy/:kind/:slug`
 
 `kind` is `domains` or `subdomains`. Body may carry `name`, `description` and
 `displayOrder`; **an empty body is `400`**, and so is any unrecognised key.
+A sub-domain also accepts `singularName`; sending it for a domain returns `400`
+with `Only a sub-domain has a singular label.` Each edit records the old and new
+`name` and `singularName` in the change log.
 
 Sending `slug` returns `400 VALIDATION_ERROR` with
 `Unrecognized key: "slug"`. A slug is a public identifier that has been indexed
@@ -868,6 +883,8 @@ many others have already replied.
 Detail. Owner always; others need a creative profile and an open, unexpired
 posting (`404` otherwise).
 
+In every posting response, `subdomain` is `{ slug, name, singularName, domain }`.
+
 ---
 
 ## Offers
@@ -880,6 +897,8 @@ profile, 4 images per offer.
 
 Own offers in `sortOrder`, with images (`url`, `thumbUrl`), subdomain, and
 moderation fields (`flaggedAt`, `reviewedAt`). Requires a creative profile.
+The sub-domain is flat: `subdomainSlug`, `subdomainName` and
+`subdomainSingularName` (the singular label for this one offer, issue #17).
 
 ### `POST /api/v1/offers`
 
@@ -946,6 +965,8 @@ caller is signed in with a municipality, nearby creatives' offers lead the list.
 
 Public detail for one published offer, including all images and creative
 summary. `404` when missing or the profile is not published.
+
+In both offer responses, `subdomain` is `{ slug, name, singularName, domain }`.
 
 ---
 

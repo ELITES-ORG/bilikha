@@ -162,21 +162,49 @@ describe('link-preview card contents', () => {
     avatarUrl: 'https://storage.example/avatars/juan.webp',
     municipality: 'Naval',
     subdomains: [
-      { slug: 'photo', name: 'Photographers', domain: 'Audiovisual Media', isPrimary: false },
-      { slug: 'film', name: 'Filmmakers', domain: 'Audiovisual Media', isPrimary: true },
+      {
+        slug: 'photo',
+        name: 'Photographers',
+        singularName: 'Photographer',
+        domain: 'Audiovisual Media',
+        isPrimary: false,
+      },
+      {
+        slug: 'film',
+        name: 'Filmmakers',
+        singularName: 'Filmmaker',
+        domain: 'Audiovisual Media',
+        isPrimary: true,
+      },
     ],
     memberSince: '2026-10-01T00:00:00.000Z',
     offers: [],
   };
 
-  it('names the primary craft and uses the photo as a small card', () => {
+  it('names the primary craft in the singular and uses the photo as a small card', () => {
     const card = profileCard(profile, site);
 
-    expect(card.title).toBe('Juan Dela Cruz · Filmmakers in Naval');
+    expect(card.title).toBe('Juan Dela Cruz · Filmmaker in Naval');
     expect(card.description).toBe('Photographers, Filmmakers · Naval, Biliran — on Bilikha');
     expect(card.image).toBe(profile.avatarUrl);
     expect(card.imageSize).toBeNull();
     expect(card.largeImage).toBe(false);
+  });
+
+  it('falls back to the plural name when an older API sent no singular label', () => {
+    const card = profileCard(
+      {
+        ...profile,
+        subdomains: [
+          { slug: 'photo', name: 'Photographers', domain: 'Audiovisual Media', isPrimary: false },
+          { slug: 'film', name: 'Filmmakers', domain: 'Audiovisual Media', isPrimary: true },
+        ],
+      },
+      site,
+    );
+
+    expect(card.title).toBe('Juan Dela Cruz · Filmmakers in Naval');
+    expect(card.description).toBe('Photographers, Filmmakers · Naval, Biliran — on Bilikha');
   });
 
   it('prefers the bio, clipped, when there is one', () => {

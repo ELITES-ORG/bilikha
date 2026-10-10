@@ -124,6 +124,7 @@ export function useCreateSubdomain() {
       domainSlug: string;
       slug: string;
       name: string;
+      singularName: string;
     }): Promise<AdminTaxonomySubdomain> => {
       try {
         const { data } = await apiClient.post<ApiResponse<AdminTaxonomySubdomain>>(
@@ -153,6 +154,8 @@ export function useUpdateTaxonomyItem() {
       kind: TaxonomyKind;
       slug: string;
       name?: string;
+      /** Sub-domains only; the server refuses it for a domain. */
+      singularName?: string;
       description?: string | null;
       displayOrder?: number;
     }): Promise<void> => {
