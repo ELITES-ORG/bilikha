@@ -86,4 +86,3 @@ generic card now keeps the link that was shared as its `og:url` and
 `canonical`. Its title, description and image stay generic, so it still names
 nothing about a hidden item; the URL holds only what the person sharing it had
 already pasted.
-

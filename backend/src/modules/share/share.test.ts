@@ -129,6 +129,26 @@ describe('link-preview cards, through the real app (ADR 0056)', () => {
     expect(meta(html, 'og:title')).toBe('Bilikha — Biliran Creative Industries Registry');
     expect(meta(html, 'og:url')).toBe(`${site}/offers/not-a-uuid`);
   });
+
+  it('keeps a hostile shared link inert in og:url and canonical', async () => {
+    // The generic card repeats the link that was shared, which anyone can
+    // write. It is percent-encoded and then HTML-escaped; either alone would
+    // leave a gap (encodeURIComponent keeps the apostrophe).
+    const hostile = [
+      `creatives/${encodeURIComponent(`"><script>alert(1)</script>`)}`,
+      `creatives/${encodeURIComponent(`it's" onmouseover="x`)}`,
+      `offers/${encodeURIComponent(`x'><svg/onload=alert(1)>`)}`,
+    ];
+
+    for (const path of hostile) {
+      const html = await (await fetch(`${base}/${path}`)).text();
+
+      expect(html, path).not.toMatch(/<script|<svg|\sonload=|\sonmouseover=/i);
+      expect(meta(html, 'og:url'), path).not.toMatch(/[<>"']/);
+      expect(html.match(/property="og:url"/g), path).toHaveLength(1);
+      expect(html.match(/rel="canonical"/g), path).toHaveLength(1);
+    }
+  });
 });
 
 describe('link-preview card contents', () => {
