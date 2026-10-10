@@ -112,6 +112,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0050](./0050-language-choice-and-the-first-translated-screen.md) | Language choice, and the first translation-ready screen | Complete |
 | [0051](./0051-organisations-as-teams-of-creatives.md) | Organisations as teams of creatives | In progress |
 | [0052](./0052-link-preview-cards.md) | Link preview cards for shared profiles and offers | In progress |
+| [0053](./0053-id-verification-for-new-accounts.md) | Verify new accounts with a photo of a Biliran ID | Draft |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

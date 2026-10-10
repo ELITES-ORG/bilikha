@@ -684,6 +684,7 @@ Sketched only. Nothing below is built, and the shapes will change.
 |---|---|---|
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
+| `id_verifications` | One row per ID submission by a new account: status (including an open appeal), ID type, private-bucket keys until deleted, who decided and when, and any appeal. Not the same thing as the tiers above | [ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md), [plan 0053](../plans/0053-id-verification-for-new-accounts.md) |
 
 Two constraints already settled and worth carrying into the schema:
 
