@@ -201,6 +201,7 @@ type PostingRowCore = {
   reviewedAt: Date | null;
   subdomainSlug: string;
   subdomainName: string;
+  subdomainSingularName: string;
   domainName: string;
   municipalitySlug: string;
   municipalityName: string;
@@ -225,6 +226,7 @@ function mapPostingRow(
     subdomain: {
       slug: row.subdomainSlug,
       name: row.subdomainName,
+      singularName: row.subdomainSingularName,
       domain: row.domainName,
     },
     municipality: {
@@ -254,6 +256,7 @@ export async function listMine(userId: string): Promise<Posting[]> {
       reviewedAt: postings.reviewedAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
       municipalitySlug: municipalities.slug,
       municipalityName: municipalities.name,
@@ -462,6 +465,7 @@ export async function listFeedPostings(
       reviewedAt: postings.reviewedAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
       municipalitySlug: municipalities.slug,
       municipalityName: municipalities.name,
@@ -520,6 +524,7 @@ export async function getPostingById(userId: string, postingId: string): Promise
       reviewedAt: postings.reviewedAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
       municipalitySlug: municipalities.slug,
       municipalityName: municipalities.name,

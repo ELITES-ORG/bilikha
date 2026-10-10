@@ -103,7 +103,7 @@ export function profileCard(profile: PublicProfileDetail, site: string): ShareCa
   const crafts = profile.subdomains.map((sub) => sub.name).join(', ');
   return {
     title: primary
-      ? `${name} · ${primary.name} in ${profile.municipality}`
+      ? `${name} · ${(primary.singularName ?? primary.name)} in ${profile.municipality}`
       : `${name} · ${profile.municipality}`,
     description: profile.bio?.trim()
       ? clip(profile.bio, 200)

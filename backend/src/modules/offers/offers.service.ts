@@ -154,6 +154,7 @@ export async function listMine(userId: string) {
       updatedAt: offers.updatedAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
     })
     .from(offers)
@@ -481,6 +482,7 @@ export async function listPublishedOffers(
       createdAt: offers.createdAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
       creativeSlug: creativeProfiles.slug,
       creativeDisplayName: creativeProfiles.displayName,
@@ -521,6 +523,7 @@ export async function listPublishedOffers(
       subdomain: {
         slug: row.subdomainSlug,
         name: row.subdomainName,
+        singularName: row.subdomainSingularName,
         domain: row.domainName,
       },
       image: imageMap.get(row.id)?.[0] ?? null,
@@ -553,6 +556,7 @@ export async function getPublishedOfferById(
       updatedAt: offers.updatedAt,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
       creativeSlug: creativeProfiles.slug,
       creativeDisplayName: creativeProfiles.displayName,
@@ -592,7 +596,12 @@ export async function getPublishedOfferById(
     priceMaxCentavos: row.priceMaxCentavos,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    subdomain: { slug: row.subdomainSlug, name: row.subdomainName, domain: row.domainName },
+    subdomain: {
+      slug: row.subdomainSlug,
+      name: row.subdomainName,
+      singularName: row.subdomainSingularName,
+      domain: row.domainName,
+    },
     images: imageMap.get(row.id) ?? [],
     creative: {
       slug: row.creativeSlug,

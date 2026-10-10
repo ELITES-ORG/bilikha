@@ -53,6 +53,10 @@ export interface AdminQueueMeta extends ListMeta {
 
 export interface AdminProfileSubdomain {
   name: string;
+  /** Singular label for one offer, posting or creative (issue #17). Optional only
+   *  for deployment skew: an API deployed before #17 omits it. Read it through
+   *  `subdomainLabel()` on the frontend, which falls back to `name`. */
+  singularName?: string;
   slug: string;
   isPrimary: boolean;
 }

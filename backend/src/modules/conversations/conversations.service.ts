@@ -231,6 +231,7 @@ async function loadPostingCards(postingIds: string[]): Promise<Map<string, Conve
       expiresAt: postings.expiresAt,
       municipalityName: municipalities.name,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
     })
     .from(postings)
     .innerJoin(municipalities, eq(postings.municipalityId, municipalities.id))
@@ -249,6 +250,7 @@ async function loadPostingCards(postingIds: string[]): Promise<Map<string, Conve
       available,
       municipalityName: row.municipalityName,
       subdomainName: row.subdomainName,
+      subdomainSingularName: row.subdomainSingularName,
     });
   }
   return result;
