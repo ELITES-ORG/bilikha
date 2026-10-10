@@ -69,6 +69,7 @@ async function seed(): Promise<void> {
             domainId: existingDomain.id,
             slug: subdomain.slug,
             name: subdomain.name,
+            singularName: subdomain.singularName,
             displayOrder: subIndex + 1,
           })
           .onConflictDoNothing({ target: creativeSubdomains.slug });

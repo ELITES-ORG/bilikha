@@ -329,6 +329,7 @@ describe('organisations — sub-domains and slugs', () => {
         domainId: domain!.id,
         slug: `${THROWAWAY_PREFIX}${Date.now()}`,
         name: 'ZZ Throwaway',
+        singularName: 'ZZ Throwaway',
         displayOrder: 999,
       })
       .returning();
