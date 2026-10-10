@@ -428,6 +428,40 @@ Rejection requires a non-empty `reason`. Each decision writes a
 to `suspended` and stores the reason for the registrant banner. Acknowledging an
 edit clears `editedSinceReviewAt` without changing the published status.
 
+### `GET /api/v1/admin/organizations`
+
+The organisation review queue ([ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)),
+shaped like the profile queue: oldest first, and `status=edited` for published
+pages with an unacknowledged edit.
+
+Query: `status` (`pending_review`, `published`, `rejected`, `suspended`, or
+`edited`), `page`, `limit` (max 50).
+
+`200` — `{ data: AdminOrganizationRow[], meta: { page, limit, total } }`.
+A row carries `id`, `slug`, `name`, `bio`, `crafts` (names, primary first),
+`status`, `founderUsername`, `municipality`, `memberCount`, `createdAt` and
+`editedSinceReviewAt` — everything the decision needs, so there is no detail
+endpoint.
+
+### `GET /api/v1/admin/organizations/counts`
+
+Counts per status for the tabs, plus `edited`.
+
+### `POST /api/v1/admin/organizations/:id/moderate`
+
+```jsonc
+{ "action": "approved" }
+{ "action": "rejected", "reason": "The name copies a real company." }
+{ "action": "acknowledged_edit" }
+```
+
+Rejection requires a non-empty `reason`. Unlike a profile, a rejected
+organisation gets the real status `rejected`, which stops it counting toward
+its founder's five-organisation cap. Each decision writes a
+`moderation_actions` row with `organization_id` set and the founder as
+`subject_user_id`. Approving and rejecting notify the founder; acknowledging an
+edit does not.
+
 ---
 
 ### `POST /api/v1/admin/error-check`
@@ -470,6 +504,128 @@ see the previous recency order and no `isNearby` field.
 `name`, `singularName`, `domain`), `images[]` with
 `id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
 `GET /creatives` omit `offers` — the offer listing is `GET /offers`.
+
+---
+
+## Organisations
+
+Teams of creatives with one public page
+([ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)). Nobody
+signs in as an organisation: every write is made by a creative, as themselves.
+Shapes are in `backend/src/contracts/organizations.ts`.
+
+Three roles: `founder` (exactly one), `co_founder`, `member`. The founder and
+co-founders edit the page and invite; only the founder invites a co-founder,
+removes a co-founder, changes the crafts or hands over the founder role.
+
+### `GET /api/v1/organizations`
+
+Public. Published organisations for the directory, by name. Query:
+`domain`, `subdomain`, `municipality` (slugs, optional), `limit` (default 12,
+max 50).
+
+`200` — `{ data: OrganizationCard[] }` — `slug`, `name`, `logoUrl`,
+`municipality`, `primaryCraft`, `memberCount`.
+
+### `GET /api/v1/organizations/:slug`
+
+Public. `200` — `{ data: PublicOrganization }`. `404` unless published.
+`members[]` lists only people whose account is active and whose own creative
+profile is published; it carries `displayName`, `profileSlug`, `avatarUrl`,
+`role` and `title`, and never a user id.
+
+### `POST /api/v1/organizations`
+
+Signed in. Founds an organisation, which starts at `pending_review`.
+
+```jsonc
+{
+  "name": "Naval Light Studio",
+  "bio": "Optional, up to 1000 characters.",
+  "municipalitySlug": "naval",
+  "subdomainSlugs": ["filmmakers", "animators"],
+  "primarySubdomainSlug": "filmmakers"
+}
+```
+
+One to five sub-domains from at most two domains, none archived. The slug is
+made from the name once and never changes.
+
+`201` — `{ data: { slug, status } }`. `403` without a published creative
+profile. `409` at the cap: five organisations, counting memberships and not
+counting `rejected` ones.
+
+### `PATCH /api/v1/organizations/:slug`
+
+Founder or co-founder. Any of `name`, `bio` (`null` clears it),
+`municipalitySlug`, and `subdomainSlugs` with `primarySubdomainSlug` (founder
+only, always together). Unknown keys are refused, so the slug cannot be sent.
+
+Editing a published page keeps it public and sets `editedSinceReviewAt`
+([ADR 0016](../decisions/0016-edits-never-unpublish.md)). Editing a `rejected`
+page sends it back to `pending_review`. A `suspended` page cannot be edited.
+
+### `GET /api/v1/organizations/:slug/manage`
+
+Any member. `200` — `{ data: ManagedOrganization }`: any status, every member
+with `userId` and `username`, the rejection reason, `myRole`, and — for the
+founder and co-founders — `invitations[]`, each with a computed `expired`.
+`404` for anyone not in it.
+
+### `GET /api/v1/organizations/mine`
+
+Signed in. The organisations the caller belongs to: `slug`, `name`, `status`,
+`role`.
+
+### `POST /api/v1/organizations/:slug/invitations`
+
+Founder or co-founder. Rate-limited per inviter.
+
+```jsonc
+{ "username": "carla", "role": "member", "title": "Composer" }
+```
+
+`role` is `member` (default) or `co_founder`. The invitation expires seven days
+later; expiry is computed when read, with no scheduled job. One `404` message
+covers an unknown username, a suspended account and an account with no published
+creative profile, so the endpoint cannot be used to discover accounts. `409` if
+they are already in the team or already have an open invitation.
+
+`201` — `{ data: { id, expiresAt, refreshed: false } }`. Re-inviting someone
+whose invitation expired renews the same invitation: `200` with
+`refreshed: true`. The invitee is notified.
+
+### `GET /api/v1/organizations/invitations`
+
+Signed in. Open, unexpired invitations to the caller: `id`, `organization`
+(`slug`, `name`), `role`, `title`, `invitedBy` (a name), `expiresAt`.
+
+### `POST /api/v1/organizations/invitations/:id/accept`
+
+The invitee. Creates the membership — **nobody is on a page without
+accepting**. `409` once expired, or at the cap. `403` without a published creative
+profile. The inviter is notified. `200` — `{ data: { slug } }`.
+
+### `POST /api/v1/organizations/invitations/:id/decline`
+
+The invitee. `200` — `{ data: { declined: true } }`.
+
+### `POST /api/v1/organizations/:slug/leave`
+
+Any member. A founder with anyone else in the team is refused (`409`) and told
+to hand over first. A founder alone closes the organisation: it is deleted.
+`200` — `{ data: { closed } }`.
+
+### `DELETE /api/v1/organizations/:slug/members/:userId`
+
+Founder, or a co-founder removing a plain member. Nobody removes the founder,
+and nobody removes themselves (leave instead). `200` — `{ data: { removed: true } }`.
+
+### `POST /api/v1/organizations/:slug/founder`
+
+Founder only. `{ "userId": "…" }` — someone already in the team. In one
+transaction the old founder becomes a co-founder and the new one the founder.
+`200` — `{ data: { handedOver: true } }`.
 
 ---
 

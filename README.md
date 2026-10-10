@@ -107,13 +107,17 @@ Live on production since 2026-10-03, with staging running ahead of it on
 - **Client postings**, which creatives browse in the directory in creative mode
 - **Conversations**, sign-in only, with **work agreements** made in the thread
 - **Ratings**, earned by a completed agreement
+- **Organisations**: teams of creatives with one reviewed public page, joined
+  only by accepting an invitation; a client's message reaches the founder
 - **A notification centre**, and the account hub: profile, offers, postings,
   how your work is doing, mode, theme and sign-in
-- **An admin area** for the registration queue, media, accounts and ratings
+- **An admin area** for the registration and organisation queues, media,
+  accounts and ratings
 - A privacy notice and terms, light and dark themes, an installable PWA, and a
   living style guide at `/styleguide`
 
-Not built: organisation accounts, free-text search, and web push
+Not built: acting *as* an organisation (its own messages, offers and
+agreements), organisation logos, free-text search, and web push
 ([plan 0018](./docs/plans/0018-web-push.md), deferred).
 
 **Shared links get their own preview card.** A shared profile or offer shows

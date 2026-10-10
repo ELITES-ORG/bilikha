@@ -247,13 +247,14 @@ acknowledgement / media-removal decision.
 |---|---|---|
 | `id` | `uuid` PK | |
 | `profile_id` | `uuid` FK null | `ON DELETE CASCADE`; null when a client avatar is removed with no creative profile |
-| `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals |
+| `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals, and to the founder for an organisation decision |
+| `organization_id` | `uuid` FK null → `organizations.id` | `ON DELETE SET NULL`; set when the decision was about an organisation page, so the audit outlives a closed organisation |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
 | `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` |
 | `reason` | `text` null | Required for rejections |
 | `created_at` | `timestamptz` | |
 
-Indexes: `profile_id`, `subject_user_id`, `created_at`.
+Indexes: `profile_id`, `subject_user_id`, `organization_id`, `created_at`.
 
 ---
 
