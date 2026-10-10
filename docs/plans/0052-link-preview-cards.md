@@ -1,6 +1,6 @@
 # 0052. Link preview cards for shared profiles and offers
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** emanuel
 - **Related:** [ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md) ·
   [ADR 0002](../decisions/0002-pern-with-client-rendered-spa.md) · issue #18
@@ -32,7 +32,7 @@ page carrying the item's own Open Graph tags; people keep the SPA unchanged.
 | 1. Share endpoints | 1 / 1 | Done |
 | 2. Routing and default image | 1 / 1 | Done |
 | 3. Records | 1 / 1 | Done |
-| 4. Check on staging | 0 / 1 | Not started — needs the merge to `main` |
+| 4. Check on staging | 1 / 1 | Done |
 
 ---
 
@@ -85,8 +85,24 @@ got before. After the release, re-scrape anything shared while it deployed
 
 ### Step 4.1 — Ask the crawlers
 
-- [ ] **Action.** After the merge, run a staging profile URL and an offer URL
+- [x] **Action.** After the merge, run a staging profile URL and an offer URL
   through Facebook's Sharing Debugger, and share one in Messenger.
-- [ ] **Verify.** The profile shows its name, craft, municipality and photo;
+- [x] **Verify.** The profile shows its name, craft, municipality and photo;
   the offer its title, price and image; a suspended profile the generic card;
   a normal browser on the same URLs still gets the app.
+
+**Result (2026-10-10, after #67).** In the Sharing Debugger, with Scrape Again:
+a profile showed name · craft · town, its bio and the avatar; an offer its
+title, price · creative · town and its photo; an unknown slug and a malformed
+offer id the generic card, each keeping its own link as `og:url` — the #67 fix.
+All answered 200; the only warning is the absent `fb:app_id`, which previews do
+not need. A browser on the same URLs gets the app. The hidden-item card was
+checked through the unknown slug; suspension itself is covered by
+`share.test.ts`.
+
+A portrait offer photo is shown as a small thumbnail: Facebook gives the large
+card only to landscape images about 600 px wide or more, whatever the tags ask.
+
+The link shared in Instagram showed the card. Messenger on the web showed only
+the domain for a link that had been scraped before the fix — most likely its
+own cached preview; not chased further.
