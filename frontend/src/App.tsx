@@ -64,6 +64,24 @@ const AdminTaxonomyPage = lazy(() =>
 const AdminProfilePage = lazy(() =>
   import('@/pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })),
 );
+const AdminOrganizationsPage = lazy(() =>
+  import('@/pages/admin/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })),
+);
+
+/* Lazy: organisations are a minority of pages, and none of them is a first load. */
+const OrganizationPage = lazy(() =>
+  import('@/pages/organizations/OrganizationPage').then((m) => ({ default: m.OrganizationPage })),
+);
+const FoundOrganizationPage = lazy(() =>
+  import('@/pages/organizations/FoundOrganizationPage').then((m) => ({
+    default: m.FoundOrganizationPage,
+  })),
+);
+const ManageOrganizationPage = lazy(() =>
+  import('@/pages/organizations/ManageOrganizationPage').then((m) => ({
+    default: m.ManageOrganizationPage,
+  })),
+);
 
 /*
  * Lazy: read once, by a minority of visitors, and long. Exactly what plan 0031
@@ -173,6 +191,23 @@ export default function App() {
                 <Route path="/directory" element={<DirectoryPage />} />
                 <Route path="/creatives" element={<CreativesPage />} />
                 <Route path="/creatives/:slug" element={<CreativeProfilePage />} />
+                <Route
+                  path="/organizations/new"
+                  element={
+                    <RequireAuth>
+                      <FoundOrganizationPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/organizations/:slug/manage"
+                  element={
+                    <RequireAuth>
+                      <ManageOrganizationPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="/organizations/:slug" element={<OrganizationPage />} />
                 <Route path="/offers/:id" element={<OfferDetailPage />} />
                 <Route
                   path="/postings/new"
@@ -348,6 +383,7 @@ export default function App() {
                 }
               >
                 <Route index element={<AdminQueuePage />} />
+                <Route path="organizations" element={<AdminOrganizationsPage />} />
                 <Route path="media" element={<AdminMediaPage />} />
                 <Route path="accounts" element={<AdminAccountsPage />} />
                 <Route path="ratings" element={<AdminRatingsPage />} />

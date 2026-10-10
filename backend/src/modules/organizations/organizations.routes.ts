@@ -6,6 +6,7 @@ import {
   foundOrganizationSchema,
   handOverSchema,
   inviteSchema,
+  listOrganizationsSchema,
   updateOrganizationSchema,
 } from './organizations.schema.js';
 import {
@@ -22,6 +23,7 @@ import {
   getManagedOrganization,
   getPublicOrganization,
   listMyOrganizations,
+  listPublishedOrganizations,
   updateOrganization,
 } from './organizations.service.js';
 
@@ -36,6 +38,12 @@ import {
 export const organizationsRouter: Router = Router();
 
 const slugParams = z.object({ slug: z.string().trim().min(1) });
+
+/** Public: published organisations for the directory, filtered like creatives. */
+organizationsRouter.get('/', async (req, res) => {
+  const filters = listOrganizationsSchema.parse(req.query);
+  res.json({ data: await listPublishedOrganizations(filters) });
+});
 
 organizationsRouter.get('/mine', requireAuth, async (req, res) => {
   res.json({ data: await listMyOrganizations(req.session.userId!) });

@@ -40,6 +40,14 @@ const FOUNDER_USERNAME = sql<string | null>`(
   limit 1
 )`;
 
+/** Craft names, primary first, so the reviewer sees what the page claims. */
+const CRAFT_NAMES = sql<string[]>`coalesce((
+  select array_agg(s.name order by os.is_primary desc, s.name)
+  from organization_subdomains os
+  join creative_subdomains s on s.id = os.subdomain_id
+  where os.organization_id = ${organizations.id}
+), '{}')`;
+
 const MEMBER_COUNT = sql<number>`(
   select count(*)::int from organization_members m
   where m.organization_id = ${organizations.id}
@@ -56,6 +64,8 @@ export async function listOrganizationsForReview(options: {
         id: organizations.id,
         slug: organizations.slug,
         name: organizations.name,
+        bio: organizations.bio,
+        crafts: CRAFT_NAMES,
         status: organizations.status,
         founderUsername: FOUNDER_USERNAME,
         municipality: municipalities.name,
@@ -82,6 +92,8 @@ export async function listOrganizationsForReview(options: {
       id: row.id,
       slug: row.slug,
       name: row.name,
+      bio: row.bio,
+      crafts: row.crafts,
       status: row.status,
       founderUsername: row.founderUsername,
       municipality: row.municipality,

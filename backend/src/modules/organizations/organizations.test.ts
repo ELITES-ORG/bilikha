@@ -10,11 +10,15 @@ import {
   organizations,
 } from '../../db/schema/index.js';
 import { makeAdmin, makeCreative, makeUser } from '../../test/factories.js';
-import { moderateOrganization } from '../admin/organization-review.service.js';
+import {
+  listOrganizationsForReview,
+  moderateOrganization,
+} from '../admin/organization-review.service.js';
 import {
   ORGANIZATION_CAP,
   foundOrganization,
   getPublicOrganization,
+  listPublishedOrganizations,
   slugify,
   updateOrganization,
 } from './organizations.service.js';
@@ -254,6 +258,17 @@ describe('editing an organisation', () => {
 });
 
 describe('reviewing an organisation', () => {
+  it('shows the reviewer the bio and crafts the public would read', async () => {
+    const founder = await makeCreative();
+    const data = { ...(await input()), bio: 'We film weddings in Naval.' };
+    const { slug } = await foundOrganization({ userId: founder.user.id, data });
+
+    const { rows } = await listOrganizationsForReview({ status: 'pending_review', page: 1, limit: 50 });
+    const row = rows.find((r) => r.slug === slug);
+    expect(row).toMatchObject({ bio: 'We film weddings in Naval.', founderUsername: founder.user.username });
+    expect(row!.crafts).toHaveLength(1);
+  });
+
   it('approving publishes the page, records it, and tells the founder', async () => {
     const founder = await makeCreative();
     const admin = await makeAdmin();
@@ -324,5 +339,35 @@ describe('the public page', () => {
     expect(page.members[0]!.role).toBe('founder');
     // No user ids in the public view.
     expect(JSON.stringify(page)).not.toContain(founder.user.id);
+  });
+});
+
+describe('the directory list', () => {
+  it('shows only published organisations, filtered like creatives', async () => {
+    const admin = await makeAdmin();
+    const [craft] = await craftsAcrossDomains(1);
+    const published = await makeCreative();
+    const pending = await makeCreative();
+
+    const shown = await foundOrganization({ userId: published.user.id, data: { ...(await input('ZZ Listed Studio')) } });
+    await foundOrganization({ userId: pending.user.id, data: { ...(await input('ZZ Unlisted Studio')) } });
+    const [org] = await db.select().from(organizations).where(eq(organizations.slug, shown.slug));
+    await moderateOrganization({ organizationId: org!.id, adminId: admin.id, action: 'approved' });
+
+    const all = await listPublishedOrganizations({ limit: 50 });
+    const names = all.map((o) => o.name);
+    expect(names).toContain('ZZ Listed Studio');
+    expect(names).not.toContain('ZZ Unlisted Studio');
+
+    const card = all.find((o) => o.name === 'ZZ Listed Studio')!;
+    expect(card.primaryCraft?.slug).toBe(craft);
+    expect(card.memberCount).toBe(1);
+
+    expect((await listPublishedOrganizations({ subdomain: craft!, limit: 50 })).map((o) => o.name)).toContain(
+      'ZZ Listed Studio',
+    );
+    expect(
+      (await listPublishedOrganizations({ municipality: 'naval', limit: 50 })).map((o) => o.name),
+    ).not.toContain('ZZ Listed Studio');
   });
 });

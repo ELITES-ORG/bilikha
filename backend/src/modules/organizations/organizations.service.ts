@@ -3,6 +3,7 @@ import type {
   ManagedOrganization,
   ManagedOrganizationMember,
   MyOrganization,
+  OrganizationCard,
   PendingOrganizationInvitation,
   OrganizationCraft,
   OrganizationRole,
@@ -504,4 +505,103 @@ export async function invitationsFor(organizationId: string): Promise<PendingOrg
     expiresAt: row.expiresAt.toISOString(),
     expired: row.expiresAt.getTime() <= now,
   }));
+}
+
+/**
+ * Members who could be seen in public — the same rule the page applies — so a
+ * directory card never promises more people than the page shows.
+ */
+const VISIBLE_MEMBER_COUNT = sql<number>`(
+  select count(*)::int from organization_members m
+  join users u on u.id = m.user_id
+  join creative_profiles p on p.user_id = u.id
+  where m.organization_id = ${organizations.id}
+    and u.status = 'active' and p.status = 'published'
+)`.mapWith(Number);
+
+/**
+ * Published organisations for the directory, filtered the way creatives are:
+ * by municipality, and by a domain or sub-domain any of their crafts belongs to.
+ */
+export async function listPublishedOrganizations(filters: {
+  domain?: string;
+  subdomain?: string;
+  municipality?: string;
+  limit: number;
+}): Promise<OrganizationCard[]> {
+  const conditions = [eq(organizations.status, 'published')];
+
+  if (filters.municipality) conditions.push(eq(municipalities.slug, filters.municipality));
+  if (filters.subdomain) {
+    conditions.push(sql`exists (
+      select 1 from organization_subdomains os
+      join creative_subdomains cs on cs.id = os.subdomain_id
+      where os.organization_id = ${organizations.id} and cs.slug = ${filters.subdomain}
+    )`);
+  }
+  if (filters.domain) {
+    conditions.push(sql`exists (
+      select 1 from organization_subdomains os
+      join creative_subdomains cs on cs.id = os.subdomain_id
+      join creative_domains cd on cd.id = cs.domain_id
+      where os.organization_id = ${organizations.id} and cd.slug = ${filters.domain}
+    )`);
+  }
+
+  const rows = await db
+    .select({
+      id: organizations.id,
+      slug: organizations.slug,
+      name: organizations.name,
+      logoKey: organizations.logoKey,
+      municipalitySlug: municipalities.slug,
+      municipalityName: municipalities.name,
+      memberCount: VISIBLE_MEMBER_COUNT,
+    })
+    .from(organizations)
+    .innerJoin(municipalities, eq(organizations.municipalityId, municipalities.id))
+    .where(and(...conditions))
+    .orderBy(asc(organizations.name))
+    .limit(filters.limit);
+
+  const primaries = rows.length
+    ? await db
+        .select({
+          organizationId: organizationSubdomains.organizationId,
+          slug: creativeSubdomains.slug,
+          name: creativeSubdomains.name,
+          domainSlug: creativeDomains.slug,
+          domainName: creativeDomains.name,
+        })
+        .from(organizationSubdomains)
+        .innerJoin(creativeSubdomains, eq(organizationSubdomains.subdomainId, creativeSubdomains.id))
+        .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
+        .where(
+          and(
+            inArray(organizationSubdomains.organizationId, rows.map((row) => row.id)),
+            eq(organizationSubdomains.isPrimary, true),
+          ),
+        )
+    : [];
+  const primaryOf = new Map(primaries.map((p) => [p.organizationId, p]));
+
+  return rows.map((row) => {
+    const primary = primaryOf.get(row.id);
+    return {
+      slug: row.slug,
+      name: row.name,
+      logoUrl: avatarUrl(row.logoKey),
+      municipality: { slug: row.municipalitySlug, name: row.municipalityName },
+      primaryCraft: primary
+        ? {
+            slug: primary.slug,
+            name: primary.name,
+            domainSlug: primary.domainSlug,
+            domainName: primary.domainName,
+            isPrimary: true,
+          }
+        : null,
+      memberCount: row.memberCount,
+    };
+  });
 }

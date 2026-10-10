@@ -124,6 +124,10 @@ export interface AdminOrganizationRow {
   id: string;
   slug: string;
   name: string;
+  /** Shown in full: the reviewer decides on what the public would read. */
+  bio: string | null;
+  /** Craft names, primary first. */
+  crafts: string[];
   status: OrganizationStatus;
   founderUsername: string | null;
   municipality: string;

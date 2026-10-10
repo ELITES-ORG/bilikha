@@ -79,3 +79,10 @@ export const handOverSchema = z.object({
 });
 
 export type InviteInput = z.infer<typeof inviteSchema>;
+
+export const listOrganizationsSchema = z.object({
+  domain: z.string().trim().min(1).optional(),
+  subdomain: z.string().trim().min(1).optional(),
+  municipality: z.string().trim().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
+});
