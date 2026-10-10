@@ -3,6 +3,7 @@ import type {
   ManagedOrganization,
   ManagedOrganizationMember,
   MyOrganization,
+  PendingOrganizationInvitation,
   OrganizationCraft,
   OrganizationRole,
   OrganizationStatus,
@@ -15,6 +16,7 @@ import {
   creativeProfiles,
   creativeSubdomains,
   municipalities,
+  organizationInvitations,
   organizationMembers,
   organizationSubdomains,
   organizations,
@@ -382,7 +384,8 @@ export async function getPublicOrganization(slug: string): Promise<PublicOrganiz
 /**
  * The team's own view, in any status. Members see it; non-members get the same
  * 404 a missing organisation would, so an unpublished page does not leak.
- * Pending invitations are filled in by `invitationsFor` once phase 3 lands.
+ * Pending invitations are included for the founder and co-founders, who can
+ * act on them; a plain member sees the team but not who has been asked.
  */
 export async function getManagedOrganization(input: {
   userId: string;
@@ -439,7 +442,7 @@ export async function getManagedOrganization(input: {
     editedSinceReviewAt: organization.editedSinceReviewAt?.toISOString() ?? null,
     myRole,
     members,
-    invitations: [],
+    invitations: myRole === 'member' ? [] : await invitationsFor(organization.id),
     createdAt: organization.createdAt.toISOString(),
   };
 }
@@ -457,4 +460,48 @@ export async function listMyOrganizations(userId: string): Promise<MyOrganizatio
     .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
     .where(eq(organizationMembers.userId, userId))
     .orderBy(ROLE_ORDER, asc(organizations.name));
+}
+
+/**
+ * The organisation's unanswered invitations, expired ones included and marked,
+ * so the team can see who never replied and send again.
+ */
+export async function invitationsFor(organizationId: string): Promise<PendingOrganizationInvitation[]> {
+  const rows = await db
+    .select({
+      id: organizationInvitations.id,
+      username: users.username,
+      role: organizationInvitations.role,
+      title: organizationInvitations.title,
+      createdAt: organizationInvitations.createdAt,
+      expiresAt: organizationInvitations.expiresAt,
+      displayName: creativeProfiles.displayName,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      suffix: users.suffix,
+    })
+    .from(organizationInvitations)
+    .innerJoin(users, eq(organizationInvitations.invitedUserId, users.id))
+    .leftJoin(creativeProfiles, eq(creativeProfiles.userId, users.id))
+    .where(
+      and(
+        eq(organizationInvitations.organizationId, organizationId),
+        isNull(organizationInvitations.acceptedAt),
+        isNull(organizationInvitations.declinedAt),
+      ),
+    )
+    .orderBy(asc(organizationInvitations.createdAt));
+
+  const now = Date.now();
+  return rows.map((row) => ({
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName ?? formatFullName(row),
+    role: row.role,
+    title: row.title,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
+    expired: row.expiresAt.getTime() <= now,
+  }));
 }

@@ -63,3 +63,19 @@ export const adminOrganizationQueueSchema = z.object({
 
 export type FoundOrganizationInput = z.infer<typeof foundOrganizationSchema>;
 export type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>;
+
+/**
+ * Inviting someone in. Never `founder`: that role is founded or handed over,
+ * not invited into (ADR 0054).
+ */
+export const inviteSchema = z.object({
+  username: z.string().trim().min(1, 'Enter a username'),
+  role: z.enum(['member', 'co_founder']).default('member'),
+  title: z.string().trim().max(60).optional().or(z.literal('').transform(() => undefined)),
+});
+
+export const handOverSchema = z.object({
+  userId: z.string().uuid('Invalid account id'),
+});
+
+export type InviteInput = z.infer<typeof inviteSchema>;
