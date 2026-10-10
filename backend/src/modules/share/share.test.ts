@@ -69,8 +69,10 @@ describe('link-preview cards, through the real app (ADR 0056)', () => {
 
     expect(response.status).toBe(200);
     expect(html).not.toContain('Hidden Person');
-    expect(html).not.toContain(profile.slug);
-    expect(meta(html, 'og:url')).toBe(`${site}/`);
+    // The shared link stays its own canonical URL, or Facebook follows og:url
+    // off to the home page and never shows this card.
+    expect(meta(html, 'og:url')).toBe(`${site}/creatives/${profile.slug}`);
+    expect(meta(html, 'og:image')).toBe(`${site}/og-default.png`);
     expect(meta(html, 'og:title')).toBe('Bilikha — Biliran Creative Industries Registry');
   });
 
@@ -83,8 +85,9 @@ describe('link-preview cards, through the real app (ADR 0056)', () => {
     const unknown = await (await fetch(`${base}/creatives/nobody-here`)).text();
 
     expect(pending).not.toContain('Not Yet Approved');
-    expect(meta(pending, 'og:url')).toBe(`${site}/`);
-    expect(meta(unknown, 'og:url')).toBe(`${site}/`);
+    expect(meta(pending, 'og:title')).toBe('Bilikha — Biliran Creative Industries Registry');
+    expect(meta(pending, 'og:url')).toBe(`${site}/creatives/${profile.slug}`);
+    expect(meta(unknown, 'og:url')).toBe(`${site}/creatives/nobody-here`);
   });
 
   it("describes a published offer with its price, and hides a suspended creative's", async () => {
@@ -104,7 +107,8 @@ describe('link-preview cards, through the real app (ADR 0056)', () => {
     await suspend(user.id);
     const hidden = await (await fetch(`${base}/offers/${offer.id}`)).text();
     expect(hidden).not.toContain('Wedding photography');
-    expect(meta(hidden, 'og:url')).toBe(`${site}/`);
+    expect(meta(hidden, 'og:title')).toBe('Bilikha — Biliran Creative Industries Registry');
+    expect(meta(hidden, 'og:url')).toBe(`${site}/offers/${offer.id}`);
   });
 
   it('escapes a title rather than letting it write markup', async () => {
@@ -121,7 +125,9 @@ describe('link-preview cards, through the real app (ADR 0056)', () => {
     const response = await fetch(`${base}/offers/not-a-uuid`);
 
     expect(response.status).toBe(200);
-    expect(meta(await response.text(), 'og:url')).toBe(`${site}/`);
+    const html = await response.text();
+    expect(meta(html, 'og:title')).toBe('Bilikha — Biliran Creative Industries Registry');
+    expect(meta(html, 'og:url')).toBe(`${site}/offers/not-a-uuid`);
   });
 });
 
