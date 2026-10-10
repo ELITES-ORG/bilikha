@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { MapPin, Settings2, Users } from 'lucide-react';
+import { MapPin, MessageSquare, Settings2, Users } from 'lucide-react';
 import { CornerBlob } from '@/components/Decor';
 import { BackPill, ShareButton } from '@/components/PageCornerActions';
 import { ProfileSkeleton } from '@/components/page-skeleton/parts';
-import { Avatar, Badge, ButtonLink, Card, CardBody, Container } from '@/components/ui';
+import { Avatar, Badge, Button, ButtonLink, Card, CardBody, Container } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
+import { ContactComposer } from '@/features/conversations/ContactComposer';
 import {
   OrganizationNotFoundError,
   useMyOrganizations,
@@ -22,8 +24,12 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
  * Laid out like a creative's profile on purpose: the same cover band, the same
  * identity block, so a visitor reads it as the same kind of thing. The members
  * are the substance — each links to the person's own profile, which is where
- * contact happens. Only members whose own profile is public are shown; the API
- * enforces that, not this page.
+ * their own work is. Only members whose own profile is public are shown; the
+ * API enforces that, not this page.
+ *
+ * Messaging the organisation is an ordinary conversation with the founder
+ * alone (ADR 0054) — the same composer as a creative's page, addressed to the
+ * founder's profile, and saying so, so nobody thinks the whole team reads it.
  */
 export function OrganizationPage() {
   const t = useT();
@@ -31,6 +37,7 @@ export function OrganizationPage() {
   const organization = useOrganization(slug);
   const { data: user } = useCurrentUser();
   const mine = useMyOrganizations(Boolean(user));
+  const [composerOpen, setComposerOpen] = useState(false);
 
   if (organization.isError && organization.error instanceof OrganizationNotFoundError) {
     return <NotFoundPage />;
@@ -38,6 +45,9 @@ export function OrganizationPage() {
 
   const data = organization.data;
   const myRole = mine.data?.find((o) => o.slug === slug)?.role;
+  const founder = data?.members.find((m) => m.role === 'founder');
+  // A member reaches the team some other way; the founder has no one to message.
+  const canMessage = Boolean(founder) && !myRole;
 
   return (
     <main className={pbBottomNav}>
@@ -71,6 +81,31 @@ export function OrganizationPage() {
                   </p>
                 </div>
               </div>
+              {canMessage && !composerOpen && (
+                <div className="mt-5 w-full sm:w-auto lg:mt-0 lg:pt-18">
+                  {user ? (
+                    <Button
+                      size="lg"
+                      fullWidth
+                      className="sm:w-auto"
+                      iconLeft={<MessageSquare className="size-4" aria-hidden="true" />}
+                      onClick={() => setComposerOpen(true)}
+                    >
+                      <Message k="organizations.page.message" />
+                    </Button>
+                  ) : (
+                    <ButtonLink
+                      to={`/login?next=${encodeURIComponent(`/organizations/${data.slug}`)}`}
+                      size="lg"
+                      fullWidth
+                      className="sm:w-auto"
+                      iconLeft={<MessageSquare className="size-4" aria-hidden="true" />}
+                    >
+                      <Message k="organizations.page.signInToMessage" />
+                    </ButtonLink>
+                  )}
+                </div>
+              )}
               {canManage(myRole) && (
                 <div className="mt-5 w-full sm:w-auto lg:mt-0 lg:pt-18">
                   <ButtonLink
@@ -96,6 +131,19 @@ export function OrganizationPage() {
                 {data.municipality.name}, Biliran
               </p>
             </div>
+
+            {user && composerOpen && founder && (
+              <div className="mt-8 lg:px-8">
+                <p className="mb-3 text-sm text-ink-muted">
+                  <Message k="organizations.page.messageNote" /> {founder.displayName}
+                </p>
+                <ContactComposer
+                  profileSlug={founder.profileSlug}
+                  creativeName={founder.displayName}
+                  onCancel={() => setComposerOpen(false)}
+                />
+              </div>
+            )}
 
             {data.bio && (
               <p className="mx-auto mt-8 max-w-2xl text-md whitespace-pre-line text-ink-muted lg:mx-0 lg:px-8">

@@ -47,6 +47,9 @@ export const en = {
   'organizations.page.share': 'Share this organisation',
   'organizations.page.manage': 'Manage team',
   'organizations.page.team': 'The team',
+  'organizations.page.message': 'Message',
+  'organizations.page.signInToMessage': 'Sign in to message',
+  'organizations.page.messageNote': 'Your message goes to the founder alone:',
   'organizations.fields.name': 'Organisation name',
   'organizations.fields.nameHint':
     'Use the name people know you by. The page address is made from it once and never changes.',
