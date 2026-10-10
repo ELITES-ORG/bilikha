@@ -239,6 +239,13 @@
       "when": 1791621793444,
       "tag": "0033_worthless_captain_cross",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791695566844,
+      "tag": "0034_perfect_captain_britain",
+      "breakpoints": true
     }
   ]
 }

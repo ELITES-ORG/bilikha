@@ -25,6 +25,13 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   // Narrowly admitted under ADR 0030: appealing is the creative's only recourse
   // against a rating, and it is useless if they do not know one arrived.
   'rating_received',
+  // Organisations (plan 0051). Review outcomes go to the founder, who is the
+  // one who can act on them; an invitation goes to the person invited, and its
+  // acceptance back to whoever sent it.
+  'organization_approved',
+  'organization_rejected',
+  'organization_invited',
+  'organization_invitation_accepted',
 ]);
 
 /**

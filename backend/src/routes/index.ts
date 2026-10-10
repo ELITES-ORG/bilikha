@@ -12,6 +12,7 @@ import { offersRouter } from '../modules/offers/offers.routes.js';
 import { postingsRouter } from '../modules/postings/postings.routes.js';
 import { ratingsRouter } from '../modules/ratings/ratings.routes.js';
 import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
+import { organizationsRouter } from '../modules/organizations/organizations.routes.js';
 import { shareRouter } from '../modules/share/share.routes.js';
 
 /**
@@ -33,5 +34,6 @@ apiRouter.use('/offers', offersRouter);
 apiRouter.use('/postings', postingsRouter);
 apiRouter.use('/ratings', ratingsRouter);
 apiRouter.use('/notifications', notificationsRouter);
+apiRouter.use('/organizations', organizationsRouter);
 apiRouter.use('/share', shareRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

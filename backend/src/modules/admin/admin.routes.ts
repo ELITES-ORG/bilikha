@@ -10,6 +10,7 @@ import {
 } from '../ratings/ratings.service.js';
 import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
 import { taxonomyAdminRouter } from './taxonomy.routes.js';
+import { organizationReviewRouter } from './organization-review.routes.js';
 import {
   findAccounts,
   getProfile,
@@ -33,6 +34,9 @@ adminRouter.use(requireAdmin);
 // Taxonomy administration (plan 0047). Its own file because the admin service
 // is already 673 lines, and the taxonomy write rules are a self-contained set.
 adminRouter.use(taxonomyAdminRouter);
+
+// Organisation pages are reviewed alongside profiles (plan 0051 phase 2).
+adminRouter.use(organizationReviewRouter);
 
 // Throws on purpose, so error reporting can be checked on a live environment
 // without breaking anything real (ADR 0053). Render's free tier has no shell,
