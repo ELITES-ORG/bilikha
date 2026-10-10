@@ -44,7 +44,7 @@ Number sequentially. Never renumber.
 | [0005](./0005-organization-pages.md) | Public pages for organisations only | Accepted (amended by 0054) |
 | [0006](./0006-asymmetric-reviews.md) | Asymmetric, restrained reputation | Proposed |
 | [0007](./0007-phone-as-primary-identity.md) | Phone number as primary identity | Superseded by 0013 |
-| [0008](./0008-publish-immediately-with-tiers.md) | Publish immediately with verification tiers | Proposed (narrowed by 0013) |
+| [0008](./0008-publish-immediately-with-tiers.md) | Publish immediately with verification tiers | Proposed (narrowed by 0013; account ID check in 0057) |
 | [0009](./0009-migrations-over-db-push.md) | Generated migrations over `db:push` | Accepted |
 | [0010](./0010-theme-static-tokens.md) | `@theme static` for design tokens | Accepted |
 | [0011](./0011-self-hosted-variable-fonts.md) | Self-hosted variable fonts | Accepted |
@@ -56,8 +56,8 @@ Number sequentially. Never renumber.
 | [0017](./0017-sign-in-before-contacting.md) | Sign in before contacting a creative | Accepted |
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted (amended by 0024) |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
-| [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted |
-| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted (scope and budget superseded by 0046) |
+| [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted (proved by an ID, 0057) |
+| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted (scope and budget superseded by 0046; private ID bucket in 0057) |
 | [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted (amended by 0046) |
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
 | [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |
@@ -93,3 +93,4 @@ Number sequentially. Never renumber.
 | [0054](./0054-organisations-are-teams-of-creatives.md) | Organisations are teams of creatives, founded by one of them | Accepted |
 | [0055](./0055-copy-is-translated-per-device-never-by-machine.md) | Language is a per-device choice, catalogues load on demand, and no string ships machine-translated | Accepted |
 | [0056](./0056-link-previews-come-from-a-crawler-only-html-endpoint.md) | Link previews come from a crawler-only HTML endpoint | Accepted |
+| [0057](./0057-new-accounts-are-verified-with-a-biliran-id.md) | New accounts are verified with a photo of a Biliran ID | Proposed |
