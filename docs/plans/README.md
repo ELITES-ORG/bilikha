@@ -114,6 +114,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0052](./0052-link-preview-cards.md) | Link preview cards for shared profiles and offers | Complete |
 | [0053](./0053-id-verification-for-new-accounts.md) | Verify new accounts with a photo of a Biliran ID | In progress |
 | [0054](./0054-search.md) | Search the directory | Complete |
+| [0055](./0055-a-cover-photo-on-the-creative-profile.md) | A cover photo on the creative profile | Ready |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.
