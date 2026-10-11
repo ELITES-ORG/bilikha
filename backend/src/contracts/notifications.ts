@@ -19,7 +19,8 @@ export type NotificationType =
   | 'organization_approved'
   | 'organization_rejected'
   | 'organization_invited'
-  | 'organization_invitation_accepted';
+  | 'organization_invitation_accepted'
+  | 'id_verified';
 
 export interface NotificationActor {
   name: string;

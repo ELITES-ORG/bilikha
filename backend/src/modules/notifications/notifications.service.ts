@@ -106,6 +106,7 @@ const TITLES: Record<NotificationType, string> = {
   organization_rejected: 'Your organisation needs changes',
   organization_invited: 'You were invited to join an organisation',
   organization_invitation_accepted: 'Someone joined your organisation',
+  id_verified: 'Your ID was verified',
 };
 
 /**
@@ -291,6 +292,14 @@ export async function listNotifications(
               ? 'Open your organisation to see what needs changing.'
               : organization.name;
         }
+        break;
+      }
+      // Points at the id_verifications row, but needs no lookup: a verified
+      // account's next step is always the directory, and the row's contents
+      // are never shown to the account (ADR 0057).
+      case 'id_verified': {
+        link = '/directory';
+        detail = 'You can now message creatives, save offers and post work.';
         break;
       }
     }

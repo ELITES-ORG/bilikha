@@ -32,6 +32,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'organization_rejected',
   'organization_invited',
   'organization_invitation_accepted',
+  // Admitted under ADR 0030 for the same reason: verifying an ID is what lifts
+  // a new account out of browse-only (ADR 0057), and the person is waiting on
+  // it. Declines need no notification — they end the session with the reason.
+  'id_verified',
 ]);
 
 /**

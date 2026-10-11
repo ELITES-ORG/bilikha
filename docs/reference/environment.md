@@ -27,6 +27,8 @@ confusing runtime error inside a request handler.
 | `SUPABASE_URL` | **yes** | — | Project URL, e.g. `https://abc.supabase.co`. Used only by the backend storage client |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | — | Service role secret from Settings → API. **Never** put this in `frontend/` or a `VITE_` variable |
 | `SUPABASE_STORAGE_BUCKET` | no | `media` | Public bucket for avatars and offer images |
+| `SUPABASE_ID_BUCKET` | no | `ids` | **Private** bucket for ID photos ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)). A plain bucket name (lowercase letters, digits, `.`, `-`, `_`). Refused at boot if it equals `SUPABASE_STORAGE_BUCKET` in any letter case. The bucket must be private with a 10 MB file size limit and `image/webp, image/jpeg` allowed; until it is, ID uploads are refused and boot logs a warning |
+| `ID_HASH_SECRET` | no | — | Keys the HMAC that recognises a repeated ID number ([plan 0053](../plans/0053-id-verification-for-new-accounts.md), Step 1.7). At least 32 characters; blank means unset, and `.env.example` leaves it blank. A value containing `replace-me` is refused, so a placeholder can never key real hashes. Generate with `openssl rand -hex 32`, a different value per environment. **Never rotate it**: a new secret makes every stored hash unmatchable. Unset: boot logs a warning and ID decisions that need a number answer 503 |
 | `SENTRY_DSN` | no | — | Sentry DSN for the API's error reports ([ADR 0053](../decisions/0053-errors-are-reported-to-sentry-without-personal-data.md)). Empty or absent: nothing is reported, everything else works |
 | `RENDER_GIT_BRANCH` | no | — | **Set by Render, never by hand.** Names the environment errors are reported under: `production` branch → production, any other → staging, absent → local |
 | `RENDER_GIT_COMMIT` | no | — | **Set by Render, never by hand.** Its first 12 characters are the release in error reports, matching the frontend's build id |
@@ -44,6 +46,8 @@ SESSION_TTL_DAYS=30
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=replace-me-with-service-role-key
 SUPABASE_STORAGE_BUCKET=media
+SUPABASE_ID_BUCKET=ids
+ID_HASH_SECRET=
 SENTRY_DSN=
 ```
 

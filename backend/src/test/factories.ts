@@ -9,6 +9,7 @@ import {
   creativeProfiles,
   creativeProfileSubdomains,
   creativeSubdomains,
+  idVerifications,
   municipalities,
   offers,
   postings,
@@ -18,6 +19,7 @@ import {
 import type { NewUser, User } from '../db/schema/users.js';
 import type { CreativeProfile } from '../db/schema/profiles.js';
 import type { Conversation } from '../db/schema/conversations.js';
+import type { NewIdVerification } from '../db/schema/verification.js';
 import { contentHash } from '../modules/agreements/agreements.service.js';
 
 /**
@@ -344,6 +346,24 @@ export async function makeRating(
       comment: 'Delivered exactly what we agreed.',
       ...overrides,
     })
+    .returning();
+
+  return row!;
+}
+
+/**
+ * An ID verification row. Pending and unsubmitted by default, which is what
+ * registration will write (plan 0053 Phase 5); pass the status and timestamps
+ * a test needs. No storage object is created — a test that needs one mocks
+ * `lib/storage.js`.
+ */
+export async function makeIdVerification(
+  userId: string,
+  overrides: Partial<NewIdVerification> = {},
+) {
+  const [row] = await db
+    .insert(idVerifications)
+    .values({ userId, ...overrides })
     .returning();
 
   return row!;

@@ -1,6 +1,6 @@
 # 0053. Verify new accounts with a photo of a Biliran ID
 
-- **Status:** Ready
+- **Status:** In progress
 - **Owner:** emanuel
 - **Related:** [ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md) ·
   [ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md) ·
@@ -84,11 +84,12 @@ as long as it takes, and its images are kept while it waits.
       plan — see Decided.
 - [x] Open question 5 answered by reyxdz (2026-10-11): recognise a repeated ID
       by a keyed hash of its number (Decided 5). This plan set to Ready.
-- [ ] Database running and current:
+- [x] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
-- [ ] A local private bucket `ids` in Supabase Studio (`http://127.0.0.1:54323`):
-      Public **off**, file size limit **10 MB**, allowed MIME types
-      `image/webp, image/jpeg`.
+- [x] A local private bucket `ids`: Public **off**, file size limit **10 MB**,
+      allowed MIME types `image/webp, image/jpeg`. Created through the storage
+      API (the command in [local setup](../getting-started/local-setup.md) §6),
+      which works whether or not Supabase Studio is running.
 - [x] **Before Phase 5 merges:** the same private bucket on staging and
       production, created by reyxdz in each Supabase dashboard (Decided 1).
       Done 2026-10-10 on `bilikha-staging` and `bilikha-production`: private,
@@ -106,7 +107,7 @@ as long as it takes, and its images are kept while it waits.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Data and private storage | 0 / 7 | Not started |
+| 1. Data and private storage | 7 / 7 | Done |
 | 2. Account side | 0 / 9 | Not started |
 | 3. Admin review and retention | 0 / 7 | Not started |
 | 4. Reversal and appeals | 0 / 5 | Not started |
@@ -120,7 +121,7 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
 
 ### Step 1.1 — Add the table and the enum values
 
-- [ ] **Action.** Create `backend/src/db/schema/verification.ts` and export it
+- [x] **Action.** Create `backend/src/db/schema/verification.ts` and export it
       from `backend/src/db/schema/index.ts`:
       - `idVerificationStatusEnum = pgEnum('id_verification_status', ['pending', 'verified', 'declined_retry', 'declined_final', 'appealed'])`
         — `appealed` is a *not from Biliran* decline whose appeal is open
@@ -150,13 +151,14 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
       administrator view" is a join, not a search of `reason`. In
       `backend/src/db/schema/notifications.ts` add `'id_verified'` to
       `notificationTypeEnum`, each with a comment.
-- [ ] **Verify.** `npm --prefix backend run typecheck` passes.
+- [x] **Verify.** `npm --prefix backend run typecheck` passes.
 
 ### Step 1.2 — Generate and read the migration
 
-- [ ] **Action.** `npm --prefix backend run db:generate`, then read the new
-      `backend/drizzle/0031_*.sql`.
-- [ ] **Verify.** It contains only `CREATE TYPE`, `CREATE TABLE`,
+- [x] **Action.** `npm --prefix backend run db:generate`, then read the new
+      `backend/drizzle/0035_*.sql` (`0035_wide_emma_frost.sql`: main had
+      reached `0034` by the time this was built).
+- [x] **Verify.** It contains only `CREATE TYPE`, `CREATE TABLE`,
       `CREATE INDEX`, foreign keys, `ALTER TYPE … ADD VALUE` and one nullable
       `ALTER TABLE "moderation_actions" ADD COLUMN "id_verification_id"` —
       **no `UPDATE`, no `INSERT`, nothing touching existing users or rows**.
@@ -164,7 +166,7 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
 
 ### Step 1.3 — Contracts and the new notification type
 
-- [ ] **Action.** Create `backend/src/contracts/verification.ts` (types only,
+- [x] **Action.** Create `backend/src/contracts/verification.ts` (types only,
       per its README): `IdVerificationStatus`, `IdType`, `OwnIdVerification`
       (`status`, `submitted: boolean`, `reason: string | null` only when
       declined — **no keys, no URLs**), `AdminIdVerificationRow`,
@@ -177,11 +179,11 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
       `backend/src/modules/notifications/notifications.service.ts` add
       `TITLES.id_verified` and its case in the target switch, linking to
       `/directory`. `PublicUser` is **not** changed in this phase.
-- [ ] **Verify.** `npm run typecheck` passes for backend and frontend.
+- [x] **Verify.** `npm run typecheck` passes for backend and frontend.
 
 ### Step 1.4 — Storage: a bucket argument, metadata, signed downloads
 
-- [ ] **Action.** First record the REST contract with `curl` against local
+- [x] **Action.** First record the REST contract with `curl` against local
       Supabase, as plan 0009 did: `POST /storage/v1/object/sign/ids/<key>` with
       `{"expiresIn": 300}` → `{ "signedURL": "/object/sign/…?token=…" }`; paste
       the request and response into this step. Then in
@@ -194,56 +196,89 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
       - `createSignedDownload(bucket, key, expiresIn)`;
       - `idObjectKey(userId, side, ext)` → `ids/<userId>/<uuid>-<side>.<ext>`;
       - error logs redact the key when the bucket is the ID bucket.
-- [ ] **Verify.** Unit tests in `backend/src/lib/storage.test.ts`, which stub
+
+      Hardened after review (2026-10-11), because the bucket defaults to the
+      public media bucket:
+      - every helper that takes a key, `publicUrl` included, refuses an `ids/`
+        key outside the ID bucket and any other key inside it — a forgotten
+        bucket argument is a 500, never an ID in the public bucket;
+      - `createSignedDownload` refuses a lifetime outside 1 to 300 seconds and an
+        unsafe key itself, rather than trusting each caller;
+      - storage's error body is logged with an ID key cut out, raw and
+        URL-encoded, since Supabase can quote the key it refused;
+      - `moderation_actions.id_verification_id` is indexed, as #78 indexed
+        `organization_id`.
+- [x] **Verify.** Unit tests in `backend/src/lib/storage.test.ts`, which stub
       `globalThis.fetch` (no route tests in that file): the bucket reaches the
       recursive call; the signed-download request has `expiresIn` 300; an ID key
       never appears in a logged error. `npm run media:prune` still lists only the
       media bucket.
 
+**Recorded 2026-10-11** against local Supabase (storage-api v1.79.28), with a
+throwaway object uploaded, signed, fetched and deleted:
+
+```
+POST /storage/v1/object/sign/ids/<key>   {"expiresIn":300}
+→ 200 {"signedURL":"/object/sign/ids/<key>?token=<jwt>"}
+GET /storage/v1 + signedURL              → 200 image/webp
+POST /storage/v1/object/sign/ids/<missing key>
+→ HTTP 400 {"statusCode":"404","error":"not_found","message":"Object not found","code":"NoSuchKey"}
+POST /storage/v1/object/list/ids         an object: metadata {"size":12,"mimetype":"image/webp",…}
+                                         a folder: id, updated_at and metadata null
+GET /storage/v1/bucket/nope
+→ HTTP 400 {"statusCode":"404","error":"Bucket not found","code":"NoSuchBucket"}
+```
+
 ### Step 1.5 — The ID bucket setting and readiness
 
-- [ ] **Action.** `SUPABASE_ID_BUCKET` (default `ids`) in
+- [x] **Action.** `SUPABASE_ID_BUCKET` (default `ids`) in
       `backend/src/config/env.ts`, refused if equal to
       `SUPABASE_STORAGE_BUCKET`; add it to `backend/.env.example`,
       `docs/reference/environment.md` and the environment table in
       `docs/reference/deployments.md`, with the bucket's settings. Add
       `idStorageReady()` in `backend/src/lib/storage.ts`: reads
       `GET /storage/v1/bucket/<id>`, ready only if it exists, `public === false`,
-      and both `file_size_limit` and `allowed_mime_types` are set; cached 10
-      minutes so a transient failure recovers; overridable in tests. Log a
+      and both `file_size_limit` and `allowed_mime_types` are set; cached one
+      minute either way, so a bucket made public stops ID uploads within a
+      minute and a transient failure clears as fast; overridable in tests. The
+      name must be a plain bucket name, and is refused if it matches the media
+      bucket in any letter case. Log a
       warning at boot in `backend/src/index.ts` when not ready. Add the local
       bucket steps to `docs/getting-started/local-setup.md`.
-- [ ] **Verify.** Tests: a public bucket, a missing one, and one without limits
+- [x] **Verify.** Tests: a public bucket, a missing one, and one without limits
       are each not ready. Booting locally with the private `ids` bucket logs no
       warning.
 
 ### Step 1.6 — Test factory and the data-model reference
 
-- [ ] **Action.** `makeIdVerification(userId, overrides)` in
+- [x] **Action.** `makeIdVerification(userId, overrides)` in
       `backend/src/test/factories.ts`. A `## \`id_verifications\`` section in
       `docs/reference/data-model.md`.
-- [ ] **Verify.** A test: users made with `makeUser` have no row.
+- [x] **Verify.** A test: users made with `makeUser` have no row.
       `npm test` and `npm run docs:check` pass.
 
 ### Step 1.7 — The ID-number secret and hash
 
-- [ ] **Action.** `ID_HASH_SECRET` in `backend/src/config/env.ts`: optional at
-      boot, but at least 32 characters when set. Add it to `backend/.env.example`
-      (a placeholder), `docs/reference/environment.md` and the environment
+- [x] **Action.** `ID_HASH_SECRET` in `backend/src/config/env.ts`: optional at
+      boot, but at least 32 characters when set, and never a value containing
+      `replace-me`. Add it to `backend/.env.example` **blank** — a placeholder
+      long enough to pass would key real hashes with a public secret — `docs/reference/environment.md` and the environment
       table in `docs/reference/deployments.md`, each saying it must never be
       rotated. New `backend/src/modules/verification/id-number.ts`:
       - `normalizeIdNumber(raw)`: Unicode NFKC, uppercase, and every character
         that is not a letter or a digit removed
       - `hashIdNumber(idType, raw)`: HMAC-SHA256 (Node's `crypto.createHmac`)
         keyed with `ID_HASH_SECRET`, over `` `${idType}:${normalizeIdNumber(raw)}` ``,
-        as hex. It throws when the secret is unset, and refuses a normalised
-        number shorter than 4 characters
+        as hex. It throws when the secret is unset, refuses a normalised
+        number shorter than 4 characters, and refuses anything but A–Z and 0–9
+        after normalising: a Cyrillic "О" or an Arabic-Indic digit would
+        otherwise hash differently from the printed number
       - `idHashReady()`: true only when the secret is set. Log a warning at boot
         in `backend/src/index.ts` when it is not
 
       A plain hash is not enough: ID numbers are short, so an unkeyed hash can
       be brute-forced back into the number.
-- [ ] **Verify.** Unit tests: `'1234-5678 9012'` and `'123456789012'` hash the
+- [x] **Verify.** Unit tests: `'1234-5678 9012'` and `'123456789012'` hash the
       same; the same number under two ID types hashes differently; a different
       secret gives a different hash; no secret throws; `'A-1'` is refused; the
       hash never contains the number.
