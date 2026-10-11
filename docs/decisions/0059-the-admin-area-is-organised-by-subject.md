@@ -53,9 +53,13 @@ so the sidebar alone answers "is there anything to do?". The counts refresh
 after any admin decision, so they stay true without each page having to report
 back.
 
-**A content decision looks the same wherever it is made.** Offers, profile
-photos and logos share one card with Approve, and Reject with a reason the owner
-sees. Each section shows its own part of the queue (`GET /admin/media?kind=…`).
+**A decision is worded the same wherever it is made: Approve, and Reject with
+a reason the owner sees.** Offers, profile photos and logos share one card. A
+creative profile and an organisation page use the same two words. An edit to a
+published profile or page is approved with **Approve edit**, and a page that was
+rejected sits under a **Rejected** tab. "Ask for changes", "Acknowledge" and
+"Changes asked" are gone. Each section shows its own part of the queue
+(`GET /admin/media?kind=…`).
 
 **Old addresses keep working.** `/admin` opens Creatives, `/admin/media` leads
 to Offers, and `/admin/ratings` leads to Reports.
@@ -82,6 +86,10 @@ decides about. ID checks go under People.
 **Reports covers only ratings for now.** It is named for what it will hold;
 another kind of report joins it rather than getting a section of its own.
 
-**The wording of decisions still differs between pages.** Profiles and
-organisations predate ADR 0058's Approve and Reject, and a report is dismissed
-or upheld, not approved. Aligning those is separate work.
+**A report is the exception to Approve and Reject.** It asks whether a rating
+stands, so its answers stay "Dismiss, leave the rating" and "Remove the rating".
+
+**A creative profile shows only the approve its state allows.** An edited,
+published profile shows **Approve edit**. Approving it again would have left it
+in the Edited queue, which was a trap. A published profile with nothing waiting
+shows no approve at all.

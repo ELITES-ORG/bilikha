@@ -19,7 +19,8 @@ const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
   { status: 'edited', label: 'Edited' },
   { status: 'published', label: 'Published' },
-  { status: 'suspended', label: 'Suspended' },
+  // A rejected profile is stored as `suspended` (ADR 0016); the tab says what it means.
+  { status: 'suspended', label: 'Rejected' },
 ];
 
 /** Registrant, municipality, crafts, waiting, arrow — one column on a phone. */

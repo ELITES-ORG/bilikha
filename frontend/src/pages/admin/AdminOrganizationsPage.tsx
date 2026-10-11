@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Inbox } from 'lucide-react';
+import { Check, CheckCircle2, Inbox, X } from 'lucide-react';
 import {
   useAdminOrganizationCounts,
   useAdminOrganizations,
@@ -30,7 +30,7 @@ const TABS: Array<{ status: OrganizationTab; label: string }> = [
   { status: 'edited', label: 'Edited' },
   { status: 'logos', label: 'Logos' },
   { status: 'published', label: 'Published' },
-  { status: 'rejected', label: 'Changes asked' },
+  { status: 'rejected', label: 'Rejected' },
   { status: 'suspended', label: 'Suspended' },
 ];
 
@@ -168,11 +168,11 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
   const decidable = queue === 'pending_review' || queue === 'edited';
 
   async function decide(action: 'approved' | 'rejected' | 'acknowledged_edit') {
-    const pending = { approved: 'Approving…', rejected: 'Sending back…', acknowledged_edit: 'Acknowledging…' }[action];
+    const pending = { approved: 'Approving…', rejected: 'Rejecting…', acknowledged_edit: 'Approving the edit…' }[action];
     const success = {
       approved: `${row.name} is public`,
-      rejected: 'Sent back to the founder with your reason',
-      acknowledged_edit: 'Edit acknowledged',
+      rejected: 'Rejected — the founder sees your reason',
+      acknowledged_edit: 'Edit approved',
     }[action];
     try {
       await toast.run(
@@ -213,8 +213,8 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
         (rejecting ? (
           <div className="max-w-xl space-y-3">
             <Textarea
-              label="What needs changing"
-              hint="The founder sees this exactly as written."
+              label="Why it is not approved"
+              hint="The founder sees this exactly as written, so say what to change."
               rows={3}
               maxLength={500}
               value={reason}
@@ -227,26 +227,43 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
                 disabled={!reason.trim() || moderate.isPending}
                 onClick={() => void decide('rejected')}
               >
-                Send back
+                Reject
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => setRejecting(false)}>
+              <Button size="sm" variant="ghost" onClick={() => setRejecting(false)}>
                 Cancel
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-wrap gap-3">
+            {/* Approve and Reject, as on every admin decision (ADR 0059). */}
             {queue === 'pending_review' ? (
-              <Button size="sm" disabled={moderate.isPending} onClick={() => void decide('approved')}>
+              <Button
+                size="sm"
+                iconLeft={<Check className="size-4" aria-hidden="true" />}
+                disabled={moderate.isPending}
+                onClick={() => void decide('approved')}
+              >
                 Approve
               </Button>
             ) : (
-              <Button size="sm" disabled={moderate.isPending} onClick={() => void decide('acknowledged_edit')}>
-                Acknowledge edit
+              <Button
+                size="sm"
+                iconLeft={<Check className="size-4" aria-hidden="true" />}
+                disabled={moderate.isPending}
+                onClick={() => void decide('acknowledged_edit')}
+              >
+                Approve edit
               </Button>
             )}
-            <Button size="sm" variant="secondary" onClick={() => setRejecting(true)}>
-              Ask for changes
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
+              iconLeft={<X className="size-4" aria-hidden="true" />}
+              onClick={() => setRejecting(true)}
+            >
+              Reject
             </Button>
           </div>
         ))}

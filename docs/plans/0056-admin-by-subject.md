@@ -28,8 +28,8 @@ from the tools.
 
 **Out of scope**
 - **ID checks under People:** plan 0053 Phase 3.
-- **The same Approve and Reject wording** on profiles, organisations and
-  reports.
+- **Reports' wording.** A report asks whether a rating stands, not whether
+  to approve something.
 - **A combined inbox of everything waiting.**
 
 ## Progress
@@ -38,7 +38,7 @@ from the tools.
 |---|---|---|
 | 1. API | 2 / 2 | Done |
 | 2. Navigation | 2 / 2 | Done |
-| 3. Pages | 3 / 3 | Done |
+| 3. Pages | 4 / 4 | Done |
 | 4. Records | 1 / 1 | Done |
 | 5. Check on staging | 0 / 1 | Not started — after merge |
 
@@ -112,6 +112,17 @@ from the tools.
     sections.
   - The page skeletons and the profile detail's back link follow.
 - [x] **Verify.** `npm run typecheck`.
+
+### Step 3.4 — Approve and Reject everywhere
+
+- [x] **Action.**
+  - Organisations: Approve, or Approve edit, and Reject, with the reason box
+    worded like the review card. The tab "Changes asked" becomes Rejected.
+  - Creative profile: the approve button fits the state (Approve, Approve
+    edit, or none), and Acknowledge is gone.
+  - Creatives: the "Suspended" tab becomes Rejected, which is what the status
+    means (ADR 0016).
+- [x] **Verify.** `npm run typecheck`, and the admin tests in `npm test`.
 
 ## Phase 4 — Records
 
