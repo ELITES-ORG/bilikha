@@ -196,6 +196,18 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
       - `createSignedDownload(bucket, key, expiresIn)`;
       - `idObjectKey(userId, side, ext)` → `ids/<userId>/<uuid>-<side>.<ext>`;
       - error logs redact the key when the bucket is the ID bucket.
+
+      Hardened after review (2026-10-11), because the bucket defaults to the
+      public media bucket:
+      - every helper that takes a key, `publicUrl` included, refuses an `ids/`
+        key outside the ID bucket and any other key inside it — a forgotten
+        bucket argument is a 500, never an ID in the public bucket;
+      - `createSignedDownload` refuses a lifetime outside 1 to 300 seconds and an
+        unsafe key itself, rather than trusting each caller;
+      - storage's error body is logged with an ID key cut out, raw and
+        URL-encoded, since Supabase can quote the key it refused;
+      - `moderation_actions.id_verification_id` is indexed, as #78 indexed
+        `organization_id`.
 - [x] **Verify.** Unit tests in `backend/src/lib/storage.test.ts`, which stub
       `globalThis.fetch` (no route tests in that file): the bucket reaches the
       recursive call; the signed-download request has `expiresIn` 300; an ID key
@@ -226,8 +238,11 @@ GET /storage/v1/bucket/nope
       `docs/reference/deployments.md`, with the bucket's settings. Add
       `idStorageReady()` in `backend/src/lib/storage.ts`: reads
       `GET /storage/v1/bucket/<id>`, ready only if it exists, `public === false`,
-      and both `file_size_limit` and `allowed_mime_types` are set; cached 10
-      minutes so a transient failure recovers; overridable in tests. Log a
+      and both `file_size_limit` and `allowed_mime_types` are set; cached one
+      minute either way, so a bucket made public stops ID uploads within a
+      minute and a transient failure clears as fast; overridable in tests. The
+      name must be a plain bucket name, and is refused if it matches the media
+      bucket in any letter case. Log a
       warning at boot in `backend/src/index.ts` when not ready. Add the local
       bucket steps to `docs/getting-started/local-setup.md`.
 - [x] **Verify.** Tests: a public bucket, a missing one, and one without limits
@@ -245,16 +260,19 @@ GET /storage/v1/bucket/nope
 ### Step 1.7 — The ID-number secret and hash
 
 - [x] **Action.** `ID_HASH_SECRET` in `backend/src/config/env.ts`: optional at
-      boot, but at least 32 characters when set. Add it to `backend/.env.example`
-      (a placeholder), `docs/reference/environment.md` and the environment
+      boot, but at least 32 characters when set, and never a value containing
+      `replace-me`. Add it to `backend/.env.example` **blank** — a placeholder
+      long enough to pass would key real hashes with a public secret — `docs/reference/environment.md` and the environment
       table in `docs/reference/deployments.md`, each saying it must never be
       rotated. New `backend/src/modules/verification/id-number.ts`:
       - `normalizeIdNumber(raw)`: Unicode NFKC, uppercase, and every character
         that is not a letter or a digit removed
       - `hashIdNumber(idType, raw)`: HMAC-SHA256 (Node's `crypto.createHmac`)
         keyed with `ID_HASH_SECRET`, over `` `${idType}:${normalizeIdNumber(raw)}` ``,
-        as hex. It throws when the secret is unset, and refuses a normalised
-        number shorter than 4 characters
+        as hex. It throws when the secret is unset, refuses a normalised
+        number shorter than 4 characters, and refuses anything but A–Z and 0–9
+        after normalising: a Cyrillic "О" or an Arabic-Indic digit would
+        otherwise hash differently from the printed number
       - `idHashReady()`: true only when the secret is set. Log a warning at boot
         in `backend/src/index.ts` when it is not
 

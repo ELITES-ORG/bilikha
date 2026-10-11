@@ -290,7 +290,7 @@ acknowledgement / media-removal decision.
 | `id_verification_id` | `uuid` FK null → `id_verifications.id` | `ON DELETE SET NULL`. Set for the `id_*` actions, so which IDs an administrator viewed or decided is a join, not a search of `reason` |
 | `created_at` | `timestamptz` | |
 
-Indexes: `profile_id`, `subject_user_id`, `organization_id`, `created_at`.
+Indexes: `profile_id`, `subject_user_id`, `organization_id`, `id_verification_id`, `created_at`.
 
 ---
 

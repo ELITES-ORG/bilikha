@@ -138,16 +138,17 @@ cd backend
 node -e "
 require('dotenv').config({ quiet: true });
 const { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key } = process.env;
+const bucket = (process.env.SUPABASE_ID_BUCKET || 'ids').trim();
 fetch(url + '/storage/v1/bucket', {
   method: 'POST',
   headers: { Authorization: 'Bearer ' + key, apikey: key, 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    id: 'ids', name: 'ids', public: false,
+    id: bucket, name: bucket, public: false,
     file_size_limit: 10485760, allowed_mime_types: ['image/webp', 'image/jpeg'],
   }),
 }).then(async (res) => console.log(res.status, await res.text()));
 "
-# 200 {"name":"ids"}
+# 200 {"name":"ids"}  — or whatever SUPABASE_ID_BUCKET names
 # Already there: 400 {... "code":"BucketAlreadyExists"} — nothing is changed.
 ```
 
