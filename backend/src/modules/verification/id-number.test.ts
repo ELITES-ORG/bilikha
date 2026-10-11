@@ -27,6 +27,19 @@ describe('normalizeIdNumber', () => {
 });
 
 describe('hashIdNumber', () => {
+  it('refuses look-alike letters and digits from other scripts rather than hashing them differently', () => {
+    // Cyrillic "О" for Latin "O", and Arabic-Indic digits for 1234.
+    for (const raw of ['NО1234', '١٢٣٤']) {
+      expect(errorOf(() => hashIdNumber('philsys_id', raw, SECRET)).status, raw).toBe(400);
+    }
+    // The message names no number.
+    expect(errorOf(() => hashIdNumber('philsys_id', 'NО1234', SECRET)).message).not.toContain('1234');
+  });
+
+  it('still accepts full-width digits, which fold to plain ones', () => {
+    expect(hashIdNumber('philsys_id', '１２３４', SECRET)).toBe(hashIdNumber('philsys_id', '1234', SECRET));
+  });
+
   it('hashes the same ID written two ways the same', () => {
     expect(hashIdNumber('philsys_id', '1234-5678 9012', SECRET)).toBe(
       hashIdNumber('philsys_id', '123456789012', SECRET),

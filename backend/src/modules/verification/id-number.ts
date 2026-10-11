@@ -19,12 +19,20 @@ const MIN_LENGTH = 4;
 
 /**
  * The same ID typed two ways must hash the same: "1234-5678 9012" and
- * "123456789012". NFKC folds full-width and other look-alike digits; only
- * letters and digits are kept.
+ * "123456789012". NFKC folds full-width letters and digits; spaces, dashes and
+ * other separators are dropped; letters and digits are kept.
  */
 export function normalizeIdNumber(raw: string): string {
   return raw.normalize('NFKC').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
 }
+
+/**
+ * Philippine ID numbers are printed in Latin letters and Western digits. A
+ * Cyrillic "О" or an Arabic-Indic "٣" survives NFKC and looks the same on
+ * screen, but would hash differently from the real number — and a repeated ID
+ * would then go unrecognised. Refused rather than guessed at.
+ */
+const PRINTED_ALPHABET = /^[A-Z0-9]+$/;
 
 /** Whether a hash can be made at all. Deciding an ID answers 503 while it is false. */
 export function idHashReady(secret: string | undefined = env.ID_HASH_SECRET): boolean {
@@ -52,6 +60,11 @@ export function hashIdNumber(
   const number = normalizeIdNumber(raw);
   if (number.length < MIN_LENGTH) {
     throw AppError.badRequest('That ID number is too short. Check it against the photo.');
+  }
+  if (!PRINTED_ALPHABET.test(number)) {
+    throw AppError.badRequest(
+      'Type the ID number in the letters A–Z and digits 0–9, exactly as printed on the ID.',
+    );
   }
 
   return createHmac('sha256', secret).update(`${idType}:${number}`).digest('hex');
