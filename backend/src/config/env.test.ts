@@ -43,6 +43,30 @@ describe('env: ID verification settings', () => {
     expect(result.data?.ID_HASH_SECRET).toBeUndefined();
   });
 
+  it("refuses the example file's placeholder, which is public", () => {
+    const result = envSchema.safeParse({
+      ...BASE,
+      ID_HASH_SECRET: 'replace-me-with-64-hex-characters-never-rotate-it',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.message).join(' ')).toContain('placeholder');
+  });
+
+  it('refuses the media bucket under another letter case', () => {
+    const result = envSchema.safeParse({ ...BASE, SUPABASE_STORAGE_BUCKET: 'media', SUPABASE_ID_BUCKET: 'Media' });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('refuses an ID bucket that is not a plain bucket name', () => {
+    for (const name of ['media/', 'ids private', 'IDS', '../media', '']) {
+      const result = envSchema.safeParse({ ...BASE, SUPABASE_ID_BUCKET: name });
+      expect(result.success, name).toBe(false);
+    }
+    expect(envSchema.safeParse({ ...BASE, SUPABASE_ID_BUCKET: 'ids-staging_2' }).success).toBe(true);
+  });
+
   it('accepts a long enough secret, trimmed', () => {
     const secret = 'f'.repeat(64);
     const result = envSchema.safeParse({ ...BASE, ID_HASH_SECRET: `${secret}\n` });

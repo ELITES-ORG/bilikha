@@ -43,8 +43,17 @@ export const envSchema = z
     SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(20).optional(),
     SUPABASE_STORAGE_BUCKET: z.string().trim().default('media'),
     // The private bucket for ID photos (ADR 0057). Never the media bucket, which
-    // is public: refused below if the two are the same.
-    SUPABASE_ID_BUCKET: z.string().trim().default('ids'),
+    // is public: refused below if the two are the same in any letter case. A
+    // plain name only — a slash or space would build a different path than the
+    // one the readiness check asks about.
+    SUPABASE_ID_BUCKET: z
+      .string()
+      .trim()
+      .regex(
+        /^[a-z0-9][a-z0-9._-]{0,62}$/,
+        'SUPABASE_ID_BUCKET must be a bucket name: lowercase letters, digits, dots, hyphens and underscores',
+      )
+      .default('ids'),
 
     // Keys the hash that recognises a repeated ID number (plan 0053 Step 1.7).
     // Optional at boot like storage, so a deploy without it keeps everything
@@ -52,7 +61,17 @@ export const envSchema = z
     // secret makes every stored hash unmatchable. Blank means unset.
     ID_HASH_SECRET: z.preprocess(
       (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
-      z.string().trim().min(32, 'ID_HASH_SECRET must be at least 32 characters').optional(),
+      z
+        .string()
+        .trim()
+        .min(32, 'ID_HASH_SECRET must be at least 32 characters')
+        // The example file's placeholder is long enough to pass the length
+        // check, and it is public. Hashes keyed with it could be reversed by
+        // anyone, and the secret can never be rotated.
+        .refine((value) => !/replace-me/i.test(value), {
+          message: 'ID_HASH_SECRET is still the example placeholder. Generate one: openssl rand -hex 32',
+        })
+        .optional(),
     ),
 
     // Optional for the same reason as storage: without it nothing is reported and
@@ -69,7 +88,7 @@ export const envSchema = z
     RENDER_GIT_BRANCH: z.string().trim().optional(),
     RENDER_GIT_COMMIT: z.string().trim().optional(),
   })
-  .refine((value) => value.SUPABASE_ID_BUCKET !== value.SUPABASE_STORAGE_BUCKET, {
+  .refine((value) => value.SUPABASE_ID_BUCKET.toLowerCase() !== value.SUPABASE_STORAGE_BUCKET.toLowerCase(), {
     path: ['SUPABASE_ID_BUCKET'],
     message: 'SUPABASE_ID_BUCKET must not be the public media bucket',
   });
