@@ -161,6 +161,9 @@ export const moderationActions = pgTable(
     index('moderation_actions_subject_idx').on(table.subjectUserId),
     index('moderation_actions_created_idx').on(table.createdAt),
     index('moderation_actions_organization_idx').on(table.organizationId),
+    // ON DELETE SET NULL looks rows up by this column, and so does the audit
+    // trail for one ID decision (plan 0053 Phase 3).
+    index('moderation_actions_id_verification_idx').on(table.idVerificationId),
   ],
 );
 
