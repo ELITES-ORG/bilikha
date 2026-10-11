@@ -35,6 +35,19 @@ export const en = {
   'account.language.description':
     'Changes the interface on this device. Not everything is translated yet.',
 
+  'directory.search.label': 'Search the directory',
+  'directory.search.placeholder': 'Search by craft, name, or town',
+  'directory.search.submit': 'Search',
+  'directory.search.clear': 'Clear search',
+  'directory.search.emptyTitle': 'No matches for your search',
+  'directory.search.emptyDescription':
+    'Check the spelling, try a shorter word, or browse by domain.',
+  'directory.search.tryCreatives': 'Search creatives instead',
+  'directory.search.tryOffers': 'Search offers instead',
+  'directory.search.postingsNote':
+    'Search covers offers and creatives. Client postings are not searched yet.',
+  'directory.search.clearFilters': 'Clear filters',
+
   // Organisations — teams of creatives (ADR 0054). Only what screens outside
   // the organisation pages show: role and status labels, the account card, the
   // directory section. The pages' own strings are in `./organizations/`.

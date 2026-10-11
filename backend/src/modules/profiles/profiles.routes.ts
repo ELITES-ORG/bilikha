@@ -7,10 +7,12 @@ import { getPublishedBySlug, listPublished } from './profiles.service.js';
 import { listRatingsSchema } from '../ratings/ratings.schema.js';
 import { listForProfile, summaryForProfile } from '../ratings/ratings.service.js';
 import type { ListMeta } from '../../contracts/pagination.js';
+import { searchQueryField } from '../search/search.schema.js';
 
 export const profilesRouter: Router = Router();
 
 const listQuerySchema = z.object({
+  q: searchQueryField,
   domain: z.string().trim().min(1).optional(),
   subdomain: z.string().trim().min(1).optional(),
   municipality: z.string().trim().min(1).optional(),

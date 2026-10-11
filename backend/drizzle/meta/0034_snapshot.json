@@ -1,5 +1,5 @@
 {
-  "id": "8ac64227-937b-4d00-b0df-450fd2070d9a",
+  "id": "4e4889fd-dd1e-4f6f-892d-90f8867ad1bc",
   "prevId": "da387b71-3fff-412e-b7da-d7cb4e96adbf",
   "version": "7",
   "dialect": "postgresql",
@@ -213,6 +213,53 @@
           "where": "archived_at is null",
           "concurrently": false,
           "method": "btree",
+          "with": {}
+        },
+        "creative_subdomains_search_idx": {
+          "name": "creative_subdomains_search_idx",
+          "columns": [
+            {
+              "expression": "to_tsvector('simple', name || ' ' || singular_name)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "creative_subdomains_name_trgm_idx": {
+          "name": "creative_subdomains_name_trgm_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "creative_subdomains_singular_name_trgm_idx": {
+          "name": "creative_subdomains_singular_name_trgm_idx",
+          "columns": [
+            {
+              "expression": "singular_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
           "with": {}
         }
       },
@@ -755,6 +802,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "users_full_name_trgm_idx": {
+          "name": "users_full_name_trgm_idx",
+          "columns": [
+            {
+              "expression": "(first_name || ' ' || coalesce(middle_name, '') || ' ' || last_name) gin_trgm_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1072,6 +1134,37 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "creative_profiles_search_idx": {
+          "name": "creative_profiles_search_idx",
+          "columns": [
+            {
+              "expression": "to_tsvector('simple', coalesce(display_name, '') || ' ' || coalesce(bio, ''))",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "creative_profiles_display_name_trgm_idx": {
+          "name": "creative_profiles_display_name_trgm_idx",
+          "columns": [
+            {
+              "expression": "display_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1133,12 +1226,6 @@
         },
         "admin_id": {
           "name": "admin_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organization_id": {
-          "name": "organization_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -1209,21 +1296,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "moderation_actions_organization_idx": {
-          "name": "moderation_actions_organization_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -1259,19 +1331,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "admin_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "moderation_actions_organization_id_organizations_id_fk": {
-          "name": "moderation_actions_organization_id_organizations_id_fk",
-          "tableFrom": "moderation_actions",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -1511,6 +1570,37 @@
           "isUnique": false,
           "concurrently": false,
           "method": "btree",
+          "with": {}
+        },
+        "offers_search_idx": {
+          "name": "offers_search_idx",
+          "columns": [
+            {
+              "expression": "to_tsvector('simple', title || ' ' || coalesce(description, ''))",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "offers_title_trgm_idx": {
+          "name": "offers_title_trgm_idx",
+          "columns": [
+            {
+              "expression": "title",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "gin_trgm_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
           "with": {}
         }
       },
@@ -3999,11 +4089,7 @@
         "agreement_delivered",
         "agreement_completed",
         "agreement_cancelled",
-        "rating_received",
-        "organization_approved",
-        "organization_rejected",
-        "organization_invited",
-        "organization_invitation_accepted"
+        "rating_received"
       ]
     },
     "public.organization_role": {

@@ -11,6 +11,19 @@ import { DrizzleSessionStore } from './lib/session-store.js';
 import { apiRouter } from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 
+/**
+ * A directory search can be a person's name. The request log keeps the rest of
+ * the URL for tracing and replaces what was searched for.
+ */
+export function redactSearch(url: string): string {
+  const queryAt = url.indexOf('?');
+  if (queryAt === -1) return url;
+  const params = new URLSearchParams(url.slice(queryAt + 1));
+  if (!params.has('q')) return url;
+  params.set('q', 'redacted');
+  return `${url.slice(0, queryAt)}?${params.toString()}`;
+}
+
 export function createApp(): Express {
   const app = express();
 
@@ -67,7 +80,7 @@ export function createApp(): Express {
         remove: true,
       },
       serializers: {
-        req: (req) => ({ id: req.id, method: req.method, url: req.url }),
+        req: (req) => ({ id: req.id, method: req.method, url: redactSearch(req.url) }),
         res: (res) => ({ statusCode: res.statusCode }),
       },
     }),

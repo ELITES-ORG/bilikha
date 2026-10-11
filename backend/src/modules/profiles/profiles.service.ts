@@ -18,12 +18,14 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { creativeSearch } from '../search/search-sql.js';
 
 export type { PublicProfile, PublicProfileDetail } from '../../contracts/profiles.js';
 
 /** Detail endpoint: directory card fields plus the profile's offers. */
 
 export interface ListPublishedOptions {
+  q?: string;
   domain?: string;
   subdomain?: string;
   municipality?: string;
@@ -180,14 +182,20 @@ export async function listPublished(
     );
   }
 
+  // Search narrows and ranks, but never outranks nearby-first (ADR 0003).
+  const search = options.q ? creativeSearch(options.q) : null;
+  if (search) filters.push(search.where);
+
   const where = and(...filters);
 
-  const nearbyFirst = options.viewerMunicipalityId
-    ? [
-        desc(sql`${users.municipalityId} = ${options.viewerMunicipalityId}`),
-        desc(creativeProfiles.createdAt),
-      ]
-    : [desc(creativeProfiles.createdAt)];
+  const order = [
+    ...(options.viewerMunicipalityId
+      ? [desc(sql`${users.municipalityId} = ${options.viewerMunicipalityId}`)]
+      : []),
+    ...(search?.orderBy ?? []),
+    desc(creativeProfiles.createdAt),
+    asc(creativeProfiles.id),
+  ];
 
   const rows = await db
     .select({
@@ -208,7 +216,7 @@ export async function listPublished(
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
     .where(where)
-    .orderBy(...nearbyFirst)
+    .orderBy(...order)
     .limit(options.limit)
     .offset(offset);
 

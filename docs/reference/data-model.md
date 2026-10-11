@@ -17,6 +17,35 @@ Reference data plus auth and profile tables from plan 0001.
 | Timestamps | `timestamptz`, defaulting to `now()` |
 | Slugs | Unique, permanent, public identifiers |
 
+## Extensions
+
+- **`pg_trgm`** — trigram similarity, for typo-tolerant directory search.
+  Created by migration `0034` (`CREATE EXTENSION IF NOT EXISTS`; trusted since
+  Postgres 13, so the migration role may create it). On Supabase it must live in
+  schema `public`, where the migrations expect it.
+
+### Search indexes
+
+Directory search ([ADR 0003](../decisions/0003-postgres-native-search.md),
+`backend/src/modules/search/search-sql.ts`) uses two kinds of GIN index. The
+query expressions are written exactly as the index expressions are; change one,
+change the other.
+
+| Index | Table | Expression |
+|---|---|---|
+| `offers_search_idx` | `offers` | `to_tsvector('simple', title \|\| ' ' \|\| coalesce(description, ''))` |
+| `offers_title_trgm_idx` | `offers` | `title gin_trgm_ops` |
+| `creative_profiles_search_idx` | `creative_profiles` | `to_tsvector('simple', coalesce(display_name, '') \|\| ' ' \|\| coalesce(bio, ''))` |
+| `creative_profiles_display_name_trgm_idx` | `creative_profiles` | `display_name gin_trgm_ops` |
+| `creative_subdomains_search_idx` | `creative_subdomains` | `to_tsvector('simple', name \|\| ' ' \|\| singular_name)` |
+| `creative_subdomains_name_trgm_idx` | `creative_subdomains` | `name gin_trgm_ops` |
+| `creative_subdomains_singular_name_trgm_idx` | `creative_subdomains` | `singular_name gin_trgm_ops` |
+| `users_full_name_trgm_idx` | `users` | `(first_name \|\| ' ' \|\| coalesce(middle_name, '') \|\| ' ' \|\| last_name) gin_trgm_ops` |
+
+They are there for growth. A search ORs conditions across joined tables, so at
+today's size Postgres scans the published rows and filters them, which is
+fast; the indexes start to pay once a table outgrows that.
+
 ---
 
 ## `creative_domains`
@@ -63,6 +92,9 @@ Indexes:
 - `creative_subdomains_domain_idx` on `domain_id`
 - `creative_subdomains_active_idx` on `(domain_id, display_order)`, partial
   `where archived_at is null`
+- `creative_subdomains_search_idx`, `creative_subdomains_name_trgm_idx`,
+  `creative_subdomains_singular_name_trgm_idx` — search
+  ([Search indexes](#search-indexes))
 
 Deleting a row is refused by the `ON DELETE RESTRICT` on every referencing
 table (`creative_profile_subdomains`, `offers`, `postings`), which is what
@@ -159,7 +191,8 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `username_normalized`, `email_normalized`, `phone`; index on
-`municipality_id`.
+`municipality_id`; `users_full_name_trgm_idx` for search
+([Search indexes](#search-indexes)).
 
 ---
 
@@ -184,7 +217,8 @@ phone verification.
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review
-queue; `edited_since_review_at` for the Edited queue.
+queue; `edited_since_review_at` for the Edited queue; two for search
+([Search indexes](#search-indexes)).
 
 Rejection sets `status` to `suspended` and stores the reason — there is no
 separate `rejected` enum value in sprint 1.
@@ -217,7 +251,8 @@ profile goes. Storage objects under `offer_images` are cleaned by
 | `flagged_at` | `timestamptz` null | Set when the description matches a contact-details pattern; sorts the review queue, does not hide the offer |
 | `created_at` / `updated_at` | `timestamptz` | |
 
-Indexes: `(profile_id, sort_order)`, `(subdomain_id, created_at)`, `reviewed_at`.
+Indexes: `(profile_id, sort_order)`, `(subdomain_id, created_at)`, `reviewed_at`;
+two for search ([Search indexes](#search-indexes)).
 
 ---
 

@@ -3,8 +3,9 @@ import { cn } from '@/lib/cn';
 
 export interface EmptyStateProps {
   icon?: ReactNode;
-  title: string;
-  description?: string;
+  /** A string, or a `<span lang>` for catalogue copy (ADR 0055). */
+  title: ReactNode;
+  description?: ReactNode;
   action?: ReactNode;
   className?: string;
 }

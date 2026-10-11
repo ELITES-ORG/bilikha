@@ -53,6 +53,8 @@ export type OfferWriteInput = {
 };
 
 export type ListOffersParams = {
+  /** Search text, already normalised — see `lib/search-query`. */
+  q?: string;
   domain?: string;
   subdomain?: string;
   municipality?: string;
