@@ -8,6 +8,8 @@ import {
   timestamp,
   uniqueIndex,
   index,
+  date,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
@@ -86,6 +88,55 @@ export const creativeSubdomains = pgTable(
       'gin',
       table.singularName.op('gin_trgm_ops'),
     ),
+  ],
+);
+
+/**
+ * Everyday words for a sub-domain, so a search for "nagkukulit" or a
+ * misspelling finds Artisans of Indigenous Crafts (issue #24, ADR 0003).
+ *
+ * Many terms to one sub-domain, and one term may sit on two ("kahoy" is wood
+ * for a carver and a furniture maker). `term` is stored as `normalizeTerm`
+ * leaves it — lowercase, accents folded, single spaces — and the query is
+ * folded the same way. Administrators add them in the admin area; there is no
+ * seeded list. An alias is not a sub-domain: it never appears on a card.
+ */
+export const subdomainAliases = pgTable(
+  'subdomain_aliases',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    // An alias means nothing without its sub-domain.
+    subdomainId: uuid('subdomain_id')
+      .notNull()
+      .references(() => creativeSubdomains.id, { onDelete: 'cascade' }),
+    term: text('term').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('subdomain_aliases_subdomain_term_idx').on(table.subdomainId, table.term),
+    index('subdomain_aliases_term_idx').on(table.term),
+  ],
+);
+
+/**
+ * Searches that found nothing, counted per word, listing and day — the
+ * evidence of which aliases are missing (issue #24).
+ *
+ * Deliberately a count, not a log: no user, session, address or time of day,
+ * so a row cannot be tied to whoever searched. Rows older than 90 days are
+ * removed as new ones are written.
+ */
+export const searchMisses = pgTable(
+  'search_misses',
+  {
+    term: text('term').notNull(),
+    listing: text('listing').notNull(),
+    day: date('day').notNull(),
+    count: integer('count').notNull().default(1),
+  },
+  (table) => [
+    primaryKey({ columns: [table.term, table.listing, table.day] }),
+    index('search_misses_day_idx').on(table.day),
   ],
 );
 

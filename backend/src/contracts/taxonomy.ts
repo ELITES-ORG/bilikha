@@ -40,6 +40,22 @@ export interface AdminTaxonomySubdomain extends CreativeSubdomain {
   referenceCount: number;
 }
 
+/** An everyday word for a sub-domain, stored lowercase with accents folded. */
+export interface SubdomainAlias {
+  id: string;
+  term: string;
+}
+
+/** Which listing a search ran on. */
+export type SearchListing = 'offers' | 'creatives';
+
+/** A search that found nothing, summed over the window asked for. */
+export interface SearchMiss {
+  term: string;
+  listing: SearchListing;
+  count: number;
+}
+
 export interface AdminTaxonomyDomain extends Omit<CreativeDomain, 'subdomains'> {
   subdomains: AdminTaxonomySubdomain[];
   /** Rows referencing any of this domain's sub-domains. */

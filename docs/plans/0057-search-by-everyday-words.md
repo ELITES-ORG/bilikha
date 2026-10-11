@@ -55,7 +55,7 @@ were.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Data and matching | 0 / 3 | Not started |
+| 1. Data and matching | 3 / 3 | Done |
 | 2. Admin | 0 / 2 | Not started |
 | 3. Records | 0 / 2 | Not started |
 
@@ -65,25 +65,25 @@ were.
 
 ### Step 1.1 — The tables
 
-- [ ] **Action.** `subdomainAliases` and `searchMisses` in
+- [x] **Action.** `subdomainAliases` and `searchMisses` in
   `backend/src/db/schema/taxonomy.ts`; `npm --prefix backend run db:generate`.
-- [ ] **Verify.** The migration is two `CREATE TABLE`s, their indexes and the
+- [x] **Verify.** The migration is two `CREATE TABLE`s, their indexes and the
   foreign key, and no `DROP`.
 
 ### Step 1.2 — Aliases in search
 
-- [ ] **Action.** `normalizeTerm` in `modules/search/search-sql.ts`; a word
+- [x] **Action.** `normalizeTerm` in `modules/search/search-sql.ts`; a word
   also matches an alias of the offer's sub-domain, or of any of a creative's.
-- [ ] **Verify.** `search.test.ts`: an alias finds a creative and an offer; by
+- [x] **Verify.** `search.test.ts`: an alias finds a creative and an offer; by
   prefix, with accents folded, and misspelt; the same term on two sub-domains;
   an alias of a sub-domain the creative does not have does not match; aliases
   never bring back unpublished or suspended rows.
 
 ### Step 1.3 — Counting unmatched searches
 
-- [ ] **Action.** `modules/search/search-misses.ts`: `recordMiss` from both
+- [x] **Action.** `modules/search/search-misses.ts`: `recordMiss` from both
   listings when `q` is set, it is page 1 and nothing matched; `topMisses`.
-- [ ] **Verify.** `search-misses.test.ts`: counts once per word, listing and
+- [x] **Verify.** `search-misses.test.ts`: counts once per word, listing and
   day, and increments; never when something matched, on page 2 or without
   `q`; rows past 90 days go; the table has no column naming a person.
 
