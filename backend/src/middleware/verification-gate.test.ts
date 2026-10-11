@@ -17,14 +17,13 @@ const SOME_ID = randomUUID();
 
 /** One write per router that sits behind requireAuth. */
 const WRITES: { method: string; path: string; body?: unknown }[] = [
-  { method: 'PATCH', path: '/me/view-mode', body: { viewMode: 'hiring' } },
+  { method: 'POST', path: '/me/blocks', body: {} },
   { method: 'POST', path: '/media/upload-url', body: { kind: 'avatar' } },
   { method: 'POST', path: '/offers', body: {} },
   { method: 'POST', path: '/postings', body: {} },
   { method: 'POST', path: '/conversations', body: {} },
   { method: 'POST', path: `/agreements/${SOME_ID}/accept`, body: {} },
   { method: 'POST', path: `/ratings/${SOME_ID}/report`, body: {} },
-  { method: 'POST', path: '/notifications/read-all' },
   { method: 'POST', path: '/organizations', body: {} },
 ];
 
@@ -122,6 +121,30 @@ describe('the browse-only gate', () => {
 
     for (const path of ['/verification/submissions', '/me/password-reset', '/me/profile']) {
       const result = await call(user.cookie, 'POST', path, {});
+      expect({ path, code: result.code }).toEqual({ path, code: 'VERIFICATION_PENDING' });
+    }
+  });
+
+  it('lets an account choose its view and read its own notifications, and nothing that looks like them', async () => {
+    const user = await signedInUser();
+    await makeIdVerification(user.id);
+
+    // Private to the account: nobody else sees either.
+    for (const [method, path, body] of [
+      ['PATCH', '/me/view-mode', { viewMode: 'creative' }],
+      ['POST', '/notifications/read-all', undefined],
+      ['POST', `/notifications/${SOME_ID}/read`, undefined],
+    ] as const) {
+      const result = await call(user.cookie, method, path, body);
+      expect({ path, code: result.code }).not.toEqual({ path, code: 'VERIFICATION_PENDING' });
+    }
+
+    for (const [method, path] of [
+      ['POST', `/notifications/${SOME_ID}/read/extra`],
+      ['POST', `/notifications/${SOME_ID}`],
+      ['PUT', '/me/view-mode/x'],
+    ] as const) {
+      const result = await call(user.cookie, method, path, {});
       expect({ path, code: result.code }).toEqual({ path, code: 'VERIFICATION_PENDING' });
     }
   });

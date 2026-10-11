@@ -350,8 +350,11 @@ it.
       7. latest `pending` or `declined_retry`, method not GET/HEAD/OPTIONS, path
          not in `ALLOWED_WHILE_UNVERIFIED` (`/api/v1/me/password`,
          `/api/v1/verification/upload-url`, `/api/v1/verification/submission`,
-         matched exactly like `ALLOWED_WHILE_LOCKED`) → `403
-         VERIFICATION_PENDING`.
+         `/api/v1/me/view-mode`, `/api/v1/notifications/read-all`, and
+         `/api/v1/notifications/:id/read`, matched exactly like
+         `ALLOWED_WHILE_LOCKED`) → `403 VERIFICATION_PENDING`. Built as: the
+         view mode and marking notifications read were added on review — both
+         are private to the account, and refusing them only produced errors.
       Read `req.method`/`req.originalUrl` only when a gating row exists. Add
       `declineNotice?` to `backend/src/types/session.d.ts`.
 - [x] **Verify.** Tests: one write per router (me, media, offers, postings,

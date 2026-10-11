@@ -36,7 +36,20 @@ const ALLOWED_WHILE_UNVERIFIED = [
   '/api/v1/me/password',
   '/api/v1/verification/upload-url',
   '/api/v1/verification/submission',
+  // Private to the account and seen by nobody else, so not what browse-only
+  // guards against: which side of the app it is looking at, and which of its
+  // own notifications it has read.
+  '/api/v1/me/view-mode',
+  '/api/v1/notifications/read-all',
 ];
+
+/** A notification marked read, by id: the same as read-all, one at a time. */
+const NOTIFICATION_READ = /^\/api\/v1\/notifications\/[^/]+\/read$/;
+
+function isAllowedWhileUnverified(originalUrl: string): boolean {
+  const path = pathOf(originalUrl);
+  return ALLOWED_WHILE_UNVERIFIED.includes(path) || NOTIFICATION_READ.test(path);
+}
 
 const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -183,7 +196,7 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
       if (
         (user.idStatus === 'pending' || user.idStatus === 'declined_retry')
         && !READ_METHODS.has(req.method)
-        && !ALLOWED_WHILE_UNVERIFIED.includes(pathOf(req.originalUrl))
+        && !isAllowedWhileUnverified(req.originalUrl)
       ) {
         next(
           new AppError(

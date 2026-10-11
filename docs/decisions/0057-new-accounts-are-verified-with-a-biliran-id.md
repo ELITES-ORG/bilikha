@@ -40,7 +40,8 @@ still 18 or older).
    change ([0051](./0051-an-admin-reset-issues-a-one-time-password.md)): while
    the latest row is `pending` or `declined_retry`, every request that is not
    GET/HEAD/OPTIONS answers `403 VERIFICATION_PENDING`, except an exact
-   allowlist (the ID routes, setting a password). The state is read from the
+   allowlist (the ID routes, setting a password, and the account's own view
+   mode and notifications, which nobody else sees). The state is read from the
    database on every request, as suspension is
    ([0028](./0028-suspension-is-enforced-per-request.md)).
 3. **A decline revokes every session at the decision and still tells that

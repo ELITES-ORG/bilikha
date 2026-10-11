@@ -290,9 +290,12 @@ that is not `GET`, `HEAD` or `OPTIONS` answers:
 { "error": { "code": "VERIFICATION_PENDING", "message": "You can browse, but not do this until your ID is verified." } }
 ```
 
-Three are exempt, matched exactly (query strings and trailing slashes do not
+These are exempt, matched exactly (query strings and trailing slashes do not
 change the match): `POST /api/v1/me/password`,
-`POST /api/v1/verification/upload-url` and `POST /api/v1/verification/submission`.
+`POST /api/v1/verification/upload-url` and `POST /api/v1/verification/submission`,
+which are how an account leaves browse-only; and `PATCH /api/v1/me/view-mode`,
+`POST /api/v1/notifications/read-all` and `POST /api/v1/notifications/:id/read`,
+which are private to the account and change nothing anyone else sees.
 
 While the latest row is `declined_final` or `appealed`, every authenticated
 route ends the session and answers `401 ID_DECLINED` with `details: { kind,
