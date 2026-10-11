@@ -14,6 +14,7 @@ import { SiteLayout } from '@/components/SiteLayout';
 import { StagingBanner } from '@/components/StagingBanner';
 import { ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n/I18nProvider';
+import { withSection } from '@/i18n/sections';
 import { queryClient } from '@/lib/query-client';
 import { useRememberSession } from '@/features/auth/api';
 import { RequireAdmin } from '@/features/auth/RequireAdmin';
@@ -67,12 +68,18 @@ const AdminProfilePage = lazy(() =>
 /*
  * Lazy: read once, by a minority of visitors, and long. Exactly what plan 0031
  * splits — nobody pays for the privacy notice on their way to the directory.
+ * Their strings come with them, and a reader who chose Waray or Filipino gets
+ * the page once, in that language (`withSection`, ADR 0055).
  */
 const PrivacyPage = lazy(() =>
-  import('@/pages/legal/PrivacyPage').then((m) => ({ default: m.PrivacyPage })),
+  import('@/pages/legal/PrivacyPage')
+    .then(withSection('legal'))
+    .then((m) => ({ default: m.PrivacyPage })),
 );
 const TermsPage = lazy(() =>
-  import('@/pages/legal/TermsPage').then((m) => ({ default: m.TermsPage })),
+  import('@/pages/legal/TermsPage')
+    .then(withSection('legal'))
+    .then((m) => ({ default: m.TermsPage })),
 );
 
 const AccountPage = lazy(() =>
