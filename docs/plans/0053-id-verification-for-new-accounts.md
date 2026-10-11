@@ -88,7 +88,7 @@ as long as it takes, and its images are kept while it waits.
       `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
 - [x] A local private bucket `ids`: Public **off**, file size limit **10 MB**,
       allowed MIME types `image/webp, image/jpeg`. Created through the storage
-      API (`curl` in [local setup](../getting-started/local-setup.md) §6),
+      API (the command in [local setup](../getting-started/local-setup.md) §6),
       which works whether or not Supabase Studio is running.
 - [x] **Before Phase 5 merges:** the same private bucket on staging and
       production, created by reyxdz in each Supabase dashboard (Decided 1).
