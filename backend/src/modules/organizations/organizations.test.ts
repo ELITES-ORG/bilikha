@@ -166,6 +166,7 @@ describe('founding an organisation', () => {
       domainId: domain!.id,
       slug,
       name: 'ZZ Archived',
+      singularName: 'ZZ Archived',
       displayOrder: 999,
       archivedAt: new Date(),
     });
