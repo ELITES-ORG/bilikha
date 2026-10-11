@@ -1,0 +1,2 @@
+ALTER TABLE "organization_invitations" ADD CONSTRAINT "organization_invitations_one_answer" CHECK ("organization_invitations"."accepted_at" is null or "organization_invitations"."declined_at" is null);--> statement-breakpoint
+ALTER TABLE "organization_invitations" ADD CONSTRAINT "organization_invitations_not_founder" CHECK ("organization_invitations"."role" <> 'founder');

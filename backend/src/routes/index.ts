@@ -12,6 +12,7 @@ import { offersRouter } from '../modules/offers/offers.routes.js';
 import { postingsRouter } from '../modules/postings/postings.routes.js';
 import { ratingsRouter } from '../modules/ratings/ratings.routes.js';
 import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
+import { shareRouter } from '../modules/share/share.routes.js';
 
 /**
  * All application routes hang off /api/v1. Versioning the prefix from day one
@@ -32,4 +33,5 @@ apiRouter.use('/offers', offersRouter);
 apiRouter.use('/postings', postingsRouter);
 apiRouter.use('/ratings', ratingsRouter);
 apiRouter.use('/notifications', notificationsRouter);
+apiRouter.use('/share', shareRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);

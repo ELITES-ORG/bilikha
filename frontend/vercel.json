@@ -11,6 +11,36 @@
       "destination": "https://bilikha.onrender.com/api/:path*"
     },
     {
+      "source": "/creatives/:slug",
+      "has": [
+        { "type": "host", "value": "bilikha.vercel.app" },
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|WhatsApp|TelegramBot|Discordbot|LinkedInBot).*" }
+      ],
+      "destination": "https://bilikha-production.onrender.com/api/v1/share/creatives/:slug"
+    },
+    {
+      "source": "/offers/:id",
+      "has": [
+        { "type": "host", "value": "bilikha.vercel.app" },
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|WhatsApp|TelegramBot|Discordbot|LinkedInBot).*" }
+      ],
+      "destination": "https://bilikha-production.onrender.com/api/v1/share/offers/:id"
+    },
+    {
+      "source": "/creatives/:slug",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|WhatsApp|TelegramBot|Discordbot|LinkedInBot).*" }
+      ],
+      "destination": "https://bilikha.onrender.com/api/v1/share/creatives/:slug"
+    },
+    {
+      "source": "/offers/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|WhatsApp|TelegramBot|Discordbot|LinkedInBot).*" }
+      ],
+      "destination": "https://bilikha.onrender.com/api/v1/share/offers/:id"
+    },
+    {
       "source": "/e/:project(\\d+)",
       "destination": "https://o4512218682359808.ingest.us.sentry.io/api/:project/envelope/"
     },

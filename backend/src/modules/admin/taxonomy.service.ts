@@ -10,6 +10,7 @@ import {
   creativeProfileSubdomains,
   creativeSubdomains,
   offers,
+  organizationSubdomains,
   postings,
   taxonomyChanges,
   users,
@@ -78,10 +79,12 @@ function serializeSubdomain(row: typeof creativeSubdomains.$inferSelect) {
 }
 
 /**
- * How many rows across the three referencing tables point at each sub-domain.
+ * How many rows across the four referencing tables point at each sub-domain.
+ * The admin page offers Delete only at zero, so a table missing here shows a
+ * Delete button that the `RESTRICT` constraint then refuses.
  *
- * One query per table rather than three joins: the counts are independent, and
- * a join across all three multiplies them.
+ * One query per table rather than joins: the counts are independent, and a
+ * join across them multiplies them.
  */
 async function referenceCounts(): Promise<Map<string, number>> {
   const totals = new Map<string, number>();
@@ -110,6 +113,12 @@ async function referenceCounts(): Promise<Map<string, number>> {
       .select({ subdomainId: postings.subdomainId, total: count() })
       .from(postings)
       .groupBy(postings.subdomainId),
+  );
+  add(
+    await db
+      .select({ subdomainId: organizationSubdomains.subdomainId, total: count() })
+      .from(organizationSubdomains)
+      .groupBy(organizationSubdomains.subdomainId),
   );
 
   return totals;
@@ -560,7 +569,7 @@ export async function deleteTaxonomyItem({ kind, slug, adminId }: ItemRef) {
         : (totals.get(current.id) ?? 0);
 
     throw AppError.conflict(
-      `"${slug}" is used by ${referencing} profile, offer or posting ${
+      `"${slug}" is used by ${referencing} profile, offer, posting or organisation ${
         referencing === 1 ? 'record' : 'records'
       }, so it cannot be deleted. Archive it instead — that takes it out of every picker and leaves those records intact.`,
     );

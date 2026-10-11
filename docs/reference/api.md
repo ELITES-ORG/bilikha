@@ -465,6 +465,41 @@ see the previous recency order and no `isNearby` field.
 
 ---
 
+## Link previews (crawlers)
+
+Public, no session. They answer **HTML, not JSON**: the `<head>` a
+link-preview crawler reads, and a single link in the body. `frontend/vercel.json`
+sends crawlers here by `User-Agent`; people never reach them
+([ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+
+Always `200` with `Content-Type: text/html`, `Cache-Control: public, max-age=600`
+and `Vary: User-Agent`. Tags: `<title>`, `description`, `canonical`,
+`og:site_name`, `og:type`, `og:url`, `og:title`, `og:description`,
+`og:image` (absolute; `og:image:width`/`height` for the default image), and
+`twitter:card`/`title`/`description`/`image`. `og:url` is the page on this
+deployment's site.
+
+Anything the public page would 404 — unpublished, suspended, unknown, or a
+malformed offer id — gets the generic Bilikha card, which names nothing about
+the item. Its `og:url` and `canonical` stay the shared link itself, never the
+home page: Facebook scrapes whatever `og:url` names, so the home page would
+replace this card with the SPA's site-wide tags. An unexpected error gets the
+same card with `Cache-Control: no-store`.
+
+### `GET /api/v1/share/creatives/:slug`
+
+Title `{name} · {primary craft} in {municipality}`; description the bio
+(clipped), or the crafts and municipality; image the avatar (`summary` card) or
+`/og-default.png`.
+
+### `GET /api/v1/share/offers/:id`
+
+Title the offer's; description `{price} · {creative}, {municipality}` and the
+offer's description (clipped); image the first photo (`summary_large_image`) or
+`/og-default.png`.
+
+---
+
 ## Conversations
 
 All routes require a signed-in session. Authorisation is by participation: the
@@ -698,7 +733,8 @@ straight to the change form instead of discovering this on the next tap.
 ### `GET /api/v1/admin/taxonomy`
 
 The full domain tree **including archived items**, each with a
-`referenceCount` — how many profile, offer and posting rows point at it. The
+`referenceCount` — how many profile, offer, posting and organisation rows point
+at it. The
 only surface that sees either; the public
 [`GET /api/v1/taxonomy/domains`](#get-apiv1taxonomydomains) serves active items
 only (ADR 0049).
@@ -735,7 +771,8 @@ archiving the item and creating a replacement.
 ### `POST /api/v1/admin/taxonomy/:kind/:slug/archive`
 
 Takes the item out of every picker and browse surface while leaving the
-profiles, offers and postings that reference it intact, and leaving its slug
+profiles, offers, postings and organisations that reference it intact, and
+leaving its slug
 resolvable. **Archiving a domain archives its sub-domains with it**, in one
 transaction, each with its own audit row.
 

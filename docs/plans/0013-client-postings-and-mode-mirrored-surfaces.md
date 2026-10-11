@@ -437,5 +437,5 @@ with today's data **empty is the common case on both sides**.
 | Telling a creative a matching posting appeared | The whole value of a board is timeliness, and there is still no notification of any kind. This is the first thing to build after it |
 | Saved postings | Saving exists for offers. Mirror it once someone asks |
 | Structured quotes | A reply is a message. Budgets and scope negotiated in the thread |
-| Postings from organisations | [ADR 0005](../decisions/0005-organization-pages.md) is still proposed; institutional buyers are the likeliest source of real budgets |
+| ~~Postings from organisations~~ | Dropped. Organisations are teams of creatives only ([ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)); there are no client organisations to post. An institution posts as an ordinary client |
 | Reporting a posting | Same gap as offers: no public report button, so an administrator has to notice |
