@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, ne } from 'drizzle-orm';
 import type {
   ContactPreference,
   OwnProfile,
@@ -522,6 +522,7 @@ export async function saveOffer(userId: string, offerId: string) {
     .where(
       and(
         eq(offers.id, offerId),
+        eq(offers.status, 'published'),
         eq(creativeProfiles.status, 'published'),
         eq(users.status, 'active'),
       ),
@@ -593,7 +594,9 @@ export async function listSavedOffers(userId: string): Promise<SavedOfferListRes
     .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
-    .where(eq(savedOffers.userId, userId))
+    // An offer that is not approved is not public (ADR 0058); it returns to the
+    // list once it is.
+    .where(and(eq(savedOffers.userId, userId), eq(offers.status, 'published')))
     .orderBy(desc(savedOffers.createdAt));
 
   const offerIds = rows.map((r) => r.offerId);
@@ -606,7 +609,7 @@ export async function listSavedOffers(userId: string): Promise<SavedOfferListRes
         thumbKey: offerImages.thumbKey,
       })
       .from(offerImages)
-      .where(inArray(offerImages.offerId, offerIds))
+      .where(and(inArray(offerImages.offerId, offerIds), ne(offerImages.state, 'pending_add')))
       .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
     for (const row of imageRows) {

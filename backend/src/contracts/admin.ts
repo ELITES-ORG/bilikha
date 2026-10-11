@@ -103,37 +103,62 @@ export interface AdminProfileListResult {
   total: number;
 }
 
-/** One image on an offer awaiting media review. */
+/**
+ * One image on an offer awaiting review. `state` says what the change does to
+ * it (ADR 0058): `live` is published and stays, `pending_add` would be added,
+ * `pending_remove` would be taken off.
+ */
 export interface AdminMediaImage {
   id: string;
   url: string;
   thumbUrl: string;
   sortOrder: number;
+  state: 'live' | 'pending_add' | 'pending_remove';
+}
+
+/** The published version of an offer, shown beside a change waiting for review. */
+export interface AdminPublishedOffer {
+  title: string;
+  description: string | null;
+  priceMinCentavos: number | null;
+  priceMaxCentavos: number | null;
+  subdomain: string;
 }
 
 /**
- * A row in the media review queue — an avatar or an offer's images.
+ * A row in the content review queue (ADR 0058): a new offer, a change to a
+ * published one, or a new photo or organisation logo. Nothing in it is public
+ * until it is approved.
  *
  * This is the wire shape. The service carries an extra `_flagged` sort helper
  * internally and strips it before responding, so it is deliberately absent here.
  */
 export interface AdminMediaRow {
-  /** The user, offer or organisation the image belongs to. */
+  /** The offer, account or organisation the item belongs to. */
   id: string;
   kind: 'avatar' | 'offer' | 'logo';
+  /** For an offer: a new one, or a change to one already published. */
+  change?: 'new' | 'edit';
   createdAt: string;
+  /** The image under review: the new photo or logo, or an offer's first photo. */
   url: string | null;
   thumbUrl: string | null;
   caption: string | null;
   ownerName: string;
   profileSlug: string | null;
   profileId: string | null;
+  /** For an offer, the version under review: new, or as the change would leave it. */
   title?: string;
   description?: string | null;
   priceMinCentavos?: number | null;
   priceMaxCentavos?: number | null;
+  subdomain?: string;
   flaggedAt?: string | null;
   images?: AdminMediaImage[];
+  /** For a change to a published offer: what the public sees now. */
+  published?: AdminPublishedOffer;
+  /** For a photo or logo replacing an approved one: the approved image. */
+  currentUrl?: string | null;
   /** For a logo on a published page: its slug, to see the image in context. */
   organizationSlug?: string;
 }

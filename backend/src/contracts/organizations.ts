@@ -92,6 +92,10 @@ export interface ManagedOrganization {
   name: string;
   bio: string | null;
   logoUrl: string | null;
+  /** A new logo waiting for review, seen only by the team (ADR 0058). */
+  pendingLogoUrl: string | null;
+  /** Why the last new logo was not approved; cleared by the next upload. */
+  logoRejectionReason: string | null;
   municipality: OrganizationMunicipality;
   crafts: OrganizationCraft[];
   status: OrganizationStatus;

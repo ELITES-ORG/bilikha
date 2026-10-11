@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
 import type {
   ConversationAgreementCard,
   ConversationListResult,
@@ -151,13 +151,19 @@ async function requireContactableProfile(userId: string, profileSlug: string) {
  */
 async function resolveOfferForProfile(offerId: string, profileId: string): Promise<string> {
   const [offer] = await db
-    .select({ id: offers.id, profileId: offers.profileId })
+    .select({ id: offers.id, profileId: offers.profileId, status: offers.status })
     .from(offers)
     .where(eq(offers.id, offerId))
     .limit(1);
 
   if (!offer || offer.profileId !== profileId) {
     throw AppError.badRequest('That offer does not belong to this creative.', {
+      field: 'offerId',
+    });
+  }
+  // Only what the other person could open: an approved offer (ADR 0058).
+  if (offer.status !== 'published') {
+    throw AppError.badRequest('That offer is waiting for review, so it cannot be shared yet.', {
       field: 'offerId',
     });
   }
@@ -178,7 +184,9 @@ async function loadOfferCards(offerIds: string[]): Promise<Map<string, Conversat
       priceMaxCentavos: offers.priceMaxCentavos,
     })
     .from(offers)
-    .where(inArray(offers.id, unique));
+    // An offer that is not approved is not public (ADR 0058): its card reads as
+    // unavailable, the same as a deleted one.
+    .where(and(inArray(offers.id, unique), eq(offers.status, 'published')));
 
   const firstImageByOfferId = new Map<string, { url: string; thumbUrl: string }>();
   if (isStorageConfigured()) {
@@ -189,7 +197,7 @@ async function loadOfferCards(offerIds: string[]): Promise<Map<string, Conversat
         thumbKey: offerImages.thumbKey,
       })
       .from(offerImages)
-      .where(inArray(offerImages.offerId, unique))
+      .where(and(inArray(offerImages.offerId, unique), ne(offerImages.state, 'pending_add')))
       .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
     for (const row of imageRows) {

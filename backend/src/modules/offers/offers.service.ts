@@ -1,4 +1,5 @@
-import { and, asc, count, desc, eq, inArray, max, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, max, ne, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import type {
   PublishedOfferDetail,
   PublishedOfferListResult,
@@ -11,6 +12,7 @@ import {
   creativeSubdomains,
   municipalities,
   offerImages,
+  offerRevisions,
   offers,
   users,
 } from '../../db/schema/index.js';
@@ -114,9 +116,23 @@ function imagePublic(row: { id: string; objectKey: string; thumbKey: string; sor
   };
 }
 
-async function imagesForOffers(offerIds: string[], firstOnly = false) {
-  const result = new Map<string, ReturnType<typeof imagePublic>[]>();
+type ImageState = (typeof offerImages.$inferSelect)['state'];
+
+/**
+ * An offer's photos. The public sees what is approved: `live`, and
+ * `pending_remove` — a photo the creative removed stays until the change is
+ * reviewed. Its owner, and review, see everything, with each photo's state.
+ */
+async function imagesForOffers(
+  offerIds: string[],
+  options: { firstOnly?: boolean; audience?: 'public' | 'owner' } = {},
+) {
+  const result = new Map<string, Array<ReturnType<typeof imagePublic> & { state: ImageState }>>();
   if (offerIds.length === 0 || !isStorageConfigured()) return result;
+
+  const visible = options.audience === 'owner'
+    ? inArray(offerImages.offerId, offerIds)
+    : and(inArray(offerImages.offerId, offerIds), ne(offerImages.state, 'pending_add'));
 
   const rows = await db
     .select({
@@ -125,22 +141,35 @@ async function imagesForOffers(offerIds: string[], firstOnly = false) {
       objectKey: offerImages.objectKey,
       thumbKey: offerImages.thumbKey,
       sortOrder: offerImages.sortOrder,
+      state: offerImages.state,
     })
     .from(offerImages)
-    .where(inArray(offerImages.offerId, offerIds))
+    .where(visible)
     .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
   for (const row of rows) {
     const list = result.get(row.offerId) ?? [];
-    if (firstOnly && list.length > 0) continue;
-    list.push(imagePublic(row));
+    if (options.firstOnly && list.length > 0) continue;
+    list.push({ ...imagePublic(row), state: row.state });
     result.set(row.offerId, list);
   }
   return result;
 }
 
+/** Without the state: what a public response carries. */
+function withoutState<T extends { state: ImageState }>(image: T): Omit<T, 'state'> {
+  const { state: _state, ...rest } = image;
+  return rest;
+}
+
+/**
+ * The creative's own offers, with where each stands in review (ADR 0058): its
+ * status and reason, a change waiting beside a published offer, why the last
+ * change was not approved, and every photo with its state.
+ */
 export async function listMine(userId: string) {
   const profile = await requireOwnProfile(userId);
+  const revisionSubdomains = alias(creativeSubdomains, 'revision_subdomains');
   const rows = await db
     .select({
       id: offers.id,
@@ -149,6 +178,9 @@ export async function listMine(userId: string) {
       priceMinCentavos: offers.priceMinCentavos,
       priceMaxCentavos: offers.priceMaxCentavos,
       sortOrder: offers.sortOrder,
+      status: offers.status,
+      rejectionReason: offers.rejectionReason,
+      revisionRejectionReason: offers.revisionRejectionReason,
       flaggedAt: offers.flaggedAt,
       reviewedAt: offers.reviewedAt,
       createdAt: offers.createdAt,
@@ -157,22 +189,64 @@ export async function listMine(userId: string) {
       subdomainName: creativeSubdomains.name,
       subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
+      revisionTitle: offerRevisions.title,
+      revisionDescription: offerRevisions.description,
+      revisionPriceMinCentavos: offerRevisions.priceMinCentavos,
+      revisionPriceMaxCentavos: offerRevisions.priceMaxCentavos,
+      revisionSubmittedAt: offerRevisions.submittedAt,
+      revisionSubdomainSlug: revisionSubdomains.slug,
+      revisionSubdomainName: revisionSubdomains.name,
+      revisionSubdomainSingularName: revisionSubdomains.singularName,
     })
     .from(offers)
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
+    .leftJoin(offerRevisions, eq(offerRevisions.offerId, offers.id))
+    .leftJoin(revisionSubdomains, eq(offerRevisions.subdomainId, revisionSubdomains.id))
     .where(eq(offers.profileId, profile.id))
     .orderBy(asc(offers.sortOrder), asc(offers.createdAt));
 
-  const imageMap = await imagesForOffers(rows.map((row) => row.id));
-  return rows.map((row) => ({
-    ...row,
-    flaggedAt: row.flaggedAt?.toISOString() ?? null,
-    reviewedAt: row.reviewedAt?.toISOString() ?? null,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    images: imageMap.get(row.id) ?? [],
-  }));
+  const imageMap = await imagesForOffers(rows.map((row) => row.id), { audience: 'owner' });
+  return rows.map((row) => {
+    const images = imageMap.get(row.id) ?? [];
+    const hasRevision = row.revisionTitle !== null;
+    const imagesPending = images.some((image) => image.state !== 'live');
+    return {
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      priceMinCentavos: row.priceMinCentavos,
+      priceMaxCentavos: row.priceMaxCentavos,
+      sortOrder: row.sortOrder,
+      subdomainSlug: row.subdomainSlug,
+      subdomainName: row.subdomainName,
+      subdomainSingularName: row.subdomainSingularName,
+      domainName: row.domainName,
+      status: row.status,
+      rejectionReason: row.rejectionReason,
+      revisionRejectionReason: row.revisionRejectionReason,
+      // A change to a published offer that is waiting for review — text, photos
+      // or both. Null when there is none.
+      pendingChanges:
+        hasRevision || imagesPending
+          ? {
+              title: row.revisionTitle ?? row.title,
+              description: hasRevision ? row.revisionDescription : row.description,
+              priceMinCentavos: hasRevision ? row.revisionPriceMinCentavos : row.priceMinCentavos,
+              priceMaxCentavos: hasRevision ? row.revisionPriceMaxCentavos : row.priceMaxCentavos,
+              subdomainSlug: row.revisionSubdomainSlug ?? row.subdomainSlug,
+              subdomainName: row.revisionSubdomainName ?? row.subdomainName,
+              subdomainSingularName: row.revisionSubdomainSingularName ?? row.subdomainSingularName,
+              submittedAt: row.revisionSubmittedAt?.toISOString() ?? null,
+            }
+          : null,
+      flaggedAt: row.flaggedAt?.toISOString() ?? null,
+      reviewedAt: row.reviewedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      images,
+    };
+  });
 }
 
 export async function createOffer(userId: string, input: OfferBody) {
@@ -194,7 +268,8 @@ export async function createOffer(userId: string, input: OfferBody) {
       .select({ maxOrder: max(offers.sortOrder) })
       .from(offers)
       .where(eq(offers.profileId, profile.id));
-    const now = new Date();
+    // Waits for review before anyone else sees it (ADR 0058): status defaults
+    // to pending_review.
     const [created] = await tx
       .insert(offers)
       .values({
@@ -205,85 +280,105 @@ export async function createOffer(userId: string, input: OfferBody) {
         priceMinCentavos: input.priceMinCentavos ?? null,
         priceMaxCentavos: input.priceMaxCentavos ?? null,
         sortOrder: (peak?.maxOrder ?? -1) + 1,
-        flaggedAt: detectContactDetails(input.description) ? now : null,
+        flaggedAt: detectContactDetails(input.description) ? new Date() : null,
       })
       .returning({ id: offers.id });
-
-    if (profile.status === 'published') {
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
     return created!.id;
   });
 
   return (await listMine(userId)).find((offer) => offer.id === id)!;
 }
 
-export async function updateOffer(userId: string, offerId: string, input: PatchOfferBody) {
-  const profile = await requireOwnProfile(userId);
+async function ownOffer(profileId: string, offerId: string) {
   const [current] = await db
     .select()
     .from(offers)
-    .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)))
+    .where(and(eq(offers.id, offerId), eq(offers.profileId, profileId)))
     .limit(1);
   if (!current) throw AppError.notFound('No such offer.');
+  return current;
+}
 
-  let subdomainId = current.subdomainId;
+/**
+ * An edit, by where the offer stands (ADR 0058):
+ *
+ * - **Not yet published** (waiting, or rejected): the offer is hidden anyway,
+ *   so the edit applies to it directly. A rejected offer goes back to review.
+ * - **Published**: the public keeps seeing the approved version. The edit is
+ *   kept beside it in `offer_revisions` until an administrator approves it
+ *   (and it replaces the published one) or rejects it (and it is dropped).
+ *   An edit that brings everything back to the published version withdraws
+ *   the change.
+ */
+export async function updateOffer(userId: string, offerId: string, input: PatchOfferBody) {
+  const profile = await requireOwnProfile(userId);
+  const current = await ownOffer(profile.id, offerId);
+  const [revision] = current.status === 'published'
+    ? await db.select().from(offerRevisions).where(eq(offerRevisions.offerId, offerId)).limit(1)
+    : [];
+
+  // An edit builds on the change already waiting, if there is one.
+  const base = revision ?? current;
+  let subdomainId = base.subdomainId;
   if (input.subdomainSlug !== undefined) {
     subdomainId = (await assertRegisteredSubdomain(profile.id, input.subdomainSlug, current.subdomainId)).id;
   }
-
-  const title = input.title !== undefined ? input.title : current.title;
-  const description = input.description !== undefined ? input.description ?? null : current.description;
-  const priceMinCentavos = input.priceMinCentavos !== undefined
-    ? input.priceMinCentavos
-    : current.priceMinCentavos;
-  const priceMaxCentavos = input.priceMaxCentavos !== undefined
-    ? input.priceMaxCentavos
-    : current.priceMaxCentavos;
+  const next = {
+    subdomainId,
+    title: input.title !== undefined ? input.title : base.title,
+    description: input.description !== undefined ? input.description ?? null : base.description,
+    priceMinCentavos: input.priceMinCentavos !== undefined ? input.priceMinCentavos : base.priceMinCentavos,
+    priceMaxCentavos: input.priceMaxCentavos !== undefined ? input.priceMaxCentavos : base.priceMaxCentavos,
+  };
   if (
-    priceMinCentavos != null
-    && priceMaxCentavos != null
-    && priceMinCentavos > priceMaxCentavos
+    next.priceMinCentavos != null
+    && next.priceMaxCentavos != null
+    && next.priceMinCentavos > next.priceMaxCentavos
   ) {
     throw AppError.badRequest('Maximum must be at least the minimum', {
       field: 'priceMaxCentavos',
     });
   }
+  const now = new Date();
+  const flaggedAt = detectContactDetails(next.description) ? now : null;
 
-  // Subdomain-only edits stay reviewed; title / description / price re-enter the queue.
-  const contentChanged =
-    title !== current.title
-    || description !== current.description
-    || priceMinCentavos !== current.priceMinCentavos
-    || priceMaxCentavos !== current.priceMaxCentavos;
-
-  await db.transaction(async (tx) => {
-    const now = new Date();
-    const [updated] = await tx
+  if (current.status !== 'published') {
+    await db
       .update(offers)
       .set({
-        title,
-        subdomainId,
-        description,
-        priceMinCentavos,
-        priceMaxCentavos,
-        flaggedAt: detectContactDetails(description) ? now : null,
-        reviewedAt: contentChanged ? null : current.reviewedAt,
+        ...next,
+        flaggedAt,
+        ...(current.status === 'rejected' ? { status: 'pending_review' as const, rejectionReason: null } : {}),
         updatedAt: now,
       })
-      .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)))
-      .returning({ id: offers.id });
-    if (!updated) throw AppError.notFound('No such offer.');
+      .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)));
+    return (await listMine(userId)).find((offer) => offer.id === offerId)!;
+  }
 
-    if (profile.status === 'published') {
+  const sameAsPublished =
+    next.subdomainId === current.subdomainId
+    && next.title === current.title
+    && next.description === current.description
+    && next.priceMinCentavos === current.priceMinCentavos
+    && next.priceMaxCentavos === current.priceMaxCentavos;
+
+  await db.transaction(async (tx) => {
+    if (sameAsPublished) {
+      await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offerId));
+    } else {
       await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
+        .insert(offerRevisions)
+        .values({ offerId, ...next, flaggedAt, submittedAt: now })
+        .onConflictDoUpdate({
+          target: offerRevisions.offerId,
+          set: { ...next, flaggedAt, submittedAt: now },
+        });
     }
+    // A new change supersedes the reason the last one was declined.
+    await tx
+      .update(offers)
+      .set({ revisionRejectionReason: null, updatedAt: now })
+      .where(eq(offers.id, offerId));
   });
 
   return (await listMine(userId)).find((offer) => offer.id === offerId)!;
@@ -298,23 +393,14 @@ export async function deleteOffer(userId: string, offerId: string) {
     .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)));
   if (rows.length === 0) throw AppError.notFound('No such offer.');
 
-  await db.transaction(async (tx) => {
-    const [deleted] = await tx
-      .delete(offers)
-      .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)))
-      .returning({ id: offers.id });
-    if (!deleted) throw AppError.notFound('No such offer.');
-    if (profile.status === 'published') {
-      const now = new Date();
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
-  });
+  const [deleted] = await db
+    .delete(offers)
+    .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)))
+    .returning({ id: offers.id });
+  if (!deleted) throw AppError.notFound('No such offer.');
 
   // Only once the rows are certainly gone. Deleting objects first leaves rows
-  // pointing at nothing if the transaction fails, and a broken image cannot be
+  // pointing at nothing if the delete fails, and a broken image cannot be
   // recovered — whereas an object with no row is just an orphan the prune
   // script collects.
   await Promise.all(rows.flatMap((row) => row.objectKey
@@ -324,6 +410,7 @@ export async function deleteOffer(userId: string, offerId: string) {
   return { ok: true as const };
 }
 
+/** Order is the creative's to set, and changes no content: it applies at once. */
 export async function reorderOffers(userId: string, ids: string[]) {
   const profile = await requireOwnProfile(userId);
   const existing = await db
@@ -342,29 +429,23 @@ export async function reorderOffers(userId: string, ids: string[]) {
         .set({ sortOrder, updatedAt: new Date() })
         .where(and(eq(offers.id, id), eq(offers.profileId, profile.id)));
     }
-    if (profile.status === 'published') {
-      const now = new Date();
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
   });
   return listMine(userId);
 }
 
+/**
+ * A photo added to a published offer waits as `pending_add` until the change
+ * is reviewed; added to one that is not yet published, it is simply part of
+ * it. A rejected offer goes back to review either way. The limit counts every
+ * photo the offer would have once the change is approved.
+ */
 export async function addOfferImage(
   userId: string,
   offerId: string,
   input: { objectKey: string; thumbKey: string },
 ) {
   const profile = await requireOwnProfile(userId);
-  const [owned] = await db
-    .select({ id: offers.id })
-    .from(offers)
-    .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)))
-    .limit(1);
-  if (!owned) throw AppError.notFound('No such offer.');
+  const current = await ownOffer(profile.id, offerId);
 
   assertOwnOfferKey(profile.id, input.objectKey);
   assertOwnOfferKey(profile.id, input.thumbKey);
@@ -374,7 +455,7 @@ export async function addOfferImage(
     const [tally] = await tx
       .select({ total: count() })
       .from(offerImages)
-      .where(eq(offerImages.offerId, offerId));
+      .where(and(eq(offerImages.offerId, offerId), ne(offerImages.state, 'pending_remove')));
     if ((tally?.total ?? 0) >= OFFER_IMAGE_LIMIT) {
       throw AppError.badRequest(`An offer can have at most ${OFFER_IMAGE_LIMIT} images`);
     }
@@ -389,27 +470,40 @@ export async function addOfferImage(
         objectKey: input.objectKey,
         thumbKey: input.thumbKey,
         sortOrder: (peak?.maxOrder ?? -1) + 1,
+        state: current.status === 'published' ? 'pending_add' : 'live',
       })
       .returning();
-    if (profile.status === 'published') {
-      const now = new Date();
-      await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
-    }
+    await tx
+      .update(offers)
+      .set(
+        current.status === 'published'
+          ? { revisionRejectionReason: null, updatedAt: new Date() }
+          : current.status === 'rejected'
+            ? { status: 'pending_review', rejectionReason: null, updatedAt: new Date() }
+            : { updatedAt: new Date() },
+      )
+      .where(eq(offers.id, offerId));
     return created!;
   });
   return imagePublic(row);
 }
 
+/**
+ * Removing a photo. From a published offer, an approved photo stays public as
+ * `pending_remove` until the change is reviewed; a photo that was itself only
+ * waiting is withdrawn at once. From an offer not yet published it simply
+ * goes.
+ */
 export async function deleteOfferImage(userId: string, imageId: string) {
   const profile = await requireOwnProfile(userId);
   const [row] = await db
     .select({
       id: offerImages.id,
+      offerId: offerImages.offerId,
       objectKey: offerImages.objectKey,
       thumbKey: offerImages.thumbKey,
+      state: offerImages.state,
+      offerStatus: offers.status,
     })
     .from(offerImages)
     .innerJoin(offers, eq(offerImages.offerId, offers.id))
@@ -417,14 +511,26 @@ export async function deleteOfferImage(userId: string, imageId: string) {
     .limit(1);
   if (!row) throw AppError.notFound('No such offer image.');
 
+  if (row.offerStatus === 'published' && row.state !== 'pending_add') {
+    if (row.state === 'live') {
+      await db.transaction(async (tx) => {
+        await tx.update(offerImages).set({ state: 'pending_remove' }).where(eq(offerImages.id, row.id));
+        await tx
+          .update(offers)
+          .set({ revisionRejectionReason: null, updatedAt: new Date() })
+          .where(eq(offers.id, row.offerId));
+      });
+    }
+    return { ok: true as const };
+  }
+
   await db.transaction(async (tx) => {
     await tx.delete(offerImages).where(eq(offerImages.id, row.id));
-    if (profile.status === 'published') {
-      const now = new Date();
+    if (row.offerStatus === 'rejected') {
       await tx
-        .update(creativeProfiles)
-        .set({ editedSinceReviewAt: now, updatedAt: now })
-        .where(eq(creativeProfiles.id, profile.id));
+        .update(offers)
+        .set({ status: 'pending_review', rejectionReason: null, updatedAt: new Date() })
+        .where(eq(offers.id, row.offerId));
     }
   });
 
@@ -438,8 +544,13 @@ export async function listPublishedOffers(
   options: ListOffersQuery & { viewerMunicipalityId?: string | null },
 ): Promise<PublishedOfferListResult> {
   const offset = (options.page - 1) * options.limit;
-  // Offers leave the directory with a suspended account — see profiles.service.
-  const filters = [eq(creativeProfiles.status, 'published'), eq(users.status, 'active')];
+  // Offers leave the directory with a suspended account — see profiles.service
+  // — and only an approved offer is on it at all (ADR 0058).
+  const filters = [
+    eq(offers.status, 'published'),
+    eq(creativeProfiles.status, 'published'),
+    eq(users.status, 'active'),
+  ];
   if (options.domain) filters.push(eq(creativeDomains.slug, options.domain));
   if (options.subdomain) filters.push(eq(creativeSubdomains.slug, options.subdomain));
   if (options.municipality) filters.push(eq(municipalities.slug, options.municipality));
@@ -516,7 +627,7 @@ export async function listPublishedOffers(
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .where(where);
-  const imageMap = await imagesForOffers(rows.map((row) => row.id), true);
+  const imageMap = await imagesForOffers(rows.map((row) => row.id), { firstOnly: true });
 
   return {
     data: rows.map((row) => ({
@@ -532,7 +643,10 @@ export async function listPublishedOffers(
         singularName: row.subdomainSingularName,
         domain: row.domainName,
       },
-      image: imageMap.get(row.id)?.[0] ?? null,
+      image: (() => {
+        const first = imageMap.get(row.id)?.[0];
+        return first ? withoutState(first) : null;
+      })(),
       creative: {
         slug: row.creativeSlug,
         displayName: row.creativeDisplayName,
@@ -579,6 +693,7 @@ export async function getPublishedOfferById(
     .where(
       and(
         eq(offers.id, offerId),
+        eq(offers.status, 'published'),
         eq(creativeProfiles.status, 'published'),
         eq(users.status, 'active'),
       ),
@@ -608,7 +723,7 @@ export async function getPublishedOfferById(
       singularName: row.subdomainSingularName,
       domain: row.domainName,
     },
-    images: imageMap.get(row.id) ?? [],
+    images: (imageMap.get(row.id) ?? []).map(withoutState),
     creative: {
       slug: row.creativeSlug,
       displayName: row.creativeDisplayName,
