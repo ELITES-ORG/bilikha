@@ -30,7 +30,8 @@ import {
  * cold load, which is the right way round on metered data (constraint 3).
  *
  * A lazy route's strings are a section (`sections.ts`). Its translations are
- * held there, not here, and read at call time, so a page held by `withSection`
+ * held there, not here, and that state changes the moment a file arrives
+ * rather than waiting on the core catalogue, so a page held by `withSection`
  * renders its translation on its first render. This provider starts those
  * fetches and re-renders when one lands.
  *
