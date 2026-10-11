@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { Locale } from '@/lib/locale';
-import { en, type Catalog, type MessageKey } from './catalogs/en';
+import type { Catalog, MessageKey } from './catalogs/en';
+import { englishFor } from './sections';
 
 /**
  * Split from the provider so that file exports only components, which is what
@@ -20,7 +21,8 @@ export interface ResolvedMessage {
 }
 
 /**
- * Resolve a key against a catalogue, falling back to English.
+ * Resolve a key against a catalogue, falling back to English — the core
+ * catalogue's or a registered section's (`sections.ts`).
  *
  * An empty string falls back too, not just a missing key: an untranslated
  * entry is committed as `''` (ADR 0055), and rendering nothing would turn a
@@ -28,7 +30,7 @@ export interface ResolvedMessage {
  */
 export function translate(catalog: Catalog, key: MessageKey): string {
   const value = catalog[key];
-  return value !== undefined && value !== '' ? value : en[key];
+  return value !== undefined && value !== '' ? value : englishFor(key);
 }
 
 /** Resolve both the copy and the language it is actually written in. */
@@ -40,7 +42,7 @@ export function resolveMessage(
   const value = catalog[key];
   return value !== undefined && value !== ''
     ? { text: value, lang: locale }
-    : { text: en[key], lang: 'en' };
+    : { text: englishFor(key), lang: 'en' };
 }
 
 /**
@@ -52,8 +54,8 @@ export function resolveMessage(
 export const I18nContext = createContext<I18nApi>({
   locale: 'en',
   choose: () => {},
-  t: (key) => en[key],
-  message: (key) => ({ text: en[key], lang: 'en' }),
+  t: englishFor,
+  message: (key) => ({ text: englishFor(key), lang: 'en' }),
 });
 
 export function useI18n(): I18nApi {

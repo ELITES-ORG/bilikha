@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { transitionTo } from '@/components/page-transition/transition-to';
 import { Container } from '@/components/ui';
 import type { MessageKey } from '@/i18n/catalogs/en';
+// Registers the legal strings. They load with these pages, not on every first
+// visit, and are in place before either page renders (ADR 0055).
+import '@/i18n/catalogs/legal';
 import { useI18n } from '@/i18n/i18n-context';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { LEGAL_CONTACT, LEGAL_LAST_UPDATED } from '@/lib/legal';
