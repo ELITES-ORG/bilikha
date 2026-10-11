@@ -173,3 +173,25 @@ export interface AdminMediaListResult {
   data: AdminMediaRow[];
   total: number;
 }
+
+/** What waits in the content queue, counted by where the admin area shows it. */
+export interface ContentQueueCounts {
+  newOffers: number;
+  changedOffers: number;
+  /** New profile photos, shown under People. */
+  photos: number;
+  /** New organisation logos, shown under Organisations. */
+  logos: number;
+}
+
+/**
+ * Everything waiting for an administrator's decision, by subject (ADR 0059):
+ * one number per sidebar section, split the way each section's tabs are.
+ */
+export interface AdminSummary {
+  creatives: { pending: number; edited: number };
+  offers: { new: number; changes: number };
+  organizations: { pending: number; edited: number; logos: number };
+  people: { photos: number };
+  reports: { open: number };
+}

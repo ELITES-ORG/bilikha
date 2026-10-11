@@ -352,6 +352,15 @@ export async function reportRating(input: {
   return { id: report!.id, status: report!.status };
 }
 
+/** Reports no administrator has answered yet. */
+export async function openReportCount(): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(ratingReports)
+    .where(eq(ratingReports.status, 'open'));
+  return row?.total ?? 0;
+}
+
 export async function adminListOpenReports(options: { page: number; limit: number }) {
   const offset = (options.page - 1) * options.limit;
   // Both parties come from `users`, so the rater needs its own alias.

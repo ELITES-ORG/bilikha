@@ -21,6 +21,7 @@ import {
   statusCounts,
 } from './admin.service.js';
 import { listContentQueue, reviewContent } from './content-review.service.js';
+import { adminSummary } from './summary.service.js';
 import type { AdminQueueMeta } from '../../contracts/admin.js';
 import type { ListMeta } from '../../contracts/pagination.js';
 
@@ -62,10 +63,19 @@ adminRouter.get('/profiles/counts', async (_req, res) => {
   res.json({ data: await statusCounts() });
 });
 
+// The sidebar's counts: what waits for a decision under each subject (ADR 0059).
+adminRouter.get('/summary', async (_req, res) => {
+  res.json({ data: await adminSummary() });
+});
+
 adminRouter.get('/media', async (req, res) => {
   const page = z.coerce.number().int().positive().default(1).parse(req.query.page ?? 1);
   const limit = z.coerce.number().int().positive().max(50).default(20).parse(req.query.limit ?? 20);
-  const { data, total } = await listContentQueue({ page, limit });
+  // One subject's part of the queue: offers (new or changes), profile photos,
+  // or organisation logos. Neither given: everything, as before.
+  const kind = z.enum(['avatar', 'offer', 'logo']).optional().parse(req.query.kind);
+  const change = z.enum(['new', 'edit']).optional().parse(req.query.change);
+  const { data, total } = await listContentQueue({ page, limit, kind, change });
   const meta: ListMeta = { page, limit, total };
   res.json({ data, meta });
 });
