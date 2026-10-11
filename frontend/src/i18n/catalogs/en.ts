@@ -21,6 +21,7 @@ import type { LegalKey } from './legal/en';
 import type { OffersKey } from './offers/en';
 import type { OrganizationsKey } from './organizations/en';
 import type { VerificationKey } from './verification/en';
+import type { RegisterKey } from './register/en';
 
 export const en = {
   'signIn.eyebrow': 'Welcome back',
@@ -101,6 +102,12 @@ export const en = {
  * import above is type-only, so naming the legal keys here costs no bytes —
  * their strings stay in the legal pages' chunk.
  */
-export type MessageKey = keyof typeof en | LegalKey | OffersKey | OrganizationsKey | VerificationKey;
+export type MessageKey =
+  | keyof typeof en
+  | LegalKey
+  | OffersKey
+  | OrganizationsKey
+  | VerificationKey
+  | RegisterKey;
 
 export type Catalog = Readonly<Partial<Record<MessageKey, string>>>;

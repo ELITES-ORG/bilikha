@@ -148,7 +148,9 @@ const PostingComposePage = lazy(() =>
   import('@/pages/PostingComposePage').then((m) => ({ default: m.PostingComposePage })),
 );
 const RegisterPage = lazy(() =>
-  import('@/pages/RegisterPage').then((m) => ({ default: m.RegisterPage })),
+  import('@/pages/RegisterPage')
+    .then(withSection('register'))
+    .then((m) => ({ default: m.RegisterPage })),
 );
 const StyleGuidePage = lazy(() =>
   import('@/pages/StyleGuidePage').then((m) => ({ default: m.StyleGuidePage })),

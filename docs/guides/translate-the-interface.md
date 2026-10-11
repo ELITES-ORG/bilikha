@@ -36,6 +36,10 @@ frontend/src/i18n/catalogs/
     en.ts     English — the source
     fil.ts    Filipino
     war.ts    Waray
+  register/   The registration page
+    en.ts     English — the source
+    fil.ts    Filipino
+    war.ts    Waray
 ```
 
 The top-level files hold the screens every visitor loads. A page that loads
@@ -70,6 +74,16 @@ you are translating.
   better fallback than a wrong translation.
 - **Names stay as they are** — Bilikha, the municipality names, the nine
   statutory domain names.
+- **A sentence with a link in it is three keys.** The registration consent
+  lines are split as `…Before`, `…Link` and `…After`, and the page shows them
+  in that order. Put the link text wherever your sentence needs it: if the link
+  belongs at the end, put the whole lead-in in `…Before` and only the closing
+  punctuation in `…After`. Keep any space you need inside your own text — the
+  page adds none, so `…Before` usually ends with a space. Fill all three
+  together, because a sentence translated in one part and English in another
+  reads as a broken sentence. If your sentence needs the link at the very
+  start, ask a developer rather than leaving `…Before` blank: an empty value
+  means "not translated" and shows the English part instead.
 
 ## The privacy notice and the terms of use
 
@@ -129,9 +143,14 @@ English-only visitor nothing (constraint 3).
 
 ## What is not covered yet
 
-- **Most of the app.** Sign-in, the privacy notice, the terms of use and the
-  language control read from a catalogue so far. Everything else is still
-  English in the component.
+- **Most of the app.** Sign-in, registration, the privacy notice, the terms of
+  use and the language control read from a catalogue so far. Everything else
+  is still English in the component.
+- **Some registration text cannot carry its language yet.** Hints,
+  placeholders, error messages and the municipality and barangay labels are
+  plain-text props on `Input` and `Select`, so a translated hint is announced
+  with the page's English voice by a screen reader. Headings, field labels,
+  buttons and the consent sentences are marked correctly.
 - **The privacy notice and terms are wired up but must not be translated yet.**
   See *The privacy notice and the terms of use* above — two questions come
   first.
