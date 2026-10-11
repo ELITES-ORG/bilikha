@@ -25,6 +25,7 @@ import { OfferReviewNotice } from '@/features/offers/OfferReviewNotice';
 import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
 import { subdomainLabel } from '@/features/taxonomy/format';
+import { useT } from '@/i18n/i18n-context';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
@@ -101,6 +102,7 @@ function describe(error: unknown): string {
 
 export function OfferEditor() {
   const toast = useToast();
+  const t = useT();
   const profile = useOwnProfile();
   const domains = useCreativeDomains();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -245,7 +247,7 @@ export function OfferEditor() {
           }
         },
         {
-          success: () => (saved ? savedMessage(saved, creating) : 'Changes saved'),
+          success: () => t(saved ? savedMessage(saved, creating) : 'offers.saved.changes'),
           error: describe,
         },
       );

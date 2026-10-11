@@ -18,6 +18,7 @@
  * value. `catalogs.test.ts` fails if you forget.
  */
 import type { LegalKey } from './legal/en';
+import type { OffersKey } from './offers/en';
 import type { OrganizationsKey } from './organizations/en';
 import type { VerificationKey } from './verification/en';
 
@@ -100,6 +101,6 @@ export const en = {
  * import above is type-only, so naming the legal keys here costs no bytes —
  * their strings stay in the legal pages' chunk.
  */
-export type MessageKey = keyof typeof en | LegalKey | OrganizationsKey | VerificationKey;
+export type MessageKey = keyof typeof en | LegalKey | OffersKey | OrganizationsKey | VerificationKey;
 
 export type Catalog = Readonly<Partial<Record<MessageKey, string>>>;
