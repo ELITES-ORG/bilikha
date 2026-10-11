@@ -1,7 +1,7 @@
 import type { AdminMediaRow } from '@contracts/admin';
 
 export type KindFilter = 'all' | AdminMediaRow['kind'];
-/** `queue` is the server's own order: flagged offers first, then newest. */
+/** `queue` is the server's own order: flagged offers first, then the longest waiting. */
 export type SortOrder = 'queue' | 'newest' | 'oldest';
 
 export function countMedia(items: ReadonlyArray<AdminMediaRow>) {
@@ -15,7 +15,7 @@ export function countMedia(items: ReadonlyArray<AdminMediaRow>) {
 
 function matchesSearch(item: AdminMediaRow, query: string): boolean {
   if (!query) return true;
-  const haystack = [item.ownerName, item.title, item.caption, item.description]
+  const haystack = [item.ownerName, item.title, item.caption, item.description, item.subdomain]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();

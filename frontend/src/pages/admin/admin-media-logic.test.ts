@@ -26,6 +26,7 @@ const items = [
     ownerName: 'Bob Cruz',
     title: 'Wedding portraits',
     description: 'Warm documentary coverage',
+    subdomain: 'Event photography',
     createdAt: '2026-01-03T00:00:00.000Z',
     flaggedAt: '2026-01-04T00:00:00.000Z',
   }),
@@ -53,6 +54,9 @@ describe('media review filtering', () => {
     ]);
     expect(filterAndSortMedia(items, 'all', 'studio', 'queue').map((item) => item.id)).toEqual([
       'old-offer',
+    ]);
+    expect(filterAndSortMedia(items, 'all', 'event photo', 'queue').map((item) => item.id)).toEqual([
+      'new-offer',
     ]);
   });
 

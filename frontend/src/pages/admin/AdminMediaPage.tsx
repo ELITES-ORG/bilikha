@@ -10,9 +10,9 @@ import {
   Images,
   Inbox,
   Search,
-  Trash2,
   UserRound,
   Users,
+  X,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, toApiError } from '@/lib/api-client';
@@ -28,6 +28,7 @@ import {
   StatItem,
   TabPanels,
   Tabs,
+  Textarea,
 } from '@/components/ui';
 import {
   AdminFact,
@@ -51,6 +52,14 @@ const KIND_FILTERS: ReadonlyArray<KindFilter> = ['all', 'avatar', 'offer', 'logo
 type ListResponse = Paginated<AdminMediaRow>;
 
 const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Avatar', offer: 'Offer', logo: 'Logo' };
+
+/** What the card is: an offer is new, or a change to one already public. */
+function cardLabel(item: AdminMediaRow): string {
+  if (item.kind !== 'offer') return KIND_LABEL[item.kind];
+  return item.change === 'edit' ? 'Offer changes' : 'New offer';
+}
+
+type ReviewAction = 'approve' | 'reject';
 
 const SORT_OPTIONS: Array<{ value: SortOrder; label: string }> = [
   { value: 'queue', label: 'Flagged first' },
@@ -85,11 +94,13 @@ export function AdminMediaPage() {
     mutationFn: async (input: {
       kind: MediaKind;
       id: string;
-      action: 'approve' | 'remove';
+      action: ReviewAction;
+      reason?: string;
     }) => {
       try {
         await apiClient.post(`/admin/media/${input.kind}/${input.id}/review`, {
           action: input.action,
+          ...(input.reason ? { reason: input.reason } : {}),
         });
       } catch (error) {
         throw toApiError(error);
@@ -111,8 +122,8 @@ export function AdminMediaPage() {
     [items, kind, query, sort],
   );
 
-  function act(item: AdminMediaRow, action: 'approve' | 'remove') {
-    void review.mutateAsync({ kind: item.kind, id: item.id, action }).catch(() => undefined);
+  function act(item: AdminMediaRow, action: ReviewAction, reason?: string) {
+    void review.mutateAsync({ kind: item.kind, id: item.id, action, reason }).catch(() => undefined);
   }
 
   const filtering = kind !== 'all' || query.trim() !== '';
@@ -120,8 +131,8 @@ export function AdminMediaPage() {
   return (
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
-        title="Media review"
-        description="Avatars, offer photos and organisation logos are live as soon as they are uploaded. Approve one to clear it from the queue, or remove it to take it down."
+        title="Offers and photos"
+        description="New offers, changes to offers, new profile photos and organisation logos wait here, unseen by the public. Approve one to publish it. Reject it with a reason, which its owner is shown — a rejected change leaves what is already public as it was."
         aside={
           list.data &&
           total > 0 && (
@@ -151,7 +162,7 @@ export function AdminMediaPage() {
               <Input
                 type="search"
                 aria-label="Search media"
-                placeholder="Search by owner or offer"
+                placeholder="Search by owner, offer or sub-domain"
                 iconLeft={<Search className="size-4" />}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -207,7 +218,7 @@ export function AdminMediaPage() {
         {list.isError && (
           <EmptyState
             icon={<Inbox className="size-5" />}
-            title="Could not load the media queue"
+            title="Could not load the review queue"
             description={list.error.message}
             action={
               <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
@@ -221,7 +232,7 @@ export function AdminMediaPage() {
           <EmptyState
             icon={<CheckCircle2 className="size-5" />}
             title="Nothing to review"
-            description="New avatars, offers and organisation logos will appear here."
+            description="New offers, changes to offers, profile photos and organisation logos will appear here."
           />
         )}
 
@@ -267,7 +278,7 @@ export function AdminMediaPage() {
                     pendingAction={pendingAction}
                     disabled={review.isPending}
                     onApprove={() => act(item, 'approve')}
-                    onRemove={() => act(item, 'remove')}
+                    onReject={(reason) => act(item, 'reject', reason)}
                   />
                 );
               })}
@@ -309,7 +320,7 @@ function NoPreview({ text }: { text: string }) {
 }
 
 function MediaPreview({ item }: { item: AdminMediaRow }) {
-  const images = item.kind === 'offer' ? (item.images ?? []) : [];
+  const images = item.kind === 'offer' ? (item.images ?? []).filter((image) => image.state !== 'pending_remove') : [];
   const [cover, ...rest] = images;
   const alt = item.caption ?? item.title ?? `${KIND_LABEL[item.kind]} by ${item.ownerName}`;
 
@@ -372,21 +383,37 @@ function MediaPreview({ item }: { item: AdminMediaRow }) {
   );
 }
 
+/** For a change: what it does to the offer's photos, in a few words. */
+function photoChanges(item: AdminMediaRow): string | null {
+  const added = (item.images ?? []).filter((image) => image.state === 'pending_add').length;
+  const removed = (item.images ?? []).filter((image) => image.state === 'pending_remove').length;
+  const parts = [
+    added ? `${added} photo${added === 1 ? '' : 's'} added` : null,
+    removed ? `${removed} photo${removed === 1 ? '' : 's'} removed` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : null;
+}
+
 function MediaCard({
   item,
   pendingAction,
   disabled,
   onApprove,
-  onRemove,
+  onReject,
 }: {
   item: AdminMediaRow;
-  pendingAction: 'approve' | 'remove' | null;
+  pendingAction: ReviewAction | null;
   disabled: boolean;
   onApprove: () => void;
-  onRemove: () => void;
+  onReject: (reason: string) => void;
 }) {
   const isOffer = item.kind === 'offer';
   const hasPrice = item.priceMinCentavos != null || item.priceMaxCentavos != null || item.title;
+  // Rejecting opens a reason box in place: its owner is shown what is written.
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const published = item.published;
+  const photos = isOffer && item.change === 'edit' ? photoChanges(item) : null;
 
   return (
     <li className="group flex flex-col overflow-hidden rounded-md border border-hairline bg-surface transition-[border-color,box-shadow] duration-200 hover:border-hairline-strong hover:shadow-sm">
@@ -406,7 +433,7 @@ function MediaCard({
               )
             }
           >
-            {KIND_LABEL[item.kind]}
+            {cardLabel(item)}
           </Badge>
           {item.flaggedAt && (
             <AdminStatusBadge status="flagged" />
@@ -430,6 +457,33 @@ function MediaCard({
                 {item.description}
               </p>
             )}
+            {item.subdomain && <p className="mt-2 text-xs text-ink-subtle">{item.subdomain}</p>}
+            {photos && <p className="mt-2 text-sm font-medium text-warning-700">{photos}</p>}
+            {published && (
+              <div className="mt-3 rounded-sm border border-hairline bg-surface-sunken px-3 py-2">
+                <p className="text-xs font-semibold tracking-wide text-ink-subtle uppercase">Public now</p>
+                <p className="mt-1 text-sm break-words text-ink">{published.title}</p>
+                <p className="text-sm text-ink-muted" data-numeric>
+                  {formatPriceRange(published.priceMinCentavos, published.priceMaxCentavos)}
+                  {published.subdomain !== item.subdomain ? ` · ${published.subdomain}` : ''}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isOffer && item.currentUrl && (
+          <div className="mb-4 flex items-center gap-3">
+            <img
+              src={item.currentUrl}
+              alt=""
+              width={44}
+              height={44}
+              className="size-11 shrink-0 rounded-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+            <p className="text-sm text-ink-muted">Replaces the approved one, which stays if you reject this.</p>
           </div>
         )}
 
@@ -461,28 +515,62 @@ function MediaCard({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-hairline px-5 py-4">
-        <Button
-          size="md"
-          iconLeft={<Check className="size-4" aria-hidden="true" />}
-          loading={pendingAction === 'approve'}
-          disabled={disabled}
-          onClick={onApprove}
+      {rejecting ? (
+        <form
+          className="space-y-3 border-t border-hairline px-5 py-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (reason.trim()) onReject(reason.trim());
+          }}
         >
-          Approve
-        </Button>
-        <Button
-          size="md"
-          variant="ghost"
-          className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
-          iconLeft={<Trash2 className="size-4" aria-hidden="true" />}
-          loading={pendingAction === 'remove'}
-          disabled={disabled}
-          onClick={onRemove}
-        >
-          Remove
-        </Button>
-      </div>
+          <Textarea
+            id={`reject-reason-${item.kind}-${item.id}`}
+            label="Why it is not approved"
+            hint="Its owner sees this, so say what to change."
+            rows={3}
+            maxLength={500}
+            required
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+          <div className="flex items-center justify-between gap-3">
+            <Button type="button" variant="ghost" size="md" disabled={disabled} onClick={() => setRejecting(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="md"
+              variant="danger"
+              loading={pendingAction === 'reject'}
+              disabled={disabled || !reason.trim()}
+            >
+              Reject
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="flex items-center justify-between gap-3 border-t border-hairline px-5 py-4">
+          <Button
+            size="md"
+            iconLeft={<Check className="size-4" aria-hidden="true" />}
+            loading={pendingAction === 'approve'}
+            disabled={disabled}
+            onClick={onApprove}
+          >
+            Approve
+          </Button>
+          <Button
+            size="md"
+            variant="ghost"
+            className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
+            iconLeft={<X className="size-4" aria-hidden="true" />}
+            disabled={disabled}
+            onClick={() => setRejecting(true)}
+          >
+            Reject
+          </Button>
+        </div>
+      )}
     </li>
   );
 }
