@@ -169,21 +169,34 @@ English ships in the route's chunk. The legal pages are the first section
 - After registration a section's English is part of the fallback.
   `translate` and `resolveMessage` behave exactly as before: an empty or
   missing value falls back to English, marked `lang="en"`.
-- When a language other than English is chosen, the provider fetches that
-  language's file for every registered section, alongside the core catalogue.
-  It fetches a section that registers later, such as opening `/privacy` with
-  Waray already chosen, when it registers. Until the file arrives, the
-  section reads in English, the same one-frame cost §2 accepts.
+- When a language other than English is chosen, that language's file is
+  fetched for every registered section, including one that registers later,
+  such as opening `/privacy` with Waray already chosen. Section translations
+  are held in `sections.ts`, not the provider's state, and are read when a
+  string is asked for, so a translation is usable the moment its file arrives.
+- **The route waits for its translation.** The legal routes' `lazy()` imports
+  go through `withSection('legal')`, which holds the route behind its loading
+  state until the chosen language's file has arrived. A Waray reader sees the
+  page once, in Waray, never in English first and then changing language
+  under them. For a consent document that matters more than the wait, which is
+  one small file. English readers wait for nothing. If the file fails, or takes
+  longer than three seconds, the page renders in English, and the translation
+  replaces it if it arrives later.
 - `MessageKey` is still one type for every key. `en.ts` names the section's
   keys through a type-only import, which compiles to nothing.
 
 **The guard.** `catalogs.test.ts` checks key parity separately for each set,
 the core catalogue and each section. It also checks that no key appears in two
-sets, so every key has exactly one English.
+sets, so every key has exactly one English. A key read where its section is not
+loaded would render as itself ("privacy.title"), so
+`section-ownership.test.ts` names the one folder that loads each section and
+fails if a section's key is read anywhere else, or if that folder stops
+importing the section. `legal-pages.test.ts` renders both legal pages and
+fails if any key reaches the screen.
 
 **Rejected: an async `t()` that fetches a missing key on demand.** It turns
 every string into a loading state, and a page of legal text that fills in
-paragraph by paragraph is worse than one frame of English. **Rejected: one
+paragraph by paragraph is worse than one that arrives once, complete. **Rejected: one
 catalogue split automatically by the bundler.** Translators would lose the
 property that a screen's strings, in every language, sit in one visible place.
 
