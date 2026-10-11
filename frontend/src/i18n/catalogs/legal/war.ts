@@ -89,6 +89,8 @@ export const warLegal: Catalog = {
   'privacy.usage.reportsRest': '',
   'privacy.usage.sessionsLead': '',
   'privacy.usage.sessionsRest': '',
+  'privacy.usage.searchesLead': '',
+  'privacy.usage.searchesRest': '',
   'privacy.cookies.heading': '',
   'privacy.cookies.oneBefore': '',
   'privacy.cookies.oneAfter': '',

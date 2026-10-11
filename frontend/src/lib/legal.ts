@@ -31,7 +31,7 @@ export const LEGAL_CONTACT: string | null = null;
  * When these documents were last changed. Shown on both pages: a notice with no
  * date cannot be checked against what a person agreed to.
  */
-export const LEGAL_LAST_UPDATED = '11 October 2026';
+export const LEGAL_LAST_UPDATED = '12 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
@@ -42,5 +42,9 @@ export const LEGAL_LAST_UPDATED = '11 October 2026';
  * Sentry and the transfer of error reports to the United States: processing
  * that started after the earlier version, so an account registered before it
  * agreed to a notice without them, and its stored version says so.
+ *
+ * 2026-10-12: the notice began saying that searches which find nothing are
+ * counted by word and day (issue #24) — again processing that started after
+ * the earlier version.
  */
-export const CONSENT_VERSION = '2026-10-11';
+export const CONSENT_VERSION = '2026-10-12';

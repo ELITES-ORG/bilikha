@@ -116,7 +116,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0054](./0054-search.md) | Search the directory | Complete |
 | [0055](./0055-approve-before-public.md) | Offers and photos wait for approval before they are public | In progress |
 | [0056](./0056-admin-by-subject.md) | The admin area by subject | In progress |
-| [0057](./0057-search-by-everyday-words.md) | Search by everyday words | In progress |
+| [0057](./0057-search-by-everyday-words.md) | Search by everyday words | Complete |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.

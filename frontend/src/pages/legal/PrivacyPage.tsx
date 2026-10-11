@@ -127,6 +127,7 @@ export function PrivacyPage() {
             <Item key="privacy.usage.ratingsLead" lead="privacy.usage.ratingsLead" rest="privacy.usage.ratingsRest" />,
             <Item key="privacy.usage.reportsLead" lead="privacy.usage.reportsLead" rest="privacy.usage.reportsRest" />,
             <Item key="privacy.usage.sessionsLead" lead="privacy.usage.sessionsLead" rest="privacy.usage.sessionsRest" />,
+            <Item key="privacy.usage.searchesLead" lead="privacy.usage.searchesLead" rest="privacy.usage.searchesRest" />,
           ]}
         />
       </LegalSection>

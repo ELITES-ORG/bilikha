@@ -393,6 +393,42 @@ with no audit row is the failure this table exists to prevent.
 
 ---
 
+## `subdomain_aliases`
+
+Everyday words a sub-domain is also searched by (issue #24) — Waray, Cebuano,
+Tagalog, English, and the misspellings people type. Administrators add them in
+the admin area; nothing is seeded. An alias is never shown on a card.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `subdomain_id` | `uuid` FK → `creative_subdomains.id` | `ON DELETE CASCADE` — an alias means nothing without its sub-domain |
+| `term` | `text` | Folded: lowercase, accents removed, single spaces (`normalizeTerm`) |
+| `created_at` | `timestamptz` | |
+
+Indexes: `(subdomain_id, term)` unique — the same term may sit on two
+sub-domains, but not twice on one; `term`.
+
+---
+
+## `search_misses`
+
+Searches that found nothing, counted (issue #24). Deliberately a count, not a
+log: there is no user, session, address or time of day, so a row cannot be tied
+to whoever searched.
+
+| Column | Type | Notes |
+|---|---|---|
+| `term` | `text` | The search's words, lowercased and joined by a space |
+| `listing` | `text` | `offers` or `creatives` |
+| `day` | `date` | |
+| `count` | `integer` | Default 1; incremented by an upsert |
+
+Primary key `(term, listing, day)`; index on `day`. Rows older than 90 days are
+deleted each time a miss is counted.
+
+---
+
 ## `creative_profile_subdomains`
 
 Many-to-many, capped at five in application code, with at most one primary

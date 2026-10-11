@@ -18,7 +18,7 @@ export type { PublicUser } from '../../contracts/auth.js';
  *  either changes what they disclose. There is no re-consent flow: a bump
  *  changes only what new registrations record. Mirrors `CONSENT_VERSION` in
  *  `frontend/src/lib/legal.ts`. */
-export const CONSENT_VERSION = '2026-10-11';
+export const CONSENT_VERSION = '2026-10-12';
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);

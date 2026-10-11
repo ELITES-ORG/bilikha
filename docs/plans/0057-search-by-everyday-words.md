@@ -1,6 +1,6 @@
 # 0057. Search by everyday words
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** userMarcPaul
 - **Related:** [ADR 0003](../decisions/0003-postgres-native-search.md) (amended) ·
   [plan 0054](./0054-search.md) · [Extend the taxonomy](../guides/extend-the-taxonomy.md) ·
@@ -57,7 +57,7 @@ were.
 |---|---|---|
 | 1. Data and matching | 3 / 3 | Done |
 | 2. Admin | 2 / 2 | Done |
-| 3. Records | 0 / 2 | Not started |
+| 3. Records | 2 / 2 | Done |
 
 ---
 
@@ -108,25 +108,25 @@ were.
 
 ### Step 3.1 — Reference and guide
 
-- [ ] **Action.** `docs/reference/api.md`, `data-model.md`, the taxonomy guide,
+- [x] **Action.** `docs/reference/api.md`, `data-model.md`, the taxonomy guide,
   and the ADR 0003 amendment.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ### Step 3.2 — The privacy notice
 
-- [ ] **Action.** One sentence in `catalogs/legal/en.ts`, empty in `fil` and
+- [x] **Action.** One sentence in `catalogs/legal/en.ts`, empty in `fil` and
   `war`.
-- [ ] **Verify.** The pull request names it for reyxdz's review.
+- [x] **Verify.** The pull request names it for reyxdz's review.
 
 ---
 
 ## Acceptance
 
-- [ ] An alias added in the admin area is found by directory search for both
+- [x] An alias added in the admin area is found by directory search for both
       offers and creatives, by prefix, without accents and with a typo.
-- [ ] Searches that find nothing are counted by word and day, never by person,
+- [x] Searches that find nothing are counted by word and day, never by person,
       and administrators can see the most common.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
+- [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
       `npm run check:bundle` pass, budget unchanged.
 
 ## Follow-ups

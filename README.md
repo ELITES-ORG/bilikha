@@ -103,7 +103,9 @@ Live on production since 2026-10-03, with staging running ahead of it on
 - **Creative profiles.** Crafts from the nine-domain taxonomy (81 sub-domains),
   one of eight municipalities, a bio, an avatar and portfolio images
 - **Offers and the directory.** Creatives publish offers; the directory lists
-  offers and creatives, nearby first
+  offers and creatives, nearby first, and searches them by craft, name or town
+  — including everyday words for a craft that administrators add, in Waray,
+  Cebuano, Tagalog or English
 - **Client postings**, which creatives browse in the directory in creative mode
 - **Conversations**, sign-in only, with **work agreements** made in the thread
 - **Ratings**, earned by a completed agreement
@@ -117,7 +119,7 @@ Live on production since 2026-10-03, with staging running ahead of it on
   living style guide at `/styleguide`
 
 Not built: acting *as* an organisation (its own messages, offers and
-agreements), organisation logos, free-text search, and web push
+agreements), organisation logos, searching client postings, and web push
 ([plan 0018](./docs/plans/0018-web-push.md), deferred).
 
 **Shared links get their own preview card.** A shared profile or offer shows

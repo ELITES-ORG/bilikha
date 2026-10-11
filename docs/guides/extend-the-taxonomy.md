@@ -115,19 +115,26 @@ A woodcarver in Culaba does not know she is *Traditional and Cultural
 Expressions → Artisans of Indigenous Crafts*. She searches `nagkukulit`,
 `woodcarver`, or `kahoy`.
 
-Registration and directory search will therefore need an **alias table**
-mapping everyday terms to sub-domain slugs, covering Waray, Cebuano, Tagalog,
-and English.
+So a sub-domain carries **aliases**: everyday words, in Waray, Cebuano, Tagalog
+or English, that directory search also finds it by
+([issue #24](https://github.com/ELITES-ORG/bilikha/issues/24), plan 0057).
 
-Not yet built — [issue #24](https://github.com/ELITES-ORG/bilikha/issues/24),
-blocked on search existing at all. When it is, conventions to hold to:
+**To add one:** Admin → Taxonomy, open the domain, press **Words** on the craft,
+type the word and **Add**. It takes effect on the next search, with no deploy.
 
-- Aliases are many-to-one — several terms point at one sub-domain
-- Store them lowercase and unaccented; normalise the query the same way
-- Include misspellings people actually type, not only correct forms
-- **Log every unmatched query.** That log is the roadmap for alias coverage, and
-  a repeated unmatched term is the only honest evidence that the taxonomy itself
-  is missing something
+- Several words may point at one sub-domain, and one word at two ("kahoy" for a
+  carver and a furniture maker).
+- Accents and capitals do not matter: a word is stored folded, and searches are
+  folded the same way. One spelling is enough; search allows a typo on top.
+- Add the misspellings people actually type, not only the correct form.
+- Write them as a speaker would, never from a translation tool — the same rule
+  as the interface copy (ADR 0055).
+
+**Where the missing words show up:** below the domains, **Searches that found
+nothing** lists the most common searches of the last 30 days that matched
+nothing, with counts and nothing about who searched. A word that keeps coming
+back is a missing alias — and, rarely, the honest evidence that the taxonomy
+itself is missing something.
 
 An alias is not a sub-domain. Adding `videographer` as an alias of *Filmmakers*
 is right; adding it as a 10th sub-domain of Audiovisual Media is wrong and
