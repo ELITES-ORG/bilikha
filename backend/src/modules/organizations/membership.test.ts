@@ -11,6 +11,7 @@ import {
 import { makeAdmin, makeCreative, makeUser } from '../../test/factories.js';
 import { moderateOrganization } from '../admin/organization-review.service.js';
 import {
+  DECLINE_PAUSE_DAYS,
   acceptInvitation,
   declineInvitation,
   handOver,
@@ -214,7 +215,7 @@ describe('answering an invitation', () => {
     });
   });
 
-  it('declining adds nobody, and a fresh invitation can follow', async () => {
+  it(`declining adds nobody, and a fresh invitation can follow after ${DECLINE_PAUSE_DAYS} days`, async () => {
     const { founder, slug, id } = await team();
     const invitee = await makeCreative();
     const data = { username: invitee.user.username, role: 'member' as const };
@@ -223,7 +224,34 @@ describe('answering an invitation', () => {
     await declineInvitation({ userId: invitee.user.id, invitationId });
 
     expect(await memberRole(id, invitee.user.id)).toBeNull();
+    // Not straight away: a decline is an answer, and asking again re-notifies.
+    await expect(invite({ inviterId: founder.user.id, slug, data })).rejects.toMatchObject({
+      status: 409,
+      message: expect.stringContaining('declined'),
+    });
+
+    const longAgo = new Date(Date.now() - (DECLINE_PAUSE_DAYS + 1) * 24 * 60 * 60 * 1000);
+    await db
+      .update(organizationInvitations)
+      .set({ declinedAt: longAgo })
+      .where(eq(organizationInvitations.id, invitationId));
     await invite({ inviterId: founder.user.id, slug, data });
+  });
+
+  it('pauses only the organisation that was declined', async () => {
+    const declined = await team();
+    const other = await team();
+    const invitee = await makeCreative();
+    const data = { username: invitee.user.username, role: 'member' as const };
+
+    const { id: invitationId } = await invite({
+      inviterId: declined.founder.user.id,
+      slug: declined.slug,
+      data,
+    });
+    await declineInvitation({ userId: invitee.user.id, invitationId });
+
+    await invite({ inviterId: other.founder.user.id, slug: other.slug, data });
   });
 
   it(`refuses to let someone join a ${ORGANIZATION_CAP + 1}th organisation`, async () => {

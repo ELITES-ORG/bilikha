@@ -1,7 +1,8 @@
-import { and, asc, count, eq, gt, isNull, ne } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import type { MyOrganizationInvitation } from '../../contracts/organizations.js';
 import { db } from '../../db/index.js';
 import {
+  creativeProfiles,
   organizationInvitations,
   organizationMembers,
   organizations,
@@ -41,6 +42,10 @@ import { brokenUniqueIndex } from './unique-violation.js';
 
 /** Invitations last a week and expire on their own (answered 2026-10-09). */
 export const INVITATION_DAYS = 7;
+
+/** After a decline, the same organisation waits this long to ask that person again. */
+export const DECLINE_PAUSE_DAYS = 30;
+const DECLINE_PAUSE_MS = DECLINE_PAUSE_DAYS * 24 * 60 * 60 * 1000;
 
 function inAWeek(): Date {
   return new Date(Date.now() + INVITATION_DAYS * 24 * 60 * 60 * 1000);
@@ -96,9 +101,15 @@ export async function invite(input: {
     throw AppError.forbidden('This organisation has been suspended.');
   }
 
+  // The account and whether its profile is published, in one query whatever
+  // the answer: how long a refusal takes must not say which refusal it is.
   const [invitee] = await db
-    .select({ id: users.id, status: users.status })
+    .select({ id: users.id, status: users.status, publishedProfileId: creativeProfiles.id })
     .from(users)
+    .leftJoin(
+      creativeProfiles,
+      and(eq(creativeProfiles.userId, users.id), eq(creativeProfiles.status, 'published')),
+    )
     .where(eq(users.usernameNormalized, normalizeUsername(input.data.username)))
     .limit(1);
 
@@ -109,13 +120,35 @@ export async function invite(input: {
   const notInvitable = AppError.notFound(
     `No creative with the username "${input.data.username}". Only creatives with a published profile can be invited.`,
   );
-  if (!invitee || invitee.status !== 'active') throw notInvitable;
-  if (invitee.id === input.inviterId) {
+  if (invitee?.id === input.inviterId) {
     throw AppError.badRequest('You are already in this organisation.');
   }
-  if (!(await publishedProfileOf(invitee.id))) throw notInvitable;
+  if (!invitee || invitee.status !== 'active' || !invitee.publishedProfileId) throw notInvitable;
   if (await roleIn(organization.id, invitee.id)) {
     throw AppError.conflict('That person is already in this organisation.');
+  }
+
+  // A decline is an answer. Without a pause, the next invitation — and its
+  // notification — could follow within the second, as often as the rate limit
+  // allows. The team is told when they may ask again; the invitee's no is
+  // theirs to know about, since it was their invitation.
+  const [declined] = await db
+    .select({ declinedAt: organizationInvitations.declinedAt })
+    .from(organizationInvitations)
+    .where(
+      and(
+        eq(organizationInvitations.organizationId, organization.id),
+        eq(organizationInvitations.invitedUserId, invitee.id),
+        gt(organizationInvitations.declinedAt, new Date(Date.now() - DECLINE_PAUSE_MS)),
+      ),
+    )
+    .orderBy(desc(organizationInvitations.declinedAt))
+    .limit(1);
+  if (declined?.declinedAt) {
+    const again = new Date(declined.declinedAt.getTime() + DECLINE_PAUSE_MS);
+    throw AppError.conflict(
+      `They declined an invitation from this organisation recently. You can invite them again from ${again.toISOString().slice(0, 10)}.`,
+    );
   }
 
   const [pending] = await db

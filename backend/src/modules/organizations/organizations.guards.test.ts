@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import {
@@ -339,6 +339,31 @@ describe('a closed organisation keeps its slug', () => {
     ]);
 
     expect(founding.slug).not.toBe(closed.slug);
+  });
+});
+
+describe('inviting someone who cannot be invited', () => {
+  it('does the same database work for every account it will not confirm', async () => {
+    const founder = await makeCreative();
+    const org = await found(founder.user.id);
+    const suspended = await makeCreative();
+    await suspend(suspended.user.id);
+    const unpublished = await makeCreative({ profile: { status: 'pending_review' } });
+
+    // Timing follows the work done, so equal work is what keeps a suspended
+    // account and an unpublished one from being told apart by how long the
+    // same 404 takes.
+    const queries: number[] = [];
+    for (const username of ['zz_nobody_by_this_name', suspended.user.username, unpublished.user.username]) {
+      const spy = vi.spyOn(db, 'select');
+      await expect(
+        invite({ inviterId: founder.user.id, slug: org.slug, data: { username, role: 'member' } }),
+      ).rejects.toMatchObject({ status: 404 });
+      queries.push(spy.mock.calls.length);
+      spy.mockRestore();
+    }
+
+    expect(new Set(queries).size).toBe(1);
   });
 });
 
