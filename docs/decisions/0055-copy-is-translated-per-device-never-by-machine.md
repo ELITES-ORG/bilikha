@@ -1,12 +1,13 @@
 # 0055. Language is a per-device choice, catalogues load on demand, and no string ships machine-translated
 
-- **Status:** Accepted
+- **Status:** Accepted, amended 2026-10-11 — a lazy route's English loads with the route
 - **Date:** 2026-10-08
 - **Related:** [0026](./0026-dark-mode-follows-the-device.md) ·
   [0010](./0010-theme-static-tokens.md) ·
   [0031](./0031-testing-strategy.md) ·
   [operating constraints §3, §5, §7](../explanation/constraints.md) ·
-  [issue #26](https://github.com/ELITES-ORG/bilikha/issues/26)
+  [issue #26](https://github.com/ELITES-ORG/bilikha/issues/26) ·
+  [issue #74](https://github.com/ELITES-ORG/bilikha/issues/74)
 
 ## Context
 
@@ -52,6 +53,9 @@ extra and the first-load budget does not move.
 The cost is a frame of English before a chosen catalogue arrives on a cold
 load. Accepted: it is one frame, against making everyone pay for languages they
 do not read.
+
+*Amended 2026-10-11 (below): English is bundled for screens in the first-load
+bundle only. A lazy route's English loads with the route.*
 
 ### 3. No translation library
 
@@ -139,3 +143,50 @@ mistaken for an oversight.
 control in the account hub, and `<html lang>` kept in step. The expensive part
 is not the code; it is finding the speakers, which is why the words are
 deliberately not in this change.
+
+## Amendment — 2026-10-11: a lazy route's English loads with the route
+
+§2 assumed English costs nothing to bundle because it moves bytes out of
+components. That holds for a screen in the first-load bundle and stops holding
+for a lazy route. When the privacy notice and the terms moved into `en.ts`,
+about 130 strings that used to load only with `/privacy` and `/terms` started
+loading on every first visit, and first-load JavaScript rose from about 173 kB
+to 177.5 kB gzip ([issue #74](https://github.com/ELITES-ORG/bilikha/issues/74)).
+Nobody pays that once and moves on: constraint 3 applies to every first visit.
+
+**The rule now.** `catalogs/en.ts` holds the English for screens in the
+first-load bundle. A lazy route's English is a **section**: its own folder under
+`catalogs/`, with `en.ts`, `fil.ts` and `war.ts` beside each other, and an
+`index.ts` that registers it. The route imports that `index.ts`, so the
+English ships in the route's chunk. The legal pages are the first section
+(`catalogs/legal/`, imported by `pages/legal/LegalLayout.tsx`).
+
+**How it loads.**
+
+- Registration happens at module scope, when the route's chunk is evaluated and
+  before its first render. The English is in place for that render, so there is
+  no frame of missing text and no loading state.
+- After registration a section's English is part of the fallback.
+  `translate` and `resolveMessage` behave exactly as before: an empty or
+  missing value falls back to English, marked `lang="en"`.
+- When a language other than English is chosen, the provider fetches that
+  language's file for every registered section, alongside the core catalogue.
+  It fetches a section that registers later, such as opening `/privacy` with
+  Waray already chosen, when it registers. Until the file arrives, the
+  section reads in English, the same one-frame cost §2 accepts.
+- `MessageKey` is still one type for every key. `en.ts` names the section's
+  keys through a type-only import, which compiles to nothing.
+
+**The guard.** `catalogs.test.ts` checks key parity separately for each set,
+the core catalogue and each section. It also checks that no key appears in two
+sets, so every key has exactly one English.
+
+**Rejected: an async `t()` that fetches a missing key on demand.** It turns
+every string into a loading state, and a page of legal text that fills in
+paragraph by paragraph is worse than one frame of English. **Rejected: one
+catalogue split automatically by the bundler.** Translators would lose the
+property that a screen's strings, in every language, sit in one visible place.
+
+**For translators**, nothing changes but where to look. A section's files sit
+in their own folder and follow the same rules, including §4.
+[Translate the interface](../guides/translate-the-interface.md) lists them.

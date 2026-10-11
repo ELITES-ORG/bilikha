@@ -211,6 +211,9 @@ The single radius is a decision, not a default
 - User-facing text goes in `src/i18n/catalogs/en.ts` and is read with `useT()`,
   not written into the component. A string hard-coded in JSX is one no
   translator will ever find ([ADR 0055](../docs/decisions/0055-copy-is-translated-per-device-never-by-machine.md)).
+  A lazy route's text goes in its own folder under `catalogs/` instead, as the
+  legal pages' does in `catalogs/legal/`, so it loads with the route and not on
+  every first visit.
 - Layouts absorb longer text. Filipino and Waray run longer than English for
   the same sentence, so no fixed-width text containers and no truncation on
   anything load-bearing — checked at 360px.

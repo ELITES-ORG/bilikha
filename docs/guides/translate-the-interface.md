@@ -29,10 +29,20 @@ If you are not a fluent speaker, leave the value empty and say so.
 
 ```
 frontend/src/i18n/catalogs/
-  en.ts     English — the source. Do not edit when translating.
-  fil.ts    Filipino
-  war.ts    Waray
+  en.ts       English — the source. Do not edit when translating.
+  fil.ts      Filipino
+  war.ts      Waray
+  legal/      The privacy notice and the terms of use
+    en.ts     English — the source
+    fil.ts    Filipino
+    war.ts    Waray
 ```
+
+The top-level files hold the screens every visitor loads. A page that loads
+only when someone opens it, like the privacy notice and the terms, keeps its
+strings in its own folder, so a visitor who never opens it never downloads
+them ([ADR 0055, amended](../decisions/0055-copy-is-translated-per-device-never-by-machine.md#amendment--2026-10-11-a-lazy-routes-english-loads-with-the-route)).
+Each folder has the same three files and the same rules.
 
 Each file is a flat list of keys and strings:
 
@@ -46,7 +56,8 @@ export const war: Catalog = {
 Fill in the right-hand side. Leave the key alone — it names *where* the string
 appears, not what it says, so rewording English never renames a key.
 
-Read the English in `en.ts` for the same key to see what you are translating.
+Read the English for the same key in the `en.ts` beside your file to see what
+you are translating.
 
 ## While you work
 
@@ -62,12 +73,13 @@ Read the English in `en.ts` for the same key to see what you are translating.
 
 ## The privacy notice and the terms of use
 
-These are the `privacy.*`, `terms.*` and `legal.*` keys. They are different from
+These are the `privacy.*`, `terms.*` and `legal.*` keys, in `catalogs/legal/`.
+They are different from
 everything else in the catalogue, because people **consent** to them under
 RA 10173, and a translation a person agreed to is a legal record, not copy.
 
 **Do not translate them until two questions are answered** — both are
-reyxdz's, and both are written at the top of the block in `en.ts`:
+reyxdz's, and both are written at the top of `legal/en.ts`:
 
 1. **Which version wins** if a translation and the English say different
    things?
@@ -98,17 +110,19 @@ npm --prefix frontend run test
 npm --prefix frontend run build
 ```
 
-`catalogs.test.ts` fails if a file is missing a key English has, so a new
-string can never be silently absent from a language.
+`catalogs.test.ts` fails if a file is missing a key the English beside it has,
+so a new string can never be silently absent from a language.
 
 ## Adding a language
 
-1. Copy `fil.ts` to the new code, empty every value, rename the export.
+1. Copy `fil.ts` to the new code, empty every value, rename the export. Do the
+   same in every folder under `catalogs/`, such as `legal/fil.ts`.
 2. Add it to `LOCALES` in `frontend/src/lib/locale.ts` and to the `Locale`
    union, labelled **in its own language** — the person who needs the control
    is the one who cannot read an English label.
-3. Add a loader line in `frontend/src/i18n/I18nProvider.tsx`.
-4. Add it to `CATALOGS` in `catalogs.test.ts`.
+3. Add a loader line in `frontend/src/i18n/I18nProvider.tsx`, and one in each
+   folder's `index.ts`, such as `catalogs/legal/index.ts`.
+4. Add it to every set in `SETS` in `catalogs.test.ts`.
 
 Catalogues are fetched only when chosen, so a new language costs an
 English-only visitor nothing (constraint 3).
