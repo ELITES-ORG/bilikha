@@ -460,7 +460,8 @@ organisation gets the real status `rejected`, which stops it counting toward
 its founder's five-organisation cap. Each decision writes a
 `moderation_actions` row with `organization_id` set and the founder as
 `subject_user_id`. Approving and rejecting notify the founder; acknowledging an
-edit does not.
+edit does not. `409` on a `suspended` organisation, which review never changes,
+and for `acknowledged_edit` unless the page is published with an edit waiting.
 
 ---
 
@@ -525,16 +526,25 @@ removes a co-founder, changes the crafts or hands over the founder role.
 
 ### `GET /api/v1/organizations`
 
-Public. Published organisations for the directory, by name. Query:
+Public. Published organisations for the directory, by name, while their
+founder could be seen in public too (see below). Query:
 `domain`, `subdomain`, `municipality` (slugs, optional), `limit` (default 12,
 max 50).
 
 `200` — `{ data: OrganizationCard[] }` — `slug`, `name`, `logoUrl`,
-`municipality`, `primaryCraft`, `memberCount`.
+`municipality`, `primaryCraft`, `memberCount`. A craft carries `name` (the
+official plural) and `singularName` (the label cards show).
+
+The directory hides this list while a search (`q` on the creatives listing) is
+active: search does not cover organisations yet.
 
 ### `GET /api/v1/organizations/:slug`
 
-Public. `200` — `{ data: PublicOrganization }`. `404` unless published.
+Public. `200` — `{ data: PublicOrganization }`. `404` unless published, and
+while the founder's own account is suspended or their creative profile is not
+published: the founder is the one person a visitor's message reaches, so a page
+with no visible founder would list a team nobody can contact. It returns when
+the founder does, or when the role is handed over.
 `members[]` lists only people whose account is active and whose own creative
 profile is published; it carries `displayName`, `profileSlug`, `avatarUrl`,
 `role` and `title`, and never a user id.
@@ -558,7 +568,9 @@ made from the name once and never changes.
 
 `201` — `{ data: { slug, status } }`. `403` without a published creative
 profile. `409` at the cap: five organisations, counting memberships and not
-counting `rejected` ones.
+counting `rejected` ones. The cap is checked under a per-person lock in the
+same transaction as the insert, so two requests at once cannot both pass it.
+Two foundings of one name at once each get their own slug.
 
 ### `PATCH /api/v1/organizations/:slug`
 
@@ -568,7 +580,9 @@ only, always together). Unknown keys are refused, so the slug cannot be sent.
 
 Editing a published page keeps it public and sets `editedSinceReviewAt`
 ([ADR 0016](../decisions/0016-edits-never-unpublish.md)). Editing a `rejected`
-page sends it back to `pending_review`. A `suspended` page cannot be edited.
+page sends it back to `pending_review` — `409` if that would take anyone in the
+team past five organisations, since a `rejected` page stops counting and its
+team may have filled the gap elsewhere. A `suspended` page cannot be edited.
 
 ### `GET /api/v1/organizations/:slug/manage`
 
@@ -594,7 +608,8 @@ Founder or co-founder. Rate-limited per inviter.
 later; expiry is computed when read, with no scheduled job. One `404` message
 covers an unknown username, a suspended account and an account with no published
 creative profile, so the endpoint cannot be used to discover accounts. `409` if
-they are already in the team or already have an open invitation.
+they are already in the team or already have an open invitation, including one
+sent a moment earlier by someone else in the team.
 
 `201` — `{ data: { id, expiresAt, refreshed: false } }`. Re-inviting someone
 whose invitation expired renews the same invitation: `200` with
@@ -608,8 +623,9 @@ Signed in. Open, unexpired invitations to the caller: `id`, `organization`
 ### `POST /api/v1/organizations/invitations/:id/accept`
 
 The invitee. Creates the membership — **nobody is on a page without
-accepting**. `409` once expired, or at the cap. `403` without a published creative
-profile. The inviter is notified. `200` — `{ data: { slug } }`.
+accepting**. `409` once expired, at the cap (checked under the same lock as
+founding), or if the same invitation was just accepted. `403` without a
+published creative profile. The inviter is notified. `200` — `{ data: { slug } }`.
 
 ### `POST /api/v1/organizations/invitations/:id/decline`
 
@@ -618,18 +634,25 @@ The invitee. `200` — `{ data: { declined: true } }`.
 ### `POST /api/v1/organizations/:slug/leave`
 
 Any member. A founder with anyone else in the team is refused (`409`) and told
-to hand over first. A founder alone closes the organisation: it is deleted.
+to hand over first. A founder alone closes the organisation: it is deleted —
+except a `suspended` one (`403`), which only an administrator can resolve.
+Leaving withdraws any unanswered invitations the person sent.
 `200` — `{ data: { closed } }`.
 
 ### `DELETE /api/v1/organizations/:slug/members/:userId`
 
 Founder, or a co-founder removing a plain member. Nobody removes the founder,
-and nobody removes themselves (leave instead). `200` — `{ data: { removed: true } }`.
+and nobody removes themselves (leave instead). Unanswered invitations the
+removed person sent are withdrawn. `200` — `{ data: { removed: true } }`.
 
 ### `POST /api/v1/organizations/:slug/founder`
 
-Founder only. `{ "userId": "…" }` — someone already in the team. In one
-transaction the old founder becomes a co-founder and the new one the founder.
+Founder only. `{ "userId": "…" }` — someone already in the team whose account
+is active and whose creative profile is published (`400` otherwise), since the
+page is public only while its founder is. In one transaction the old founder
+becomes a co-founder, the new one the founder, and the old founder's unanswered
+co-founder invitations are withdrawn: inviting a co-founder is the founder's
+power. `409` if another hand-over got there first.
 `200` — `{ data: { handedOver: true } }`.
 
 ---

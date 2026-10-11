@@ -57,7 +57,24 @@ Choices phases 2–5 made that the steps above did not spell out:
 - **Handover keeps the old founder.** They become a co-founder rather than
   leaving, so handing over never removes anyone from a page by surprise.
 - **Editing a rejected page resubmits it** to `pending_review`, the same way a
-  profile goes back to review.
+  profile goes back to review — refused if that would take anyone in the team
+  past five, because a rejected page stops counting and its team may have filled
+  the gap meanwhile. The cap is checked under a per-person advisory lock inside
+  the transaction that adds the membership, so concurrent requests cannot both
+  pass it.
+- **A page is public only while its founder is.** The founder is the one person
+  a visitor's message reaches, so an organisation whose founder is suspended or
+  has taken their profile down leaves the directory until they return or the
+  role is handed over. For the same reason the role can only go to someone whose
+  own profile is public.
+- **Invitations speak for whoever sent them.** Leaving or being removed
+  withdraws the unanswered invitations a person sent; handing over withdraws
+  the old founder's co-founder invitations, since that power moved with the
+  role.
+- **Review never touches a suspension.** Approve, reject and acknowledge are
+  refused on a suspended organisation, and its founder cannot close it by
+  leaving. Nothing sets `suspended` yet; these hold the rule for when something
+  does.
 - **Step 3.4's deletion precondition** has nothing to attach to: there is no
   account-deletion feature. The `RESTRICT` foreign key and the leave rule hold
   the invariant until one exists.
