@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { en } from '@/i18n/catalogs/en';
+import { enLegal } from '@/i18n/catalogs/legal/en';
 
 /**
  * The privacy notice has to name every company that receives data (RA 10173).
@@ -9,7 +9,7 @@ import { en } from '@/i18n/catalogs/en';
  */
 describe('privacy notice: who receives data', () => {
   it('names Sentry, what a report carries, and where it is stored', () => {
-    const sharing = en['privacy.sharing.hostsRest'];
+    const sharing = enLegal['privacy.sharing.hostsRest'];
 
     expect(sharing).toContain('Sentry');
     expect(sharing).toContain('United States');
@@ -20,7 +20,7 @@ describe('privacy notice: who receives data', () => {
   });
 
   it('does not claim that nothing goes to a third party', () => {
-    expect(en['privacy.cookies.noTracking']).not.toMatch(/no third-party/i);
-    expect(en['privacy.cookies.noTracking']).toContain('report of an error');
+    expect(enLegal['privacy.cookies.noTracking']).not.toMatch(/no third-party/i);
+    expect(enLegal['privacy.cookies.noTracking']).toContain('report of an error');
   });
 });

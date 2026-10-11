@@ -4,7 +4,7 @@ import { act, createElement, type ComponentType, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Catalog } from '@/i18n/catalogs/en';
-import { en } from '@/i18n/catalogs/en';
+import { enLegal } from '@/i18n/catalogs/legal/en';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import { LOCALE_STORAGE_KEY } from '@/lib/locale';
 import { LegalSection, LegalText } from './LegalLayout';
@@ -55,7 +55,7 @@ describe('LegalText', () => {
     const host = await render(createElement(LegalText, { k: 'privacy.title' }));
     const span = host.querySelector('span')!;
 
-    expect(span.textContent).toBe(en['privacy.title']);
+    expect(span.textContent).toBe(enLegal['privacy.title']);
     expect(span.lang).toBe('en');
   });
 
@@ -64,7 +64,7 @@ describe('LegalText', () => {
     const host = await render(createElement(LegalText, { k: 'privacy.title' }), async () => ({}));
     const span = host.querySelector('span')!;
 
-    expect(span.textContent).toBe(en['privacy.title']);
+    expect(span.textContent).toBe(enLegal['privacy.title']);
     // English text under a Waray document language must still be marked
     // English, or a screen reader reads English words in a Waray voice.
     expect(span.lang).toBe('en');
@@ -85,8 +85,8 @@ describe('LegalText', () => {
   it('keeps a leading space in a continuation key, so a bold lead-in still reads as one sentence', async () => {
     const host = await render(createElement(LegalText, { k: 'privacy.collect.nameRest' }));
 
-    expect(host.querySelector('span')!.textContent).toBe(en['privacy.collect.nameRest']);
-    expect(en['privacy.collect.nameRest'].startsWith(' ')).toBe(true);
+    expect(host.querySelector('span')!.textContent).toBe(enLegal['privacy.collect.nameRest']);
+    expect(enLegal['privacy.collect.nameRest'].startsWith(' ')).toBe(true);
   });
 });
 
