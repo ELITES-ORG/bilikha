@@ -31,7 +31,7 @@ export const LEGAL_CONTACT: string | null = null;
  * When these documents were last changed. Shown on both pages: a notice with no
  * date cannot be checked against what a person agreed to.
  */
-export const LEGAL_LAST_UPDATED = '7 October 2026';
+export const LEGAL_LAST_UPDATED = '11 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
