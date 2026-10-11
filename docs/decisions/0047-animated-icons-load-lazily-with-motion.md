@@ -1,6 +1,6 @@
 # 0047. Animated icons use motion, loaded lazily behind their static icon
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-11)
 - **Date:** 2026-10-07
 - **Related:** [constraints](../explanation/constraints.md) (3: budget Android
   over metered data) · [frontend/DESIGN.md](../../frontend/DESIGN.md) (Motion)

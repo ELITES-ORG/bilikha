@@ -1,6 +1,6 @@
 # 0053. Errors are reported to Sentry, without personal data
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-11)
 - **Date:** 2026-10-08
 - **Related:** [0040](./0040-a-deploy-must-not-break-an-open-tab.md) ·
   [0042](./0042-main-is-staging-production-is-a-branch.md) ·
