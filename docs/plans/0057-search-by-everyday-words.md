@@ -56,7 +56,7 @@ were.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Data and matching | 3 / 3 | Done |
-| 2. Admin | 1 / 2 | In progress |
+| 2. Admin | 2 / 2 | Done |
 | 3. Records | 0 / 2 | Not started |
 
 ---
@@ -99,9 +99,9 @@ were.
 
 ### Step 2.2 — The screen
 
-- [ ] **Action.** Admin → Taxonomy: an aliases editor on each sub-domain and a
+- [x] **Action.** Admin → Taxonomy: an aliases editor on each sub-domain and a
   "Searches that found nothing" panel.
-- [ ] **Verify.** 375px and 1280px, light and dark; an alias added there makes
+- [x] **Verify.** 375px and 1280px, light and dark; an alias added there makes
   `/directory?view=creatives&q=<it>` find that sub-domain's creatives.
 
 ## Phase 3 — Records

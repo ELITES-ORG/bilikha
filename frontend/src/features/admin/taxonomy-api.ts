@@ -14,11 +14,19 @@ import { apiClient, toApiError } from '@/lib/api-client';
 import type {
   AdminTaxonomyDomain,
   AdminTaxonomySubdomain,
+  SearchMiss,
+  SubdomainAlias,
   TaxonomyChangeEntry,
 } from '@contracts/taxonomy';
 import type { ListMeta } from '@contracts/pagination';
 
-export type { AdminTaxonomyDomain, AdminTaxonomySubdomain, TaxonomyChangeEntry };
+export type {
+  AdminTaxonomyDomain,
+  AdminTaxonomySubdomain,
+  SearchMiss,
+  SubdomainAlias,
+  TaxonomyChangeEntry,
+};
 
 /** Which of the two tables a route addresses — the API's own path segment. */
 export type TaxonomyKind = 'domains' | 'subdomains';
@@ -36,6 +44,7 @@ export const adminTaxonomyKeys = {
   all: ['admin', 'taxonomy'] as const,
   tree: () => [...adminTaxonomyKeys.all, 'tree'] as const,
   changes: (page: number) => [...adminTaxonomyKeys.all, 'changes', page] as const,
+  misses: (days: number) => [...adminTaxonomyKeys.all, 'misses', days] as const,
 };
 
 /**
@@ -205,5 +214,57 @@ export function useDeleteTaxonomyItem() {
       }
     },
     onSuccess: invalidate,
+  });
+}
+
+/** An everyday word for a sub-domain (issue #24). The server folds it. */
+export function useAddAlias() {
+  const invalidate = useInvalidateTaxonomy();
+
+  return useMutation({
+    mutationFn: async (input: { slug: string; term: string }): Promise<SubdomainAlias> => {
+      try {
+        const { data } = await apiClient.post<ApiResponse<SubdomainAlias>>(
+          `/admin/taxonomy/subdomains/${input.slug}/aliases`,
+          { term: input.term },
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveAlias() {
+  const invalidate = useInvalidateTaxonomy();
+
+  return useMutation({
+    mutationFn: async (input: { slug: string; id: string }): Promise<void> => {
+      try {
+        await apiClient.delete(`/admin/taxonomy/subdomains/${input.slug}/aliases/${input.id}`);
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    onSuccess: invalidate,
+  });
+}
+
+/** The most common searches that found nothing over the last `days` days. */
+export function useSearchMisses(days: number) {
+  return useQuery({
+    queryKey: adminTaxonomyKeys.misses(days),
+    queryFn: async (): Promise<SearchMiss[]> => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<SearchMiss[]>>('/admin/search-misses', {
+          params: { days },
+        });
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
   });
 }

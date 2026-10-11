@@ -33,6 +33,7 @@ import {
   type TaxonomyKind,
 } from '@/features/admin/taxonomy-api';
 import { toApiError } from '@/lib/api-client';
+import { SubdomainAliases, UnmatchedSearches } from './SubdomainAliases';
 import { canDelete, referencesLabel, reorderWrites } from './taxonomy-page-logic';
 import {
   AdminPageHeader,
@@ -155,6 +156,7 @@ export function AdminTaxonomyPage() {
         )}
       </div>
 
+      <UnmatchedSearches />
       <ChangeLog />
     </Container>
   );
@@ -252,6 +254,7 @@ function SubdomainRow({
   index: number;
 }) {
   const [editing, setEditing] = useState(false);
+  const [words, setWords] = useState(false);
   const archived = subdomain.archivedAt !== null;
 
   return (
@@ -265,6 +268,11 @@ function SubdomainRow({
           <p className="text-xs text-ink-subtle">
             {subdomain.slug} · {referencesLabel(subdomain.referenceCount)}
           </p>
+          {subdomain.aliases.length > 0 && (
+            <p className="text-xs break-words text-ink-subtle">
+              Also found by: {subdomain.aliases.map((alias) => alias.term).join(', ')}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -278,6 +286,15 @@ function SubdomainRow({
           >
             {editing ? 'Close' : 'Rename'}
           </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-expanded={words}
+            onClick={() => setWords((value) => !value)}
+          >
+            {words ? 'Close words' : 'Words'}
+          </Button>
           <ItemActions kind="subdomains" item={subdomain} />
         </div>
       </div>
@@ -290,6 +307,12 @@ function SubdomainRow({
             name={subdomain.name}
             singularName={subdomain.singularName ?? ''}
           />
+        </div>
+      )}
+
+      {words && (
+        <div className="mt-3">
+          <SubdomainAliases subdomain={subdomain} />
         </div>
       )}
     </li>
