@@ -1,6 +1,6 @@
 # 0054. Search the directory
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** emanuel
 - **Related:** [ADR 0003](../decisions/0003-postgres-native-search.md) (amended) ·
   [constraints](../explanation/constraints.md) · issue #22 · aliases follow in #24
@@ -38,7 +38,7 @@ tolerated, and a search that finds nothing says so with a way forward.
 | 1. API and indexes | 2 / 2 | Done |
 | 2. Landing and directory | 2 / 2 | Done |
 | 3. Records | 1 / 1 | Done |
-| 4. Check on staging | 0 / 1 | Not started — needs the merge to `main` |
+| 4. Check on staging | 1 / 1 | Done |
 
 ---
 
@@ -100,9 +100,18 @@ runs the same migration at its next release.
 
 ### Step 4.1 — Search on staging
 
-- [ ] **Action.** After the deploy, search from the staging landing page.
-- [ ] **Verify.** The deploy log shows migration 0034 applied; the search lands
+- [x] **Action.** After the deploy, search from the staging landing page.
+- [x] **Verify.** The deploy log shows migration 0034 applied; the search lands
   on `/directory?q=…` with results; a misspelt craft still finds it.
+
+**Result (2026-10-11, after #77).** In a browser on staging, "composer" landed
+on `/directory?q=composer` with the Music Composer offer, and "zzzz" showed the
+search empty state. Against the staging API: typos found their matches —
+"composr" a composer, "cabucgayn" a creative in Cabucgayan, "Digitl" the
+creatives in Digital Interactive Media; "Digital" found that domain's offers;
+a one-letter `q` answered `400`. The deploy log itself was not read: typo
+matching only works with `pg_trgm` and the new indexes in place, which is what
+showed migration 0034 had run. Production runs it at its next release.
 
 ## Acceptance
 
@@ -110,7 +119,7 @@ runs the same migration at its next release.
 - [x] `q` is shareable, tolerates typos, and respects published-only,
   suspension and nearby-first.
 - [x] A search with no results shows a designed empty state.
-- [ ] Verified on staging.
+- [x] Verified on staging.
 
 ## Follow-ups
 
