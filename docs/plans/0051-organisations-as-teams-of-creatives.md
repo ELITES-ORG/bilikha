@@ -75,6 +75,19 @@ Choices phases 2–5 made that the steps above did not spell out:
   slug goes to `retired_organization_slugs` in the same transaction, and a new
   organisation of the same name gets `-2`. Founding and closing lock the slug,
   so they cannot interleave. Shared links never open a different team.
+- **Logos are handled like profile photos.** Founder and co-founders upload
+  one from the manage page: resized on the device, uploaded straight to storage
+  with a signed URL, attached by key under the organisation's own folder. It is
+  live straight away and goes to the media queue as a third kind, where an
+  administrator approves it or removes it (the page stays up); a pending page's
+  logo also shows in the organisations queue. The prune script counts logo
+  keys as referenced, and closing deletes the image.
+- **A decline pauses that organisation for 30 days.** Without it the next
+  invitation, and its notification, could follow straight away. The team is
+  told the date they can ask again; other organisations are unaffected.
+- **Refusing an invitation does the same work for every account.** Account and
+  published profile come from one query, so the time a 404 takes does not tell a
+  suspended account from an unpublished one.
 - **Review never touches a suspension.** Approve, reject and acknowledge are
   refused on a suspended organisation, and its founder cannot close it by
   leaving. Nothing sets `suspended` yet; these hold the rule for when something
@@ -357,8 +370,5 @@ Choices phases 2–5 made that the steps above did not spell out:
 - **Dropping `users.account_type`.** Nothing reads it now — step 5.3's grep
   finds only the schema. Needs its own migration and pull request; the issue
   is still to be opened.
-- **Organisation logos.** `logo_key` exists and the page shows initials until
-  an upload flow is built; image storage is not configured locally, so it was
-  left out rather than shipped untested.
 - **Sharing a client's message with co-founders**, which ADR 0054 calls the
   likely next step.

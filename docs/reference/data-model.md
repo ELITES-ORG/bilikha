@@ -585,7 +585,8 @@ so handing the role over is one write rather than two that can disagree.
 | `slug` | `text` | **Unique.** A public URL — permanent, for the reason ADR 0049 gives for taxonomy slugs |
 | `name` | `text` | |
 | `bio` | `text` null | |
-| `logo_key` | `text` null | Storage key, as `users.avatar_key` |
+| `logo_key` | `text` null | Storage key, as `users.avatar_key`: `organizations/<id>/<uuid>.webp`. Founder or co-founder uploads it; closing deletes it |
+| `logo_reviewed_at` | `timestamptz` null | Null until an administrator has seen the current logo in the media queue, as `users.avatar_reviewed_at` |
 | `municipality_id` | `uuid` FK → `municipalities.id` | `ON DELETE RESTRICT` |
 | `status` | `organization_status` | `pending_review` \| `published` \| `rejected` \| `suspended`. Default `pending_review` |
 | `rejection_reason` | `text` null | Shown to the founder verbatim |

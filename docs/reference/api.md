@@ -611,7 +611,10 @@ later; expiry is computed when read, with no scheduled job. One `404` message
 covers an unknown username, a suspended account and an account with no published
 creative profile, so the endpoint cannot be used to discover accounts. `409` if
 they are already in the team or already have an open invitation, including one
-sent a moment earlier by someone else in the team.
+sent a moment earlier by someone else in the team — and for 30 days after they
+decline one from this organisation, with the date they can be asked again. One
+query decides the 404 whichever account it is, so the time it takes does not
+tell a suspended account from an unpublished one.
 
 `201` — `{ data: { id, expiresAt, refreshed: false } }`. Re-inviting someone
 whose invitation expired renews the same invitation: `200` with
@@ -647,6 +650,27 @@ Leaving withdraws any unanswered invitations the person sent.
 Founder, or a co-founder removing a plain member. Nobody removes the founder,
 and nobody removes themselves (leave instead). Unanswered invitations the
 removed person sent are withdrawn. `200` — `{ data: { removed: true } }`.
+
+### `POST /api/v1/organizations/:slug/logo/upload-url`
+
+Founder or co-founder; not on a suspended organisation. Rate-limited like other
+uploads. `200` — `{ data: { uploadUrl, objectKey } }`: the browser resizes the
+image and PUTs it straight to `uploadUrl`, as for an avatar. `503` when image
+storage is not configured.
+
+### `PUT /api/v1/organizations/:slug/logo`
+
+Founder or co-founder. `{ "objectKey": "organizations/<id>/…" }` — only a key
+under this organisation's own folder is accepted (`403` otherwise, `400` for a
+malformed key). The logo is live straight away and goes to the media queue
+(`logo_reviewed_at` cleared); on a published page it also sets
+`editedSinceReviewAt`, as a new profile photo does. The previous image is
+deleted. `200` — `{ data: { objectKey } }`.
+
+### `DELETE /api/v1/organizations/:slug/logo`
+
+Founder or co-founder. `200` — `{ data: { removed } }`. Closing an
+organisation also deletes its logo.
 
 ### `POST /api/v1/organizations/:slug/founder`
 
@@ -835,19 +859,23 @@ Admin session required (`403` otherwise).
 
 ### `GET /api/v1/admin/media`
 
-Unreviewed avatars and offers (`reviewedAt` null), paginated. Flagged offers
-(`flaggedAt` set) sort first; then remaining unreviewed rows by `createdAt`
-desc. Each row has `kind` (`avatar` \| `offer`), absolute `url`/`thumbUrl`
-when images exist, owner name, and profile slug when present. Offer rows also
+Unreviewed avatars, offers and organisation logos (`reviewedAt` null),
+paginated. Flagged offers (`flaggedAt` set) sort first; then remaining
+unreviewed rows by `createdAt` desc. Each row has `kind` (`avatar` \| `offer`
+\| `logo`), absolute `url`/`thumbUrl` when images exist, owner name (the
+organisation's name for a logo), and profile slug when present. A logo row
+carries `organizationSlug` when the page is published. Offer rows also
 include `title`, `description`, `priceMinCentavos`, `priceMaxCentavos`,
 `flaggedAt`, and `images[]`.
 
 ### `POST /api/v1/admin/media/:kind/:id/review`
 
-`kind` is `avatar` or `offer`. Body `{ "action": "approve" | "remove" }`.
-Approve stamps the reviewed timestamp. Remove deletes the avatar object or the
-offer (and its storage objects) and writes a `media_removed` moderation action
-with `subjectUserId` set to the owner.
+`kind` is `avatar`, `offer` or `logo` (`id` is then the organisation's). Body
+`{ "action": "approve" | "remove" }`. Approve stamps the reviewed timestamp.
+Remove deletes the avatar object, the offer (and its storage objects), or the
+logo — leaving the organisation's page up — and writes a `media_removed`
+moderation action with `subjectUserId` set to the owner, or for a logo to the
+founder with `organizationId` set.
 
 ### `GET /api/v1/admin/accounts`
 
