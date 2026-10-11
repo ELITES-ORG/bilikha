@@ -27,6 +27,7 @@ import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { formatFullName } from '../profiles/profiles.service.js';
 import type { FoundOrganizationInput, UpdateOrganizationInput } from './organizations.schema.js';
+import { brokenUniqueIndex } from './unique-violation.js';
 
 /**
  * Organisations are teams of creatives (ADR 0054, plan 0051).
@@ -94,8 +95,8 @@ async function freeSlug(name: string): Promise<string> {
  * How many organisations count toward this person's cap: memberships of any
  * role, excluding organisations whose page was rejected.
  */
-export async function countTowardCap(userId: string): Promise<number> {
-  const [row] = await db
+export async function countTowardCap(userId: string, executor: Executor = db): Promise<number> {
+  const [row] = await executor
     .select({ total: count() })
     .from(organizationMembers)
     .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
@@ -103,8 +104,23 @@ export async function countTowardCap(userId: string): Promise<number> {
   return row?.total ?? 0;
 }
 
-export async function assertUnderCap(userId: string): Promise<void> {
-  if ((await countTowardCap(userId)) >= ORGANIZATION_CAP) {
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Executor = typeof db | Tx;
+
+/**
+ * Hold each person's cap until the transaction ends. Without it, two requests
+ * at four organisations both read four and both write a fifth. Locks are taken
+ * in id order, so two transactions locking the same people cannot deadlock.
+ */
+export async function lockCaps(tx: Tx, userIds: string[]): Promise<void> {
+  for (const userId of [...new Set(userIds)].sort()) {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`organization-cap:${userId}`}))`);
+  }
+}
+
+/** Call inside the transaction that adds the membership, after `lockCaps`. */
+export async function assertUnderCap(userId: string, executor: Executor = db): Promise<void> {
+  if ((await countTowardCap(userId, executor)) >= ORGANIZATION_CAP) {
     throw AppError.conflict(
       `You can belong to at most ${ORGANIZATION_CAP} organisations. Leave one before founding or joining another.`,
     );
@@ -198,39 +214,52 @@ export async function foundOrganization(input: {
       'You need a published creative profile to found an organisation.',
     );
   }
+  // A friendly early answer; the binding check is inside the transaction.
   await assertUnderCap(input.userId);
 
-  const [crafts, municipalityId, slug] = await Promise.all([
+  const [crafts, municipalityId] = await Promise.all([
     resolveCrafts(input.data.subdomainSlugs, input.data.primarySubdomainSlug),
     municipalityIdFor(input.data.municipalitySlug),
-    freeSlug(input.data.name),
   ]);
 
-  // The organisation and its founder in one transaction: an organisation with
-  // no founder must never exist, even between two statements.
-  const created = await db.transaction(async (tx) => {
-    const [organization] = await tx
-      .insert(organizations)
-      .values({
-        slug,
-        name: input.data.name,
-        bio: input.data.bio ?? null,
-        municipalityId,
-      })
-      .returning({ id: organizations.id, slug: organizations.slug, status: organizations.status });
+  // Someone founding the same name at the same moment can take the slug
+  // between the read and the insert; the next free one is read again.
+  for (let attempt = 1; ; attempt += 1) {
+    const slug = await freeSlug(input.data.name);
+    try {
+      // The organisation and its founder in one transaction: an organisation
+      // with no founder must never exist, even between two statements.
+      const created = await db.transaction(async (tx) => {
+        await lockCaps(tx, [input.userId]);
+        await assertUnderCap(input.userId, tx);
 
-    await tx
-      .insert(organizationMembers)
-      .values({ organizationId: organization!.id, userId: input.userId, role: 'founder' });
+        const [organization] = await tx
+          .insert(organizations)
+          .values({
+            slug,
+            name: input.data.name,
+            bio: input.data.bio ?? null,
+            municipalityId,
+          })
+          .returning({ id: organizations.id, slug: organizations.slug, status: organizations.status });
 
-    await tx
-      .insert(organizationSubdomains)
-      .values(crafts.map((craft) => ({ organizationId: organization!.id, ...craft })));
+        await tx
+          .insert(organizationMembers)
+          .values({ organizationId: organization!.id, userId: input.userId, role: 'founder' });
 
-    return organization!;
-  });
+        await tx
+          .insert(organizationSubdomains)
+          .values(crafts.map((craft) => ({ organizationId: organization!.id, ...craft })));
 
-  return { slug: created.slug, status: created.status };
+        return organization!;
+      });
+
+      return { slug: created.slug, status: created.status };
+    } catch (error) {
+      if (brokenUniqueIndex(error) === 'organizations_slug_idx' && attempt < 3) continue;
+      throw error;
+    }
+  }
 }
 
 /**
@@ -272,6 +301,27 @@ export async function updateOrganization(input: {
         : {};
 
   const updated = await db.transaction(async (tx) => {
+    // A rejected page does not count toward anyone's cap, so its team may have
+    // filled their five elsewhere meanwhile. Resubmitting makes it count again,
+    // which must not take anyone past five.
+    if (organization.status === 'rejected') {
+      const team = await tx
+        .select({ userId: organizationMembers.userId })
+        .from(organizationMembers)
+        .where(eq(organizationMembers.organizationId, organization.id));
+      const ids = team.map((member) => member.userId);
+      await lockCaps(tx, ids);
+      for (const userId of ids) {
+        if ((await countTowardCap(userId, tx)) >= ORGANIZATION_CAP) {
+          throw AppError.conflict(
+            userId === input.userId
+              ? `You already belong to ${ORGANIZATION_CAP} other organisations. Leave one before sending this page back for review.`
+              : `Someone in this team already belongs to ${ORGANIZATION_CAP} other organisations. They must leave one, or leave this team, before the page can go back for review.`,
+          );
+        }
+      }
+    }
+
     const [row] = await tx
       .update(organizations)
       .set({
@@ -304,6 +354,7 @@ async function craftsFor(organizationId: string): Promise<OrganizationCraft[]> {
     .select({
       slug: creativeSubdomains.slug,
       name: creativeSubdomains.name,
+      singularName: creativeSubdomains.singularName,
       domainSlug: creativeDomains.slug,
       domainName: creativeDomains.name,
       isPrimary: organizationSubdomains.isPrimary,
@@ -326,13 +377,32 @@ async function municipalityOf(municipalityId: string) {
 }
 
 /**
+ * A published organisation is shown only while its founder could be seen in
+ * public too. The founder is the one person a visitor's message reaches; an
+ * organisation fronted by a suspended account, or by a profile its owner has
+ * taken down, would list a team nobody can contact. It returns when the
+ * founder does, or when the role is handed over.
+ */
+const FOUNDER_VISIBLE = sql`exists (
+  select 1 from organization_members m
+  join users u on u.id = m.user_id
+  join creative_profiles p on p.user_id = u.id
+  where m.organization_id = ${organizations.id} and m.role = 'founder'
+    and u.status = 'active' and p.status = 'published'
+)`;
+
+/**
  * The public page. Only a published organisation, and only members who could
  * themselves be seen in public: an active account with a published profile
  * (the rule `getPublishedBySlug` applies to a single creative).
  */
 export async function getPublicOrganization(slug: string): Promise<PublicOrganization> {
-  const organization = await findBySlug(slug);
-  if (organization.status !== 'published') throw AppError.notFound('No such organisation.');
+  const [organization] = await db
+    .select()
+    .from(organizations)
+    .where(and(eq(organizations.slug, slug), eq(organizations.status, 'published'), FOUNDER_VISIBLE))
+    .limit(1);
+  if (!organization) throw AppError.notFound('No such organisation.');
 
   const [crafts, municipality, memberRows] = await Promise.all([
     craftsFor(organization.id),
@@ -529,7 +599,7 @@ export async function listPublishedOrganizations(filters: {
   municipality?: string;
   limit: number;
 }): Promise<OrganizationCard[]> {
-  const conditions = [eq(organizations.status, 'published')];
+  const conditions = [eq(organizations.status, 'published'), FOUNDER_VISIBLE];
 
   if (filters.municipality) conditions.push(eq(municipalities.slug, filters.municipality));
   if (filters.subdomain) {
@@ -570,6 +640,7 @@ export async function listPublishedOrganizations(filters: {
           organizationId: organizationSubdomains.organizationId,
           slug: creativeSubdomains.slug,
           name: creativeSubdomains.name,
+          singularName: creativeSubdomains.singularName,
           domainSlug: creativeDomains.slug,
           domainName: creativeDomains.name,
         })
@@ -596,6 +667,7 @@ export async function listPublishedOrganizations(filters: {
         ? {
             slug: primary.slug,
             name: primary.name,
+            singularName: primary.singularName,
             domainSlug: primary.domainSlug,
             domainName: primary.domainName,
             isPrimary: true,

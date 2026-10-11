@@ -20,7 +20,10 @@ export type OrganizationRole = 'founder' | 'co_founder' | 'member';
 /** A sub-domain the organisation names as its work. */
 export interface OrganizationCraft {
   slug: string;
+  /** The official RA 11904 plural, e.g. "Photographers". */
   name: string;
+  /** The singular label cards and pages show, e.g. "Photographer" (issue #17). */
+  singularName: string;
   domainSlug: string;
   domainName: string;
   isPrimary: boolean;

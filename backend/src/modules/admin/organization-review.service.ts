@@ -134,6 +134,25 @@ export async function moderateOrganization(input: {
     throw AppError.badRequest('A reason is required when rejecting.', { field: 'reason' });
   }
 
+  const [current] = await db
+    .select({ status: organizations.status, editedSinceReviewAt: organizations.editedSinceReviewAt })
+    .from(organizations)
+    .where(eq(organizations.id, input.organizationId))
+    .limit(1);
+  if (!current) throw AppError.notFound('No such organisation.');
+  // None of these three decides a suspension, and approving would silently
+  // lift one. Acknowledging only means something for a public page with an
+  // edit waiting; anywhere else it would write an audit row about nothing.
+  if (current.status === 'suspended') {
+    throw AppError.conflict('This organisation is suspended. Review does not change that.');
+  }
+  if (
+    input.action === 'acknowledged_edit' &&
+    (current.status !== 'published' || !current.editedSinceReviewAt)
+  ) {
+    throw AppError.conflict('There is no edit waiting on this organisation.');
+  }
+
   const [founder] = await db
     .select({ userId: organizationMembers.userId })
     .from(organizationMembers)

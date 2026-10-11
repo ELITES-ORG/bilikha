@@ -12,7 +12,14 @@ import { normalizeUsername } from '../../lib/username.js';
 import { notify } from '../notifications/notifications.service.js';
 import { formatFullName } from '../profiles/profiles.service.js';
 import type { InviteInput } from './organizations.schema.js';
-import { assertUnderCap, publishedProfileOf, roleIn } from './organizations.service.js';
+import {
+  assertUnderCap,
+  lockCaps,
+  publishedProfileOf,
+  roleIn,
+  type Tx,
+} from './organizations.service.js';
+import { brokenUniqueIndex } from './unique-violation.js';
 
 /**
  * Membership and invitations (plan 0051 phase 3, ADR 0054).
@@ -35,6 +42,30 @@ export const INVITATION_DAYS = 7;
 
 function inAWeek(): Date {
   return new Date(Date.now() + INVITATION_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Withdraw unanswered invitations this person sent for this organisation. An
+ * invitation speaks for whoever sent it: once they are out of the team, or no
+ * longer hold the power it used, it should not still let someone in.
+ */
+async function withdrawInvitationsFrom(
+  tx: Tx,
+  organizationId: string,
+  inviterId: string,
+  onlyRole?: 'co_founder',
+): Promise<void> {
+  await tx
+    .delete(organizationInvitations)
+    .where(
+      and(
+        eq(organizationInvitations.organizationId, organizationId),
+        eq(organizationInvitations.invitedBy, inviterId),
+        isNull(organizationInvitations.acceptedAt),
+        isNull(organizationInvitations.declinedAt),
+        ...(onlyRole ? [eq(organizationInvitations.role, onlyRole)] : []),
+      ),
+    );
 }
 
 async function organizationBySlug(slug: string) {
@@ -121,18 +152,26 @@ export async function invite(input: {
     id = pending.id;
     refreshed = true;
   } else {
-    const [row] = await db
-      .insert(organizationInvitations)
-      .values({
-        organizationId: organization.id,
-        invitedUserId: invitee.id,
-        invitedBy: input.inviterId,
-        role: input.data.role,
-        title: input.data.title ?? null,
-        expiresAt,
-      })
-      .returning({ id: organizationInvitations.id });
-    id = row!.id;
+    try {
+      const [row] = await db
+        .insert(organizationInvitations)
+        .values({
+          organizationId: organization.id,
+          invitedUserId: invitee.id,
+          invitedBy: input.inviterId,
+          role: input.data.role,
+          title: input.data.title ?? null,
+          expiresAt,
+        })
+        .returning({ id: organizationInvitations.id });
+      id = row!.id;
+    } catch (error) {
+      // Someone else in the team invited them a moment earlier.
+      if (brokenUniqueIndex(error) === 'organization_invitations_one_pending_idx') {
+        throw AppError.conflict('That person already has an invitation waiting.');
+      }
+      throw error;
+    }
   }
 
   await notify({
@@ -175,6 +214,7 @@ export async function acceptInvitation(input: {
   if (!(await publishedProfileOf(input.userId))) {
     throw AppError.forbidden('You need a published creative profile to join an organisation.');
   }
+  // A friendly early answer; the binding check is inside the transaction.
   await assertUnderCap(input.userId);
 
   const [organization] = await db
@@ -187,18 +227,28 @@ export async function acceptInvitation(input: {
   }
 
   // Acceptance is what lists a person; both writes or neither.
-  await db.transaction(async (tx) => {
-    await tx.insert(organizationMembers).values({
-      organizationId: invitation.organizationId,
-      userId: input.userId,
-      role: invitation.role,
-      title: invitation.title,
+  try {
+    await db.transaction(async (tx) => {
+      await lockCaps(tx, [input.userId]);
+      await assertUnderCap(input.userId, tx);
+      await tx.insert(organizationMembers).values({
+        organizationId: invitation.organizationId,
+        userId: input.userId,
+        role: invitation.role,
+        title: invitation.title,
+      });
+      await tx
+        .update(organizationInvitations)
+        .set({ acceptedAt: new Date() })
+        .where(eq(organizationInvitations.id, invitation.id));
     });
-    await tx
-      .update(organizationInvitations)
-      .set({ acceptedAt: new Date() })
-      .where(eq(organizationInvitations.id, invitation.id));
-  });
+  } catch (error) {
+    // The same invitation accepted twice at once: the first one won.
+    if (brokenUniqueIndex(error) === 'organization_members_org_user_idx') {
+      throw AppError.conflict('You are already in this organisation.');
+    }
+    throw error;
+  }
 
   if (invitation.invitedBy) {
     await notify({
@@ -299,18 +349,29 @@ export async function leaveOrganization(input: {
       );
     }
 
+    // Closing deletes the organisation, which would also undo a suspension and
+    // free the cap it holds. An administrator decides what happens to it.
+    if (organization.status === 'suspended') {
+      throw AppError.forbidden(
+        'This organisation has been suspended, so it cannot be closed. Contact an administrator.',
+      );
+    }
+
     await db.delete(organizations).where(eq(organizations.id, organization.id));
     return { closed: true };
   }
 
-  await db
-    .delete(organizationMembers)
-    .where(
-      and(
-        eq(organizationMembers.organizationId, organization.id),
-        eq(organizationMembers.userId, input.userId),
-      ),
-    );
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organization.id),
+          eq(organizationMembers.userId, input.userId),
+        ),
+      );
+    await withdrawInvitationsFrom(tx, organization.id, input.userId);
+  });
   return { closed: false };
 }
 
@@ -343,14 +404,17 @@ export async function removeMember(input: {
     throw AppError.forbidden('Only the founder can remove a co-founder.');
   }
 
-  await db
-    .delete(organizationMembers)
-    .where(
-      and(
-        eq(organizationMembers.organizationId, organization.id),
-        eq(organizationMembers.userId, input.userId),
-      ),
-    );
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.organizationId, organization.id),
+          eq(organizationMembers.userId, input.userId),
+        ),
+      );
+    await withdrawInvitationsFrom(tx, organization.id, input.userId);
+  });
 }
 
 /**
@@ -376,25 +440,48 @@ export async function handOver(input: {
   if (!(await roleIn(organization.id, input.toUserId))) {
     throw AppError.badRequest('The founder role can only go to someone already in the organisation.');
   }
+  // The founder is who a visitor's message reaches, and the page is public only
+  // while the founder is (getPublicOrganization). Handing the role to someone
+  // suspended or unpublished would take the whole page down.
+  const [recipient] = await db
+    .select({ status: users.status })
+    .from(users)
+    .where(eq(users.id, input.toUserId))
+    .limit(1);
+  if (recipient?.status !== 'active' || !(await publishedProfileOf(input.toUserId))) {
+    throw AppError.badRequest(
+      'The founder role can only go to someone whose own creative profile is public.',
+    );
+  }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(organizationMembers)
-      .set({ role: 'co_founder' })
-      .where(
-        and(
-          eq(organizationMembers.organizationId, organization.id),
-          eq(organizationMembers.userId, input.founderId),
-        ),
-      );
-    await tx
-      .update(organizationMembers)
-      .set({ role: 'founder' })
-      .where(
-        and(
-          eq(organizationMembers.organizationId, organization.id),
-          eq(organizationMembers.userId, input.toUserId),
-        ),
-      );
-  });
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(organizationMembers)
+        .set({ role: 'co_founder' })
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organization.id),
+            eq(organizationMembers.userId, input.founderId),
+          ),
+        );
+      await tx
+        .update(organizationMembers)
+        .set({ role: 'founder' })
+        .where(
+          and(
+            eq(organizationMembers.organizationId, organization.id),
+            eq(organizationMembers.userId, input.toUserId),
+          ),
+        );
+      // Inviting a co-founder is the founder's power, and it has moved on.
+      await withdrawInvitationsFrom(tx, organization.id, input.founderId, 'co_founder');
+    });
+  } catch (error) {
+    // Two handovers at once: the other one already moved the role.
+    if (brokenUniqueIndex(error) === 'organization_members_one_founder_idx') {
+      throw AppError.conflict('The founder role has just changed hands. Reload the page.');
+    }
+    throw error;
+  }
 }
