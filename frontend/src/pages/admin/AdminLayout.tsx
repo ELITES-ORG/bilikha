@@ -1,11 +1,32 @@
 import { useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ButtonLink } from '@/components/ui';
+import { Badge, ButtonLink } from '@/components/ui';
+import { useAdminSummary, useSummaryFollowsDecisions } from '@/features/admin/api';
 import { Wordmark } from '@/components/Wordmark';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
-import { ADMIN_SECTIONS, isAdminSectionActive } from './admin-sections';
+import { ADMIN_GROUPS, ADMIN_SECTIONS, isAdminSectionActive, type AdminSection } from './admin-sections';
+
+/** What waits in a section, or null when nothing does or it is a tool: a zero is not drawn. */
+function useWaiting(): (section: AdminSection) => number | null {
+  const summary = useAdminSummary();
+  return (section) => {
+    if (!section.waiting || !summary.data) return null;
+    const count = section.waiting(summary.data);
+    return count > 0 ? count : null;
+  };
+}
+
+function WaitingBadge({ count, label }: { count: number | null; label: string }) {
+  if (count === null) return null;
+  return (
+    <Badge tone="brand" className="ml-auto" data-numeric>
+      <span aria-hidden="true">{count}</span>
+      <span className="sr-only">{`${count} waiting in ${label}`}</span>
+    </Badge>
+  );
+}
 
 /**
  * One shell for `/admin/*`: header, section nav, and the outlet. The
@@ -19,6 +40,8 @@ export function AdminLayout() {
 
 function AdminShell() {
   const { pathname } = useLocation();
+  useSummaryFollowsDecisions();
+  const waiting = useWaiting();
 
   return (
     <div className="min-h-page bg-paper">
@@ -26,7 +49,7 @@ function AdminShell() {
         {/*
           Logo sits in the same w-56 column as the aside, with the same p-4 +
           px-3 inset as the nav links, so "Bilikha" shares a left edge with
-          "Review queue". Phones keep a simple gutter — there is no sidebar.
+          "Creatives". Phones keep a simple gutter — there is no sidebar.
         */}
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex min-w-0 items-center px-3 sm:w-56 sm:shrink-0 sm:px-4">
@@ -45,14 +68,16 @@ function AdminShell() {
       <RegistrationStatusBanner />
 
       {/* Phones: always-visible scrolling row. No drawer, no open/closed state. */}
-      <AdminPhoneNav pathname={pathname} />
+      <AdminPhoneNav pathname={pathname} waiting={waiting} />
 
       <div className="sm:flex sm:min-h-[calc(100dvh-4rem-var(--staging-banner-h))]">
         <aside className="hidden w-56 shrink-0 border-r border-hairline sm:block">
           <nav aria-label="Administration" className="sticky top-(--staging-banner-h) short:top-0 p-4">
-            <p className="u-eyebrow px-3">Administration</p>
+            {ADMIN_GROUPS.map((group, index) => (
+            <div key={group.id} className={index > 0 ? 'mt-8' : undefined}>
+            <p className="u-eyebrow px-3">{group.label}</p>
             <ul className="mt-4 space-y-1">
-              {ADMIN_SECTIONS.map((section) => {
+              {ADMIN_SECTIONS.filter((section) => section.group === group.id).map((section) => {
                 const active = isAdminSectionActive(pathname, section.path);
                 return (
                   <li key={section.path}>
@@ -74,11 +99,14 @@ function AdminShell() {
                         aria-hidden="true"
                       />
                       {section.label}
+                      <WaitingBadge count={waiting(section)} label={section.label} />
                     </Link>
                   </li>
                 );
               })}
             </ul>
+            </div>
+            ))}
           </nav>
         </aside>
 
@@ -91,7 +119,13 @@ function AdminShell() {
   );
 }
 
-function AdminPhoneNav({ pathname }: { pathname: string }) {
+function AdminPhoneNav({
+  pathname,
+  waiting,
+}: {
+  pathname: string;
+  waiting: (section: AdminSection) => number | null;
+}) {
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -131,6 +165,7 @@ function AdminPhoneNav({ pathname }: { pathname: string }) {
                 aria-hidden="true"
               />
               {section.label}
+              <WaitingBadge count={waiting(section)} label={section.label} />
             </Link>
           );
         })}

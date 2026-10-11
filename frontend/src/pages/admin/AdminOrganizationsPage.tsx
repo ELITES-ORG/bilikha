@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Inbox } from 'lucide-react';
+import { Check, CheckCircle2, Inbox, X } from 'lucide-react';
 import {
   useAdminOrganizationCounts,
   useAdminOrganizations,
@@ -8,6 +8,8 @@ import {
 import type { AdminOrganizationRow } from '@/features/organizations/types';
 import { Avatar, Button, Container, EmptyState, Skeleton, TabPanels, Tabs, Textarea, useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { useAdminSummary } from '@/features/admin/api';
+import { ContentReviewList } from './content-review/ContentReviewList';
 import {
   AdminPageHeader,
   AdminPagination,
@@ -20,11 +22,15 @@ import {
 
 type OrganizationQueue = 'pending_review' | 'edited' | 'published' | 'rejected' | 'suspended';
 
-const TABS: Array<{ status: OrganizationQueue; label: string }> = [
+/** The page's states, and its logos: everything about an organisation is decided here (ADR 0059). */
+type OrganizationTab = OrganizationQueue | 'logos';
+
+const TABS: Array<{ status: OrganizationTab; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
   { status: 'edited', label: 'Edited' },
+  { status: 'logos', label: 'Logos' },
   { status: 'published', label: 'Published' },
-  { status: 'rejected', label: 'Changes asked' },
+  { status: 'rejected', label: 'Rejected' },
   { status: 'suspended', label: 'Suspended' },
 ];
 
@@ -36,9 +42,14 @@ const TABS: Array<{ status: OrganizationQueue; label: string }> = [
  * and there is no detail page to open. English only, like every admin screen.
  */
 export function AdminOrganizationsPage() {
-  const [status, setStatus] = useState<OrganizationQueue>('pending_review');
+  const [tab, setTab] = useState<OrganizationTab>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminOrganizationCounts();
+  const summary = useAdminSummary();
+  // The Logos tab is the content queue's, not a page state; the page list
+  // stays on its first tab underneath rather than asking for a state that does
+  // not exist.
+  const status: OrganizationQueue = tab === 'logos' ? 'pending_review' : tab;
   const list = useAdminOrganizations(status, page);
 
   const totalPages = useMemo(() => {
@@ -59,21 +70,41 @@ export function AdminOrganizationsPage() {
           label="Organisation queue"
           idPrefix="organizations"
           className={adminTabsClass}
-          value={status}
+          value={tab}
           onChange={(next) => {
-            setStatus(next);
+            setTab(next);
             setPage(1);
           }}
-          items={TABS.map((tab) => ({
-            value: tab.status,
+          items={TABS.map((item) => ({
+            value: item.status,
             label: (
-              <AdminTabLabel text={tab.label} count={counts.data?.[tab.status] ?? 0} active={status === tab.status} />
+              <AdminTabLabel
+                text={item.label}
+                count={
+                  item.status === 'logos'
+                    ? (summary.data?.organizations.logos ?? 0)
+                    : (counts.data?.[item.status] ?? 0)
+                }
+                active={tab === item.status}
+              />
             ),
           }))}
         />
       </AdminToolbar>
 
-      <TabPanels idPrefix="organizations" values={TABS.map((tab) => tab.status)} value={status} className="mt-8">
+      <TabPanels idPrefix="organizations" values={TABS.map((item) => item.status)} value={tab} className="mt-8">
+        {tab === 'logos' ? (
+          <ContentReviewList
+            kind="logo"
+            searchLabel="Search logos"
+            searchPlaceholder="Search by organisation"
+            empty={{
+              title: 'No logos waiting',
+              description: 'A new organisation logo appears here before anyone else can see it. The approved logo, or initials, stays in its place until then.',
+            }}
+          />
+        ) : (
+        <>
         {list.isPending && (
           <ul className={adminListClass} aria-label="Loading organisations">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -122,6 +153,8 @@ export function AdminOrganizationsPage() {
         )}
 
         <AdminPagination page={page} pages={totalPages} onPage={setPage} />
+        </>
+        )}
       </TabPanels>
     </Container>
   );
@@ -135,11 +168,11 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
   const decidable = queue === 'pending_review' || queue === 'edited';
 
   async function decide(action: 'approved' | 'rejected' | 'acknowledged_edit') {
-    const pending = { approved: 'Approving…', rejected: 'Sending back…', acknowledged_edit: 'Acknowledging…' }[action];
+    const pending = { approved: 'Approving…', rejected: 'Rejecting…', acknowledged_edit: 'Approving the edit…' }[action];
     const success = {
       approved: `${row.name} is public`,
-      rejected: 'Sent back to the founder with your reason',
-      acknowledged_edit: 'Edit acknowledged',
+      rejected: 'Rejected — the founder sees your reason',
+      acknowledged_edit: 'Edit approved',
     }[action];
     try {
       await toast.run(
@@ -180,8 +213,8 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
         (rejecting ? (
           <div className="max-w-xl space-y-3">
             <Textarea
-              label="What needs changing"
-              hint="The founder sees this exactly as written."
+              label="Why it is not approved"
+              hint="The founder sees this exactly as written, so say what to change."
               rows={3}
               maxLength={500}
               value={reason}
@@ -194,26 +227,43 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
                 disabled={!reason.trim() || moderate.isPending}
                 onClick={() => void decide('rejected')}
               >
-                Send back
+                Reject
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => setRejecting(false)}>
+              <Button size="sm" variant="ghost" onClick={() => setRejecting(false)}>
                 Cancel
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-wrap gap-3">
+            {/* Approve and Reject, as on every admin decision (ADR 0059). */}
             {queue === 'pending_review' ? (
-              <Button size="sm" disabled={moderate.isPending} onClick={() => void decide('approved')}>
+              <Button
+                size="sm"
+                iconLeft={<Check className="size-4" aria-hidden="true" />}
+                disabled={moderate.isPending}
+                onClick={() => void decide('approved')}
+              >
                 Approve
               </Button>
             ) : (
-              <Button size="sm" disabled={moderate.isPending} onClick={() => void decide('acknowledged_edit')}>
-                Acknowledge edit
+              <Button
+                size="sm"
+                iconLeft={<Check className="size-4" aria-hidden="true" />}
+                disabled={moderate.isPending}
+                onClick={() => void decide('acknowledged_edit')}
+              >
+                Approve edit
               </Button>
             )}
-            <Button size="sm" variant="secondary" onClick={() => setRejecting(true)}>
-              Ask for changes
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
+              iconLeft={<X className="size-4" aria-hidden="true" />}
+              onClick={() => setRejecting(true)}
+            >
+              Reject
             </Button>
           </div>
         ))}

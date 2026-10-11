@@ -1,6 +1,6 @@
 import type { AdminMediaRow } from '@contracts/admin';
 import { describe, expect, it } from 'vitest';
-import { countMedia, filterAndSortMedia } from './admin-media-logic';
+import { countFlagged, filterAndSortReview } from './review-list-logic';
 
 function row(overrides: Partial<AdminMediaRow> & Pick<AdminMediaRow, 'id'>): AdminMediaRow {
   const { id, ...rest } = overrides;
@@ -44,30 +44,29 @@ const items = [
 
 describe('media review filtering', () => {
   it('matches trimmed, case-insensitive text across every searchable field', () => {
-    expect(filterAndSortMedia(items, 'all', '  ALICE  ', 'queue').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(items, '  ALICE  ', 'queue').map((item) => item.id)).toEqual([
       'avatar',
     ]);
-    expect(filterAndSortMedia(items, 'all', 'wedding', 'queue').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(items, 'wedding', 'queue').map((item) => item.id)).toEqual([
       'new-offer',
     ]);
-    expect(filterAndSortMedia(items, 'all', 'documentary', 'queue').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(items, 'documentary', 'queue').map((item) => item.id)).toEqual([
       'new-offer',
     ]);
-    expect(filterAndSortMedia(items, 'all', 'studio', 'queue').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(items, 'studio', 'queue').map((item) => item.id)).toEqual([
       'old-offer',
     ]);
-    expect(filterAndSortMedia(items, 'all', 'event photo', 'queue').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(items, 'event photo', 'queue').map((item) => item.id)).toEqual([
       'new-offer',
     ]);
   });
 
-  it('combines the kind and search filters and tolerates missing optional fields', () => {
-    expect(filterAndSortMedia(items, 'offer', 'portrait', 'queue').map((item) => item.id)).toEqual([
+  it('tolerates missing optional fields, and finds nothing for text that is not there', () => {
+    expect(filterAndSortReview(items, 'portrait', 'queue').map((item) => item.id)).toEqual([
       'new-offer',
       'old-offer',
     ]);
-    expect(filterAndSortMedia(items, 'avatar', 'portrait', 'queue')).toEqual([]);
-    expect(filterAndSortMedia(items, 'all', 'not present', 'queue')).toEqual([]);
+    expect(filterAndSortReview(items, 'not present', 'queue')).toEqual([]);
   });
 });
 
@@ -75,20 +74,20 @@ describe('media review ordering', () => {
   it('preserves the server queue order and never mutates the input', () => {
     const original = items.map((item) => item.id);
 
-    expect(filterAndSortMedia(items, 'all', '', 'queue').map((item) => item.id)).toEqual(original);
+    expect(filterAndSortReview(items, '', 'queue').map((item) => item.id)).toEqual(original);
     expect(items.map((item) => item.id)).toEqual(original);
   });
 
   it('sorts newest and oldest without disturbing equal timestamps', () => {
     const tied = [items[0]!, row({ id: 'same-time' }), items[1]!, items[2]!];
 
-    expect(filterAndSortMedia(tied, 'all', '', 'newest').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(tied, '', 'newest').map((item) => item.id)).toEqual([
       'new-offer',
       'avatar',
       'same-time',
       'old-offer',
     ]);
-    expect(filterAndSortMedia(tied, 'all', '', 'oldest').map((item) => item.id)).toEqual([
+    expect(filterAndSortReview(tied, '', 'oldest').map((item) => item.id)).toEqual([
       'old-offer',
       'avatar',
       'same-time',
@@ -99,16 +98,14 @@ describe('media review ordering', () => {
 });
 
 describe('media review counts', () => {
-  it('counts kinds and flagged entries independently', () => {
-    expect(countMedia(items)).toEqual({ avatar: 1, offer: 2, logo: 0, flagged: 1 });
-    expect(countMedia([])).toEqual({ avatar: 0, offer: 0, logo: 0, flagged: 0 });
+  it('counts flagged entries', () => {
+    expect(countFlagged(items)).toBe(1);
+    expect(countFlagged([])).toBe(0);
   });
 
-  it('counts organisation logos as their own kind, and filters to them', () => {
+  it('searches an organisation logo by its organisation', () => {
     const withLogo = [...items, row({ id: 'logo', kind: 'logo', ownerName: 'Naval Light Studio' })];
 
-    expect(countMedia(withLogo)).toMatchObject({ logo: 1, avatar: 1 });
-    expect(filterAndSortMedia(withLogo, 'logo', '', 'queue').map((item) => item.id)).toEqual(['logo']);
-    expect(filterAndSortMedia(withLogo, 'all', 'naval light', 'queue').map((item) => item.id)).toEqual(['logo']);
+    expect(filterAndSortReview(withLogo, 'naval light', 'queue').map((item) => item.id)).toEqual(['logo']);
   });
 });

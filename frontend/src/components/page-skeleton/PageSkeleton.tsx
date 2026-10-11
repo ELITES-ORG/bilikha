@@ -56,9 +56,10 @@ const ROUTES: readonly Route[] = [
   [is('/welcome/profile'), 'onboarding', ProfileSetupSkeleton],
   [is('/welcome/submitted'), 'onboarding', SubmittedBody],
   [under('/admin/profiles'), 'admin', AdminProfileBody],
-  [is('/admin/media'), 'admin', AdminMediaBody],
+  // Content waiting for a decision: cards, under Offers and People (ADR 0059).
+  [(path) => path === '/admin/offers' || path === '/admin/people', 'admin', AdminMediaBody],
   [is('/admin/accounts'), 'admin', AdminAccountsBody],
-  [is('/admin/ratings'), 'admin', AdminRatingsBody],
+  [is('/admin/reports'), 'admin', AdminRatingsBody],
   [(path) => path === '/admin' || under('/admin')(path), 'admin', AdminQueueBody],
   [(path) => path === '/directory' || path === '/creatives', 'site', DirectoryBody],
   [under('/creatives'), 'site', CreativeBody],

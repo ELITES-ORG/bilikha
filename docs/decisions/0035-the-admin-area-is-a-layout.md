@@ -7,6 +7,12 @@
   [0028](./0028-suspension-is-enforced-per-request.md) ·
   [operating constraints §3](../explanation/constraints.md)
 
+> **Amended by [0059](./0059-the-admin-area-is-organised-by-subject.md)
+> (2026-10-12).** The layout, the one list of sections and the guard are
+> unchanged. The sections themselves are now one per subject — Creatives,
+> Offers, Organisations, People, Reports — grouped apart from the tools, each
+> with a count of what waits in it.
+
 ## Context
 
 The admin area is five pages that each build their own chrome. There is no

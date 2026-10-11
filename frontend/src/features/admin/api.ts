@@ -1,4 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
+import type { AdminSummary } from '@contracts/admin';
 import { apiClient, toApiError } from '@/lib/api-client';
 import type {
   AdminAccount,
@@ -25,6 +27,7 @@ export const adminKeys = {
   list: (status: QueueStatus, page: number) =>
     [...adminKeys.lists(), status, page] as const,
   counts: () => [...adminKeys.all, 'counts'] as const,
+  summary: () => [...adminKeys.all, 'summary'] as const,
   detail: (id: string) => [...adminKeys.all, 'detail', id] as const,
 };
 
@@ -42,6 +45,42 @@ export function useAdminProfiles(status: QueueStatus, page: number) {
       }
     },
   });
+}
+
+/**
+ * What waits for a decision under each admin subject (ADR 0059): the sidebar's
+ * badges and each page's tab counts.
+ */
+export function useAdminSummary() {
+  return useQuery({
+    queryKey: adminKeys.summary(),
+    queryFn: async (): Promise<AdminSummary> => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<AdminSummary>>('/admin/summary');
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}
+
+/**
+ * Re-reads the summary whenever the admin area's writes settle. Every decision
+ * — a profile, an organisation, an offer, a report — changes what is waiting,
+ * and this keeps the badges true without each of those mutations having to
+ * know the sidebar exists.
+ */
+export function useSummaryFollowsDecisions() {
+  const queryClient = useQueryClient();
+  const mutating = useIsMutating();
+  const was = useRef(mutating);
+  useEffect(() => {
+    if (was.current > 0 && mutating === 0) {
+      void queryClient.invalidateQueries({ queryKey: adminKeys.summary() });
+    }
+    was.current = mutating;
+  }, [mutating, queryClient]);
 }
 
 export function useAdminCounts() {

@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
-import { and, asc, eq, exists, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
-import type { AdminMediaImage, AdminMediaListResult, AdminMediaRow } from '../../contracts/admin.js';
+import { and, asc, count, eq, exists, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
+import type {
+  AdminMediaImage,
+  AdminMediaListResult,
+  AdminMediaRow,
+  ContentQueueCounts,
+} from '../../contracts/admin.js';
 import { db } from '../../db/index.js';
 import {
   creativeProfiles,
@@ -123,11 +128,28 @@ const hasPendingImages = exists(
     .where(and(eq(offerImages.offerId, offers.id), ne(offerImages.state, 'live'))),
 );
 
-export async function listContentQueue(options: { page: number; limit: number }): Promise<AdminMediaListResult> {
+/** A new offer, or a change to a published one (`change`). */
+const NEW_OFFER = eq(offers.status, 'pending_review');
+const CHANGED_OFFER = and(eq(offers.status, 'published'), or(isNotNull(offerRevisions.offerId), hasPendingImages));
+
+/**
+ * The queue, or one part of it. The admin area shows each kind under the
+ * subject it belongs to (ADR 0059): offers on the Offers page, a profile photo
+ * under People, a logo under Organisations. `change` narrows offers to new
+ * ones or changes, and implies `kind: 'offer'`.
+ */
+export async function listContentQueue(options: {
+  page: number;
+  limit: number;
+  kind?: AdminMediaRow['kind'];
+  change?: 'new' | 'edit';
+}): Promise<AdminMediaListResult> {
   const offset = (options.page - 1) * options.limit;
   const ownerName = sql<string>`trim(concat(${users.firstName}, ' ', ${users.lastName}))`;
+  const kind = options.change ? 'offer' : options.kind;
+  const wants = (candidate: AdminMediaRow['kind']) => !kind || kind === candidate;
 
-  const offerRows = await db
+  const offerRows = !wants('offer') ? [] : await db
     .select({
       id: offers.id,
       status: offers.status,
@@ -156,10 +178,7 @@ export async function listContentQueue(options: { page: number; limit: number })
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .leftJoin(offerRevisions, eq(offerRevisions.offerId, offers.id))
     .where(
-      or(
-        eq(offers.status, 'pending_review'),
-        and(eq(offers.status, 'published'), or(isNotNull(offerRevisions.offerId), hasPendingImages)),
-      ),
+      options.change === 'new' ? NEW_OFFER : options.change === 'edit' ? CHANGED_OFFER : or(NEW_OFFER, CHANGED_OFFER),
     );
 
   // A change can move an offer to another sub-domain; name it as the change would.
@@ -233,7 +252,7 @@ export async function listContentQueue(options: { page: number; limit: number })
     };
   });
 
-  const avatarRows = await db
+  const avatarRows = !wants('avatar') ? [] : await db
     .select({
       id: users.id,
       updatedAt: users.updatedAt,
@@ -263,7 +282,7 @@ export async function listContentQueue(options: { page: number; limit: number })
     _flagged: false,
   }));
 
-  const logoRows = await db
+  const logoRows = !wants('logo') ? [] : await db
     .select({
       id: organizations.id,
       updatedAt: organizations.updatedAt,
@@ -303,6 +322,29 @@ export async function listContentQueue(options: { page: number; limit: number })
   const total = merged.length;
   const data = merged.slice(offset, offset + options.limit).map(({ _flagged: _, ...row }) => row);
   return { data, total };
+}
+
+/**
+ * How much of the queue is waiting, by subject, without building it: the
+ * sidebar and the tab counts read this on every admin page.
+ */
+export async function contentQueueCounts(): Promise<ContentQueueCounts> {
+  const [[newOffers], [changedOffers], [photos], [logos]] = await Promise.all([
+    db.select({ total: count() }).from(offers).where(NEW_OFFER),
+    db
+      .select({ total: count() })
+      .from(offers)
+      .leftJoin(offerRevisions, eq(offerRevisions.offerId, offers.id))
+      .where(CHANGED_OFFER),
+    db.select({ total: count() }).from(users).where(isNotNull(users.avatarPendingKey)),
+    db.select({ total: count() }).from(organizations).where(isNotNull(organizations.logoPendingKey)),
+  ]);
+  return {
+    newOffers: newOffers?.total ?? 0,
+    changedOffers: changedOffers?.total ?? 0,
+    photos: photos?.total ?? 0,
+    logos: logos?.total ?? 0,
+  };
 }
 
 function requireReason(action: ReviewAction, reason: string | undefined): string | null {

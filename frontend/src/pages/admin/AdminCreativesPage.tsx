@@ -19,7 +19,8 @@ const TABS: Array<{ status: QueueStatus; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
   { status: 'edited', label: 'Edited' },
   { status: 'published', label: 'Published' },
-  { status: 'suspended', label: 'Suspended' },
+  // A rejected profile is stored as `suspended` (ADR 0016); the tab says what it means.
+  { status: 'suspended', label: 'Rejected' },
 ];
 
 /** Registrant, municipality, crafts, waiting, arrow — one column on a phone. */
@@ -34,7 +35,7 @@ function waitingLabel(createdAt: string): string {
   return `${days}d`;
 }
 
-export function AdminQueuePage() {
+export function AdminCreativesPage() {
   const [status, setStatus] = useState<QueueStatus>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminCounts();
@@ -49,8 +50,8 @@ export function AdminQueuePage() {
   return (
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
-        title="Review queue"
-        description="Oldest registrations first. Open one to approve it, or reject it with a reason the registrant will see."
+        title="Creatives"
+        description="New creative profiles, and edits to published ones. Oldest first. Open one to approve it, or reject it with a reason the registrant will see."
       />
 
       <AdminToolbar ruled={false}>

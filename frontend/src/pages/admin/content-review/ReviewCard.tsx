@@ -1,322 +1,30 @@
 import type { AdminMediaRow } from '@contracts/admin';
-import type { Paginated } from '@contracts/pagination';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ArrowUpRight,
-  Check,
-  CheckCircle2,
-  ImageOff,
-  Images,
-  Inbox,
-  Search,
-  UserRound,
-  Users,
-  X,
-} from 'lucide-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, toApiError } from '@/lib/api-client';
+import { ArrowUpRight, Check, ImageOff, Images, UserRound, Users, X } from 'lucide-react';
+import { Badge, Button, ProgressiveImage, Skeleton, Textarea } from '@/components/ui';
 import { formatPriceRange } from '@/lib/money';
-import {
-  Badge,
-  Button,
-  Container,
-  EmptyState,
-  Input,
-  ProgressiveImage,
-  Skeleton,
-  StatItem,
-  TabPanels,
-  Tabs,
-  Textarea,
-} from '@/components/ui';
-import {
-  AdminFact,
-  AdminPageHeader,
-  AdminStatusBadge,
-  AdminTabLabel,
-  AdminToolbar,
-  adminTabsClass,
-} from './admin-ui';
-import { formatAdminDate } from './admin-format';
-import {
-  countMedia,
-  filterAndSortMedia,
-  type KindFilter,
-  type SortOrder,
-} from './admin-media-logic';
+import { AdminFact, AdminStatusBadge } from '../admin-ui';
+import { formatAdminDate } from '../admin-format';
+
+/**
+ * One item waiting for a decision (ADR 0058): what it is, what the public sees
+ * now if anything, and Approve or Reject with a reason its owner sees. The same
+ * card under every subject that reviews content — Offers, People's profile
+ * photos, Organisations' logos (ADR 0059) — so a decision always looks the same.
+ */
+
+export type ReviewAction = 'approve' | 'reject';
 
 type MediaKind = AdminMediaRow['kind'];
-const KIND_FILTERS: ReadonlyArray<KindFilter> = ['all', 'avatar', 'offer', 'logo'];
 
-type ListResponse = Paginated<AdminMediaRow>;
-
-const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Avatar', offer: 'Offer', logo: 'Logo' };
+const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Profile photo', offer: 'Offer', logo: 'Logo' };
 
 /** What the card is: an offer is new, or a change to one already public. */
 function cardLabel(item: AdminMediaRow): string {
   if (item.kind !== 'offer') return KIND_LABEL[item.kind];
   return item.change === 'edit' ? 'Offer changes' : 'New offer';
 }
-
-type ReviewAction = 'approve' | 'reject';
-
-const SORT_OPTIONS: Array<{ value: SortOrder; label: string }> = [
-  { value: 'queue', label: 'Flagged first' },
-  { value: 'newest', label: 'Newest first' },
-  { value: 'oldest', label: 'Oldest first' },
-];
-
-function useAdminMedia() {
-  return useQuery({
-    queryKey: ['admin', 'media'],
-    queryFn: async (): Promise<ListResponse> => {
-      try {
-        const { data } = await apiClient.get<ListResponse>('/admin/media', {
-          params: { page: 1, limit: 50 },
-        });
-        return data;
-      } catch (error) {
-        throw toApiError(error);
-      }
-    },
-  });
-}
-
-export function AdminMediaPage() {
-  const queryClient = useQueryClient();
-  const list = useAdminMedia();
-  const [kind, setKind] = useState<KindFilter>('all');
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<SortOrder>('queue');
-
-  const review = useMutation({
-    mutationFn: async (input: {
-      kind: MediaKind;
-      id: string;
-      action: ReviewAction;
-      reason?: string;
-      version: string;
-    }) => {
-      try {
-        await apiClient.post(`/admin/media/${input.kind}/${input.id}/review`, {
-          action: input.action,
-          ...(input.reason ? { reason: input.reason } : {}),
-          // The decision is about this version; the server refuses it if the
-          // owner has changed the item since the queue loaded.
-          version: input.version,
-        });
-      } catch (error) {
-        throw toApiError(error);
-      }
-    },
-    // After a refusal too: an item changed or withdrawn since the queue loaded
-    // reappears as it is now, or leaves.
-    onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'media'] });
-    },
-  });
-
-  const items = useMemo(() => list.data?.data ?? [], [list.data]);
-  const total = list.data?.meta.total ?? 0;
-  // The split is only true when every waiting item is on this page.
-  const complete = items.length === total;
-  const counts = useMemo(() => countMedia(items), [items]);
-
-  const visible = useMemo(
-    () => filterAndSortMedia(items, kind, query, sort),
-    [items, kind, query, sort],
-  );
-
-  function act(item: AdminMediaRow, action: ReviewAction, reason?: string) {
-    void review
-      .mutateAsync({ kind: item.kind, id: item.id, action, reason, version: item.version })
-      .catch(() => undefined);
-  }
-
-  const filtering = kind !== 'all' || query.trim() !== '';
-
-  return (
-    <Container width="wide" className="py-(--section-gap)">
-      <AdminPageHeader
-        title="Offers and photos"
-        description="New offers, changes to offers, new profile photos and organisation logos wait here, unseen by the public. Approve one to publish it. Reject it with a reason, which its owner is shown — a rejected change leaves what is already public as it was."
-        aside={
-          list.data &&
-          total > 0 && (
-            <dl className="flex divide-x divide-hairline">
-              <StatItem value={total} label="Waiting" />
-              {complete && (
-                <>
-                  <StatItem value={counts.avatar} label={counts.avatar === 1 ? 'Avatar' : 'Avatars'} />
-                  <StatItem value={counts.offer} label={counts.offer === 1 ? 'Offer' : 'Offers'} />
-                  {counts.logo > 0 && (
-                    <StatItem value={counts.logo} label={counts.logo === 1 ? 'Logo' : 'Logos'} />
-                  )}
-                </>
-              )}
-              {counts.flagged > 0 && <StatItem value={counts.flagged} label="Flagged" />}
-            </dl>
-          )
-        }
-      />
-
-      {list.data && items.length > 0 && (
-        <AdminToolbar>
-          {/* Search leads until the row fits beside the admin sidebar (xl); on a
-              phone it is the quickest way to one item. */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:order-last">
-            <div className="sm:flex-1 xl:w-72 xl:flex-none">
-              <Input
-                type="search"
-                aria-label="Search media"
-                placeholder="Search by owner, offer or sub-domain"
-                iconLeft={<Search className="size-4" />}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm text-ink-muted">
-              <span className="shrink-0">Sort</span>
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortOrder)}
-                className="h-11 w-full rounded-sm border border-hairline-strong bg-surface px-3 text-sm font-semibold text-ink transition-colors hover:border-ink-subtle sm:w-auto"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <Tabs
-            label="Media type"
-            idPrefix="media"
-            className={adminTabsClass}
-            value={kind}
-            onChange={setKind}
-            items={[
-              { value: 'all' as const, label: <AdminTabLabel text="All" count={items.length} active={kind === 'all'} /> },
-              { value: 'avatar' as const, label: <AdminTabLabel text="Avatars" count={counts.avatar} active={kind === 'avatar'} /> },
-              { value: 'offer' as const, label: <AdminTabLabel text="Offers" count={counts.offer} active={kind === 'offer'} /> },
-              { value: 'logo' as const, label: <AdminTabLabel text="Logos" count={counts.logo} active={kind === 'logo'} /> },
-            ]}
-          />
-        </AdminToolbar>
-      )}
-
-      {review.isError && (
-        <p role="alert" className="mt-5 text-sm text-danger-700">
-          {review.error.message}
-        </p>
-      )}
-
-      <MediaResultsPanel tabbed={Boolean(list.data && items.length > 0)} kind={kind}>
-        {list.isPending && (
-          <ul className={gridClass} aria-label="Loading media">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <MediaCardSkeleton key={i} />
-            ))}
-          </ul>
-        )}
-
-        {list.isError && (
-          <EmptyState
-            icon={<Inbox className="size-5" />}
-            title="Could not load the review queue"
-            description={list.error.message}
-            action={
-              <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
-                Try again
-              </Button>
-            }
-          />
-        )}
-
-        {list.data && items.length === 0 && (
-          <EmptyState
-            icon={<CheckCircle2 className="size-5" />}
-            title="Nothing to review"
-            description="New offers, changes to offers, profile photos and organisation logos will appear here."
-          />
-        )}
-
-        {list.data && items.length > 0 && visible.length === 0 && (
-          <EmptyState
-            icon={<Search className="size-5" />}
-            title="No media matches"
-            description="Try another name, or show every type."
-            action={
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setQuery('');
-                  setKind('all');
-                }}
-              >
-                Clear search
-              </Button>
-            }
-          />
-        )}
-
-        {visible.length > 0 && (
-          <>
-            {(filtering || !complete) && (
-              <p className="mb-5 text-sm text-ink-muted" data-numeric>
-                {filtering
-                  ? `Showing ${visible.length} of ${items.length}`
-                  : `Showing the first ${items.length} of ${total}`}
-              </p>
-            )}
-            <ul className={gridClass}>
-              {visible.map((item) => {
-                const pendingAction =
-                  review.isPending && review.variables?.id === item.id
-                    ? review.variables.action
-                    : null;
-                return (
-                  <MediaCard
-                    key={`${item.kind}-${item.id}`}
-                    item={item}
-                    pendingAction={pendingAction}
-                    disabled={review.isPending}
-                    onApprove={() => act(item, 'approve')}
-                    onReject={(reason) => act(item, 'reject', reason)}
-                  />
-                );
-              })}
-            </ul>
-          </>
-        )}
-      </MediaResultsPanel>
-    </Container>
-  );
-}
-
-function MediaResultsPanel({
-  tabbed,
-  kind,
-  children,
-}: {
-  tabbed: boolean;
-  kind: KindFilter;
-  children: ReactNode;
-}) {
-  if (!tabbed) return <div className="mt-8">{children}</div>;
-  return (
-    <TabPanels idPrefix="media" values={KIND_FILTERS} value={kind} className="mt-8">
-      {children}
-    </TabPanels>
-  );
-}
-
-/** One column on a phone, two from `sm`, three from `lg`. */
-const gridClass = 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6';
 
 function NoPreview({ text }: { text: string }) {
   return (
@@ -402,7 +110,7 @@ function photoChanges(item: AdminMediaRow): string | null {
   return parts.length ? parts.join(', ') : null;
 }
 
-function MediaCard({
+export function ReviewCard({
   item,
   pendingAction,
   disabled,
@@ -583,7 +291,7 @@ function MediaCard({
   );
 }
 
-function MediaCardSkeleton() {
+export function ReviewCardSkeleton() {
   return (
     <li className="overflow-hidden rounded-md border border-hairline bg-surface" aria-hidden="true">
       <Skeleton radius="xs" className="aspect-4/3 w-full rounded-none" />

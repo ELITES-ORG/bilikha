@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminProfile, useModerateProfile } from '@/features/admin/api';
 import { Badge, Button, ButtonLink, Container, EmptyState, Input, Skeleton } from '@/components/ui';
-import { ArrowLeft, Star, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Check, Star, TriangleAlert, X } from 'lucide-react';
 import {
   AdminFact,
   AdminPageHeader,
@@ -29,7 +29,7 @@ export function AdminProfilePage() {
         action,
         reason: action === 'rejected' ? reason : undefined,
       });
-      void navigate('/admin');
+      void navigate('/admin/creatives');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the decision');
     }
@@ -39,13 +39,13 @@ export function AdminProfilePage() {
     <Container width="wide" className="py-(--section-gap)">
       {/* Return from a detail view — not section navigation. */}
       <ButtonLink
-        to="/admin"
+        to="/admin/creatives"
         variant="ghost"
         size="sm"
         className="-ml-3"
         iconLeft={<ArrowLeft className="size-4" aria-hidden="true" />}
       >
-        Back to the queue
+        Back to Creatives
       </ButtonLink>
 
       {profile.isPending && (
@@ -180,30 +180,54 @@ export function AdminProfilePage() {
                 </p>
               )}
 
+              {/*
+                Approve and Reject, as on every admin decision (ADR 0059). Which
+                approve depends on the state: an edit to a published profile is
+                approved by acknowledging it — approving the profile again would
+                leave it in the Edited queue — and a published profile with
+                nothing waiting has nothing to approve.
+              */}
               <div className="flex flex-wrap gap-2">
-                <Button
-                  loading={moderate.isPending}
-                  disabled={moderate.isPending}
-                  onClick={() => void decide('approved')}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
-                  aria-expanded={rejectOpen}
-                  disabled={moderate.isPending}
-                  onClick={() => setRejectOpen((open) => !open)}
-                >
-                  Reject
-                </Button>
+                {profile.data.status === 'published' ? (
+                  profile.data.editedSinceReviewAt && (
+                    <Button
+                      iconLeft={<Check className="size-4" aria-hidden="true" />}
+                      loading={moderate.isPending}
+                      disabled={moderate.isPending}
+                      onClick={() => void decide('acknowledged_edit')}
+                    >
+                      Approve edit
+                    </Button>
+                  )
+                ) : (
+                  <Button
+                    iconLeft={<Check className="size-4" aria-hidden="true" />}
+                    loading={moderate.isPending}
+                    disabled={moderate.isPending}
+                    onClick={() => void decide('approved')}
+                  >
+                    Approve
+                  </Button>
+                )}
+                {profile.data.status !== 'suspended' && (
+                  <Button
+                    variant="ghost"
+                    className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
+                    iconLeft={<X className="size-4" aria-hidden="true" />}
+                    aria-expanded={rejectOpen}
+                    disabled={moderate.isPending}
+                    onClick={() => setRejectOpen((open) => !open)}
+                  >
+                    Reject
+                  </Button>
+                )}
               </div>
 
               {rejectOpen && (
                 <div className="space-y-3 border-t border-hairline pt-4">
                   <Input
-                    label="Reason"
-                    hint="The registrant will see this text exactly as written."
+                    label="Why it is not approved"
+                    hint="The registrant sees this exactly as written, so say what to change."
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                   />
@@ -213,13 +237,11 @@ export function AdminProfilePage() {
                     disabled={moderate.isPending || reason.trim().length === 0}
                     onClick={() => void decide('rejected')}
                   >
-                    Confirm rejection
+                    Reject
                   </Button>
                 </div>
               )}
 
-              {/* Acknowledge only exists on a published profile, so this group
-                  is never empty when it shows. */}
               {profile.data.status !== 'pending_review' && (
                 <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">
                   <Button
@@ -231,17 +253,6 @@ export function AdminProfilePage() {
                   >
                     Return to pending
                   </Button>
-                  {profile.data.status === 'published' && profile.data.editedSinceReviewAt && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      loading={moderate.isPending}
-                      disabled={moderate.isPending}
-                      onClick={() => void decide('acknowledged_edit')}
-                    >
-                      Acknowledge
-                    </Button>
-                  )}
                 </div>
               )}
             </section>
