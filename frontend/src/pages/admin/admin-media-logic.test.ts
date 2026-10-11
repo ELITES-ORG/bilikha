@@ -14,6 +14,7 @@ function row(overrides: Partial<AdminMediaRow> & Pick<AdminMediaRow, 'id'>): Adm
     ownerName: 'Owner',
     profileSlug: null,
     profileId: null,
+    version: `v-${id}`,
     ...rest,
   };
 }

@@ -96,17 +96,23 @@ export function AdminMediaPage() {
       id: string;
       action: ReviewAction;
       reason?: string;
+      version: string;
     }) => {
       try {
         await apiClient.post(`/admin/media/${input.kind}/${input.id}/review`, {
           action: input.action,
           ...(input.reason ? { reason: input.reason } : {}),
+          // The decision is about this version; the server refuses it if the
+          // owner has changed the item since the queue loaded.
+          version: input.version,
         });
       } catch (error) {
         throw toApiError(error);
       }
     },
-    onSuccess: async () => {
+    // After a refusal too: an item changed or withdrawn since the queue loaded
+    // reappears as it is now, or leaves.
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'media'] });
     },
   });
@@ -123,7 +129,9 @@ export function AdminMediaPage() {
   );
 
   function act(item: AdminMediaRow, action: ReviewAction, reason?: string) {
-    void review.mutateAsync({ kind: item.kind, id: item.id, action, reason }).catch(() => undefined);
+    void review
+      .mutateAsync({ kind: item.kind, id: item.id, action, reason, version: item.version })
+      .catch(() => undefined);
   }
 
   const filtering = kind !== 'all' || query.trim() !== '';

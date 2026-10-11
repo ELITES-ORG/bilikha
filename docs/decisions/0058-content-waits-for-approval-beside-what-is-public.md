@@ -110,6 +110,16 @@ rest oldest first.
 **Every public read of offers filters on status**, and every new one must. The
 owner's own views read the waiting version too; nothing else may.
 
+**A decision is about what the administrator saw.** The queue gives each item a
+version token, and the review is refused if the item has changed since, rather
+than approving an edit nobody looked at. The owner's writes and the review take
+the same row lock on the offer, so a write can never land between an approval
+reading the offer and changing it.
+
+**A waiting change holds its sub-domain** as the offer does: the taxonomy counts
+it as a reference, and a creative cannot drop a sub-domain a waiting change
+moves an offer to.
+
 **Taking down something already approved is not part of this queue.** The queue
 only holds what waits for a decision. Reports and suspension remain the way to
 remove approved content.

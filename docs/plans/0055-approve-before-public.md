@@ -116,8 +116,16 @@ public version. Rejecting it leaves the public version exactly as it was.
   - `POST /admin/media/:kind/:id/review` takes
     `{ action: 'approve' | 'reject', reason? }`. Reject requires a reason.
   - Each decision writes an audit row and notifies the owner.
+  - The review carries the queue row's `version` and is refused with `409` if
+    the item changed since. Owner writes and the review share the offer's row
+    lock.
+  - A waiting change counts as a reference to its sub-domain, in the taxonomy
+    and when a creative removes a sub-domain from their profile.
 - [x] **Verify.** The approve, reject, `409` and queue-order tests in
-  `content-review.test.ts`, which also check which storage files are deleted.
+  `content-review.test.ts`, which also check which storage files are deleted;
+  "a decision" (stale versions refused) and "a creative's write racing an
+  approval" in the same file; the two offer-change tests in
+  `taxonomy.test.ts`.
 
 ## Phase 3 — Owner screens
 

@@ -889,7 +889,8 @@ Each row has:
 - the profile slug, when there is one
 
 A logo row carries `organizationSlug` when the page is published. An avatar or
-logo row carries `currentUrl` when it would replace an approved image.
+logo row carries `currentUrl` when it would replace an approved image. Every
+row carries a `version`: a token for exactly what the row shows.
 
 Offer rows also include:
 
@@ -904,8 +905,12 @@ Offer rows also include:
 
 `kind` is `avatar`, `offer` or `logo`. For a logo, `id` is the organisation's.
 
-Body: `{ "action": "approve" | "reject", "reason"?: string }`. A reject needs
-a `reason` of up to 500 characters, else `400`. The owner sees the reason.
+Body: `{ "action": "approve" | "reject", "reason"?: string, "version": string }`.
+A reject needs a `reason` of up to 500 characters, else `400`. The owner sees
+the reason. `version` is the queue row's: if the owner has changed the item
+since — edited the offer, added or removed a photo, uploaded another photo or
+logo — the decision is refused with `409`, so nothing is approved unseen.
+Reload the queue and decide on what is there now.
 
 **Approve:**
 
