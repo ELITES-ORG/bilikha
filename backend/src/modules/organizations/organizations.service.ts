@@ -539,6 +539,8 @@ export async function getManagedOrganization(input: {
     name: organization.name,
     bio: organization.bio,
     logoUrl: avatarUrl(organization.logoKey),
+    pendingLogoUrl: avatarUrl(organization.logoPendingKey),
+    logoRejectionReason: organization.logoRejectionReason,
     municipality,
     crafts,
     status: organization.status,

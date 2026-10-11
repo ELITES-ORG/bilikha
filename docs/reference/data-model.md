@@ -185,8 +185,10 @@ password for sprint 1 ([ADR 0013](../decisions/0013-username-password-auth-sprin
 | `consent_version` | `text` | Bumped when policy text changes |
 | `last_login_at` | `timestamptz` null | |
 | `must_change_password` | `boolean` | Default false. Set by an administrator's password reset; while true `requireAuth` refuses every route but `GET /auth/me` and `POST /me/password` ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)) |
-| `avatar_key` | `text` null | Storage object key; one avatar per account |
-| `avatar_reviewed_at` | `timestamptz` null | Cleared on upload; set by admin media review |
+| `avatar_key` | `text` null | Storage object key of the approved photo, the one everyone sees |
+| `avatar_pending_key` | `text` null | A new photo waiting for review, seen only by its owner; replaces `avatar_key` when approved ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)) |
+| `avatar_rejection_reason` | `text` null | Why the last new photo was not approved; cleared by the next upload |
+| `avatar_reviewed_at` | `timestamptz` null | Kept but no longer read since ADR 0058 |
 | `view_mode` | enum | `hiring` \| `creative`; default `hiring`. Flips to `creative` when a profile is created ([ADR 0025](../decisions/0025-client-postings-and-mirrored-home.md)) |
 | `created_at` / `updated_at` | `timestamptz` | |
 
@@ -234,8 +236,11 @@ changes such as `contact_preference` do not set the flag.
 
 Up to six service listings per creative profile. Cascade deletes when the
 profile goes. Storage objects under `offer_images` are cleaned by
-`npm run media:prune` or by the delete / admin-remove paths. See
-[ADR 0022](../decisions/0022-offers-replace-portfolio.md).
+`npm run media:prune`, by deleting an offer or photo, or by a review decision.
+See [ADR 0022](../decisions/0022-offers-replace-portfolio.md).
+
+Only `published` offers are public ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)). A change to a published offer
+waits in `offer_revisions` and leaves the published values as they are.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -247,12 +252,33 @@ profile goes. Storage objects under `offer_images` are cleaned by
 | `price_min_centavos` | `integer` null | Integer centavos; null with no max → "Price on request" |
 | `price_max_centavos` | `integer` null | Minimum alone renders "from ₱X" |
 | `sort_order` | `integer` | Default 0 |
-| `reviewed_at` | `timestamptz` null | Cleared when title, description, or price changes; set by admin media review |
-| `flagged_at` | `timestamptz` null | Set when the description matches a contact-details pattern; sorts the review queue, does not hide the offer |
+| `status` | `offer_status` | `pending_review` \| `published` \| `rejected`. Default `pending_review`. Editing a rejected offer returns it to `pending_review` |
+| `rejection_reason` | `text` null | Why a new offer was not approved; shown to its creative |
+| `revision_rejection_reason` | `text` null | Why the last change to a published offer was not approved; cleared by the next edit |
+| `reviewed_at` | `timestamptz` null | Set when an administrator approves the offer or a change to it |
+| `flagged_at` | `timestamptz` null | Set when the description matches a contact-details pattern; sorts the review queue |
 | `created_at` / `updated_at` | `timestamptz` | |
 
-Indexes: `(profile_id, sort_order)`, `(subdomain_id, created_at)`, `reviewed_at`;
-two for search ([Search indexes](#search-indexes)).
+Indexes: `(profile_id, sort_order)`, `(subdomain_id, created_at)`, `reviewed_at`,
+`status`; two for search ([Search indexes](#search-indexes)).
+
+---
+
+## `offer_revisions`
+
+A change to a published offer, waiting for review. At most one per offer:
+editing again overwrites it, and an edit back to the published values deletes
+it. Approval copies it onto `offers` and deletes it. Rejection deletes it.
+
+| Column | Type | Notes |
+|---|---|---|
+| `offer_id` | `uuid` PK, FK → `offers.id` | `ON DELETE CASCADE` |
+| `subdomain_id` | `uuid` FK → `creative_subdomains.id` | `ON DELETE RESTRICT` |
+| `title` | `text` | |
+| `description` | `text` null | |
+| `price_min_centavos` / `price_max_centavos` | `integer` null | As on `offers` |
+| `flagged_at` | `timestamptz` null | As on `offers`, for the proposed description |
+| `submitted_at` | `timestamptz` | Default now; the time of the latest edit |
 
 ---
 
@@ -267,6 +293,7 @@ Up to four images per offer. Cascade deletes when the offer goes.
 | `object_key` | `text` | Display-size object (`offers/<profileId>/…` or legacy `portfolio/…`) |
 | `thumb_key` | `text` | Thumbnail object |
 | `sort_order` | `integer` | Default 0 |
+| `state` | `offer_image_state` | `live` \| `pending_add` \| `pending_remove`. Default `live`. On a published offer, a new photo is `pending_add` (not public) and a removed one `pending_remove` (still public) until the change is reviewed |
 | `created_at` | `timestamptz` | |
 
 Indexes: `(offer_id, sort_order)`.
@@ -288,9 +315,10 @@ acknowledgement / media-removal decision.
 | `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` \| `id_viewed` \| `id_verified` \| `id_declined_retry` \| `id_declined_final` \| `id_decision_reversed` \| `id_appeal_granted` \| `id_appeal_upheld` |
 | `reason` | `text` null | Required for rejections |
 | `id_verification_id` | `uuid` FK null → `id_verifications.id` | `ON DELETE SET NULL`. Set for the `id_*` actions, so which IDs an administrator viewed or decided is a join, not a search of `reason` |
+| `offer_id` | `uuid` FK null → `offers.id` | `ON DELETE SET NULL`. Set when an offer or a change to one was approved or rejected |
 | `created_at` | `timestamptz` | |
 
-Indexes: `profile_id`, `subject_user_id`, `organization_id`, `id_verification_id`, `created_at`.
+Indexes: `profile_id`, `subject_user_id`, `organization_id`, `id_verification_id`, `offer_id`, `created_at`.
 
 ---
 
@@ -629,8 +657,10 @@ so handing the role over is one write rather than two that can disagree.
 | `slug` | `text` | **Unique.** A public URL — permanent, for the reason ADR 0049 gives for taxonomy slugs |
 | `name` | `text` | |
 | `bio` | `text` null | |
-| `logo_key` | `text` null | Storage key, as `users.avatar_key`: `organizations/<id>/<uuid>.webp`. Founder or co-founder uploads it; closing deletes it |
-| `logo_reviewed_at` | `timestamptz` null | Null until an administrator has seen the current logo in the media queue, as `users.avatar_reviewed_at` |
+| `logo_key` | `text` null | Storage key of the approved logo, as `users.avatar_key`: `organizations/<id>/<uuid>.webp`. Closing deletes it |
+| `logo_pending_key` | `text` null | A new logo waiting for review, uploaded by the founder or a co-founder; replaces `logo_key` when approved |
+| `logo_rejection_reason` | `text` null | Why the last new logo was not approved; cleared by the next upload |
+| `logo_reviewed_at` | `timestamptz` null | Kept but no longer read since ADR 0058 |
 | `municipality_id` | `uuid` FK → `municipalities.id` | `ON DELETE RESTRICT` |
 | `status` | `organization_status` | `pending_review` \| `published` \| `rejected` \| `suspended`. Default `pending_review` |
 | `rejection_reason` | `text` null | Shown to the founder verbatim |

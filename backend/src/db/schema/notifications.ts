@@ -36,6 +36,13 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   // a new account out of browse-only (ADR 0057), and the person is waiting on
   // it. Declines need no notification — they end the session with the reason.
   'id_verified',
+  // Content review (ADR 0058). An offer or a change to it was approved, or
+  // was not (with the reason); a new photo or logo was not approved. An
+  // approved photo needs no message — it simply appears.
+  'offer_approved',
+  'offer_rejected',
+  'avatar_rejected',
+  'logo_rejected',
 ]);
 
 /**

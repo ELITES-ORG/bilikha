@@ -11,7 +11,7 @@ import { Images, ListChecks, Star, Tags, UserRound, Users } from 'lucide-react';
 export const ADMIN_SECTIONS = [
   { label: 'Review queue', path: '/admin', icon: ListChecks },
   { label: 'Organisations', path: '/admin/organizations', icon: Users },
-  { label: 'Media', path: '/admin/media', icon: Images },
+  { label: 'Offers & photos', path: '/admin/media', icon: Images },
   { label: 'Accounts', path: '/admin/accounts', icon: UserRound },
   { label: 'Ratings', path: '/admin/ratings', icon: Star },
   { label: 'Taxonomy', path: '/admin/taxonomy', icon: Tags },

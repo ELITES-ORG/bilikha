@@ -5,6 +5,7 @@ import {
   creativeDomains,
   creativeProfileSubdomains,
   creativeSubdomains,
+  offerRevisions,
   offers,
   organizationSubdomains,
   organizations,
@@ -54,6 +55,7 @@ afterEach(async () => {
     // Everything that references a test sub-domain goes first: the references
     // are ON DELETE RESTRICT, and a cleanup that fails leaks `zz-test-` rows
     // into every later run.
+    await db.delete(offerRevisions).where(inArray(offerRevisions.subdomainId, ids));
     await db.delete(offers).where(inArray(offers.subdomainId, ids));
     await db.delete(postings).where(inArray(postings.subdomainId, ids));
     await db.delete(creativeProfileSubdomains).where(
@@ -424,6 +426,53 @@ describe('admin taxonomy — deleting', () => {
     await expect(
       deleteTaxonomyItem({ kind: 'subdomains', slug: sub.slug, adminId: admin.id }),
     ).rejects.toMatchObject({ status: 409, message: expect.stringMatching(/used by 1 /) });
+  });
+
+  it('counts an offer change waiting for review as a reference (ADR 0058)', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+    const { profile } = await makeCreative();
+    const offer = await makeOffer(profile.id);
+    await db.insert(offerRevisions).values({ offerId: offer.id, subdomainId: sub.id, title: 'ZZ Moved' });
+
+    const tree = await listTaxonomyForAdmin();
+    const listed = tree
+      .find((item) => item.slug === domain.slug)
+      ?.subdomains.find((item) => item.slug === sub.slug);
+    expect(listed?.referenceCount).toBe(1);
+
+    // Without the count, delete reached the foreign key and answered 500.
+    await expect(
+      deleteTaxonomyItem({ kind: 'subdomains', slug: sub.slug, adminId: admin.id }),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('keeps a creative from dropping a sub-domain an offer change waiting for review moves to', async () => {
+    const admin = await makeAdmin();
+    const domain = await makeTestDomain(admin.id);
+    const sub = await makeTestSubdomain(admin.id, domain.slug);
+    const { user, profile } = await makeCreative();
+    await db.insert(creativeProfileSubdomains).values({ profileId: profile.id, subdomainId: sub.id });
+    const offer = await makeOffer(profile.id);
+    await db.insert(offerRevisions).values({ offerId: offer.id, subdomainId: sub.id, title: 'ZZ Moved' });
+
+    const { getOwnProfile, updateOwnProfile } = await import('../me/me.service.js');
+    const own = await getOwnProfile(user.id);
+    const kept = own!.subdomainSlugs.filter((slug) => slug !== sub.slug);
+
+    // Approving the change would have published the offer under a sub-domain
+    // the profile no longer has.
+    await expect(
+      updateOwnProfile(user.id, {
+        firstName: own!.firstName,
+        lastName: own!.lastName,
+        municipalitySlug: own!.municipalitySlug,
+        subdomainSlugs: kept,
+        primarySubdomainSlug: kept[0],
+        contactPreference: own!.contactPreference,
+      } as Parameters<typeof updateOwnProfile>[1]),
+    ).rejects.toMatchObject({ status: 400, message: expect.stringMatching(/waiting for review/) });
   });
 
   it('deletes an unreferenced sub-domain and keeps its history', async () => {

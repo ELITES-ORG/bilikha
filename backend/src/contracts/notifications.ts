@@ -20,7 +20,11 @@ export type NotificationType =
   | 'organization_rejected'
   | 'organization_invited'
   | 'organization_invitation_accepted'
-  | 'id_verified';
+  | 'id_verified'
+  | 'offer_approved'
+  | 'offer_rejected'
+  | 'avatar_rejected'
+  | 'logo_rejected';
 
 export interface NotificationActor {
   name: string;

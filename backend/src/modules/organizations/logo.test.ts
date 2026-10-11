@@ -3,11 +3,19 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { creativeSubdomains, moderationActions, organizations } from '../../db/schema/index.js';
 import { makeAdmin, makeCreative } from '../../test/factories.js';
-import { reviewMedia } from '../admin/admin.service.js';
+import { listContentQueue, reviewContent } from '../admin/content-review.service.js';
+import { listNotifications } from '../notifications/notifications.service.js';
 import { moderateOrganization } from '../admin/organization-review.service.js';
 import { clearLogo, issueLogoUpload, setLogo } from './logo.service.js';
 import { acceptInvitation, invite, leaveOrganization } from './membership.service.js';
 import { foundOrganization } from './organizations.service.js';
+
+/** As the admin page does: decide on the version the queue showed. */
+async function review(input: Omit<Parameters<typeof reviewContent>[0], 'version'>) {
+  const queue = await listContentQueue({ page: 1, limit: 10_000 });
+  const row = queue.data.find((item) => item.kind === input.kind && item.id === input.id);
+  return reviewContent({ ...input, version: row?.version ?? 'not-in-the-queue' });
+}
 
 /**
  * Organisation logos (plan 0051 follow-up). Storage is not configured under
@@ -50,15 +58,15 @@ async function row(id: string) {
 }
 
 describe('setting a logo', () => {
-  it('attaches an object under the organisation, unreviewed, and flags a published page as edited', async () => {
+  it('waits for review in the pending slot, leaving the approved logo public', async () => {
     const { founder, slug, id } = await teamWithMember({ publish: true });
+    await db.update(organizations).set({ logoKey: 'organizations/approved/old.webp' }).where(eq(organizations.id, id));
 
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
 
     const org = await row(id);
-    expect(org.logoKey).toBe(keyFor(id));
-    expect(org.logoReviewedAt).toBeNull();
-    expect(org.editedSinceReviewAt).not.toBeNull();
+    expect(org.logoPendingKey).toBe(keyFor(id));
+    expect(org.logoKey).toBe('organizations/approved/old.webp');
     expect(org.status).toBe('published');
   });
 
@@ -96,9 +104,13 @@ describe('setting a logo', () => {
     await expect(issueLogoUpload({ userId: founder.user.id, slug })).rejects.toMatchObject({ status: 503 });
   });
 
-  it('can be removed', async () => {
+  it('withdraws a logo waiting for review first, and takes down the approved one after', async () => {
     const { founder, slug, id } = await teamWithMember();
+    await db.update(organizations).set({ logoKey: 'organizations/approved/old.webp' }).where(eq(organizations.id, id));
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
+
+    expect(await clearLogo({ userId: founder.user.id, slug })).toEqual({ removed: true });
+    expect(await row(id)).toMatchObject({ logoPendingKey: null, logoKey: 'organizations/approved/old.webp' });
 
     expect(await clearLogo({ userId: founder.user.id, slug })).toEqual({ removed: true });
     expect((await row(id)).logoKey).toBeNull();
@@ -124,37 +136,49 @@ describe('setting a logo', () => {
 });
 
 describe('reviewing a logo', () => {
-  it('approving marks the current logo as seen', async () => {
+  it('approving makes the new logo the public one', async () => {
     const { founder, slug, id } = await teamWithMember();
     const admin = await makeAdmin();
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
 
-    await reviewMedia({ kind: 'logo', id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'logo', id, adminId: admin.id, action: 'approve' });
 
-    expect((await row(id)).logoReviewedAt).not.toBeNull();
+    expect(await row(id)).toMatchObject({ logoKey: keyFor(id), logoPendingKey: null });
   });
 
-  it('removing takes the logo off, keeps the page, and records it against the organisation and founder', async () => {
+  it('rejecting needs a reason, keeps the approved logo and the page, and tells the founder why', async () => {
     const { founder, slug, id } = await teamWithMember({ publish: true });
     const admin = await makeAdmin();
+    await db.update(organizations).set({ logoKey: 'organizations/approved/old.webp' }).where(eq(organizations.id, id));
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
 
-    await reviewMedia({ kind: 'logo', id, adminId: admin.id, action: 'remove' });
+    await expect(review({ kind: 'logo', id, adminId: admin.id, action: 'reject' })).rejects.toMatchObject({
+      status: 400,
+    });
+    await review({ kind: 'logo', id, adminId: admin.id, action: 'reject', reason: 'This is a stock image.' });
 
-    const org = await row(id);
-    expect(org.logoKey).toBeNull();
-    expect(org.status).toBe('published');
+    expect(await row(id)).toMatchObject({
+      logoKey: 'organizations/approved/old.webp',
+      logoPendingKey: null,
+      logoRejectionReason: 'This is a stock image.',
+      status: 'published',
+    });
     const [audit] = await db
       .select()
       .from(moderationActions)
       .where(and(eq(moderationActions.organizationId, id), eq(moderationActions.action, 'media_removed')));
-    expect(audit).toMatchObject({ subjectUserId: founder.user.id, adminId: admin.id });
+    expect(audit).toMatchObject({ subjectUserId: founder.user.id, adminId: admin.id, reason: 'This is a stock image.' });
+    const { data } = await listNotifications(founder.user.id, { page: 1, limit: 10 });
+    expect(data.find((n) => n.type === 'logo_rejected')).toMatchObject({
+      detail: 'This is a stock image.',
+      link: `/organizations/${slug}/manage`,
+    });
   });
 
-  it('is a 404 for an organisation with no logo', async () => {
+  it('is a 404 when no logo is waiting', async () => {
     const { id } = await teamWithMember();
     const admin = await makeAdmin();
-    await expect(reviewMedia({ kind: 'logo', id, adminId: admin.id, action: 'approve' })).rejects.toMatchObject({
+    await expect(review({ kind: 'logo', id, adminId: admin.id, action: 'approve' })).rejects.toMatchObject({
       status: 404,
     });
   });

@@ -37,6 +37,8 @@ export interface OfferCardProps {
   save?: OfferCardSave;
   /** Owner cards: the action row (Edit, more). Ignored when `href` is set. */
   footer?: ReactNode;
+  /** Owner cards: where the offer stands in review, above the action row. */
+  notice?: ReactNode;
   /** Similar-offers strip: no description, tighter type. */
   compact?: boolean;
   /** Whose initials fill the no-photo panel when there is no `provider`. */
@@ -98,6 +100,7 @@ export function OfferCard({
   href,
   save,
   footer,
+  notice,
   compact = false,
   fallbackName,
   className,
@@ -190,6 +193,8 @@ export function OfferCard({
           </div>
         )}
       </div>
+
+      {!href && notice && <div className="border-t border-hairline px-5 py-3">{notice}</div>}
 
       {!href && footer && (
         <div className="flex items-center gap-2 border-t border-hairline px-5 py-3">{footer}</div>

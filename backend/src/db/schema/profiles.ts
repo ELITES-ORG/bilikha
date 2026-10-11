@@ -154,6 +154,9 @@ export const moderationActions = pgTable(
     idVerificationId: uuid('id_verification_id').references(() => idVerifications.id, {
       onDelete: 'set null',
     }),
+    // Set when an offer, or a change to one, was approved or rejected
+    // (ADR 0058). Set null so the record outlives a deleted offer.
+    offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -164,8 +167,27 @@ export const moderationActions = pgTable(
     // ON DELETE SET NULL looks rows up by this column, and so does the audit
     // trail for one ID decision (plan 0053 Phase 3).
     index('moderation_actions_id_verification_idx').on(table.idVerificationId),
+    index('moderation_actions_offer_idx').on(table.offerId),
   ],
 );
+
+/**
+ * Whether an offer is on the directory (ADR 0058). A new offer waits for an
+ * administrator before anyone else sees it; a rejected one stays hidden, with
+ * the reason shown to its creative, until they change it and it goes back to
+ * review. A published offer stays published while a change to it waits in
+ * `offer_revisions`.
+ */
+export const offerStatusEnum = pgEnum('offer_status', ['pending_review', 'published', 'rejected']);
+
+/**
+ * A photo of a published offer is `live`. A photo added to one waits as
+ * `pending_add`, unseen by the public, and a photo removed from one stays
+ * public as `pending_remove`, until the change is reviewed (ADR 0058). A
+ * photo of an offer that is not yet published is simply `live`: the whole
+ * offer is hidden anyway.
+ */
+export const offerImageStateEnum = pgEnum('offer_image_state', ['live', 'pending_add', 'pending_remove']);
 
 export const offers = pgTable(
   'offers',
@@ -186,9 +208,17 @@ export const offers = pgTable(
     priceMinCentavos: integer('price_min_centavos'),
     priceMaxCentavos: integer('price_max_centavos'),
     sortOrder: integer('sort_order').notNull().default(0),
+    status: offerStatusEnum('status').notNull().default('pending_review'),
+    // Why an offer that was never published was rejected. Shown to its creative
+    // verbatim; cleared when they change it and it goes back to review.
+    rejectionReason: text('rejection_reason'),
+    // Why the last change to a published offer was not approved. The offer
+    // itself stayed as it was; cleared when the next change is submitted.
+    revisionRejectionReason: text('revision_rejection_reason'),
+    // When an administrator last approved the offer or a change to it.
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     // Set when the description matches a contact-details pattern. Advisory —
-    // it sorts the review queue, it does not hide the offer.
+    // it sorts the review queue first.
     flaggedAt: timestamp('flagged_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -202,8 +232,30 @@ export const offers = pgTable(
       sql`to_tsvector('simple', title || ' ' || coalesce(description, ''))`,
     ),
     index('offers_title_trgm_idx').using('gin', table.title.op('gin_trgm_ops')),
+    index('offers_status_idx').on(table.status),
   ],
 );
+
+/**
+ * A change to a published offer, waiting for review beside the version the
+ * public sees (ADR 0058). One per offer: editing again updates it. Approving
+ * copies it onto the offer and deletes it; rejecting just deletes it, so the
+ * published version stays exactly as it was.
+ */
+export const offerRevisions = pgTable('offer_revisions', {
+  offerId: uuid('offer_id')
+    .primaryKey()
+    .references(() => offers.id, { onDelete: 'cascade' }),
+  subdomainId: uuid('subdomain_id')
+    .notNull()
+    .references(() => creativeSubdomains.id, { onDelete: 'restrict' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  priceMinCentavos: integer('price_min_centavos'),
+  priceMaxCentavos: integer('price_max_centavos'),
+  flaggedAt: timestamp('flagged_at', { withTimezone: true }),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const offerImages = pgTable(
   'offer_images',
@@ -215,6 +267,7 @@ export const offerImages = pgTable(
     objectKey: text('object_key').notNull(),
     thumbKey: text('thumb_key').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
+    state: offerImageStateEnum('state').notNull().default('live'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('offer_images_offer_order_idx').on(table.offerId, table.sortOrder)],

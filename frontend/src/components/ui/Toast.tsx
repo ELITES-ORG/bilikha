@@ -106,7 +106,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         const id = push('pending', pendingMessage);
         try {
           const result = await work();
-          settle(id, 'success', options?.success ?? 'Done');
+          const success = options?.success;
+          settle(id, 'success', (typeof success === 'function' ? success(result) : success) ?? 'Done');
           return result;
         } catch (error) {
           const message = options?.error

@@ -5,6 +5,12 @@
 - **Related:** [0008](./0008-publish-immediately-with-tiers.md) ·
   [0013](./0013-username-password-auth-sprint-1.md)
 
+> **Narrowed by [0058](./0058-content-waits-for-approval-beside-what-is-public.md)
+> (2026-10-11).** Offers, profile photos and organisation logos have their own
+> review. A change to one of them waits beside the approved version, which
+> stays public. It no longer flags the profile for the **Edited** tab. The rule
+> that an edit never takes anything down still holds.
+
 ## Context
 
 Profiles are reviewed before publishing, because

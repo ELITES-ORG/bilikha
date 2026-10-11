@@ -161,6 +161,10 @@ export async function makeOffer(
       profileId,
       subdomainId: await anySubdomainId(),
       title: 'Test offer',
+      // An approved offer, as most tests need one on the directory. Tests of
+      // review pass status: 'pending_review' (ADR 0058).
+      status: 'published',
+      reviewedAt: new Date(),
       ...overrides,
     })
     .returning();

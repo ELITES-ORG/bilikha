@@ -70,6 +70,12 @@ export const organizations = pgTable(
     // queue, the way `users.avatar_reviewed_at` works for a photo. A new
     // upload clears it.
     logoReviewedAt: timestamp('logo_reviewed_at', { withTimezone: true }),
+    // A new logo waiting for review, seen only by the team; the approved
+    // `logo_key` stays public until this is approved, and stays if it is
+    // rejected (ADR 0058).
+    logoPendingKey: text('logo_pending_key'),
+    // Why the last new logo was not approved, shown to the team.
+    logoRejectionReason: text('logo_rejection_reason'),
     municipalityId: uuid('municipality_id')
       .notNull()
       .references(() => municipalities.id, { onDelete: 'restrict' }),

@@ -40,7 +40,34 @@ export type OwnOffer = {
    *  `subdomainLabel()` on the frontend, which falls back to `name`. */
   subdomainSingularName?: string;
   domainName: string;
-  images: OfferImage[];
+  /** Where the offer stands in review (ADR 0058). */
+  status: OfferStatus;
+  /** Why a never-published offer was not approved; shown until it is changed. */
+  rejectionReason: string | null;
+  /** Why the last change to a published offer was not approved. */
+  revisionRejectionReason: string | null;
+  /** A change to a published offer waiting for review, as it would leave the offer. */
+  pendingChanges: OfferPendingChanges | null;
+  images: OwnOfferImage[];
+};
+
+export type OfferStatus = 'pending_review' | 'published' | 'rejected';
+
+/**
+ * `live` is public. For a published offer, `pending_add` waits to be added and
+ * `pending_remove` waits to be taken off (it stays public until then).
+ */
+export type OwnOfferImage = OfferImage & { state: 'live' | 'pending_add' | 'pending_remove' };
+
+export type OfferPendingChanges = {
+  title: string;
+  description: string | null;
+  priceMinCentavos: number | null;
+  priceMaxCentavos: number | null;
+  subdomainSlug: string;
+  subdomainName: string;
+  subdomainSingularName?: string;
+  submittedAt: string | null;
 };
 
 export type OfferWriteInput = {

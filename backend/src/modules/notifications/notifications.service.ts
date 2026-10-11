@@ -10,6 +10,7 @@ import {
   creativeProfiles,
   conversations,
   notifications,
+  offers,
   organizations,
   postings,
   users,
@@ -107,6 +108,10 @@ const TITLES: Record<NotificationType, string> = {
   organization_invited: 'You were invited to join an organisation',
   organization_invitation_accepted: 'Someone joined your organisation',
   id_verified: 'Your ID was verified',
+  offer_approved: 'Your offer was approved',
+  offer_rejected: 'Your offer was not approved',
+  avatar_rejected: 'Your new photo was not approved',
+  logo_rejected: 'Your new organisation logo was not approved',
 };
 
 /**
@@ -149,7 +154,14 @@ async function resolveTargets(rows: Notification[]) {
     'organization_invitation_accepted',
   ]);
 
-  const [profiles, threads, agreementRows, organizationRows] = await Promise.all([
+  // Content review (ADR 0058). The reason is read from the offer, account or
+  // organisation when the centre is opened — never copied into the row — so a
+  // reason the creative has since acted on is not shown again.
+  const offerIds = byType(['offer_approved', 'offer_rejected']);
+  const avatarOwnerIds = byType(['avatar_rejected']);
+  const logoOrganizationIds = byType(['logo_rejected']);
+
+  const [profiles, threads, agreementRows, organizationRows, offerRows, avatarRows, logoRows] = await Promise.all([
     profileIds.length === 0
       ? Promise.resolve([])
       : db
@@ -174,6 +186,29 @@ async function resolveTargets(rows: Notification[]) {
           .select({ id: organizations.id, slug: organizations.slug, name: organizations.name })
           .from(organizations)
           .where(inArray(organizations.id, organizationIds)),
+    offerIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({
+            id: offers.id,
+            title: offers.title,
+            rejectionReason: offers.rejectionReason,
+            revisionRejectionReason: offers.revisionRejectionReason,
+          })
+          .from(offers)
+          .where(inArray(offers.id, offerIds)),
+    avatarOwnerIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ id: users.id, reason: users.avatarRejectionReason })
+          .from(users)
+          .where(inArray(users.id, avatarOwnerIds)),
+    logoOrganizationIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ id: organizations.id, slug: organizations.slug, reason: organizations.logoRejectionReason })
+          .from(organizations)
+          .where(inArray(organizations.id, logoOrganizationIds)),
   ]);
 
   return {
@@ -181,6 +216,9 @@ async function resolveTargets(rows: Notification[]) {
     threads: new Map(threads.map((t) => [t.id, t])),
     agreements: new Map(agreementRows.map((a) => [a.id, a])),
     organizations: new Map(organizationRows.map((o) => [o.id, o])),
+    offers: new Map(offerRows.map((o) => [o.id, o])),
+    avatars: new Map(avatarRows.map((a) => [a.id, a])),
+    logos: new Map(logoRows.map((l) => [l.id, l])),
   };
 }
 
@@ -300,6 +338,36 @@ export async function listNotifications(
       case 'id_verified': {
         link = '/directory';
         detail = 'You can now message creatives, save offers and post work.';
+        break;
+      }
+      // All of these open where the creative acts on them: their offers, their
+      // profile photo, or the organisation's own page.
+      case 'offer_approved':
+      case 'offer_rejected': {
+        const offer = targets.offers.get(row.targetId);
+        if (offer) {
+          link = '/account/offers';
+          detail =
+            row.type === 'offer_rejected'
+              ? (offer.rejectionReason ?? offer.revisionRejectionReason ?? offer.title)
+              : offer.title;
+        }
+        break;
+      }
+      case 'avatar_rejected': {
+        const avatar = targets.avatars.get(row.targetId);
+        if (avatar) {
+          link = '/account/profile';
+          detail = avatar.reason ?? 'Upload another photo to try again.';
+        }
+        break;
+      }
+      case 'logo_rejected': {
+        const logo = targets.logos.get(row.targetId);
+        if (logo) {
+          link = `/organizations/${logo.slug}/manage`;
+          detail = logo.reason ?? 'Upload another logo to try again.';
+        }
         break;
       }
     }

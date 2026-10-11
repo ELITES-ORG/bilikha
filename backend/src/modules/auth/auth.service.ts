@@ -5,7 +5,7 @@ import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
 import { normalizeEmail, normalizePhone } from '../../lib/contact.js';
-import { publicUrl } from '../../lib/storage.js';
+import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type { PublicUser } from '../../contracts/auth.js';
 import type { RegisterInput } from './auth.schema.js';
 
@@ -162,7 +162,10 @@ async function toPublicUser(
     profileStatus: profile?.status ?? null,
     rejectionReason: profile?.rejectionReason ?? null,
     mustChangePassword: user.mustChangePassword,
-    avatarUrl: user.avatarKey ? publicUrl(user.avatarKey) : null,
+    avatarUrl: user.avatarKey && isStorageConfigured() ? publicUrl(user.avatarKey) : null,
+    pendingAvatarUrl:
+      user.avatarPendingKey && isStorageConfigured() ? publicUrl(user.avatarPendingKey) : null,
+    avatarRejectionReason: user.avatarRejectionReason,
   };
 }
 
