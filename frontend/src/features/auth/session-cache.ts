@@ -25,7 +25,7 @@ const KEY = 'bilikha:last-session';
 
 /** Bumped when `AuthUser` changes shape, so an old entry is ignored rather than
  *  rendered half-populated. */
-const VERSION = 1;
+const VERSION = 2;
 
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 

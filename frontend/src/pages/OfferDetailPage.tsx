@@ -41,6 +41,8 @@ import {
 import { toApiError } from '@/lib/api-client';
 import { effectiveViewMode } from '@/lib/view-mode';
 import { cn } from '@/lib/cn';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 export function OfferDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +55,8 @@ export function OfferDetailPage() {
   // One save flow for this offer and the similar-offer cards: one cached
   // saved-offers list, one set of toasts.
   const offerSaving = useOfferSaving(Boolean(user));
+  // Waiting on its ID, an account may read but not inquire or save (ADR 0057).
+  const { browseOnly } = useVerificationGate();
   // Similar cards follow the directory: no save hearts while browsing as a
   // creative. This offer's own Save stays for any signed-in viewer, as before.
   const browsingAsCreative =
@@ -117,6 +121,8 @@ export function OfferDetailPage() {
     <ButtonLink to="/account/offers" size="lg" fullWidth className="sm:w-auto lg:w-full">
       Edit offer
     </ButtonLink>
+  ) : user && browseOnly ? (
+    <BrowseOnlyNote />
   ) : user ? (
     <Button
       size="lg"
@@ -133,7 +139,7 @@ export function OfferDetailPage() {
     </ButtonLink>
   );
 
-  const saveControl = isOwner ? null : user ? (
+  const saveControl = isOwner || browseOnly ? null : user ? (
     <Button
       size="lg"
       variant="secondary"

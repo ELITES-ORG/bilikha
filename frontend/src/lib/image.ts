@@ -4,6 +4,8 @@
  */
 export const DISPLAY_EDGE = 1600;
 export const THUMB_EDGE = 400;
+/** An ID photo must stay legible: a larger edge than any other image (issue #51). */
+export const ID_EDGE = 2000;
 
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
 

@@ -2,6 +2,7 @@ import { AxiosError } from 'axios';
 import type { ErrorEvent } from '@sentry/browser';
 import { describe, expect, it } from 'vitest';
 import { isReportable, isReportableUncaught, routePattern } from './error-reporting';
+import { ApiError } from './api-client';
 import { redactText, scrubEvent, TUNNEL_HOST, tunnelFor } from './error-reporting-client';
 import vercelJson from '../../vercel.json?raw';
 
@@ -33,6 +34,8 @@ describe('isReportable', () => {
   it('leaves API failures to the API, and a dropped connection is not a bug', () => {
     expect(isReportable(new AxiosError('Request failed with status code 500'))).toBe(false);
     expect(isReportable(new AxiosError('Network Error', 'ERR_NETWORK'))).toBe(false);
+    // What toApiError turns an API answer into is the API's to report too.
+    expect(isReportable(new ApiError('Not until your ID is verified', 403, 'VERIFICATION_PENDING'))).toBe(false);
   });
 
   it('ignores the null a cross-origin script error leaves', () => {

@@ -27,6 +27,11 @@ export const loginLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  // A declined ID answers the *right* password with 403 ID_DECLINED (ADR 0057).
+  // That is not a guess, so it must not count towards locking the person out
+  // of reading their reason again.
+  requestWasSuccessful: (_req, res) =>
+    res.statusCode < 400 || res.locals.errorCode === 'ID_DECLINED',
   message: {
     error: {
       code: 'RATE_LIMITED',

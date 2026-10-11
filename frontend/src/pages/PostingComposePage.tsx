@@ -26,6 +26,8 @@ import { centavosToPesoInput, pesoInputToCentavos } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 export function PostingComposePage() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +39,8 @@ export function PostingComposePage() {
   const update = useUpdatePosting(id ?? '');
   const domains = useCreativeDomains();
   const municipalities = useMunicipalities();
+  // Posting work waits for a verified ID (ADR 0057).
+  const { browseOnly } = useVerificationGate();
 
   const [title, setTitle] = useState('');
   const [domainSlug, setDomainSlug] = useState('');
@@ -146,7 +150,9 @@ export function PostingComposePage() {
 
           {loadingForm && <Skeleton className="mt-10 h-96 w-full" />}
 
-          {!loadingForm && (
+          {!loadingForm && browseOnly && <BrowseOnlyNote className="mt-8" />}
+
+          {!loadingForm && !browseOnly && (
             <Card as="section" className="mt-8 p-5 sm:p-8">
               <form onSubmit={(e) => void onSubmit(e)} className="space-y-6" noValidate>
                 <Input

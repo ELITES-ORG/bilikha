@@ -1,7 +1,8 @@
 import type { RequestHandler } from 'express';
-import { eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
+import type { IdDeclinedDetails } from '../contracts/verification.js';
 import { db } from '../db/index.js';
-import { users } from '../db/schema/index.js';
+import { idVerifications, users } from '../db/schema/index.js';
 import { AppError } from '../lib/http-error.js';
 
 /**
@@ -16,10 +17,50 @@ import { AppError } from '../lib/http-error.js';
  */
 const ALLOWED_WHILE_LOCKED = ['/api/v1/auth/me', '/api/v1/me/password'];
 
+// Query strings and trailing slashes must not be a way around either list.
+function pathOf(originalUrl: string): string {
+  return originalUrl.split('?')[0]!.replace(/\/+$/, '');
+}
+
 function isAllowedWhileLocked(originalUrl: string): boolean {
-  // Query strings and trailing slashes must not be a way around it.
-  const path = originalUrl.split('?')[0]!.replace(/\/+$/, '');
-  return ALLOWED_WHILE_LOCKED.includes(path);
+  return ALLOWED_WHILE_LOCKED.includes(pathOf(originalUrl));
+}
+
+/**
+ * What an account waiting on its ID may change: its password, and its ID
+ * (ADR 0057). Everything else that writes answers VERIFICATION_PENDING; reading
+ * is open, which is what "browse only" means. An allowlist for the same reason
+ * as the one above, with the same cost when an endpoint is forgotten.
+ */
+const ALLOWED_WHILE_UNVERIFIED = [
+  '/api/v1/me/password',
+  '/api/v1/verification/upload-url',
+  '/api/v1/verification/submission',
+];
+
+const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Ends the session, then answers. Waiting matters here: the reason is told
+ * once, and a request that raced ahead of the delete would be told again.
+ */
+function endWithDecline(
+  req: Parameters<RequestHandler>[0],
+  next: Parameters<RequestHandler>[2],
+  details: IdDeclinedDetails,
+): void {
+  const error = idDeclined(details);
+  req.session.destroy(() => next(error));
+}
+
+function idDeclined(details: IdDeclinedDetails): AppError {
+  const message =
+    details.kind === 'retry'
+      ? 'Your ID could not be verified. Sign in to submit it again.'
+      : details.kind === 'appealed'
+        ? 'Your appeal is being reviewed.'
+        : 'Your ID was declined, so this account cannot be used.';
+  return new AppError(401, 'ID_DECLINED', message, details);
 }
 
 /**
@@ -38,6 +79,18 @@ function isAllowedWhileLocked(originalUrl: string): boolean {
  * ever correct rather than eventually correct.
  */
 export const requireAuth: RequestHandler = (req, _res, next) => {
+  /**
+   * A decline rewrites the account's sessions in place (plan 0053 Step 3.2):
+   * the user is removed and this notice added. Answered before the userId
+   * check, which would otherwise answer first with a bare 401 — the browser
+   * learns why it was signed out, once, and the session goes.
+   */
+  const notice = req.session.declineNotice;
+  if (notice) {
+    endWithDecline(req, next, { kind: notice.kind, reason: notice.reason });
+    return;
+  }
+
   const userId = req.session.userId;
 
   if (!userId) {
@@ -47,9 +100,25 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
 
   void (async () => {
     try {
+      // The account and its latest ID verification, in one query: this runs
+      // on every authenticated request.
+      const latest = db
+        .select({ status: idVerifications.status, reason: idVerifications.decisionReason })
+        .from(idVerifications)
+        .where(eq(idVerifications.userId, users.id))
+        .orderBy(desc(idVerifications.createdAt))
+        .limit(1)
+        .as('latest_id_verification');
+
       const [user] = await db
-        .select({ status: users.status, mustChangePassword: users.mustChangePassword })
+        .select({
+          status: users.status,
+          mustChangePassword: users.mustChangePassword,
+          idStatus: latest.status,
+          idReason: latest.reason,
+        })
         .from(users)
+        .leftJoinLateral(latest, sql`true`)
         .where(eq(users.id, userId))
         .limit(1);
 
@@ -75,6 +144,16 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
         return;
       }
 
+      // Not from Biliran, or an appeal against that still open: this account
+      // cannot be used, so the session ends with the reason (ADR 0057).
+      if (user.idStatus === 'declined_final' || user.idStatus === 'appealed') {
+        endWithDecline(req, next, {
+          kind: user.idStatus === 'appealed' ? 'appealed' : 'final',
+          reason: user.idReason,
+        });
+        return;
+      }
+
       /**
        * An administrator issued a temporary password (ADR 0051). The session is
        * valid, so this is a 403 and not a 401 — the account is signed in and
@@ -90,6 +169,27 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
             403,
             'PASSWORD_CHANGE_REQUIRED',
             'Set a new password before continuing.',
+          ),
+        );
+        return;
+      }
+
+      /**
+       * Browse only while the ID waits for review, or after *try again* until it
+       * is resubmitted (ADR 0057). No row at all — every account that existed
+       * before this — is never gated. The request is looked at only when there
+       * is a row to gate on.
+       */
+      if (
+        (user.idStatus === 'pending' || user.idStatus === 'declined_retry')
+        && !READ_METHODS.has(req.method)
+        && !ALLOWED_WHILE_UNVERIFIED.includes(pathOf(req.originalUrl))
+      ) {
+        next(
+          new AppError(
+            403,
+            'VERIFICATION_PENDING',
+            'You can browse, but not do this until your ID is verified.',
           ),
         );
         return;

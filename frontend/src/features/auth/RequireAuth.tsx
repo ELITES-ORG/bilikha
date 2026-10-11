@@ -2,12 +2,12 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { RouteFallback } from '@/components/RouteFallback';
 import { useCurrentUser } from './api';
+import { guardRedirect } from './guard-redirect';
 
-/** Kept here with the redirect that uses it, and matched in App.tsx. */
-export const CHANGE_PASSWORD_PATH = '/change-password';
+export { CHANGE_PASSWORD_PATH } from './guard-redirect';
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { data: user, isPending } = useCurrentUser();
+  const { data: user, isPending, isPlaceholderData } = useCurrentUser();
   const location = useLocation();
 
   // Not a redirect while resolving — that would bounce a signed-in user to
@@ -21,14 +21,15 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   /**
-   * An administrator reset this password (ADR 0051). The API refuses every
-   * route but reading the session and setting a new password, so without this
-   * the person would walk into a 403 on whatever they tapped and have no idea
-   * why. The guard on the server is what enforces it; this is what explains
-   * it.
+   * An administrator reset this password (ADR 0051), or the account still owes
+   * its ID (ADR 0057). The API refuses what either blocks, so without this the
+   * person would walk into a 403 on whatever they tapped and have no idea why.
+   * The guard on the server is what enforces it; this is what explains it.
+   * `guardRedirect` decides which comes first.
    */
-  if (user.mustChangePassword && location.pathname !== CHANGE_PASSWORD_PATH) {
-    return <Navigate to={CHANGE_PASSWORD_PATH} replace />;
+  const redirect = guardRedirect(user, location.pathname, isPlaceholderData);
+  if (redirect) {
+    return <Navigate to={redirect} replace />;
   }
 
   return <>{children}</>;

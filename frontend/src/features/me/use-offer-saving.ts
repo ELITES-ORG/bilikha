@@ -1,5 +1,6 @@
 import { useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 import { useSaveOffer, useSavedOffers, useUnsaveOffer } from './saved-offers';
 
 /**
@@ -8,10 +9,14 @@ import { useSaveOffer, useSavedOffers, useUnsaveOffer } from './saved-offers';
  * mutations are the ones the offer page already uses.
  *
  * Pass `enabled` false for anyone who cannot save — signed out, or browsing as
- * a creative — and the hook fetches nothing.
+ * a creative — and the hook fetches nothing. An account waiting on its ID can
+ * never save (ADR 0057), so that is decided here for every caller, and the
+ * cards show no save control.
  */
-export function useOfferSaving(enabled: boolean) {
+export function useOfferSaving(requested: boolean) {
   const toast = useToast();
+  const { browseOnly } = useVerificationGate();
+  const enabled = requested && !browseOnly;
   const saved = useSavedOffers(enabled);
   const saveOffer = useSaveOffer();
   const unsaveOffer = useUnsaveOffer();

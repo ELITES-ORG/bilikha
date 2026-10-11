@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Source checks, in the style of site-layout.test.ts. The regressions worth
- * catching: the banner moving inside a layout route, where some pages would
- * lose it; the banner deciding by anything other than the hostname rule that
- * keeps it off production; and a new sticky bar or full-height screen that
- * ignores the banner's height, so the banner covers it or makes it scroll.
+ * catching: the pinned banners moving inside a layout route, where some pages
+ * would lose them; the staging banner deciding by anything other than the
+ * hostname rule that keeps it off production; and a new sticky bar or
+ * full-height screen that ignores the banners' height, so they cover it or
+ * make it scroll.
+ *
+ * `PinnedBanners` holds the staging banner and the ID verification banner
+ * (ADR 0057). Only it is sticky, and only it measures.
  */
 
 const raw = (glob: Record<string, string>, key: string) => glob[key]!;
@@ -20,6 +24,11 @@ const bannerSource = raw(
   './StagingBanner.tsx',
 );
 
+const pinnedSource = raw(
+  import.meta.glob('./PinnedBanners.tsx', { query: '?raw', import: 'default', eager: true }),
+  './PinnedBanners.tsx',
+);
+
 const sources = import.meta.glob(['../**/*.tsx', '!../**/*.test.*'], {
   query: '?raw',
   import: 'default',
@@ -29,11 +38,28 @@ const sources = import.meta.glob(['../**/*.tsx', '!../**/*.test.*'], {
 const sourceOf = (suffix: string) =>
   Object.entries(sources).find(([path]) => path.endsWith(suffix))?.[1];
 
-describe('the staging banner', () => {
-  it('is rendered once by App, outside the routes, so every page has it', () => {
-    expect(appSource.split('<StagingBanner />')).toHaveLength(2);
-    expect(appSource.indexOf('<StagingBanner />')).toBeLessThan(appSource.indexOf('<Routes>'));
+describe('the pinned banners', () => {
+  it('are rendered once by App, outside the routes, so every page has them', () => {
+    expect(appSource.split('<PinnedBanners />')).toHaveLength(2);
+    expect(appSource.indexOf('<PinnedBanners />')).toBeLessThan(appSource.indexOf('<Routes>'));
+    expect(appSource).not.toContain('<StagingBanner />');
   });
+
+  it('hold the staging banner and the verification banner, always rendered', () => {
+    expect(pinnedSource).toContain('<StagingBanner />');
+    expect(pinnedSource).toContain('<VerificationBanner />');
+    // No early return: the wrapper is what publishes 0px when neither shows.
+    expect(pinnedSource).not.toMatch(/return null/);
+  });
+
+  it('are sticky as one, and publish their height for the rest of the layout', () => {
+    expect(pinnedSource).toContain('sticky top-0');
+    expect(pinnedSource).toContain("setProperty('--staging-banner-h'");
+    expect(pinnedSource).toContain("removeProperty('--staging-banner-h')");
+  });
+});
+
+describe('the staging banner', () => {
 
   it('is hidden by the production hostname rule and nothing else', () => {
     expect(bannerSource).toContain('if (isProductionHost(window.location.hostname)) return null;');
@@ -44,10 +70,9 @@ describe('the staging banner', () => {
     expect(bannerSource).toContain('href={PRODUCTION_ORIGIN}');
   });
 
-  it('is sticky and publishes its height for the rest of the layout', () => {
-    expect(bannerSource).toContain('sticky top-0');
-    expect(bannerSource).toContain("setProperty('--staging-banner-h'");
-    expect(bannerSource).toContain("removeProperty('--staging-banner-h')");
+  it('leaves pinning and measuring to the wrapper', () => {
+    expect(bannerSource).not.toContain('sticky');
+    expect(bannerSource).not.toContain('--staging-banner-h');
   });
 });
 
@@ -57,7 +82,7 @@ describe('the layout makes room for the staging banner', () => {
       expect(sourceOf(suffix), suffix).toContain('sticky top-(--staging-banner-h)');
     }
     const offenders = Object.entries(sources)
-      .filter(([path]) => !path.endsWith('/StagingBanner.tsx'))
+      .filter(([path]) => !path.endsWith('/PinnedBanners.tsx'))
       .filter(([, source]) => /\bsticky top-0\b/.test(source))
       .map(([path]) => path);
     expect(offenders).toEqual([]);

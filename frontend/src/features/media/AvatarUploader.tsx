@@ -5,6 +5,8 @@ import { authKeys } from '@/features/auth/api';
 import { confirmAvatar, removeAvatar, requestUploadUrl, uploadImage } from '@/features/media/api';
 import { THUMB_EDGE, resizeImage } from '@/lib/image';
 import { toApiError } from '@/lib/api-client';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 interface AvatarUploaderProps {
   name: string;
@@ -23,6 +25,8 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Uploads other than the ID itself wait for a verified ID (ADR 0057).
+  const { browseOnly } = useVerificationGate();
 
   async function refreshUser() {
     await queryClient.invalidateQueries({ queryKey: authKeys.me });
@@ -93,17 +97,24 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
             type="button"
             size="sm"
             variant="secondary"
-            disabled={busy}
+            disabled={busy || browseOnly}
             onClick={() => inputRef.current?.click()}
           >
             {busy ? 'Working…' : previewUrl ? 'Replace photo' : 'Add photo'}
           </Button>
           {previewUrl && (
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={busy || browseOnly}
+              onClick={onRemove}
+            >
               Remove
             </Button>
           )}
         </div>
+        {browseOnly && <BrowseOnlyNote className="mt-3" />}
         {error && <p className="mt-2 text-sm text-danger-700">{error}</p>}
         <input
           ref={inputRef}

@@ -46,6 +46,29 @@ export interface OwnIdVerification {
   reason: string | null;
 }
 
+/**
+ * What `POST /verification/upload-url` returns: where the browser PUTs one
+ * side of the ID, and the key to submit afterwards. The only response that
+ * carries an ID key, because the account is the one uploading it.
+ */
+export interface IdUploadTicket {
+  uploadUrl: string;
+  objectKey: string;
+}
+
+/**
+ * `details` of an `ID_DECLINED` error: a 401 when a session ends at a decline,
+ * a 403 when signing in is refused.
+ */
+export interface IdDeclinedDetails {
+  /** retry: sign in to resubmit; final: not from Biliran; appealed: under review. */
+  kind: 'retry' | 'final' | 'appealed';
+  /** The administrator's reason, written for the person. */
+  reason: string | null;
+  /** While an appeal is still possible (plan 0053 Phase 4). */
+  appealUntil?: string;
+}
+
 /** A row in the admin ID queue. No URLs: those are issued only by the detail. */
 export interface AdminIdVerificationRow {
   id: string;

@@ -14,6 +14,7 @@ import { ratingsRouter } from '../modules/ratings/ratings.routes.js';
 import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
 import { organizationsRouter } from '../modules/organizations/organizations.routes.js';
 import { shareRouter } from '../modules/share/share.routes.js';
+import { verificationRouter } from '../modules/verification/verification.routes.js';
 
 /**
  * All application routes hang off /api/v1. Versioning the prefix from day one
@@ -37,3 +38,4 @@ apiRouter.use('/notifications', notificationsRouter);
 apiRouter.use('/organizations', organizationsRouter);
 apiRouter.use('/share', shareRouter);
 apiRouter.use('/taxonomy', taxonomyRouter);
+apiRouter.use('/verification', verificationRouter);

@@ -52,6 +52,7 @@ const ROUTES: readonly Route[] = [
   [is('/login'), 'auth', LoginBody],
   [is('/register'), 'auth', RegisterBody],
   [is('/welcome'), 'onboarding', IntentBody],
+  [is('/welcome/id'), 'onboarding', IdStepBody],
   [is('/welcome/profile'), 'onboarding', ProfileSetupSkeleton],
   [is('/welcome/submitted'), 'onboarding', SubmittedBody],
   [under('/admin/profiles'), 'admin', AdminProfileBody],
@@ -393,6 +394,20 @@ function IntentBody() {
       <div className="mt-10 grid gap-4">
         <Skeleton className="h-23 w-full" />
         <Skeleton className="h-23 w-full" />
+      </div>
+    </>
+  );
+}
+
+function IdStepBody() {
+  return (
+    <>
+      <PageIntroShape title="w-72" description={['w-full', 'w-80']} />
+      <Text widths={['w-40', 'w-64', 'w-56', 'w-64']} className="mt-10" />
+      <Skeleton className="mt-10 h-48 w-full" />
+      <div className="mt-8 flex flex-wrap gap-3">
+        <ButtonShape className="w-36" />
+        <ButtonShape className="w-36" />
       </div>
     </>
   );

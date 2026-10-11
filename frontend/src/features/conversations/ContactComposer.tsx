@@ -9,6 +9,8 @@ import {
 } from '@/features/conversations/draft';
 import { Button, useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 interface ContactComposerProps {
   profileSlug: string;
@@ -43,6 +45,7 @@ export function ContactComposer({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const { browseOnly } = useVerificationGate();
 
   async function submitConversation(draft: MessageDraft) {
     setPhase('sending');
@@ -82,6 +85,9 @@ export function ContactComposer({
     saveMessageDraft(profileSlug, draft);
     await submitConversation(draft);
   }
+
+  // An account waiting on its ID can read, not message (ADR 0057).
+  if (browseOnly) return <BrowseOnlyNote />;
 
   if (phase === 'done' && conversationId) {
     return (

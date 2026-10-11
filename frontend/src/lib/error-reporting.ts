@@ -1,5 +1,6 @@
 import { AxiosError } from 'axios';
 import { BUILD_ID, isChunkLoadError } from '@/lib/app-update';
+import { ApiError } from '@/lib/api-client';
 import { deploymentEnvironment } from '@/lib/site-host';
 
 /**
@@ -37,7 +38,7 @@ let client: Promise<Capture | null> | null = null;
  */
 const ROUTE_WORDS = new Set([
   'account', 'accounts', 'admin', 'agreements', 'change-password', 'creatives',
-  'directory', 'edit', 'history', 'inbox', 'inquiries', 'login', 'media',
+  'directory', 'edit', 'history', 'id', 'inbox', 'inquiries', 'login', 'media',
   'messages', 'mine', 'new', 'notifications', 'offers', 'postings', 'privacy',
   'profile', 'profiles', 'ratings', 'register', 'security', 'styleguide',
   'submitted', 'taxonomy', 'terms', 'welcome', 'work',
@@ -61,7 +62,7 @@ export function routePattern(pathname: string): string {
  */
 export function isReportable(error: unknown): boolean {
   if (error === null || error === undefined) return false;
-  return !(error instanceof AxiosError);
+  return !(error instanceof AxiosError) && !(error instanceof ApiError);
 }
 
 /**
