@@ -255,6 +255,10 @@ Requires a valid session. Returns the same public user shape as login, including
 `role`, `viewMode` (`hiring` \| `creative`), `municipalitySlug`,
 `municipalityName` (null for legacy accounts that never set a location),
 `profileStatus`, and `rejectionReason` (set when a registration was rejected).
+`avatarUrl` is the approved photo. `pendingAvatarUrl` is a new photo waiting
+for review, which only its owner sees. `avatarRejectionReason` is set when the
+last new photo was not approved
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)).
 
 `401` when unsigned-in or the session points at a deleted user.
 
@@ -591,7 +595,9 @@ team may have filled the gap elsewhere. A `suspended` page cannot be edited.
 Any member. `200` — `{ data: ManagedOrganization }`: any status, every member
 with `userId` and `username`, the rejection reason, `myRole`, and — for the
 founder and co-founders — `invitations[]`, each with a computed `expired`.
-`404` for anyone not in it.
+`logoUrl` is the approved logo. `pendingLogoUrl` is a new logo waiting for
+review, and `logoRejectionReason` is set when the last new logo was not
+approved. `404` for anyone not in it.
 
 ### `GET /api/v1/organizations/mine`
 
@@ -662,15 +668,19 @@ storage is not configured.
 
 Founder or co-founder. `{ "objectKey": "organizations/<id>/…" }` — only a key
 under this organisation's own folder is accepted (`403` otherwise, `400` for a
-malformed key). The logo is live straight away and goes to the media queue
-(`logo_reviewed_at` cleared); on a published page it also sets
-`editedSinceReviewAt`, as a new profile photo does. The previous image is
-deleted. `200` — `{ data: { objectKey } }`.
+malformed key). The logo waits for review in a pending slot and clears any
+earlier rejection reason. Everyone else sees the approved logo, or initials,
+until an administrator approves it
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)).
+If another logo was already waiting, it is deleted. `200` —
+`{ data: { objectKey } }`.
 
 ### `DELETE /api/v1/organizations/:slug/logo`
 
-Founder or co-founder. `200` — `{ data: { removed } }`. Closing an
-organisation also deletes its logo.
+Founder or co-founder. If a logo is waiting for review, it is withdrawn and
+the approved logo stays. Otherwise the approved logo is removed. `200` —
+`{ data: { removed } }`. Closing an organisation also deletes its logo and any
+waiting one.
 
 ### `POST /api/v1/organizations/:slug/founder`
 
@@ -859,23 +869,67 @@ Admin session required (`403` otherwise).
 
 ### `GET /api/v1/admin/media`
 
-Unreviewed avatars, offers and organisation logos (`reviewedAt` null),
-paginated. Flagged offers (`flaggedAt` set) sort first; then remaining
-unreviewed rows by `createdAt` desc. Each row has `kind` (`avatar` \| `offer`
-\| `logo`), absolute `url`/`thumbUrl` when images exist, owner name (the
-organisation's name for a logo), and profile slug when present. A logo row
-carries `organizationSlug` when the page is published. Offer rows also
-include `title`, `description`, `priceMinCentavos`, `priceMaxCentavos`,
-`flaggedAt`, and `images[]`.
+Everything waiting for a decision
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)),
+paginated:
+
+- **Offers.** A new offer in `pending_review`, and a published offer with a
+  waiting change: a revision, or photos added or removed.
+- **Avatars and logos.** A new profile photo or organisation logo in its
+  pending slot.
+
+Flagged items (`flaggedAt` set) sort first, then the rest by the longest
+waiting.
+
+Each row has:
+
+- `kind` (`avatar` \| `offer` \| `logo`)
+- absolute `url`/`thumbUrl` for the waiting image
+- the owner's name (the organisation's name for a logo)
+- the profile slug, when there is one
+
+A logo row carries `organizationSlug` when the page is published. An avatar or
+logo row carries `currentUrl` when it would replace an approved image.
+
+Offer rows also include:
+
+- `change`: `new` or `edit`
+- the proposed `title`, `description`, `priceMinCentavos`,
+  `priceMaxCentavos`, `subdomain` and `flaggedAt`
+- `images[]`, each with a `state`: `live`, `pending_add` or `pending_remove`
+- for an `edit`, `published`: the public version's `title`, prices and
+  `subdomain`
 
 ### `POST /api/v1/admin/media/:kind/:id/review`
 
-`kind` is `avatar`, `offer` or `logo` (`id` is then the organisation's). Body
-`{ "action": "approve" | "remove" }`. Approve stamps the reviewed timestamp.
-Remove deletes the avatar object, the offer (and its storage objects), or the
-logo — leaving the organisation's page up — and writes a `media_removed`
-moderation action with `subjectUserId` set to the owner, or for a logo to the
-founder with `organizationId` set.
+`kind` is `avatar`, `offer` or `logo`. For a logo, `id` is the organisation's.
+
+Body: `{ "action": "approve" | "reject", "reason"?: string }`. A reject needs
+a `reason` of up to 500 characters, else `400`. The owner sees the reason.
+
+**Approve:**
+
+- A new offer is published.
+- An offer change replaces the public version. Added photos go live, and
+  removed photos are deleted.
+- A photo or logo replaces the approved one, which is then deleted.
+
+**Reject:**
+
+- A new offer becomes `rejected`, with the reason, and stays hidden until its
+  creative edits it.
+- An offer change is dropped. Photos it added are deleted, photos it removed
+  are kept, and the public version is unchanged. The reason is stored as the
+  offer's `revisionRejectionReason`.
+- A waiting photo or logo is deleted, and the reason is stored on the account
+  or organisation.
+
+Every decision writes a moderation action and notifies the owner. For a logo,
+the founder is notified. An approved photo or logo does not send a
+notification.
+
+If nothing is waiting, or the offer is already rejected, the response is
+`409`. If the item does not exist, it is `404`.
 
 ### `GET /api/v1/admin/accounts`
 
@@ -1110,8 +1164,22 @@ profile, 4 images per offer.
 
 ### `GET /api/v1/offers/mine`
 
-Own offers in `sortOrder`, with images (`url`, `thumbUrl`), subdomain, and
-moderation fields (`flaggedAt`, `reviewedAt`). Requires a creative profile.
+Own offers in `sortOrder`, with images (`url`, `thumbUrl`, `state`),
+subdomain, and moderation fields (`flaggedAt`, `reviewedAt`). Requires a
+creative profile.
+
+Review fields
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)):
+
+- `status`: `pending_review`, `published` or `rejected`
+- `rejectionReason`: for a rejected offer
+- `revisionRejectionReason`: when the last change to a published offer was not
+  approved
+- `pendingChanges`: the waiting version of a published offer (`title`,
+  `description`, prices, sub-domain and `submittedAt`), or `null`
+
+A published offer's images include photos that are waiting to be added
+(`pending_add`) or removed (`pending_remove`).
 The sub-domain is flat: `subdomainSlug`, `subdomainName` and
 `subdomainSingularName` (the singular label for this one offer, issue #17).
 
@@ -1131,15 +1199,22 @@ The sub-domain is flat: `subdomainSlug`, `subdomainName` and
 caller's profile — otherwise `400` — and active: an archived one the profile
 still holds → `400`, so a new offer never lands under a category no directory
 filter shows ([ADR 0049](../decisions/0049-the-database-is-the-taxonomy-source-of-truth.md)).
-Published profiles set `editedSinceReviewAt`.
+A new offer is `pending_review`. Nobody else sees it until an administrator
+approves it.
 
 ### `PATCH /api/v1/offers/:id`
 
 Any of title, `subdomainSlug`, description, price. Another creative's id →
 `404`. An offer may keep the archived sub-domain it already has; switching to a
-different archived one → `400`. Changing title, description, or price clears `reviewedAt` (offer stays
-live); subdomain-only edits do not. Contact-detail patterns in the description
-set `flaggedAt`.
+different archived one → `400`.
+
+- **A published offer** stays as it is. The edit waits beside it as a
+  revision until an administrator approves it. Editing again updates the
+  revision. An edit that matches the published values withdraws it.
+- **An offer that is not published** is changed directly. If it was
+  `rejected`, it goes back to `pending_review` and its reason is cleared.
+
+Contact-detail patterns in the description set `flaggedAt`.
 
 ### `DELETE /api/v1/offers/:id`
 
@@ -1159,13 +1234,22 @@ Rewrites `sortOrder`. The list must be exactly the caller's current offers.
 { "objectKey": "offers/<profileId>/<uuid>.webp", "thumbKey": "…-thumb.webp" }
 ```
 
-`201`. Enforces the four-image cap. Keys must start with
+`201`. Enforces the four-image cap; photos waiting to be removed do not count.
+On a published offer, the new photo is `pending_add` until approved. On a
+rejected offer, it sends the offer back to `pending_review`. Keys must start with
 `offers/<callerProfileId>/` (migrated legacy `portfolio/…` keys are never
 re-asserted on upload).
 
 ### `DELETE /api/v1/offers/images/:imageId`
 
-Deletes both objects, then the row. Another creative's image → `404`.
+On a published offer:
+
+- a live photo becomes `pending_remove` and stays public until the change is
+  approved
+- a photo waiting to be added is deleted straight away
+
+On any other offer, it deletes both objects, then the row. Another creative's
+image → `404`.
 
 ### `GET /api/v1/offers`
 
@@ -1173,7 +1257,8 @@ Public. Session-aware, not session-required. Query: `q` (search text,
 optional — see [Directory search](#directory-search)), `domain`, `subdomain`,
 `municipality` (slugs, optional), `budgetMin` / `budgetMax` (pesos as positive
 integers, optional; max must be ≥ min), `page` (default 1), `limit` (default 20,
-max 50). Only offers whose profile is `published` appear. A budget filter keeps
+max 50). Only `published` offers whose profile is `published` appear. A
+photo waiting to be added is left out. A budget filter keeps
 offers whose price range overlaps and drops "Price on request" rows. When the
 caller is signed in with a municipality, nearby creatives' offers lead the list.
 
@@ -1244,14 +1329,18 @@ a later media or offers endpoint.
 { "objectKey": "avatars/<userId>/<uuid>.webp" }
 ```
 
-Records the key, clears `avatarReviewedAt`, deletes any previous object, and
-flags a published creative profile as edited. `objectKey` must start with
-`avatars/<callerUserId>/` — otherwise `403`.
+Records the key in the pending slot and clears any earlier rejection reason.
+Everyone else sees the approved photo, or initials, until an administrator
+approves it
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)).
+If another photo was already waiting, it is deleted. `objectKey` must start
+with `avatars/<callerUserId>/` — otherwise `403`.
 
 ### `DELETE /api/v1/media/avatar`
 
-Removes the object and nulls the column. Also flags a published profile as
-edited.
+If a photo is waiting for review, it is withdrawn and the approved photo stays.
+Otherwise the approved photo is removed. Removing a photo needs no review.
+`{ data: { ok, removed: "pending" | "approved" } }`.
 
 ### `POST /api/v1/media/abandon`
 

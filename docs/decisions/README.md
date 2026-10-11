@@ -44,7 +44,7 @@ Number sequentially. Never renumber.
 | [0005](./0005-organization-pages.md) | Public pages for organisations only | Accepted (amended by 0054) |
 | [0006](./0006-asymmetric-reviews.md) | Asymmetric, restrained reputation | Proposed |
 | [0007](./0007-phone-as-primary-identity.md) | Phone number as primary identity | Superseded by 0013 |
-| [0008](./0008-publish-immediately-with-tiers.md) | Publish immediately with verification tiers | Proposed (narrowed by 0013; account ID check in 0057) |
+| [0008](./0008-publish-immediately-with-tiers.md) | Publish immediately with verification tiers | Proposed (narrowed by 0013; account ID check in 0057; offers and images superseded by 0058) |
 | [0009](./0009-migrations-over-db-push.md) | Generated migrations over `db:push` | Accepted |
 | [0010](./0010-theme-static-tokens.md) | `@theme static` for design tokens | Accepted |
 | [0011](./0011-self-hosted-variable-fonts.md) | Self-hosted variable fonts | Accepted |
@@ -52,7 +52,7 @@ Number sequentially. Never renumber.
 | [0013](./0013-username-password-auth-sprint-1.md) | Username and password auth for sprint 1 | Accepted |
 | [0014](./0014-modular-monolith-architecture.md) | Modular monolith with feature slices | Accepted |
 | [0015](./0015-clients-register-through-the-inquiry-flow.md) | Clients register through the inquiry flow | Partly superseded by 0017, 0020 |
-| [0016](./0016-edits-never-unpublish.md) | Edits never un-publish; public edits flag for re-review | Accepted |
+| [0016](./0016-edits-never-unpublish.md) | Edits never un-publish; public edits flag for re-review | Accepted (offers and photos review their own changes, 0058) |
 | [0017](./0017-sign-in-before-contacting.md) | Sign in before contacting a creative | Accepted |
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted (amended by 0024) |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
@@ -66,7 +66,7 @@ Number sequentially. Never renumber.
 | [0027](./0027-account-is-a-hub.md) | The account page is a hub, not a page | Accepted |
 | [0028](./0028-suspension-is-enforced-per-request.md) | Suspension is enforced per request; content hidden by derivation | Accepted |
 | [0029](./0029-work-agreements-not-invoices.md) | Work agreements, accepted by re-authentication | Accepted |
-| [0030](./0030-notifications.md) | Notifications: a record, and two ways to deliver it | Accepted |
+| [0030](./0030-notifications.md) | Notifications: a record, and two ways to deliver it | Accepted (four review notifications added by 0058) |
 | [0031](./0031-testing-strategy.md) | Tests run against a real database, at the service layer | Accepted |
 | [0032](./0032-an-accepted-agreement-is-not-deleted.md) | An accepted agreement is not deleted | Accepted |
 | [0033](./0033-ratings-earned-by-a-completed-agreement.md) | A rating is earned by a completed agreement | Accepted |
@@ -94,3 +94,4 @@ Number sequentially. Never renumber.
 | [0055](./0055-copy-is-translated-per-device-never-by-machine.md) | Language is a per-device choice, catalogues load on demand, and no string ships machine-translated | Accepted |
 | [0056](./0056-link-previews-come-from-a-crawler-only-html-endpoint.md) | Link previews come from a crawler-only HTML endpoint | Accepted |
 | [0057](./0057-new-accounts-are-verified-with-a-biliran-id.md) | New accounts are verified with a photo of a Biliran ID | Accepted |
+| [0058](./0058-content-waits-for-approval-beside-what-is-public.md) | Offers and images wait for approval, beside what is already public | Accepted |
