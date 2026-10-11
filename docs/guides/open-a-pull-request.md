@@ -135,6 +135,15 @@ its absence cost an audit time:
 | Rollout | Anything the deploy itself must do, or be told |
 | Known gaps | A limitation stated is a decision; a limitation found is a finding |
 
+**Plan / issue.** Write `Closes #N` for each issue the pull request finishes —
+`Plan / issue: docs/plans/0054-search.md · Closes #22`. GitHub closes the issue
+when the pull request merges into `main`. A bare `#N` only links it, and the
+issue stays open until someone remembers it: #17 and #74 sat open after their
+work merged for exactly that reason. For one step of a larger issue, write
+`Part of #N`, so the issue is not closed early — phase 1 of #51 was one of five.
+`Fixes` and `Resolves` work too; GitHub ignores the keyword in a pull request
+that does not target the default branch.
+
 **Fixtures.** `node scripts/seed-fixtures.mjs` reaches states the API will not
 hand you on demand — an expired posting, one somebody replied to. Verify against
 those, not three identical happy-path rows.

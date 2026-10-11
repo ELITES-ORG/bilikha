@@ -13,7 +13,13 @@ attribution anywhere — not in commits, not in this description.
 
 ## What and why
 
-<!-- One paragraph. Link the plan (docs/plans/NNNN) or issue this delivers. -->
+<!-- One paragraph. Link the plan (docs/plans/NNNN) or issue this delivers.
+
+On the line below, write "Closes #N" for each issue this pull request
+finishes: GitHub then closes it when the pull request merges. A bare "#N" only
+links, and the issue stays open. For one step of a larger issue, write
+"Part of #N" instead, so it is not closed early. For example:
+  Plan / issue: docs/plans/0054-search.md · Closes #22 -->
 
 Plan / issue:
 
