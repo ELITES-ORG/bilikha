@@ -132,13 +132,45 @@ export function assertSafeObjectKey(objectKey: string): void {
   }
 }
 
+/** Every ID photo's key starts with this, and nothing else's does. */
+const ID_KEY_PREFIX = 'ids/';
+
+const isIdBucket = (bucket: string) => bucket === env.SUPABASE_ID_BUCKET;
+
 /**
  * An ID's object key names the account it belongs to, and a log line is read by
- * more people than an administrator. Keys in the ID bucket never reach a log.
+ * more people than an administrator. Keys in the ID bucket — or shaped like an
+ * ID key wherever they turn up — never reach a log.
  */
 function loggableKey(bucket: string, objectKey: string): string {
-  return bucket === env.SUPABASE_ID_BUCKET ? '[id object]' : objectKey;
+  return isIdBucket(bucket) || objectKey.startsWith(ID_KEY_PREFIX) ? '[id object]' : objectKey;
 }
+
+/**
+ * Storage's error body, for a log line. Supabase can quote the key it refused
+ * ("Invalid key: ids/…"), so for an ID the key is cut out of the body too, raw
+ * and URL-encoded.
+ */
+function loggableBody(bucket: string, objectKey: string, body: string): string {
+  const text = body.slice(0, 500);
+  if (loggableKey(bucket, objectKey) === objectKey) return text;
+  return text.split(objectKey).join('[id object]').split(encodeObjectKey(objectKey)).join('[id object]');
+}
+
+/**
+ * ID photos go only to the private ID bucket, and nothing else goes there. The
+ * helpers default to the public media bucket, so without this a call that
+ * forgot its bucket argument would put a government ID where anyone can read
+ * it (ADR 0057). A programming error, so a 500 — and the key is not echoed.
+ */
+function assertBucketFitsKey(bucket: string, objectKey: string): void {
+  if (objectKey.startsWith(ID_KEY_PREFIX) !== isIdBucket(bucket)) {
+    throw new AppError(500, 'STORAGE_MISUSE', 'An image was sent to the wrong storage bucket.');
+  }
+}
+
+/** The longest an administrator's link to an ID photo may live (plan 0053). */
+export const SIGNED_DOWNLOAD_MAX_SECONDS = 300;
 
 function encodeObjectKey(objectKey: string): string {
   return objectKey
@@ -151,7 +183,9 @@ export async function createSignedUpload(
   objectKey: string,
   bucket: string = env.SUPABASE_STORAGE_BUCKET,
 ): Promise<{ uploadUrl: string; objectKey: string }> {
-  const path = `${storageBase()}/object/upload/sign/${bucket}/${encodeObjectKey(objectKey)}`;
+  assertSafeObjectKey(objectKey);
+  assertBucketFitsKey(bucket, objectKey);
+  const path = `${storageBase()}/object/upload/sign/${encodeURIComponent(bucket)}/${encodeObjectKey(objectKey)}`;
 
   const response = await fetch(path, {
     method: 'POST',
@@ -165,7 +199,7 @@ export async function createSignedUpload(
     // belong in the client response.
     const body = await response.text();
     logger.error(
-      { status: response.status, body: body.slice(0, 500), objectKey: loggableKey(bucket, objectKey) },
+      { status: response.status, body: loggableBody(bucket, objectKey, body), objectKey: loggableKey(bucket, objectKey) },
       'Supabase refused to sign an upload',
     );
     throw new AppError(502, 'STORAGE_ERROR', 'Could not prepare the upload. Try again.');
@@ -184,14 +218,20 @@ export async function createSignedUpload(
 
 /**
  * A URL that reads one object from a private bucket for `expiresIn` seconds.
- * Issued only to administrators (ADR 0057); never logged, never stored.
+ * Issued only to administrators (ADR 0057); never logged, never stored. The
+ * five-minute ceiling is enforced here rather than trusted to every caller.
  */
 export async function createSignedDownload(
   bucket: string,
   objectKey: string,
   expiresIn: number,
 ): Promise<string> {
-  const path = `${storageBase()}/object/sign/${bucket}/${encodeObjectKey(objectKey)}`;
+  if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > SIGNED_DOWNLOAD_MAX_SECONDS) {
+    throw new AppError(500, 'STORAGE_MISUSE', `A signed download lasts 1 to ${SIGNED_DOWNLOAD_MAX_SECONDS} seconds.`);
+  }
+  assertSafeObjectKey(objectKey);
+  assertBucketFitsKey(bucket, objectKey);
+  const path = `${storageBase()}/object/sign/${encodeURIComponent(bucket)}/${encodeObjectKey(objectKey)}`;
 
   const response = await fetch(path, {
     method: 'POST',
@@ -202,7 +242,7 @@ export async function createSignedDownload(
   if (!response.ok) {
     const body = await response.text();
     logger.error(
-      { status: response.status, body: body.slice(0, 500), objectKey: loggableKey(bucket, objectKey) },
+      { status: response.status, body: loggableBody(bucket, objectKey, body), objectKey: loggableKey(bucket, objectKey) },
       'Supabase refused to sign a download',
     );
     throw new AppError(502, 'STORAGE_ERROR', 'Could not read the image. Try again.');
@@ -218,6 +258,8 @@ export async function createSignedDownload(
 
 export function publicUrl(objectKey: string): string {
   const bucket = env.SUPABASE_STORAGE_BUCKET;
+  // The media bucket is public; an ID key here would be a readable ID.
+  assertBucketFitsKey(bucket, objectKey);
   return `${storageBase()}/object/public/${bucket}/${encodeObjectKey(objectKey)}`;
 }
 
@@ -225,7 +267,8 @@ export async function deleteObject(
   objectKey: string,
   bucket: string = env.SUPABASE_STORAGE_BUCKET,
 ): Promise<void> {
-  const path = `${storageBase()}/object/${bucket}/${encodeObjectKey(objectKey)}`;
+  assertBucketFitsKey(bucket, objectKey);
+  const path = `${storageBase()}/object/${encodeURIComponent(bucket)}/${encodeObjectKey(objectKey)}`;
 
   const response = await fetch(path, {
     method: 'DELETE',
@@ -272,7 +315,10 @@ export async function discardObject(objectKey: string): Promise<void> {
   try {
     await deleteObject(objectKey);
   } catch (error) {
-    logger.warn({ err: error, objectKey }, 'Could not delete a replaced image; media:prune will');
+    logger.warn(
+      { err: error, objectKey: loggableKey(env.SUPABASE_STORAGE_BUCKET, objectKey) },
+      'Could not delete a replaced image; media:prune will',
+    );
   }
 }
 
@@ -294,7 +340,7 @@ export async function listObjects(
   const limit = 100;
 
   for (;;) {
-    const response = await fetch(`${storageBase()}/object/list/${bucket}`, {
+    const response = await fetch(`${storageBase()}/object/list/${encodeURIComponent(bucket)}`, {
       method: 'POST',
       headers: {
         ...serviceHeaders(),
@@ -360,10 +406,11 @@ export const idObjectKey = (userId: string, side: 'front' | 'back', ext: 'webp' 
  * size limit and an allowed list of types, so the bucket itself refuses
  * anything else (ADR 0057). Uploads are refused while this is false.
  *
- * Cached for 10 minutes, failures included, so a transient storage error
- * recovers on its own without a check on every request.
+ * Cached for a minute either way: long enough not to ask storage on every
+ * request, short enough that a bucket made public stops ID uploads within a
+ * minute, and a transient storage error clears within one too.
  */
-const ID_READY_TTL_MS = 10 * 60 * 1000;
+const ID_READY_TTL_MS = 60 * 1000;
 let idReadyCache: { value: boolean; at: number } | null = null;
 let idReadyOverride: boolean | null = null;
 

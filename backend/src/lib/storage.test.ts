@@ -2,12 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { env } from '../config/env.js';
 import { logger } from './logger.js';
 import {
+  SIGNED_DOWNLOAD_MAX_SECONDS,
   createSignedDownload,
   createSignedUpload,
+  deleteObject,
+  discardObject,
   idObjectKey,
   idStorageReady,
   listObjects,
   overrideIdStorageReady,
+  publicUrl,
 } from './storage.js';
 
 /**
@@ -232,5 +236,95 @@ describe('idStorageReady', () => {
     expect(await idStorageReady()).toBe(true);
     expect(await idStorageReady()).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('keeping ID photos in the ID bucket', () => {
+  it('refuses an ID key sent to the media bucket by a forgotten argument, before asking storage', async () => {
+    await expect(createSignedUpload(ID_KEY)).rejects.toMatchObject({ status: 500, code: 'STORAGE_MISUSE' });
+    await expect(deleteObject(ID_KEY)).rejects.toMatchObject({ status: 500, code: 'STORAGE_MISUSE' });
+    expect(() => publicUrl(ID_KEY)).toThrow(expect.objectContaining({ code: 'STORAGE_MISUSE' }));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses anything but an ID key in the ID bucket', async () => {
+    await expect(createSignedUpload('avatars/u/x.webp', 'ids')).rejects.toMatchObject({
+      code: 'STORAGE_MISUSE',
+    });
+    await expect(createSignedDownload('ids', 'offers/p/x.webp', 60)).rejects.toMatchObject({
+      code: 'STORAGE_MISUSE',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not echo the key it refused', async () => {
+    const refusal = await createSignedUpload(ID_KEY).catch((error: Error) => error);
+    expect(String((refusal as Error).message)).not.toContain('0b6f1d2e');
+  });
+
+  it('keeps an ID key out of the log even when a misrouted delete is swallowed', async () => {
+    const warned = vi.spyOn(logger, 'warn');
+
+    await discardObject(ID_KEY);
+
+    expect(warned).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(warned.mock.calls)).not.toContain('0b6f1d2e');
+  });
+});
+
+describe('signed downloads have their own limits', () => {
+  it(`refuses a lifetime outside 1 to ${SIGNED_DOWNLOAD_MAX_SECONDS} seconds, before asking storage`, async () => {
+    for (const expiresIn of [0, -5, 1.5, SIGNED_DOWNLOAD_MAX_SECONDS + 1, 86_400]) {
+      await expect(createSignedDownload('ids', ID_KEY, expiresIn)).rejects.toMatchObject({
+        code: 'STORAGE_MISUSE',
+      });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a key that climbs out of its folder', async () => {
+    await expect(
+      createSignedDownload('ids', 'ids/user-1/../user-2/x-front.webp', 60),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("storage's own error text", () => {
+  it('has an ID key cut out before it is logged', async () => {
+    const logged = vi.spyOn(logger, 'error');
+    answer({
+      status: 400,
+      body: { statusCode: '400', code: 'InvalidKey', message: `Invalid key: ${ID_KEY}` },
+    });
+
+    await expect(createSignedDownload('ids', ID_KEY, 60)).rejects.toMatchObject({ status: 502 });
+
+    const written = JSON.stringify(logged.mock.calls);
+    expect(written).not.toContain('0b6f1d2e');
+    expect(written).toContain('InvalidKey');
+  });
+});
+
+describe('idStorageReady over time', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('asks again within a minute, so a bucket made public stops ID uploads', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-11T00:00:00Z'));
+    const privateBucket = {
+      id: 'ids',
+      public: false,
+      file_size_limit: 10485760,
+      allowed_mime_types: ['image/webp', 'image/jpeg'],
+    };
+    answer({ body: privateBucket }, { body: { ...privateBucket, public: true } });
+
+    expect(await idStorageReady()).toBe(true);
+    vi.setSystemTime(new Date('2026-10-11T00:01:01Z'));
+    expect(await idStorageReady()).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
