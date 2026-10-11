@@ -1,5 +1,6 @@
 import { and, desc, or, sql, type SQL } from 'drizzle-orm';
 import {
+  creativeDomains,
   creativeProfiles,
   creativeSubdomains,
   municipalities,
@@ -105,12 +106,15 @@ function build(q: string, fields: Fields): SearchSql {
   return { where, orderBy };
 }
 
-/** Title, description, sub-domain, the creative's display name, and their town. */
+/** Title, description, sub-domain, domain, the creative's display name, and their town. */
 export function offerSearch(q: string): SearchSql {
   return build(q, {
     documents: [
       sql`${offers.title} || ' ' || coalesce(${offers.description}, '')`,
       sql`${creativeSubdomains.name} || ' ' || ${creativeSubdomains.singularName}`,
+      // The domain is the eyebrow on every card ("Digital Interactive Media").
+      // Nine rows, so no index.
+      sql`${creativeDomains.name}`,
       sql`coalesce(${creativeProfiles.displayName}, '')`,
       sql`${municipalities.name}`,
     ],
@@ -118,6 +122,7 @@ export function offerSearch(q: string): SearchSql {
       sql`${offers.title}`,
       sql`${creativeSubdomains.name}`,
       sql`${creativeSubdomains.singularName}`,
+      sql`${creativeDomains.name}`,
       sql`${creativeProfiles.displayName}`,
       sql`${municipalities.name}`,
     ],
@@ -125,7 +130,7 @@ export function offerSearch(q: string): SearchSql {
   });
 }
 
-/** Display name, full name, bio, any of their sub-domains, and their town. */
+/** Display name, full name, bio, any of their sub-domains and those domains, and their town. */
 export function creativeSearch(q: string): SearchSql {
   // The middle name is usually the mother's surname, and people know
   // creatives by it, so it is searchable too.
@@ -142,11 +147,21 @@ export function creativeSearch(q: string): SearchSql {
       const subdomainWhere = (match: SQL) => sql`exists (
         select 1 from creative_profile_subdomains cps
         join creative_subdomains cs on cs.id = cps.subdomain_id
+        join creative_domains cd on cd.id = cs.domain_id
         where cps.profile_id = ${creativeProfiles.id}
           and ${match}
       )`;
-      const prefix = subdomainWhere(prefixMatch(sql`cs.name || ' ' || cs.singular_name`, word));
-      const typo = or(typoMatch(sql`cs.name`, word), typoMatch(sql`cs.singular_name`, word))!;
+      const prefix = subdomainWhere(
+        or(
+          prefixMatch(sql`cs.name || ' ' || cs.singular_name`, word),
+          prefixMatch(sql`cd.name`, word),
+        )!,
+      );
+      const typo = or(
+        typoMatch(sql`cs.name`, word),
+        typoMatch(sql`cs.singular_name`, word),
+        typoMatch(sql`cd.name`, word),
+      )!;
       return { prefix, any: typos ? subdomainWhere(typo) : prefix };
     },
   });

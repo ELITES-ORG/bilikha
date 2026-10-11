@@ -5,6 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp, redactSearch } from '../../app.js';
 import { db } from '../../db/index.js';
 import {
+  creativeDomains,
   creativeProfileSubdomains,
   creativeSubdomains,
   municipalities,
@@ -49,8 +50,10 @@ async function subdomainAt(index: number) {
       slug: creativeSubdomains.slug,
       name: creativeSubdomains.name,
       singularName: creativeSubdomains.singularName,
+      domainName: creativeDomains.name,
     })
     .from(creativeSubdomains)
+    .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .orderBy(asc(creativeSubdomains.slug))
     .limit(index + 1);
   const row = rows[index];
@@ -138,6 +141,18 @@ describe('searching creatives', () => {
     });
 
     expect(await creativeSlugs(sub.singularName)).toContain(creative.profile.slug);
+  });
+
+  it('matches the domain their sub-domains belong to', async () => {
+    const sub = await subdomainAt(3);
+    const creative = await makeCreative({ profile: { displayName: 'Zyrel Ocampo' } });
+    await db.insert(creativeProfileSubdomains).values({
+      profileId: creative.profile.id,
+      subdomainId: sub.id,
+      isPrimary: false,
+    });
+
+    expect(await creativeSlugs(sub.domainName)).toContain(creative.profile.slug);
   });
 
   it('lets each word match a different field', async () => {
@@ -246,7 +261,7 @@ describe('searching offers', () => {
     expect(await offerTitles('wedding drone')).toEqual([]);
   });
 
-  it("matches the offer's sub-domain, the creative's name and their town", async () => {
+  it("matches the offer's sub-domain and domain, the creative's name and their town", async () => {
     const sub = await subdomainAt(3);
     const town = await municipalityAt(2);
     const { profile } = await makeCreative({
@@ -257,6 +272,7 @@ describe('searching offers', () => {
 
     expect(await offerTitles(longestWord(sub.name))).toContain('Zxq package');
     expect(await offerTitles(sub.singularName)).toContain('Zxq package');
+    expect(await offerTitles(sub.domainName)).toContain('Zxq package');
     expect(await offerTitles('tindog')).toEqual(['Zxq package']);
     expect(await offerTitles(town.name)).toContain('Zxq package');
   });

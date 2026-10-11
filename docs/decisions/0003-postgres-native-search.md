@@ -81,7 +81,9 @@ decision above holds; these are the choices made in building it.
 - **A sub-domain matches by both its labels**: the official RA 11904 plural
   ("Art Galleries and Studios") and the singular label cards show ("Art
   Gallery or Studio"). A prefix of the singular does not always reach the
-  plural — "gallery" is not the start of "galleries".
+  plural — "gallery" is not the start of "galleries". The **domain** matches
+  too ("Digital Interactive Media"): it is the eyebrow on every card, so people
+  search for it. Domains are nine rows and get no index.
 - **Order: nearby-first, then relevance, then newest.** Relevance is two keys:
   rows where every word matched as typed before typo-only matches, then the
   word similarity of the main name. No `ts_rank`: at this size the two keys

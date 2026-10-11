@@ -454,7 +454,8 @@ optional — see [Directory search](#directory-search)), `domain`, `subdomain`,
 max 50).
 
 `q` matches a creative's display name, full name (middle name included), bio,
-any of their sub-domains (plural name or singular label), and their town.
+any of their sub-domains (plural name or singular label) and those
+sub-domains' domains, and their town.
 
 When the caller is signed in and has a municipality, rows from that municipality
 lead the list (`createdAt` desc as tiebreaker). Each row then includes
@@ -966,8 +967,8 @@ max 50). Only offers whose profile is `published` appear. A budget filter keeps
 offers whose price range overlaps and drops "Price on request" rows. When the
 caller is signed in with a municipality, nearby creatives' offers lead the list.
 
-`q` matches an offer's title, description and sub-domain (plural name or
-singular label), and its creative's display name and town.
+`q` matches an offer's title, description, sub-domain (plural name or
+singular label) and domain, and its creative's display name and town.
 
 #### Directory search
 
