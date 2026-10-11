@@ -1,6 +1,6 @@
 # 0048. Client postings as a card catalog
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** emanuel
 - **Related:** [plan 0041](./0041-offers-as-a-catalog.md) ·
   [plan 0046](./0046-responsive-on-every-screen.md) ·
@@ -30,7 +30,7 @@ filters, pagination, empty state and the posting page are unchanged.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Card and grid | 1 / 1 | Done |
-| 2. Browser check | 0 / 1 | Not started |
+| 2. Browser check | 1 / 1 | Done |
 
 ---
 
