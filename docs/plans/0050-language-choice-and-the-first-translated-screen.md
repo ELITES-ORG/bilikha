@@ -29,8 +29,19 @@ English, and a translator fills them in without opening a component.
 
 The privacy notice and terms are **out of scope here** for the same reason, and
 a stronger one: they are consented to under RA 10173, so a fabricated
-translation is a legal defect rather than a copy defect. They are the first
-thing to translate once a speaker is found, not the first thing to wire up.
+translation is a legal defect rather than a copy defect. They were left
+unwired at first; phase 6 wires them up — in English only — after they were
+named as the first pass on 2026-10-10.
+
+## Decisions on issue #26
+
+Answered by userMarcPaul on 2026-10-10, recorded as given:
+
+| Question | Answer |
+|---|---|
+| Which languages come first? | **"English comes first."** English stays the default and the source every other language falls back to — already how the runtime works. |
+| Who translates and reviews? | **"Anyone because it is personal."** Not yet clarified between *anyone who speaks the language* and *anyone at all*. The first is compatible with ADR 0055; the second would overturn its §4 (no machine translation), which is reyxdz's call. Until clarified, ADR 0055 stands — and for the privacy notice and terms it is not negotiable, see phase 6. |
+| What does the first pass cover? | **"Privacy notice and terms."** Wired up in phase 6. |
 
 ## Rules for whoever executes this
 
@@ -55,6 +66,7 @@ thing to translate once a speaker is found, not the first thing to wire up.
 | 3. The control | 2 / 2 | Done |
 | 4. The first screen | 2 / 2 | Done |
 | 5. Documentation | 2 / 2 | Done |
+| 6. The privacy notice and terms | 3 / 3 | Done |
 
 ---
 
@@ -176,6 +188,47 @@ thing to translate once a speaker is found, not the first thing to wire up.
 
 ---
 
+## Phase 6 — The privacy notice and terms
+
+Named as issue #26's first pass on 2026-10-10. **Wired up in English only** —
+translating them waits for the two questions in step 6.3.
+
+### Step 6.1 — Move the text into the catalogue
+
+- [x] **Action.** Every string in `frontend/src/pages/legal/PrivacyPage.tsx`,
+      `TermsPage.tsx` and `LegalLayout.tsx` — 130 keys under `privacy.*`,
+      `terms.*` and `legal.*` — appended to `en.ts`, with matching empty entries
+      in `fil.ts` and `war.ts`. Bold lead-ins split into `…Lead` / `…Rest`;
+      anything not translated (the operator's name, *Elites*, `bilikha.sid`, the
+      contact address, the *Last updated* date) split out with
+      `…Before` / `…After`. Rendered through a `LegalText` helper that marks
+      each string with the language it is actually in.
+- [x] **Verify.** The rendered text of both pages is **character-for-character
+      identical** before and after (privacy 5,497, terms 3,969). The terms are
+      pixel-identical at 360px in both themes; the privacy notice differs only
+      by sub-pixel anti-aliasing on one line (353 px, ≤ 49/255), from the space
+      after a bold phrase moving into the translatable text.
+
+### Step 6.2 — Tell translators how the legal text works
+
+- [x] **Action.** A section in `docs/guides/translate-the-interface.md`: the two
+      questions, the stricter rule, and how `…Lead` / `…Rest` / `…Before` /
+      `…After` split the sentences.
+- [x] **Verify.** `npm run docs:check` passes.
+
+### Step 6.3 — Name what blocks translating them
+
+- [x] **Action.** Written at the top of the legal block in `en.ts`, where a
+      translator meets it, and in the guide:
+      1. **Which version is authoritative** if a translation and the English
+         differ.
+      2. **Whether an account records the language its owner agreed in.**
+         `users.consent_version` holds a date only; RA 10173 consent must be
+         demonstrable, and "agreed to the Waray text" is not recorded anywhere.
+      Both are reyxdz's, and the second is a schema change best made before any
+      account consents in a translation.
+- [x] **Verify.** Both appear in `en.ts` and the guide.
+
 ## Acceptance
 
 - [x] Choosing Filipino or Waray survives a reload on that device.
@@ -186,6 +239,8 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - [x] An untranslated key renders its English string.
 - [x] The three catalogues have identical key sets, enforced by a test.
 - [x] Sign-in reads from the catalogue, and is unchanged on screen.
+- [x] The privacy notice and terms read from the catalogue, and their rendered
+      text is character-for-character unchanged.
 - [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check` and
       `npm run check:bundle` pass, with the budget unchanged.
 
@@ -194,8 +249,14 @@ thing to translate once a speaker is found, not the first thing to wire up.
 - **The words.** Nothing is translated until reyxdz names the languages and
   finds speakers. That is the whole value of this feature and none of it is
   here.
-- **The privacy notice and terms** are the first thing to translate, and the
-  one place a wrong translation is a legal problem.
+- **Translating the privacy notice and terms** waits on the two questions in
+  step 6.3 — which version is authoritative, and whether consent records its
+  language.
+- **The privacy notice may be out of date.** PR #52 added Sentry error
+  reporting, but the notice still says there is "no third-party tracker
+  anywhere" and lists only Supabase and the hosts as companies that see data.
+  Whether Sentry belongs there is a content question for reyxdz — phase 6
+  changed no wording, deliberately.
 - **Server copy is not covered.** `AppError` messages reach the user in
   English, so a translated screen can still show an English error. Needs its
   own decision about whether the API returns codes the client renders.

@@ -1,4 +1,4 @@
-import { LegalLayout, LegalList, LegalSection } from './LegalLayout';
+import { LegalLayout, LegalList, LegalSection, LegalText } from './LegalLayout';
 
 /**
  * The terms of use.
@@ -9,138 +9,105 @@ import { LegalLayout, LegalList, LegalSection } from './LegalLayout';
  * most important thing it says is the thing a template would not: Bilikha is
  * not a party to the work, does not hold the money, and does not guarantee
  * anybody.
+ *
+ * The words live in the translation catalogue (`terms.*`, plan 0050 phase 6).
+ * Before any of them is translated, read the warning at the top of that block
+ * in `en.ts`: this is a document people consent to, not ordinary copy.
  */
 export function TermsPage() {
   return (
     <LegalLayout
-      title="Terms of use"
-      summary="What Bilikha does, what it does not do, and what is expected of you while you use it."
-      other={{ to: '/privacy', label: 'Read the privacy notice →' }}
+      titleKey="terms.title"
+      summaryKey="terms.summary"
+      other={{ to: '/privacy', labelKey: 'terms.otherLink' }}
     >
-      <LegalSection title="What Bilikha is">
+      <LegalSection titleKey="terms.what.heading">
         <p>
-          Bilikha is a registry. It lists creative practitioners in Biliran and the work they
-          offer, and it gives people a way to find each other and agree terms in writing.
+          <LegalText k="terms.what.registry" />
         </p>
         <p>
           <strong className="text-ink">
-            It is not a party to any work you agree to do or pay for.
+            <LegalText k="terms.what.notPartyLead" />
           </strong>{' '}
-          It does not hold or transfer money, does not guarantee that anyone is competent,
-          honest or available, and does not employ or represent the people listed on it. An
-          agreement made here is between you and the other person.
+          <LegalText k="terms.what.notPartyRest" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Who may use it">
+      <LegalSection titleKey="terms.who.heading">
         <p>
-          You must be at least 18 years old. Accounts are not created for anyone younger, and
-          your date of birth is checked when you register.
+          <LegalText k="terms.who.age" />
         </p>
         <p>
-          Register once, with your real name and your own contact details. An account is yours
-          alone — do not share your password, and tell us if you think someone else has it.
+          <LegalText k="terms.who.once" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Profiles and offers">
+      <LegalSection titleKey="terms.profiles.heading">
         <LegalList
           items={[
-            <>
-              A creative profile is reviewed before it appears publicly, and so are profile
-              photos and offer images. A profile can be rejected, and you will be told why.
-            </>,
-            <>
-              You may list up to six offers, each with up to four images, and you choose the
-              order they appear in.
-            </>,
-            <>
-              Describe what you actually do and price it honestly. Do not list work you cannot
-              deliver, and do not use someone else&rsquo;s photographs as your own.
-            </>,
-            <>
-              You keep ownership of what you upload. By putting it on Bilikha you allow us to
-              display it on the registry, at the sizes the site needs, for as long as it is on
-              your profile.
-            </>,
+            <LegalText key="terms.profiles.review" k="terms.profiles.review" />,
+            <LegalText key="terms.profiles.limits" k="terms.profiles.limits" />,
+            <LegalText key="terms.profiles.honest" k="terms.profiles.honest" />,
+            <LegalText key="terms.profiles.ownership" k="terms.profiles.ownership" />,
           ]}
         />
       </LegalSection>
 
-      <LegalSection title="Postings and agreements">
+      <LegalSection titleKey="terms.agreements.heading">
         <LegalList
           items={[
-            <>
-              A posting describes work you want done. It expires on its own, and you can close
-              it once it is filled or no longer needed.
-            </>,
-            <>
-              An agreement records what was agreed: the work, the price, and the terms. When
-              both sides accept it, Bilikha keeps a fingerprint of the exact text that was
-              accepted, so neither side can later be shown a different version.
-            </>,
-            <>
-              Bilikha does not enforce agreements, chase payment, or arbitrate disputes. It
-              records what was agreed so that you can.
-            </>,
+            <LegalText key="terms.agreements.postings" k="terms.agreements.postings" />,
+            <LegalText key="terms.agreements.records" k="terms.agreements.records" />,
+            <LegalText key="terms.agreements.noEnforce" k="terms.agreements.noEnforce" />,
           ]}
         />
       </LegalSection>
 
-      <LegalSection title="Ratings">
+      <LegalSection titleKey="terms.ratings.heading">
         <p>
-          You can rate the other person only after an agreement between you, and only once for
-          each. Rate the work that actually happened. Ratings are not for pressure,
-          retaliation, or settling something unrelated, and ratings that are can be removed.
+          <LegalText k="terms.ratings.body" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Behaviour">
-        <p>While using Bilikha, do not:</p>
+      <LegalSection titleKey="terms.behaviour.heading">
+        <p>
+          <LegalText k="terms.behaviour.intro" />
+        </p>
         <LegalList
           items={[
-            <>Harass, threaten or abuse anyone.</>,
-            <>Post anything unlawful, or anything you have no right to post.</>,
-            <>Impersonate another person, or misrepresent who you are.</>,
-            <>Use the registry to advertise something other than creative work in Biliran.</>,
-            <>Attempt to break, overload or extract data in bulk from the service.</>,
+            <LegalText key="terms.behaviour.harass" k="terms.behaviour.harass" />,
+            <LegalText key="terms.behaviour.unlawful" k="terms.behaviour.unlawful" />,
+            <LegalText key="terms.behaviour.impersonate" k="terms.behaviour.impersonate" />,
+            <LegalText key="terms.behaviour.advertise" k="terms.behaviour.advertise" />,
+            <LegalText key="terms.behaviour.abuse" k="terms.behaviour.abuse" />,
           ]}
         />
         <p>
-          You can report a conversation or a rating, and you can block someone. Reports are
-          read by an administrator, who may remove content, suspend an account, or refuse a
-          profile.
+          <LegalText k="terms.behaviour.reports" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Availability">
+      <LegalSection titleKey="terms.availability.heading">
         <p>
-          Bilikha is provided as it is. It may be unavailable, lose recent changes during an
-          incident, or change in ways that remove things you were using. It is a small service
-          for a small province and is run accordingly — treat anything important to you as
-          something to keep your own copy of.
+          <LegalText k="terms.availability.body" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Ending your use">
+      <LegalSection titleKey="terms.ending.heading">
         <p>
-          You may stop using Bilikha at any time and ask for your account to be deleted; the{' '}
-          privacy notice explains what that does and does not remove. We may suspend or remove
-          an account that breaks these terms, or that is being used to harm someone.
+          <LegalText k="terms.ending.body" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Changes to these terms">
+      <LegalSection titleKey="terms.changes.heading">
         <p>
-          These terms change as the service does, and the date at the top moves when they do.
-          Where a change materially affects you, we will ask you to accept it again rather
-          than relying on you noticing.
+          <LegalText k="terms.changes.body" />
         </p>
       </LegalSection>
 
-      <LegalSection title="Governing law">
+      <LegalSection titleKey="terms.law.heading">
         <p>
-          These terms are governed by the laws of the Republic of the Philippines.
+          <LegalText k="terms.law.body" />
         </p>
       </LegalSection>
     </LegalLayout>
