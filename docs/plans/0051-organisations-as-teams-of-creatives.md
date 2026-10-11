@@ -71,6 +71,10 @@ Choices phases 2–5 made that the steps above did not spell out:
   withdraws the unanswered invitations a person sent; handing over withdraws
   the old founder's co-founder invitations, since that power moved with the
   role.
+- **A closed organisation keeps its slug.** Closing deletes the row, so its
+  slug goes to `retired_organization_slugs` in the same transaction, and a new
+  organisation of the same name gets `-2`. Founding and closing lock the slug,
+  so they cannot interleave. Shared links never open a different team.
 - **Review never touches a suspension.** Approve, reject and acknowledge are
   refused on a suspended organisation, and its founder cannot close it by
   leaving. Nothing sets `suspended` yet; these hold the rule for when something

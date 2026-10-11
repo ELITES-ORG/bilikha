@@ -5,6 +5,7 @@ import {
   organizationInvitations,
   organizationMembers,
   organizations,
+  retiredOrganizationSlugs,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
@@ -15,6 +16,7 @@ import type { InviteInput } from './organizations.schema.js';
 import {
   assertUnderCap,
   lockCaps,
+  lockSlug,
   publishedProfileOf,
   roleIn,
   type Tx,
@@ -357,7 +359,16 @@ export async function leaveOrganization(input: {
       );
     }
 
-    await db.delete(organizations).where(eq(organizations.id, organization.id));
+    // The slug stays reserved: links to the closed organisation must not open
+    // whichever team takes its name next.
+    await db.transaction(async (tx) => {
+      await lockSlug(tx, organization.slug);
+      await tx.delete(organizations).where(eq(organizations.id, organization.id));
+      await tx
+        .insert(retiredOrganizationSlugs)
+        .values({ slug: organization.slug })
+        .onConflictDoNothing();
+    });
     return { closed: true };
   }
 

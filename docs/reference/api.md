@@ -564,7 +564,9 @@ Signed in. Founds an organisation, which starts at `pending_review`.
 ```
 
 One to five sub-domains from at most two domains, none archived. The slug is
-made from the name once and never changes.
+made from the name once and never changes, and is never reused: a closed
+organisation's slug stays reserved, so the next one of the same name gets
+`<slug>-2`.
 
 `201` — `{ data: { slug, status } }`. `403` without a published creative
 profile. `409` at the cap: five organisations, counting memberships and not
@@ -636,6 +638,7 @@ The invitee. `200` — `{ data: { declined: true } }`.
 Any member. A founder with anyone else in the team is refused (`409`) and told
 to hand over first. A founder alone closes the organisation: it is deleted —
 except a `suspended` one (`403`), which only an administrator can resolve.
+Its slug is retired, never to be handed out again.
 Leaving withdraws any unanswered invitations the person sent.
 `200` — `{ data: { closed } }`.
 

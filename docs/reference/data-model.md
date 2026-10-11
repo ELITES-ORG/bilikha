@@ -694,6 +694,24 @@ would fight an administrator correcting data.
 
 ---
 
+## `retired_organization_slugs`
+
+Slugs of organisations that have been closed. A founder alone closes an
+organisation by leaving, which deletes its row; without this table the next
+organisation of the same name would take the same slug and answer every link
+shared for the old one. Written in the same transaction as the delete, and
+treated as taken when a slug is chosen.
+
+| Column | Type | Notes |
+|---|---|---|
+| `slug` | `text` PK | The closed organisation's slug, never handed out again |
+| `retired_at` | `timestamptz` | Default `now()` |
+
+Only the slug is kept: who the team was goes with the organisation, which is
+what closing it means.
+
+---
+
 ## Seeding
 
 `backend/src/db/seed/` — data in `taxonomy-data.ts`, runner in `index.ts`,

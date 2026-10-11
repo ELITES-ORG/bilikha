@@ -6,6 +6,7 @@ import {
   creativeSubdomains,
   organizationInvitations,
   organizations,
+  retiredOrganizationSlugs,
 } from '../../db/schema/index.js';
 import { makeAdmin, makeCreative, reinstate, suspend } from '../../test/factories.js';
 import { moderateOrganization } from '../admin/organization-review.service.js';
@@ -303,6 +304,41 @@ describe('suspension', () => {
     ).rejects.toMatchObject({ status: 409 });
     const [row] = await db.select().from(organizations).where(eq(organizations.id, pending.id));
     expect(row!.status).toBe('suspended');
+  });
+});
+
+describe('a closed organisation keeps its slug', () => {
+  it('never gives the slug of a closed organisation to a new one', async () => {
+    const first = await makeCreative();
+    const name = `ZZ Closing Studio ${Date.now()}`;
+    const closed = await found(first.user.id, name);
+
+    await leaveOrganization({ userId: first.user.id, slug: closed.slug });
+
+    const [retired] = await db
+      .select()
+      .from(retiredOrganizationSlugs)
+      .where(eq(retiredOrganizationSlugs.slug, closed.slug));
+    expect(retired).toBeDefined();
+
+    const next = await makeCreative();
+    const reopened = await found(next.user.id, name);
+    expect(reopened.slug).not.toBe(closed.slug);
+    expect(reopened.slug).toBe(`${closed.slug}-2`);
+  });
+
+  it('holds when the closing and a founding of the same name happen at once', async () => {
+    const first = await makeCreative();
+    const second = await makeCreative();
+    const name = `ZZ Racing Studio ${Date.now()}`;
+    const closed = await found(first.user.id, name);
+
+    const [, founding] = await Promise.all([
+      leaveOrganization({ userId: first.user.id, slug: closed.slug }),
+      found(second.user.id, name),
+    ]);
+
+    expect(founding.slug).not.toBe(closed.slug);
   });
 });
 

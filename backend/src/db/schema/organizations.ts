@@ -89,6 +89,21 @@ export const organizations = pgTable(
 );
 
 /**
+ * Slugs of organisations that have been closed, never to be handed out again.
+ *
+ * A founder alone closes an organisation by leaving, which deletes its row and
+ * would otherwise free its slug. The next organisation of the same name would
+ * then answer every link ever shared for the old one — a different team behind
+ * the same URL. Kept here instead, in the same transaction as the delete, and
+ * `freeSlug` treats them as taken. Only the slug: who the team was is gone with
+ * the organisation, as closing it means.
+ */
+export const retiredOrganizationSlugs = pgTable('retired_organization_slugs', {
+  slug: text('slug').primaryKey(),
+  retiredAt: timestamp('retired_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Who is in a team, and as what.
  *
  * A row exists only once somebody has accepted an invitation, or founded the

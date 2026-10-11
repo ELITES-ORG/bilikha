@@ -21,6 +21,7 @@ import {
   organizationMembers,
   organizationSubdomains,
   organizations,
+  retiredOrganizationSlugs,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
@@ -72,17 +73,22 @@ export function slugify(name: string): string {
   return slug || 'organisation';
 }
 
-/** The base slug, or the first free `base-2`, `base-3`… */
+/**
+ * The base slug, or the first free `base-2`, `base-3`… A slug a closed
+ * organisation held is never free again (`retired_organization_slugs`).
+ */
 async function freeSlug(name: string): Promise<string> {
   const base = slugify(name);
-  const taken = new Set(
-    (
-      await db
-        .select({ slug: organizations.slug })
-        .from(organizations)
-        .where(sql`${organizations.slug} = ${base} or ${organizations.slug} like ${`${base}-%`}`)
-    ).map((row) => row.slug),
-  );
+  const matching = (column: typeof organizations.slug | typeof retiredOrganizationSlugs.slug) =>
+    sql`${column} = ${base} or ${column} like ${`${base}-%`}`;
+  const [live, retired] = await Promise.all([
+    db.select({ slug: organizations.slug }).from(organizations).where(matching(organizations.slug)),
+    db
+      .select({ slug: retiredOrganizationSlugs.slug })
+      .from(retiredOrganizationSlugs)
+      .where(matching(retiredOrganizationSlugs.slug)),
+  ]);
+  const taken = new Set([...live, ...retired].map((row) => row.slug));
 
   if (!taken.has(base) && !RESERVED_SLUGS.has(base)) return base;
   for (let n = 2; ; n += 1) {
@@ -117,6 +123,18 @@ export async function lockCaps(tx: Tx, userIds: string[]): Promise<void> {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`organization-cap:${userId}`}))`);
   }
 }
+
+/**
+ * Hold a slug until the transaction ends. Founding and closing both take it,
+ * so a closure retiring a slug and a founding claiming the same one cannot
+ * interleave: the founding re-reads after the closure commits and moves on.
+ */
+export async function lockSlug(tx: Tx, slug: string): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`organization-slug:${slug}`}))`);
+}
+
+/** Thrown inside a founding transaction when its slug was taken meanwhile. */
+class SlugTaken extends Error {}
 
 /** Call inside the transaction that adds the membership, after `lockCaps`. */
 export async function assertUnderCap(userId: string, executor: Executor = db): Promise<void> {
@@ -233,6 +251,16 @@ export async function foundOrganization(input: {
         await lockCaps(tx, [input.userId]);
         await assertUnderCap(input.userId, tx);
 
+        // Re-read under the slug's lock: a closure may have retired it, or
+        // another founding taken it, since `freeSlug` looked.
+        await lockSlug(tx, slug);
+        const [retired] = await tx
+          .select({ slug: retiredOrganizationSlugs.slug })
+          .from(retiredOrganizationSlugs)
+          .where(eq(retiredOrganizationSlugs.slug, slug))
+          .limit(1);
+        if (retired) throw new SlugTaken();
+
         const [organization] = await tx
           .insert(organizations)
           .values({
@@ -256,7 +284,12 @@ export async function foundOrganization(input: {
 
       return { slug: created.slug, status: created.status };
     } catch (error) {
-      if (brokenUniqueIndex(error) === 'organizations_slug_idx' && attempt < 3) continue;
+      const slugTaken =
+        error instanceof SlugTaken || brokenUniqueIndex(error) === 'organizations_slug_idx';
+      if (slugTaken && attempt < 3) continue;
+      if (slugTaken) {
+        throw AppError.conflict('That name was just taken. Try again, or choose another.');
+      }
       throw error;
     }
   }

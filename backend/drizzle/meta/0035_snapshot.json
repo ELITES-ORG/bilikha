@@ -1,5 +1,5 @@
 {
-  "id": "f2103429-677b-4e8f-bfbf-024b867e8427",
+  "id": "43d46c82-49c8-48a7-bd6b-d5e392dad0a7",
   "prevId": "4e4889fd-dd1e-4f6f-892d-90f8867ad1bc",
   "version": "7",
   "dialect": "postgresql",
@@ -3986,6 +3986,32 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.retired_organization_slugs": {
+      "name": "retired_organization_slugs",
+      "schema": "",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "retired_at": {
+          "name": "retired_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
