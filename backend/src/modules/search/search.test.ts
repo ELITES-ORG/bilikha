@@ -180,6 +180,18 @@ describe('searching creatives', () => {
     expect(await creativeSlugs('fotographer')).toEqual([photographer.profile.slug]);
   });
 
+  it('finds a long word missing a letter, and keeps a short word strict', async () => {
+    const developer = await makeCreative({ profile: { displayName: 'Developer Hilario' } });
+    await makeCreative({ profile: { displayName: 'Lorena Pacquiao' } });
+
+    // "develper" scores 0.58 against "Developer": under the default 0.6 that a
+    // short word must meet, over the 0.5 a long word gets.
+    expect(await creativeSlugs('develper')).toEqual([developer.profile.slug]);
+    // "lorna" scores 0.5 against "Lorena" — another person's name, and five
+    // letters is short, so it stays at 0.6 and does not match.
+    expect(await creativeSlugs('lorna')).toEqual([]);
+  });
+
   it('ranks a word match above a typo-only match', async () => {
     const exact = await makeCreative({ profile: { displayName: 'Photographer Ramon' } });
     // Newer, so newest-first alone would put it on top.

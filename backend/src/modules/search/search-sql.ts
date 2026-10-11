@@ -17,8 +17,10 @@ import {
  *
  * - **Prefix.** `to_tsvector('simple', field) @@ to_tsquery('simple', 'word:*')`.
  *   `simple` does no stemming, so it treats English, Tagalog and Waray alike.
- * - **Typo.** `'word' <% field` — pg_trgm word similarity, on short name-like
- *   fields, for words of `TYPO_MIN_LENGTH` characters or more.
+ * - **Typo.** pg_trgm word similarity, on short name-like fields, for words
+ *   of `TYPO_MIN_LENGTH` characters or more: `'word' <% field` (the default
+ *   threshold, 0.6) for a short word, and a looser `LONG_WORD_SIMILARITY` for
+ *   a word of `LONG_WORD_LENGTH` or more.
  *
  * So "photographer naval" finds a photographer in Naval: one word matches the
  * craft, the other the town.
@@ -31,6 +33,17 @@ export const SEARCH_MIN_LENGTH = 2;
 export const SEARCH_MAX_LENGTH = 100;
 /** Trigrams say nothing useful about one or two characters. */
 export const TYPO_MIN_LENGTH = 3;
+/**
+ * A dropped letter costs a long word more trigrams than the default threshold
+ * allows: "develper" scores 0.56 against "Developers". Measured over every
+ * seeded sub-domain and town name, a one-letter drop in a word of 6–7 letters
+ * was found 26% of the time at 0.6 and 93% at 0.5, and 72% → 100% at 8 or
+ * more. The extra loose matches are mostly kindred crafts ("artisans" and
+ * "artists"), and they sort after every match as typed. Short words keep 0.6:
+ * lowering it found few more dropped letters and matched more unrelated names.
+ */
+export const LONG_WORD_LENGTH = 6;
+export const LONG_WORD_SIMILARITY = 0.5;
 /** Words past this are ignored; each one adds a condition per field. */
 export const SEARCH_MAX_WORDS = 8;
 
@@ -70,7 +83,11 @@ function prefixMatch(document: SQL, word: string): SQL {
 }
 
 function typoMatch(field: SQL, word: string): SQL {
-  return sql`${word}::text <% (${field})`;
+  // A search ORs across joined tables, so neither form uses a trigram index
+  // today (ADR 0003); `<%` is kept where it applies, for when one can.
+  return word.length >= LONG_WORD_LENGTH
+    ? sql`word_similarity(${word}::text, (${field})) >= ${LONG_WORD_SIMILARITY}`
+    : sql`${word}::text <% (${field})`;
 }
 
 function build(q: string, fields: Fields): SearchSql {

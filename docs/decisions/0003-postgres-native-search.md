@@ -73,9 +73,16 @@ decision above holds; these are the choices made in building it.
   "photographer naval" is a craft and a town. Comparing the whole query by
   trigram instead let "dalisay kali" match "Dalisay Ramos" on one strong word.
 - **`pg_trgm` per word, on name-like fields only** — titles, names, sub-domain
-  and town names — for words of three characters or more, at the default word
-  similarity threshold (0.6). Descriptions and bios are long enough that
-  trigrams match noise.
+  and town names — for words of three characters or more. A word of up to five
+  letters must reach the default word similarity threshold (0.6); a word of six
+  or more needs 0.5, because a dropped letter costs a long word more trigrams
+  ("develper" scores 0.58 against "Developer"). Measured over every seeded
+  sub-domain and town name, a one-letter drop was found 26% of the time at 0.6
+  and 93% at 0.5 for words of 6–7 letters, and 72% and 100% at 8 or more. The
+  extra loose matches are mostly kindred crafts ("artisans" and "artists"),
+  and they sort after every match as typed. Short words gained little from a
+  lower threshold and matched more unrelated names, so they stay at 0.6.
+  Descriptions and bios are long enough that trigrams match noise.
 - **The town is searchable.** The landing page has always promised "craft,
   name, or town".
 - **A sub-domain matches by both its labels**: the official RA 11904 plural

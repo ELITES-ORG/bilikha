@@ -983,7 +983,9 @@ singular label) and domain, and its creative's display name and town.
 - **Matching.** Every word must match some field of the row, either as a word
   prefix (`photo` finds "Photographers"; no stemming, so English, Filipino and
   Waray behave alike) or, for words of three characters or more, by trigram
-  similarity on name-like fields (`fotographer` finds "Photographer"). Words
+  similarity on name-like fields (`fotographer` finds "Photographer"; a word of
+  six letters or more is allowed a looser match, so `develper` finds
+  "Developer"). Words
   may match different fields: `photographer naval` finds a photographer in
   Naval.
 - **Visibility** is the listing's own: published profiles of active accounts

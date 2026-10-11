@@ -59,7 +59,7 @@ tolerated, and a search that finds nothing says so with a way forward.
   log replaces `q`.
 - [x] **Verify.** `search.test.ts`: title, description, name, full name, bio,
   sub-domain (both labels), domain and town; prefix and every-word; words across fields; typo
-  "fotographer"; word matches above typo-only, nearby-first above both;
+  "fotographer", and "develper" with short words kept strict; word matches above typo-only, nearby-first above both;
   unpublished, suspended and an unpublished profile's offers excluded; with
   the town and sub-domain filters; pagination and `total`; query syntax as
   input; one character refused, blank ignored.
