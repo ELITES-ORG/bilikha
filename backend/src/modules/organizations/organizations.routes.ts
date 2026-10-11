@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../../middleware/require-auth.js';
-import { organizationInviteLimiter } from '../../middleware/rate-limit.js';
+import { organizationInviteLimiter, uploadLimiter } from '../../middleware/rate-limit.js';
+import { clearLogo, issueLogoUpload, setLogo } from './logo.service.js';
 import {
   foundOrganizationSchema,
   handOverSchema,
   inviteSchema,
   listOrganizationsSchema,
+  setLogoSchema,
   updateOrganizationSchema,
 } from './organizations.schema.js';
 import {
@@ -111,6 +113,24 @@ organizationsRouter.post('/:slug/founder', requireAuth, async (req, res) => {
   const { userId } = handOverSchema.parse(req.body);
   await handOver({ founderId: req.session.userId!, slug, toUserId: userId });
   res.json({ data: { handedOver: true } });
+});
+
+/** A signed URL to upload a logo to; the browser PUTs the resized image there. */
+organizationsRouter.post('/:slug/logo/upload-url', requireAuth, uploadLimiter, async (req, res) => {
+  const { slug } = slugParams.parse(req.params);
+  res.json({ data: await issueLogoUpload({ userId: req.session.userId!, slug }) });
+});
+
+/** Attach the uploaded object as the logo. */
+organizationsRouter.put('/:slug/logo', requireAuth, async (req, res) => {
+  const { slug } = slugParams.parse(req.params);
+  const { objectKey } = setLogoSchema.parse(req.body);
+  res.json({ data: await setLogo({ userId: req.session.userId!, slug, objectKey }) });
+});
+
+organizationsRouter.delete('/:slug/logo', requireAuth, async (req, res) => {
+  const { slug } = slugParams.parse(req.params);
+  res.json({ data: await clearLogo({ userId: req.session.userId!, slug }) });
 });
 
 /** Public. Only a published organisation — anything else is a 404. */

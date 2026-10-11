@@ -78,6 +78,11 @@ export const handOverSchema = z.object({
   userId: z.string().uuid('Invalid account id'),
 });
 
+/** The storage key the browser uploaded the resized logo to. */
+export const setLogoSchema = z.object({
+  objectKey: z.string().min(1).max(512),
+});
+
 export type InviteInput = z.infer<typeof inviteSchema>;
 
 export const listOrganizationsSchema = z.object({

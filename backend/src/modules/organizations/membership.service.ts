@@ -10,6 +10,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { discardObject } from '../../lib/storage.js';
 import { normalizeUsername } from '../../lib/username.js';
 import { notify } from '../notifications/notifications.service.js';
 import { formatFullName } from '../profiles/profiles.service.js';
@@ -402,6 +403,7 @@ export async function leaveOrganization(input: {
         .values({ slug: organization.slug })
         .onConflictDoNothing();
     });
+    if (organization.logoKey) await discardObject(organization.logoKey);
     return { closed: true };
   }
 

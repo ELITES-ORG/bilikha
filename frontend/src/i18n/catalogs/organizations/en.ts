@@ -75,6 +75,17 @@ export const enOrganizations = {
   'organizations.manage.member.removed': 'Removed from the team',
   'organizations.manage.member.handingOver': 'Handing over…',
   'organizations.manage.member.handedOver': 'The founder has changed',
+  'organizations.manage.logo.heading': 'Logo',
+  'organizations.manage.logo.intro':
+    'Shown on the page and in the directory. A square image works best; it is resized on your device before it uploads. An administrator looks at every new logo.',
+  'organizations.manage.logo.add': 'Add a logo',
+  'organizations.manage.logo.replace': 'Replace logo',
+  'organizations.manage.logo.remove': 'Remove',
+  'organizations.manage.logo.working': 'Working…',
+  'organizations.manage.logo.uploading': 'Uploading the logo…',
+  'organizations.manage.logo.updated': 'Logo updated',
+  'organizations.manage.logo.removing': 'Removing the logo…',
+  'organizations.manage.logo.removed': 'Logo removed',
   'organizations.manage.invite.heading': 'Invite someone',
   'organizations.manage.invite.intro':
     'They need a creative profile. The invitation waits on their account for seven days.',

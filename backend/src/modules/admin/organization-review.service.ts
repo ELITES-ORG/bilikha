@@ -8,6 +8,7 @@ import {
   organizations,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notify } from '../notifications/notifications.service.js';
 
 /**
@@ -65,6 +66,7 @@ export async function listOrganizationsForReview(options: {
         slug: organizations.slug,
         name: organizations.name,
         bio: organizations.bio,
+        logoKey: organizations.logoKey,
         crafts: CRAFT_NAMES,
         status: organizations.status,
         founderUsername: FOUNDER_USERNAME,
@@ -93,6 +95,7 @@ export async function listOrganizationsForReview(options: {
       slug: row.slug,
       name: row.name,
       bio: row.bio,
+      logoUrl: row.logoKey && isStorageConfigured() ? publicUrl(row.logoKey) : null,
       crafts: row.crafts,
       status: row.status,
       founderUsername: row.founderUsername,

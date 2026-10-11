@@ -66,6 +66,10 @@ export const organizations = pgTable(
     // Storage key, as `users.avatar_key` is. The upload path arrives with the
     // page in plan 0051 phase 4.
     logoKey: text('logo_key'),
+    // Null until an administrator has looked at the current logo in the media
+    // queue, the way `users.avatar_reviewed_at` works for a photo. A new
+    // upload clears it.
+    logoReviewedAt: timestamp('logo_reviewed_at', { withTimezone: true }),
     municipalityId: uuid('municipality_id')
       .notNull()
       .references(() => municipalities.id, { onDelete: 'restrict' }),

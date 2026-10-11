@@ -157,7 +157,7 @@ function OrganizationRow({ row, queue }: { row: AdminOrganizationRow; queue: Org
   return (
     <li className="space-y-4 px-1 py-5 md:px-2">
       <div className="flex items-start gap-3">
-        <Avatar src={null} name={row.name} size="md" />
+        <Avatar src={row.logoUrl} name={row.name} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold break-words text-ink">{row.name}</p>

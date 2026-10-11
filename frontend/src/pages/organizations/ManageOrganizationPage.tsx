@@ -26,6 +26,7 @@ import {
   useUpdateOrganization,
 } from '@/features/organizations/api';
 import { ROLE_LABEL, canManage } from '@/features/organizations/labels';
+import { LogoSection } from './LogoSection';
 import {
   OrganizationFields,
   type OrganizationFormState,
@@ -108,6 +109,7 @@ function ManageBody({ organization, myUserId }: { organization: ManagedOrganizat
 
       <StatusNotice organization={organization} />
 
+      {manages && organization.status !== 'suspended' && <LogoSection organization={organization} />}
       {manages && <EditSection organization={organization} />}
       <TeamSection organization={organization} myUserId={myUserId} />
       {manages && organization.status !== 'suspended' && <InviteSection organization={organization} />}

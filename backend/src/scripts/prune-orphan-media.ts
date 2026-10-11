@@ -1,6 +1,6 @@
 /**
  * Lists every object in the media bucket, compares against keys referenced by
- * users.avatar_key / offer_images, and reports (or deletes with --delete)
+ * users.avatar_key / offer_images / organizations.logo_key, and reports (or deletes with --delete)
  * objects older than 24 hours that no row references.
  *
  * The age check is load-bearing: without it this races an upload in progress.
@@ -11,7 +11,7 @@
  */
 import { env } from '../config/env.js';
 import { db, closeDatabase } from '../db/index.js';
-import { offerImages, users } from '../db/schema/index.js';
+import { offerImages, organizations, users } from '../db/schema/index.js';
 import { deleteObject, listObjects } from '../lib/storage.js';
 
 const AGE_MS = 24 * 60 * 60 * 1000;
@@ -41,14 +41,15 @@ async function main() {
   if (shouldDelete) assertNotDevDatabaseAgainstRemoteStorage();
   const now = Date.now();
 
-  const [avatarRows, imageRows, objects] = await Promise.all([
+  const [avatarRows, logoRows, imageRows, objects] = await Promise.all([
     db.select({ key: users.avatarKey }).from(users),
+    db.select({ key: organizations.logoKey }).from(organizations),
     db.select({ objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey }).from(offerImages),
     listObjects(''),
   ]);
 
   const referenced = new Set<string>();
-  for (const row of avatarRows) {
+  for (const row of [...avatarRows, ...logoRows]) {
     if (row.key) referenced.add(row.key);
   }
   for (const row of imageRows) {

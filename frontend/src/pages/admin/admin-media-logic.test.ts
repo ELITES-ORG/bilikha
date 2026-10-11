@@ -95,7 +95,15 @@ describe('media review ordering', () => {
 
 describe('media review counts', () => {
   it('counts kinds and flagged entries independently', () => {
-    expect(countMedia(items)).toEqual({ avatar: 1, offer: 2, flagged: 1 });
-    expect(countMedia([])).toEqual({ avatar: 0, offer: 0, flagged: 0 });
+    expect(countMedia(items)).toEqual({ avatar: 1, offer: 2, logo: 0, flagged: 1 });
+    expect(countMedia([])).toEqual({ avatar: 0, offer: 0, logo: 0, flagged: 0 });
+  });
+
+  it('counts organisation logos as their own kind, and filters to them', () => {
+    const withLogo = [...items, row({ id: 'logo', kind: 'logo', ownerName: 'Naval Light Studio' })];
+
+    expect(countMedia(withLogo)).toMatchObject({ logo: 1, avatar: 1 });
+    expect(filterAndSortMedia(withLogo, 'logo', '', 'queue').map((item) => item.id)).toEqual(['logo']);
+    expect(filterAndSortMedia(withLogo, 'all', 'naval light', 'queue').map((item) => item.id)).toEqual(['logo']);
   });
 });

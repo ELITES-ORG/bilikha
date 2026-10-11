@@ -8,6 +8,7 @@ export function countMedia(items: ReadonlyArray<AdminMediaRow>) {
   return {
     avatar: items.filter((item) => item.kind === 'avatar').length,
     offer: items.filter((item) => item.kind === 'offer').length,
+    logo: items.filter((item) => item.kind === 'logo').length,
     flagged: items.filter((item) => item.flaggedAt).length,
   };
 }

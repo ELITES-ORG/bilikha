@@ -129,6 +129,8 @@ export interface AdminOrganizationRow {
   name: string;
   /** Shown in full: the reviewer decides on what the public would read. */
   bio: string | null;
+  /** The logo the page would show, so a pending page is reviewed with it. */
+  logoUrl: string | null;
   /** Craft names, primary first. */
   crafts: string[];
   status: OrganizationStatus;
