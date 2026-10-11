@@ -1,16 +1,11 @@
 import type { AdminMediaRow } from '@contracts/admin';
 
-export type KindFilter = 'all' | AdminMediaRow['kind'];
-/** `queue` is the server's own order: flagged offers first, then the longest waiting. */
+/** `queue` is the server's own order: flagged items first, then the longest waiting. */
 export type SortOrder = 'queue' | 'newest' | 'oldest';
 
-export function countMedia(items: ReadonlyArray<AdminMediaRow>) {
-  return {
-    avatar: items.filter((item) => item.kind === 'avatar').length,
-    offer: items.filter((item) => item.kind === 'offer').length,
-    logo: items.filter((item) => item.kind === 'logo').length,
-    flagged: items.filter((item) => item.flaggedAt).length,
-  };
+/** How many items carry contact details in a description: they sort first. */
+export function countFlagged(items: ReadonlyArray<AdminMediaRow>): number {
+  return items.filter((item) => item.flaggedAt).length;
 }
 
 function matchesSearch(item: AdminMediaRow, query: string): boolean {
@@ -22,16 +17,17 @@ function matchesSearch(item: AdminMediaRow, query: string): boolean {
   return haystack.includes(query);
 }
 
-export function filterAndSortMedia(
+/**
+ * One subject's list of waiting items, searched and ordered. Each list holds a
+ * single kind (ADR 0059), so there is no kind filter to apply here.
+ */
+export function filterAndSortReview(
   items: ReadonlyArray<AdminMediaRow>,
-  kind: KindFilter,
   query: string,
   sort: SortOrder,
 ): AdminMediaRow[] {
   const needle = query.trim().toLowerCase();
-  const filtered = items.filter(
-    (item) => (kind === 'all' || item.kind === kind) && matchesSearch(item, needle),
-  );
+  const filtered = items.filter((item) => matchesSearch(item, needle));
   if (sort === 'queue') return filtered;
   const direction = sort === 'newest' ? -1 : 1;
   return [...filtered].sort((a, b) =>

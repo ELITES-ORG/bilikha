@@ -8,6 +8,8 @@ import {
 import type { AdminOrganizationRow } from '@/features/organizations/types';
 import { Avatar, Button, Container, EmptyState, Skeleton, TabPanels, Tabs, Textarea, useToast } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
+import { useAdminSummary } from '@/features/admin/api';
+import { ContentReviewList } from './content-review/ContentReviewList';
 import {
   AdminPageHeader,
   AdminPagination,
@@ -20,9 +22,13 @@ import {
 
 type OrganizationQueue = 'pending_review' | 'edited' | 'published' | 'rejected' | 'suspended';
 
-const TABS: Array<{ status: OrganizationQueue; label: string }> = [
+/** The page's states, and its logos: everything about an organisation is decided here (ADR 0059). */
+type OrganizationTab = OrganizationQueue | 'logos';
+
+const TABS: Array<{ status: OrganizationTab; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
   { status: 'edited', label: 'Edited' },
+  { status: 'logos', label: 'Logos' },
   { status: 'published', label: 'Published' },
   { status: 'rejected', label: 'Changes asked' },
   { status: 'suspended', label: 'Suspended' },
@@ -36,9 +42,14 @@ const TABS: Array<{ status: OrganizationQueue; label: string }> = [
  * and there is no detail page to open. English only, like every admin screen.
  */
 export function AdminOrganizationsPage() {
-  const [status, setStatus] = useState<OrganizationQueue>('pending_review');
+  const [tab, setTab] = useState<OrganizationTab>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminOrganizationCounts();
+  const summary = useAdminSummary();
+  // The Logos tab is the content queue's, not a page state; the page list
+  // stays on its first tab underneath rather than asking for a state that does
+  // not exist.
+  const status: OrganizationQueue = tab === 'logos' ? 'pending_review' : tab;
   const list = useAdminOrganizations(status, page);
 
   const totalPages = useMemo(() => {
@@ -59,21 +70,41 @@ export function AdminOrganizationsPage() {
           label="Organisation queue"
           idPrefix="organizations"
           className={adminTabsClass}
-          value={status}
+          value={tab}
           onChange={(next) => {
-            setStatus(next);
+            setTab(next);
             setPage(1);
           }}
-          items={TABS.map((tab) => ({
-            value: tab.status,
+          items={TABS.map((item) => ({
+            value: item.status,
             label: (
-              <AdminTabLabel text={tab.label} count={counts.data?.[tab.status] ?? 0} active={status === tab.status} />
+              <AdminTabLabel
+                text={item.label}
+                count={
+                  item.status === 'logos'
+                    ? (summary.data?.organizations.logos ?? 0)
+                    : (counts.data?.[item.status] ?? 0)
+                }
+                active={tab === item.status}
+              />
             ),
           }))}
         />
       </AdminToolbar>
 
-      <TabPanels idPrefix="organizations" values={TABS.map((tab) => tab.status)} value={status} className="mt-8">
+      <TabPanels idPrefix="organizations" values={TABS.map((item) => item.status)} value={tab} className="mt-8">
+        {tab === 'logos' ? (
+          <ContentReviewList
+            kind="logo"
+            searchLabel="Search logos"
+            searchPlaceholder="Search by organisation"
+            empty={{
+              title: 'No logos waiting',
+              description: 'A new organisation logo appears here before anyone else can see it. The approved logo, or initials, stays in its place until then.',
+            }}
+          />
+        ) : (
+        <>
         {list.isPending && (
           <ul className={adminListClass} aria-label="Loading organisations">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -122,6 +153,8 @@ export function AdminOrganizationsPage() {
         )}
 
         <AdminPagination page={page} pages={totalPages} onPage={setPage} />
+        </>
+        )}
       </TabPanels>
     </Container>
   );

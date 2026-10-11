@@ -1,11 +1,11 @@
+import type { AdminSummary } from '@contracts/admin';
 import { describe, expect, it } from 'vitest';
-import { ADMIN_SECTIONS, isAdminSectionActive } from './admin-sections';
+import { ADMIN_GROUPS, ADMIN_HOME, ADMIN_SECTIONS, isAdminSectionActive } from './admin-sections';
 
 /**
- * Plan 0022 step 4.2, the half that needs no browser. Which section is marked
- * is pure logic, and the `/admin` prefix trap is the specific bug the plan
- * warned about: every admin path starts with `/admin`, so a prefix match there
- * lights the review queue on every page.
+ * Plan 0022 step 4.2, the half that needs no browser, and the sections by
+ * subject (ADR 0059). Which section is marked, and what its badge counts, is
+ * pure logic.
  */
 describe('which admin section is marked', () => {
   it('marks exactly one section on every section path', () => {
@@ -18,29 +18,58 @@ describe('which admin section is marked', () => {
     }
   });
 
-  it('does not light the review queue on the other sections', () => {
-    for (const path of ['/admin/organizations', '/admin/media', '/admin/accounts', '/admin/ratings', '/admin/taxonomy']) {
-      expect(isAdminSectionActive(path, '/admin'), `queue lit on ${path}`).toBe(false);
-    }
-  });
-
-  it('keeps the review queue lit on a profile detail', () => {
+  it('keeps Creatives marked on a profile detail, and nothing else', () => {
     const detail = '/admin/profiles/0f2c8f1e-1111-2222-3333-444455556666';
 
-    expect(isAdminSectionActive(detail, '/admin')).toBe(true);
-
-    const others = ADMIN_SECTIONS.filter(
-      (s) => s.path !== '/admin' && isAdminSectionActive(detail, s.path),
-    );
-    expect(others).toEqual([]);
+    expect(isAdminSectionActive(detail, ADMIN_HOME)).toBe(true);
+    expect(ADMIN_SECTIONS.filter((s) => isAdminSectionActive(detail, s.path)).map((s) => s.path)).toEqual([
+      ADMIN_HOME,
+    ]);
   });
 
   it('marks a section on its own sub-paths', () => {
-    expect(isAdminSectionActive('/admin/media/anything', '/admin/media')).toBe(true);
+    expect(isAdminSectionActive('/admin/offers/anything', '/admin/offers')).toBe(true);
   });
 
   it('does not match a section whose path is a string prefix of another', () => {
     // '/admin/account' must not light '/admin/accounts', and vice versa.
     expect(isAdminSectionActive('/admin/accountsomething', '/admin/accounts')).toBe(false);
+  });
+});
+
+describe('the sections by subject', () => {
+  const summary: AdminSummary = {
+    creatives: { pending: 2, edited: 1 },
+    offers: { new: 3, changes: 4 },
+    organizations: { pending: 1, edited: 2, logos: 5 },
+    people: { photos: 6 },
+    reports: { open: 7 },
+  };
+
+  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers', () => {
+    const waiting = Object.fromEntries(
+      ADMIN_SECTIONS.map((section) => [section.label, section.waiting ? section.waiting(summary) : null]),
+    );
+
+    expect(waiting).toEqual({
+      Creatives: 3,
+      Offers: 7,
+      Organisations: 8,
+      People: 6,
+      Reports: 7,
+      'Find an account': null,
+      Taxonomy: null,
+    });
+  });
+
+  it('lists every section of work before the tools, and gives only the work a badge', () => {
+    const groups = ADMIN_SECTIONS.map((section) => section.group);
+    const firstTool = groups.indexOf('manage');
+
+    expect(groups.slice(firstTool).every((group) => group === 'manage')).toBe(true);
+    expect(new Set(groups)).toEqual(new Set(ADMIN_GROUPS.map((group) => group.id)));
+    for (const section of ADMIN_SECTIONS) {
+      expect(section.waiting === null, section.label).toBe(section.group === 'manage');
+    }
   });
 });

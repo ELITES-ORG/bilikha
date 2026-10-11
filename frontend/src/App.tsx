@@ -46,11 +46,14 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 const AdminLayout = lazy(() =>
   import('@/pages/admin/AdminLayout').then((m) => ({ default: m.AdminLayout })),
 );
-const AdminQueuePage = lazy(() =>
-  import('@/pages/admin/AdminQueuePage').then((m) => ({ default: m.AdminQueuePage })),
+const AdminCreativesPage = lazy(() =>
+  import('@/pages/admin/AdminCreativesPage').then((m) => ({ default: m.AdminCreativesPage })),
 );
-const AdminMediaPage = lazy(() =>
-  import('@/pages/admin/AdminMediaPage').then((m) => ({ default: m.AdminMediaPage })),
+const AdminOffersPage = lazy(() =>
+  import('@/pages/admin/AdminOffersPage').then((m) => ({ default: m.AdminOffersPage })),
+);
+const AdminPeoplePage = lazy(() =>
+  import('@/pages/admin/AdminPeoplePage').then((m) => ({ default: m.AdminPeoplePage })),
 );
 const AdminAccountsPage = lazy(() =>
   import('@/pages/admin/AdminAccountsPage').then((m) => ({ default: m.AdminAccountsPage })),
@@ -405,12 +408,20 @@ export default function App() {
                   </RequireAdmin>
                 }
               >
-                <Route index element={<AdminQueuePage />} />
+                {/*
+                  By subject (ADR 0059). /admin opens the first section of
+                  work; the old addresses lead to where their work moved.
+                */}
+                <Route index element={<Navigate to="/admin/creatives" replace />} />
+                <Route path="creatives" element={<AdminCreativesPage />} />
+                <Route path="offers" element={<AdminOffersPage />} />
                 <Route path="organizations" element={<AdminOrganizationsPage />} />
-                <Route path="media" element={<AdminMediaPage />} />
+                <Route path="people" element={<AdminPeoplePage />} />
+                <Route path="reports" element={<AdminRatingsPage />} />
                 <Route path="accounts" element={<AdminAccountsPage />} />
-                <Route path="ratings" element={<AdminRatingsPage />} />
                 <Route path="taxonomy" element={<AdminTaxonomyPage />} />
+                <Route path="media" element={<Navigate to="/admin/offers" replace />} />
+                <Route path="ratings" element={<Navigate to="/admin/reports" replace />} />
                 <Route path="profiles/:id" element={<AdminProfilePage />} />
               </Route>
               {/* Internal design-system reference. Not linked from the product. */}

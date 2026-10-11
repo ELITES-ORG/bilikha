@@ -24,8 +24,8 @@ export function AdminRatingsPage() {
   return (
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
-        title="Reported ratings"
-        description="Oldest first. An appeal is a creative's only recourse against a rating, so answer it quickly: either the rating stands, or it goes with a reason on the record."
+        title="Reports"
+        description="Ratings a creative has reported, oldest first. An appeal is a creative's only recourse against a rating, so answer it quickly: either the rating stands, or it goes with a reason on the record."
         aside={
           reports.data &&
           reports.data.meta.total > 0 && (

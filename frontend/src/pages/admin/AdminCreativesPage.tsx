@@ -34,7 +34,7 @@ function waitingLabel(createdAt: string): string {
   return `${days}d`;
 }
 
-export function AdminQueuePage() {
+export function AdminCreativesPage() {
   const [status, setStatus] = useState<QueueStatus>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminCounts();
@@ -49,8 +49,8 @@ export function AdminQueuePage() {
   return (
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
-        title="Review queue"
-        description="Oldest registrations first. Open one to approve it, or reject it with a reason the registrant will see."
+        title="Creatives"
+        description="New creative profiles, and edits to published ones. Oldest first. Open one to approve it, or reject it with a reason the registrant will see."
       />
 
       <AdminToolbar ruled={false}>

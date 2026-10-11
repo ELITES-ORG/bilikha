@@ -241,8 +241,8 @@ export function AdminAccountsPage() {
   return (
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
-        title="Accounts"
-        description="Find an account to suspend, reinstate, or reset its password. Suspending ends its session and takes its profile, offers and postings off every public surface; reinstating puts them all back."
+        title="Find an account"
+        description="Look someone up to suspend, reinstate, or reset their password. Suspending ends its session and takes its profile, offers and postings off every public surface; reinstating puts them all back."
       />
 
       <AdminToolbar>

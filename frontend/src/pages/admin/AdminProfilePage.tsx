@@ -29,7 +29,7 @@ export function AdminProfilePage() {
         action,
         reason: action === 'rejected' ? reason : undefined,
       });
-      void navigate('/admin');
+      void navigate('/admin/creatives');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the decision');
     }
@@ -39,13 +39,13 @@ export function AdminProfilePage() {
     <Container width="wide" className="py-(--section-gap)">
       {/* Return from a detail view — not section navigation. */}
       <ButtonLink
-        to="/admin"
+        to="/admin/creatives"
         variant="ghost"
         size="sm"
         className="-ml-3"
         iconLeft={<ArrowLeft className="size-4" aria-hidden="true" />}
       >
-        Back to the queue
+        Back to Creatives
       </ButtonLink>
 
       {profile.isPending && (
