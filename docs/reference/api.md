@@ -947,11 +947,37 @@ Marks the caller's side as read up to now.
 
 Admin session required (`403` otherwise).
 
+### `GET /api/v1/admin/summary`
+
+How many items wait for a decision under each admin section
+([ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md)):
+
+```jsonc
+{
+  "data": {
+    "creatives": { "pending": 2, "edited": 1 },
+    "offers": { "new": 3, "changes": 1 },
+    "organizations": { "pending": 0, "edited": 1, "logos": 1 },
+    "people": { "photos": 4 },
+    "reports": { "open": 0 }
+  }
+}
+```
+
+Published and suspended rows are not waiting, so they are not counted.
+
 ### `GET /api/v1/admin/media`
 
 Everything waiting for a decision
 ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)),
-paginated:
+paginated. Optional filters return one admin section's part of the queue
+([ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md)):
+
+- `kind`: `offer`, `avatar` or `logo`.
+- `change`: `new` or `edit`, for new offers or changes to published ones.
+  It implies `kind=offer`.
+
+Without either, the whole queue comes back:
 
 - **Offers.** A new offer in `pending_review`, and a published offer with a
   waiting change: a revision, or photos added or removed.

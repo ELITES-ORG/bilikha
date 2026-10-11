@@ -184,7 +184,7 @@ the queue.
 
 ### Step 6.1 — Review on staging
 
-- [ ] **Action.** After the deploy, open **Admin › Offers & photos** on staging.
+- [ ] **Action.** After the deploy, open **Admin › Offers** on staging (and **People** for a profile photo).
   Approve one item, and reject one with a reason.
 - [ ] **Verify.**
   - The approved item appears on the directory.

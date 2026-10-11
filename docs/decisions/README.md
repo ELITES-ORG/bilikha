@@ -71,7 +71,7 @@ Number sequentially. Never renumber.
 | [0032](./0032-an-accepted-agreement-is-not-deleted.md) | An accepted agreement is not deleted | Accepted |
 | [0033](./0033-ratings-earned-by-a-completed-agreement.md) | A rating is earned by a completed agreement | Accepted |
 | [0034](./0034-navigation-transitions.md) | Navigation transitions use the browser's, not a library | Accepted |
-| [0035](./0035-the-admin-area-is-a-layout.md) | The admin area is a layout, not five pages | Accepted |
+| [0035](./0035-the-admin-area-is-a-layout.md) | The admin area is a layout, not five pages | Accepted (sections by subject, 0059) |
 | [0036](./0036-persistent-chrome-holds-the-most-used-control.md) | Persistent chrome holds a surface's most-used control | Accepted |
 | [0037](./0037-one-definition-of-an-api-shape.md) | One definition of an API shape, imported by both sides | Accepted |
 | [0038](./0038-mode-is-a-role-you-are-in-not-a-filter.md) | Mode is a role you are in, not a filter you apply | Accepted |
@@ -95,3 +95,4 @@ Number sequentially. Never renumber.
 | [0056](./0056-link-previews-come-from-a-crawler-only-html-endpoint.md) | Link previews come from a crawler-only HTML endpoint | Accepted |
 | [0057](./0057-new-accounts-are-verified-with-a-biliran-id.md) | New accounts are verified with a photo of a Biliran ID | Accepted |
 | [0058](./0058-content-waits-for-approval-beside-what-is-public.md) | Offers and images wait for approval, beside what is already public | Accepted |
+| [0059](./0059-the-admin-area-is-organised-by-subject.md) | The admin area is organised by what is being decided | Accepted |
