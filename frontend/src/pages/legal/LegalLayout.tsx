@@ -90,7 +90,7 @@ export function LegalLayout({
 }
 
 /** One numbered section. The heading is what a person scans for. */
-export function LegalSection({ titleKey, children }: { titleKey: MessageKey; children: ReactNode }) {
+export function LegalSection({ titleKey, children }: { titleKey: MessageKey; children?: ReactNode }) {
   const { message } = useI18n();
   const title = message(titleKey);
 

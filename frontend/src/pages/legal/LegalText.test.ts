@@ -94,7 +94,7 @@ describe('LegalSection', () => {
   it('marks its heading with the language it is written in', async () => {
     localStorage.setItem(LOCALE_STORAGE_KEY, 'fil');
     const host = await render(
-      createElement(LegalSection, { titleKey: 'terms.law.heading', children: null }),
+      createElement(LegalSection, { titleKey: 'terms.law.heading' }),
       async () => ({ 'terms.law.heading': '[fil] governing law heading' }),
     );
     const heading = host.querySelector('h2')!;

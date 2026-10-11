@@ -635,9 +635,14 @@ always-on Render instance** (Prerequisites).
 
 ### Step 5.3 — The privacy notice
 
-- [ ] **Action.** In `frontend/src/pages/legal/PrivacyPage.tsx`: the ID photo
-      collected at registration is sensitive personal information under RA
-      10173; what it is for; that only administrators see it; that it is deleted
+- [ ] **Action.** Add an ID section to the privacy notice. Its words are
+      catalogue keys in the `privacy.*` block of
+      `frontend/src/i18n/catalogs/en.ts`, with empty `fil`/`war` entries, read
+      through `LegalSection` and `LegalText` in
+      `frontend/src/pages/legal/PrivacyPage.tsx` like the other sections (plan
+      0050 phase 6, and the warning at the top of that block). The section
+      says: the ID photo collected at registration is sensitive personal
+      information under RA 10173; what it is for; that only administrators see it; that it is deleted
       7 days after the decision, or after an appeal's outcome while one is
       open; that a *not from Biliran* decline can be appealed within 7 days;
       that a one-way code made from the ID number (a keyed hash, which cannot be
