@@ -22,6 +22,8 @@ import { formatBudgetRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { AccountPageHeading } from './account/AccountPageHeading';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 function postingStatusTone(status: string): 'neutral' | 'warning' {
   // Expired lapsed without a deliberate close — it should not look like Closed.
@@ -33,6 +35,7 @@ export function MyPostingsPage() {
   const close = useClosePosting();
   const del = useDeletePosting();
   const toast = useToast();
+  const { browseOnly } = useVerificationGate();
 
   async function onClose(id: string) {
     await toast.run(
@@ -64,7 +67,7 @@ export function MyPostingsPage() {
           </p>
 
           {/* The empty state carries its own, so this is still one button. */}
-          {populated && (
+          {populated && !browseOnly && (
             <div className="mt-6">
               <ButtonLink to="/postings/new">Post work</ButtonLink>
             </div>
@@ -78,7 +81,14 @@ export function MyPostingsPage() {
               <EmptyState
                 title="No postings yet"
                 description="Publish work you need done — matching creatives will see it on their Home feed."
-                action={<ButtonLink to="/postings/new" size="sm">Post work</ButtonLink>}
+                action={
+                  // Posting work waits for a verified ID (ADR 0057).
+                  browseOnly ? (
+                    <BrowseOnlyNote />
+                  ) : (
+                    <ButtonLink to="/postings/new" size="sm">Post work</ButtonLink>
+                  )
+                }
               />
             )}
 

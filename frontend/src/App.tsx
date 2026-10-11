@@ -11,7 +11,7 @@ import {
 } from '@/components/page-transition/PageTransition';
 import { ScrollOnNavigate } from '@/components/ScrollOnNavigate';
 import { SiteLayout } from '@/components/SiteLayout';
-import { StagingBanner } from '@/components/StagingBanner';
+import { PinnedBanners } from '@/components/PinnedBanners';
 import { ToastProvider } from '@/components/ui';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import { withSection } from '@/i18n/sections';
@@ -150,6 +150,12 @@ const StyleGuidePage = lazy(() =>
 const IntentPage = lazy(() =>
   import('@/pages/onboarding/IntentPage').then((m) => ({ default: m.IntentPage })),
 );
+// Its copy is a catalogue section of its own, loaded with it (ADR 0055).
+const IdStepPage = lazy(() =>
+  import('@/pages/onboarding/IdStepPage')
+    .then(withSection('verification'))
+    .then((m) => ({ default: m.IdStepPage })),
+);
 const ProfileSetupPage = lazy(() =>
   import('@/pages/onboarding/ProfileSetupPage').then((m) => ({ default: m.ProfileSetupPage })),
 );
@@ -180,7 +186,7 @@ export default function App() {
         <ToastProvider>
         <BrowserRouter>
           <ScrollOnNavigate />
-          <StagingBanner />
+          <PinnedBanners />
           {/*
             One Suspense high up for the routes outside SiteLayout. BottomNav
             sits outside the routes and SiteHeader inside SiteLayout, so neither
@@ -341,6 +347,18 @@ export default function App() {
                 element={
                   <RequireAuth>
                     <IntentPage />
+                  </RequireAuth>
+                }
+              />
+              {/*
+                Where RequireAuth sends an account that still owes its ID, and
+                the page that takes it again after *try again* (ADR 0057).
+              */}
+              <Route
+                path="/welcome/id"
+                element={
+                  <RequireAuth>
+                    <IdStepPage />
                   </RequireAuth>
                 }
               />

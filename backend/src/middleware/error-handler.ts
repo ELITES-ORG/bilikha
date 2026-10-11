@@ -29,6 +29,9 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
 
   if (err instanceof AppError) {
+    // For anything that judges the response after it is sent — the login
+    // limiter tells a declined ID apart from a wrong password by it.
+    res.locals.errorCode = err.code;
     res.status(err.status).json({
       error: { code: err.code, message: err.message, details: err.details },
     });

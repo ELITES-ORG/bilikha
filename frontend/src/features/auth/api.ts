@@ -5,6 +5,7 @@ import { AxiosError } from 'axios';
 import { playTransition, SESSION_LABEL } from '@/components/page-transition/transition-to';
 import { apiClient, toApiError } from '@/lib/api-client';
 import { clearLastSession, readLastSession, writeLastSession } from './session-cache';
+import { isBrowseOnly } from '@/features/verification/status';
 import type { AuthUser, RegisterPayload } from './types';
 
 interface ApiResponse<T> {
@@ -58,6 +59,11 @@ export function useCurrentUser() {
     },
     retry: false,
     staleTime: 5 * 60 * 1000,
+    // While the ID waits for review, look again every minute and whenever the
+    // tab comes back, so a verification lifts browse-only without signing in
+    // again (ADR 0057). Everyone else keeps the five-minute staleness.
+    refetchInterval: (query) => (isBrowseOnly(query.state.data) ? 60_000 : false),
+    refetchOnWindowFocus: (query) => (isBrowseOnly(query.state.data) ? 'always' : true),
     ...(seed !== undefined ? { placeholderData: seed } : {}),
   });
 

@@ -1,3 +1,5 @@
+import type { OwnIdVerification } from './verification.js';
+
 /**
  * Session / identity payload returned by register, login, and /me bootstrap.
  */
@@ -23,4 +25,9 @@ export interface PublicUser {
   avatarRejectionReason: string | null;
   /** An administrator reset this password; nothing works until it is changed. */
   mustChangePassword: boolean;
+  /**
+   * The account's ID verification (ADR 0057). Null when none is required —
+   * every account that existed before it shipped. Never a key or a URL.
+   */
+  idVerification: OwnIdVerification | null;
 }

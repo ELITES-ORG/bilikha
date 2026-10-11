@@ -108,7 +108,7 @@ as long as it takes, and its images are kept while it waits.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Data and private storage | 7 / 7 | Done |
-| 2. Account side | 0 / 9 | Not started |
+| 2. Account side | 9 / 9 | Done |
 | 3. Admin review and retention | 0 / 7 | Not started |
 | 4. Reversal and appeals | 0 / 5 | Not started |
 | 5. Switch on | 0 / 5 | Not started |
@@ -288,9 +288,34 @@ GET /storage/v1/bucket/nope
 Branch `feat/id-verification-account`. Dormant: only factory-made rows exercise
 it.
 
+**Built as (2026-10-11).** Differences from the steps below, found in the code:
+
+- `POST /verification/upload-url` takes `{ side, contentType }`: the browser
+  falls back to JPEG where it cannot encode WebP, and the key's extension must
+  match what is uploaded.
+- The ID types live in a dependency-free `modules/verification/id-types.ts`,
+  which the frontend parity test imports directly; the schema imports it.
+- `authKeys` did not move: the `401 ID_DECLINED` interceptor does a full page
+  load to `/login`, so it never touches the query cache.
+- The ID step's copy is a catalogue section of its own (`catalogs/verification/`,
+  a lazy route, ADR 0055 as amended); the banner, sign-in notices and the
+  browse-only sentence are in core `en.ts`. ID names are data in
+  `features/verification/id-types.ts`.
+- Browse-only in the interface covers what a new account can reach: messaging,
+  saving, posting work, creating a profile, the avatar. Agreements, ratings and
+  organisations need a profile or a conversation first; the server refuses them
+  and the error displays show the catalogue sentence.
+- The photo controls on the ID step stay disabled until the consent is ticked.
+- The *try again* banner names the decline and links to the ID step, which
+  shows the reason in full; the sign-in screen shows it too. Pinned on every
+  page, a long reason took half a 320px screen.
+- `requireAuth` waits for the session to be deleted before answering a decline,
+  so the reason is told once even to a request racing it.
+- The gate's tests include `organizations`, which arrived after this plan.
+
 ### Step 2.1 — The verification routes
 
-- [ ] **Action.** New module `backend/src/modules/verification/`
+- [x] **Action.** New module `backend/src/modules/verification/`
       (`verification.routes.ts`, `.service.ts`, `.schema.ts`), mounted at
       `/api/v1/verification` behind `requireAuth`:
       - `POST /upload-url` `{ side: 'front' | 'back' }` → a signed upload URL
@@ -305,14 +330,14 @@ it.
         `pending` row, or after `declined_retry` inserts a new one; stamps
         `id_consent_at` and `submitted_at`. A `23505` answers `409`.
       The ID types and `hasBack` live in `verification.schema.ts`.
-- [ ] **Verify.** Tests (storage mocked): another account's prefix → 403; an old
+- [x] **Verify.** Tests (storage mocked): another account's prefix → 403; an old
       row's key → 400; a card without a back → 400; an object not uploaded →
       400; oversized or wrong type → 400; storage not ready → 503; a double
       submit → 409; a suspended account → 401.
 
 ### Step 2.2 — The gate in `requireAuth`
 
-- [ ] **Action.** In `backend/src/middleware/require-auth.ts`, in this order:
+- [x] **Action.** In `backend/src/middleware/require-auth.ts`, in this order:
       1. `req.session.declineNotice` → destroy the session, `401 ID_DECLINED`
          with the notice in `details` — **before** the `!userId` check, which
          would otherwise answer first;
@@ -325,11 +350,14 @@ it.
       7. latest `pending` or `declined_retry`, method not GET/HEAD/OPTIONS, path
          not in `ALLOWED_WHILE_UNVERIFIED` (`/api/v1/me/password`,
          `/api/v1/verification/upload-url`, `/api/v1/verification/submission`,
-         matched exactly like `ALLOWED_WHILE_LOCKED`) → `403
-         VERIFICATION_PENDING`.
+         `/api/v1/me/view-mode`, `/api/v1/notifications/read-all`, and
+         `/api/v1/notifications/:id/read`, matched exactly like
+         `ALLOWED_WHILE_LOCKED`) → `403 VERIFICATION_PENDING`. Built as: the
+         view mode and marking notifications read were added on review — both
+         are private to the account, and refusing them only produced errors.
       Read `req.method`/`req.originalUrl` only when a gating row exists. Add
       `declineNotice?` to `backend/src/types/session.d.ts`.
-- [ ] **Verify.** Tests: one write per router (me, media, offers, postings,
+- [x] **Verify.** Tests: one write per router (me, media, offers, postings,
       conversations, agreements, ratings, notifications) → 403 for `pending`
       and for `declined_retry`; their GETs → 200; the allowlist with `?x=1`, a
       trailing slash and near misses; no row → untouched; a `declineNotice`
@@ -338,7 +366,7 @@ it.
 
 ### Step 2.3 — Sign-in and the current user
 
-- [ ] **Action.** `authenticate()` in `backend/src/modules/auth/auth.service.ts`:
+- [x] **Action.** `authenticate()` in `backend/src/modules/auth/auth.service.ts`:
       after the password and suspension checks and **before** `lastLoginAt` is
       written, a latest `declined_final` → `403 ID_DECLINED` with
       `details.reason`, and `details.appealUntil` while an appeal is still
@@ -349,13 +377,13 @@ it.
       `ID_DECLINED`.
       `PublicUser` (`contracts/auth.ts`) gains `idVerification:
       OwnIdVerification | null`, filled by `toPublicUser`/`getUserById`.
-- [ ] **Verify.** Tests: a wrong password on a declined account is the normal
+- [x] **Verify.** Tests: a wrong password on a declined account is the normal
       401, the right one the reason; `lastLoginAt` unchanged; ten attempts never
       turn into "rate limited"; `/auth/me` shows the status and never a key.
 
 ### Step 2.4 — Errors that keep their code
 
-- [ ] **Action.** In `frontend/src/lib/api-client.ts`, `toApiError` returns
+- [x] **Action.** In `frontend/src/lib/api-client.ts`, `toApiError` returns
       `ApiError extends Error` — same message, plus `status`, `code`,
       `details`. Add a response interceptor for **only** `401 ID_DECLINED`: save
       the notice in `sessionStorage` and `window.location.assign('/login')`.
@@ -363,11 +391,11 @@ it.
       `features/auth/api.ts`. `isReportable` in `frontend/src/lib/error-reporting.ts`
       skips `ApiError`; add `id` to `ROUTE_WORDS`. Bump `VERSION` in
       `frontend/src/features/auth/session-cache.ts`.
-- [ ] **Verify.** Existing frontend tests pass; a new test covers `ApiError`.
+- [x] **Verify.** Existing frontend tests pass; a new test covers `ApiError`.
 
 ### Step 2.5 — The ID step page
 
-- [ ] **Action.** `frontend/src/pages/onboarding/IdStepPage.tsx` at
+- [x] **Action.** `frontend/src/pages/onboarding/IdStepPage.tsx` at
       `/welcome/id` inside `RequireAuth`; it is also the resubmit page, showing
       the decline reason. It redirects onward when there is no row, the ID is
       already submitted, or the account is verified. Contents, in order: the
@@ -391,13 +419,13 @@ it.
       ID labels in `frontend/src/features/verification/id-types.ts`, kept in
       step with the backend list by a parity test. All copy in
       `frontend/src/i18n/catalogs/en.ts`, empty keys in `fil.ts`/`war.ts`.
-- [ ] **Verify.** At 320px and 1280px, light and dark: the consent sentence
+- [x] **Verify.** At 320px and 1280px, light and dark: the consent sentence
       shows before either photo button; a card asks for both sides, a
       certificate for one.
 
 ### Step 2.6 — The pinned banners
 
-- [ ] **Action.** A `PinnedBanners` wrapper rendered once in `App.tsx` before
+- [x] **Action.** A `PinnedBanners` wrapper rendered once in `App.tsx` before
       `<Routes>`, **always**, holding `StagingBanner` and a new
       `VerificationBanner`; it alone is `sticky top-0` and publishes
       `--staging-banner-h` for both through one `ResizeObserver`.
@@ -408,22 +436,22 @@ it.
       `RegistrationStatusBanner` returns null while verification is pending or
       declined. Rewrite `frontend/src/components/staging-banner.test.ts` to
       assert the same three things about the wrapper.
-- [ ] **Verify.** Each state on every page at phone and desktop widths, light
+- [x] **Verify.** Each state on every page at phone and desktop widths, light
       and dark, with and without the staging banner; sticky headers and toasts
       sit below it.
 
 ### Step 2.7 — Routing to the ID step
 
-- [ ] **Action.** `frontend/src/features/auth/RequireAuth.tsx`: when
+- [x] **Action.** `frontend/src/features/auth/RequireAuth.tsx`: when
       `!user.mustChangePassword`, the data is not the remembered placeholder,
       and the row is unsubmitted or `declined_retry`, redirect to `/welcome/id`.
       `frontend/src/pages/LoginPage.tsx`: after sign-in, go to `/welcome/id`
       when the user needs it.
-- [ ] **Verify.** A test that the password-change and ID redirects cannot loop.
+- [x] **Verify.** A test that the password-change and ID redirects cannot loop.
 
 ### Step 2.8 — Browse-only in the interface
 
-- [ ] **Action.** `frontend/src/features/verification/useVerificationGate.ts`
+- [x] **Action.** `frontend/src/features/verification/useVerificationGate.ts`
       (status, `canAct`, `explain()`). Disable or explain: message and inquire,
       save an offer, post work, create a profile or offer, agreement and rating
       actions. `VERIFICATION_PENDING` reaches the existing error displays as
@@ -431,15 +459,15 @@ it.
       and on focus, so a verification takes effect without signing in again.
       `LoginPage` shows a stored decline notice, or the sign-in refusal's
       reason, in its existing alert.
-- [ ] **Verify.** Every one of those actions explains itself instead of failing
+- [x] **Verify.** Every one of those actions explains itself instead of failing
       on a 403.
 
 ### Step 2.9 — Document the account side
 
-- [ ] **Action.** `docs/reference/api.md`: the two verification routes,
+- [x] **Action.** `docs/reference/api.md`: the two verification routes,
       `VERIFICATION_PENDING`, `ID_DECLINED`, `ID_STORAGE_UNAVAILABLE`,
       `PublicUser.idVerification`.
-- [ ] **Verify.** `npm run docs:check` passes. A test: no non-admin response
+- [x] **Verify.** `npm run docs:check` passes. A test: no non-admin response
       contains `ids/` or `token=`.
 
 ## Phase 3 — Admin review and retention

@@ -7,6 +7,8 @@ import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
 import { normalizeEmail, normalizePhone } from '../../lib/contact.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type { PublicUser } from '../../contracts/auth.js';
+import type { IdDeclinedDetails } from '../../contracts/verification.js';
+import { latestIdVerification, ownView } from '../verification/verification.service.js';
 import type { RegisterInput } from './auth.schema.js';
 
 export type { PublicUser } from '../../contracts/auth.js';
@@ -107,6 +109,25 @@ export async function authenticate(username: string, password: string): Promise<
     throw AppError.forbidden('This account has been suspended.');
   }
 
+  // Checked only after the right password, so the reason is never told to
+  // someone guessing (ADR 0057). Before lastLoginAt: a refused sign-in is not
+  // a sign-in. *Try again* is let in — resubmitting the ID is all it can do.
+  const verification = await latestIdVerification(user.id);
+  if (verification?.status === 'declined_final' || verification?.status === 'appealed') {
+    const details: IdDeclinedDetails =
+      verification.status === 'appealed'
+        ? { kind: 'appealed', reason: verification.decisionReason }
+        : { kind: 'final', reason: verification.decisionReason };
+    throw new AppError(
+      403,
+      'ID_DECLINED',
+      verification.status === 'appealed'
+        ? 'Your appeal is being reviewed. You will be able to sign in if it is granted.'
+        : 'Your ID was declined, so this account cannot be used.',
+      details,
+    );
+  }
+
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 
   const [profile] = await db
@@ -166,6 +187,7 @@ async function toPublicUser(
     pendingAvatarUrl:
       user.avatarPendingKey && isStorageConfigured() ? publicUrl(user.avatarPendingKey) : null,
     avatarRejectionReason: user.avatarRejectionReason,
+    idVerification: ownView(await latestIdVerification(user.id)),
   };
 }
 

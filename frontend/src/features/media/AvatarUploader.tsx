@@ -5,6 +5,8 @@ import { authKeys } from '@/features/auth/api';
 import { confirmAvatar, removeAvatar, requestUploadUrl, uploadImage } from '@/features/media/api';
 import { THUMB_EDGE, resizeImage } from '@/lib/image';
 import { toApiError } from '@/lib/api-client';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 interface AvatarUploaderProps {
   name: string;
@@ -33,6 +35,8 @@ export function AvatarUploader({ name, avatarUrl, pendingAvatarUrl = null, rejec
   // Shown straight after an upload, before the account reloads.
   const [justUploaded, setJustUploaded] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Uploads other than the ID itself wait for a verified ID (ADR 0057).
+  const { browseOnly } = useVerificationGate();
 
   const pending = justUploaded ?? pendingAvatarUrl;
   const shown = pending ?? avatarUrl;
@@ -123,17 +127,18 @@ export function AvatarUploader({ name, avatarUrl, pendingAvatarUrl = null, rejec
             type="button"
             size="sm"
             variant="secondary"
-            disabled={busy}
+            disabled={busy || browseOnly}
             onClick={() => inputRef.current?.click()}
           >
             {busy ? 'Working…' : shown ? 'Replace photo' : 'Add photo'}
           </Button>
           {shown && (
-            <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
+            <Button type="button" size="sm" variant="ghost" disabled={busy || browseOnly} onClick={onRemove}>
               {pending ? 'Withdraw new photo' : 'Remove'}
             </Button>
           )}
         </div>
+        {browseOnly && <BrowseOnlyNote className="mt-3" />}
         <input
           ref={inputRef}
           type="file"

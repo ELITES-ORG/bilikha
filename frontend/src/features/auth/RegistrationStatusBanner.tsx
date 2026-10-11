@@ -2,10 +2,15 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock3, CircleAlert, FilePenLine } from 'lucide-react';
 import { useCurrentUser } from './api';
+import { isBrowseOnly } from '@/features/verification/status';
 import { Badge, Container } from '@/components/ui';
 
 export function RegistrationStatusBanner() {
   const { data: user } = useCurrentUser();
+
+  // While the ID waits, the pinned verification banner speaks instead: "everything
+  // else works" below would be false for an account that can only browse.
+  if (isBrowseOnly(user)) return null;
 
   if (!user || user.profileStatus === 'published' || !user.profileStatus) {
     return null;

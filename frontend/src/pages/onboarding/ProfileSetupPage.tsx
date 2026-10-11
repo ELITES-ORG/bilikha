@@ -12,6 +12,8 @@ import { ProfileSetupSkeleton } from '@/components/page-skeleton/parts';
 import { Button, Container, Eyebrow } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
+import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
+import { useVerificationGate } from '@/features/verification/useVerificationGate';
 
 const EMPTY_FORM: ProfileCraftFormState = {
   displayName: '',
@@ -31,6 +33,8 @@ export function ProfileSetupPage() {
   const { data: user } = useCurrentUser();
   const existing = useOwnProfile();
   const createProfile = useCreateOwnProfile();
+  // A creative profile waits for a verified ID (ADR 0057).
+  const { browseOnly } = useVerificationGate();
 
   const [form, setForm] = useState<ProfileCraftFormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -166,11 +170,12 @@ export function ProfileSetupPage() {
               }}
             />
 
+            {browseOnly && <BrowseOnlyNote />}
             <Button
               type="submit"
               size="lg"
               loading={createProfile.isPending}
-              disabled={createProfile.isPending}
+              disabled={createProfile.isPending || browseOnly}
             >
               Submit for review
             </Button>

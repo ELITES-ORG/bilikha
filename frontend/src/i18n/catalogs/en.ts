@@ -19,6 +19,7 @@
  */
 import type { LegalKey } from './legal/en';
 import type { OrganizationsKey } from './organizations/en';
+import type { VerificationKey } from './verification/en';
 
 export const en = {
   'signIn.eyebrow': 'Welcome back',
@@ -74,6 +75,24 @@ export const en = {
   'organizations.directory.heading': 'Organisations',
   'organizations.directory.intro': 'Teams of creatives. Each member also has their own profile.',
   'organizations.directory.members': 'Members:',
+
+  // ID verification (ADR 0057). The ID step's own copy is a section of its
+  // own (`./verification/`); these show on screens every account can reach.
+  'verification.pending.explain': 'You can browse, but not do this until your ID is verified.',
+  'verification.banner.missing.label': 'ID needed',
+  'verification.banner.missing.message':
+    'Add a photo of your Biliran ID to finish registering. Until it is verified you can browse offers and creatives.',
+  'verification.banner.missing.action': 'Add your ID',
+  'verification.banner.review.label': 'Being verified',
+  'verification.banner.review.message':
+    'Your registration is being verified. You can browse offers and creatives; everything else unlocks once an administrator checks your ID.',
+  'verification.banner.retry.label': 'ID not accepted',
+  'verification.banner.retry.message': 'Your ID could not be verified. Submit it again to finish registering.',
+  'verification.banner.retry.action': 'Submit your ID again',
+  'verification.reasonLabel': 'Reason given:',
+  'signIn.declined.retry': 'Your ID could not be verified. Sign in to submit it again.',
+  'signIn.declined.final': 'Your ID was declined, so this account cannot be used.',
+  'signIn.declined.appealed': 'Your appeal is being reviewed. You can sign in if it is granted.',
 } as const;
 
 /**
@@ -81,6 +100,6 @@ export const en = {
  * import above is type-only, so naming the legal keys here costs no bytes —
  * their strings stay in the legal pages' chunk.
  */
-export type MessageKey = keyof typeof en | LegalKey | OrganizationsKey;
+export type MessageKey = keyof typeof en | LegalKey | OrganizationsKey | VerificationKey;
 
 export type Catalog = Readonly<Partial<Record<MessageKey, string>>>;

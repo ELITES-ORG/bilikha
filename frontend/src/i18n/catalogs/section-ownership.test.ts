@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { en } from './en';
 import { enLegal } from './legal/en';
 import { enOrganizations } from './organizations/en';
+import { enVerification } from './verification/en';
 
 /**
  * A lazy route's keys may only be read where its section is loaded (ADR 0055).
@@ -14,6 +15,7 @@ import { enOrganizations } from './organizations/en';
 const SECTIONS = [
   { name: 'legal', keys: Object.keys(enLegal), home: '/src/pages/legal/' },
   { name: 'organizations', keys: Object.keys(enOrganizations), home: '/src/pages/organizations/' },
+  { name: 'verification', keys: Object.keys(enVerification), home: '/src/pages/onboarding/' },
 ] as const;
 
 const sources = import.meta.glob<string>('/src/**/*.{ts,tsx}', {

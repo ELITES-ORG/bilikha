@@ -40,6 +40,9 @@ a stable contract — see [ADR 0012](../decisions/0012-versioned-api-prefix.md).
 | `FORBIDDEN` | 403 | Authenticated but not permitted |
 | `NOT_FOUND` | 404 | No such resource, or no such route |
 | `CONFLICT` | 409 | Violates a uniqueness or state constraint |
+| `VERIFICATION_PENDING` | 403 | The account may only browse until its ID is verified — see [ID verification](#id-verification) |
+| `ID_DECLINED` | 401 / 403 | The account's ID was declined. `details` is `{ kind, reason, appealUntil? }` — see [ID verification](#id-verification) |
+| `ID_STORAGE_UNAVAILABLE` | 503 | The private ID bucket is missing, public, or has no limits, so ID uploads are refused |
 | `INTERNAL_SERVER_ERROR` | 500 | Unhandled. `message` is generic in production |
 
 Timestamps are ISO 8601 UTC. IDs are UUID v4.
@@ -237,12 +240,14 @@ exists only under another municipality (e.g. Naval + Culaba's `looc`) is a
 ```
 
 `200` — same `data` shape as register. Rate limited to 10 failed attempts per
-IP per 15 minutes (`skipSuccessfulRequests`).
+IP per 15 minutes (`skipSuccessfulRequests`). An `ID_DECLINED` refusal answers
+the right password, so it is not counted as a failure.
 
 | Status | When |
 |---|---|
 | `401` | Incorrect username or password |
 | `403` | Account suspended |
+| `403` | `ID_DECLINED`: the latest ID verification is `declined_final` (`details: { kind: 'final', reason }`) or `appealed` (`details: { kind: 'appealed', reason }`). Checked only after the right password, and before `lastLoginAt` is written. A `declined_retry` account signs in normally, to resubmit |
 | `429` | Rate limited |
 
 ### `POST /api/v1/auth/logout`
@@ -259,8 +264,83 @@ Requires a valid session. Returns the same public user shape as login, including
 for review, which only its owner sees. `avatarRejectionReason` is set when the
 last new photo was not approved
 ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)).
+`idVerification` is `{ status, submitted, reason }`, or `null` for an account
+that needs no ID — every account that existed before ID verification. `reason`
+is set only when declined. Never an object key or a URL.
 
-`401` when unsigned-in or the session points at a deleted user.
+`401` when unsigned-in or the session points at a deleted user. `401
+ID_DECLINED` when the account's ID was declined — the session ends with it.
+
+---
+
+## ID verification
+
+New accounts verify with a photo of a Biliran ID
+([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md),
+[plan 0053](../plans/0053-id-verification-for-new-accounts.md)). An account's
+state is its **latest** `id_verifications` row; **no row means not required**.
+Nothing writes a row yet: registration starts doing so in plan 0053 Phase 5.
+
+### Browse only — every authenticated route
+
+While the latest row is `pending` or `declined_retry`, every authenticated route
+that is not `GET`, `HEAD` or `OPTIONS` answers:
+
+```json
+{ "error": { "code": "VERIFICATION_PENDING", "message": "You can browse, but not do this until your ID is verified." } }
+```
+
+These are exempt, matched exactly (query strings and trailing slashes do not
+change the match): `POST /api/v1/me/password`,
+`POST /api/v1/verification/upload-url` and `POST /api/v1/verification/submission`,
+which are how an account leaves browse-only; and `PATCH /api/v1/me/view-mode`,
+`POST /api/v1/notifications/read-all` and `POST /api/v1/notifications/:id/read`,
+which are private to the account and change nothing anyone else sees.
+
+While the latest row is `declined_final` or `appealed`, every authenticated
+route ends the session and answers `401 ID_DECLINED` with `details: { kind,
+reason }`; the next request is an ordinary `401`. A session that a decline
+rewrote (Phase 3) answers the same once, before anything else.
+
+### `POST /api/v1/verification/upload-url`
+
+Signed in. `uploadLimiter` (40 per hour, shared with media).
+
+```jsonc
+{ "side": "front", "contentType": "image/webp" } // or "back"; or "image/jpeg"
+```
+
+`200` — `{ data: { uploadUrl, objectKey } }`: a signed upload URL in the
+**private** ID bucket, under `ids/<userId>/`, with a key ending
+`-front.webp` or `-back.jpg` to match. The browser `PUT`s the resized photo to
+`uploadUrl`; the bucket enforces 10 MB and WebP or JPEG.
+
+| Status | When |
+|---|---|
+| `409` | No ID is required, or it is already submitted, verified or finally declined. Allowed only while the latest row is `pending` and unsubmitted, or `declined_retry` |
+| `503` | `ID_STORAGE_UNAVAILABLE` |
+
+### `POST /api/v1/verification/submission`
+
+```jsonc
+{
+  "idType": "drivers_license",          // a slug from IdType (contracts/verification.ts)
+  "frontKey": "ids/<userId>/<uuid>-front.webp",
+  "backKey": "ids/<userId>/<uuid>-back.webp", // exactly when the ID type has a back
+  "idConsent": true
+}
+```
+
+Fills the open `pending` row, or after `declined_retry` starts a new one
+(the declined row keeps its decision), stamping `id_consent_at` and
+`submitted_at`. `200` — `{ data: { status: 'pending', submitted: true, reason: null } }`.
+
+| Status | When |
+|---|---|
+| `400` | Validation; a key not issued by upload-url, or for the wrong side; a card without its back, or a single-page document with one; a photo already on an earlier submission; an object not in the bucket, over 10 MB, or not the type its name says |
+| `403` | A key under another account's `ids/` prefix |
+| `409` | Nothing open to submit, or a second submission of the same ID racing the first |
+| `503` | `ID_STORAGE_UNAVAILABLE` |
 
 ---
 
