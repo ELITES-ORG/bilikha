@@ -1,5 +1,16 @@
 import { afterAll, beforeEach } from 'vitest';
+import { env } from '../config/env.js';
 import { closeDatabase, sql } from '../db/index.js';
+
+/**
+ * Image storage is off under test, whatever this machine's backend/.env holds.
+ * CI has no storage, so tests are written for that: with a developer's own
+ * Supabase values loaded, an upload is signed or refused for real (502, not the
+ * 503 a test expects), and replacing an image sends a delete to that project.
+ * A test that needs storage sets these itself, as lib/storage.test.ts does.
+ */
+env.SUPABASE_URL = undefined;
+env.SUPABASE_SERVICE_ROLE_KEY = undefined;
 
 /**
  * Reference data is a fixture and is never truncated: everything else has a
