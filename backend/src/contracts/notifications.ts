@@ -15,7 +15,8 @@ export type NotificationType =
   | 'agreement_delivered'
   | 'agreement_completed'
   | 'agreement_cancelled'
-  | 'rating_received';
+  | 'rating_received'
+  | 'id_verified';
 
 export interface NotificationActor {
   name: string;

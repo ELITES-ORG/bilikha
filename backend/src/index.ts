@@ -2,7 +2,13 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { initErrorReporting, reportCrash } from './lib/error-reporting.js';
 import { logger } from './lib/logger.js';
-import { isStorageConfigured, projectRefFromUrl, storageKeyClaims } from './lib/storage.js';
+import {
+  idStorageReady,
+  isStorageConfigured,
+  projectRefFromUrl,
+  storageKeyClaims,
+} from './lib/storage.js';
+import { idHashReady } from './modules/verification/id-number.js';
 import { closeDatabase } from './db/index.js';
 
 // Before anything takes a request, so the first failure is not the one missed.
@@ -42,6 +48,23 @@ const server = app.listen(env.PORT, () => {
         'SUPABASE_SERVICE_ROLE_KEY was issued for a different Supabase project than SUPABASE_URL points at. Uploads will fail with "signature verification failed".',
       );
     }
+
+    // ID uploads are refused until the bucket is private and limited, so say
+    // so at boot rather than at the first new registration (ADR 0057).
+    void idStorageReady().then((ready) => {
+      if (!ready) {
+        logger.warn(
+          { bucket: env.SUPABASE_ID_BUCKET },
+          'The ID bucket is missing, public, or has no size or type limits — ID uploads are refused until it is a private bucket with both limits set.',
+        );
+      }
+    });
+  }
+
+  if (!idHashReady()) {
+    logger.warn(
+      'ID_HASH_SECRET is not set — ID numbers cannot be recorded, so ID decisions that need one answer 503.',
+    );
   }
 });
 

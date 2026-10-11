@@ -126,6 +126,26 @@ describe('notifications', () => {
     expect(await unreadCount(recipient.id)).toBe(1);
   });
 
+  it('sends a verified ID to the directory, with no lookup of the record', async () => {
+    const user = await makeUser();
+    const admin = await makeAdmin();
+
+    await notify({
+      userId: user.id,
+      actorUserId: admin.id,
+      type: 'id_verified',
+      // A record that no longer exists still links: nothing about it is shown.
+      targetId: '00000000-0000-4000-8000-000000000000',
+    });
+
+    const { data } = await listNotifications(user.id, { page: 1, limit: 10 });
+    expect(data[0]).toMatchObject({
+      type: 'id_verified',
+      title: 'Your ID was verified',
+      link: '/directory',
+    });
+  });
+
   it('does not fail the thing that caused it', async () => {
     // A notification is a side effect. If writing it throws, the moderation
     // decision it followed must still stand.

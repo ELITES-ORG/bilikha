@@ -25,6 +25,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   // Narrowly admitted under ADR 0030: appealing is the creative's only recourse
   // against a rating, and it is useless if they do not know one arrived.
   'rating_received',
+  // Admitted under ADR 0030 for the same reason: verifying an ID is what lifts
+  // a new account out of browse-only (ADR 0057), and the person is waiting on
+  // it. Declines need no notification — they end the session with the reason.
+  'id_verified',
 ]);
 
 /**

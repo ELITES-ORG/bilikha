@@ -118,6 +118,36 @@ and UI primitive on one page. It is not linked from the product.
 
 ---
 
+## 6. Image and ID storage (optional)
+
+Everything above works without storage; images are simply disabled. To work on
+uploads, point `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env`
+at a Supabase project — a hosted one, or a local one from the Supabase CLI
+(`supabase start`, API on `http://127.0.0.1:54321`).
+
+The project needs two buckets. `media` is public, for avatars and offer
+photos. `ids` is **private**, for ID photos
+([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md));
+the API refuses ID uploads until it exists, is private and has both limits.
+Create it with the service key from `backend/.env`, which never needs to be
+printed:
+
+```bash
+cd backend && set -a && . ./.env && set +a
+curl -s -X POST "$SUPABASE_URL/storage/v1/bucket" \
+  -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"ids","name":"ids","public":false,"file_size_limit":10485760,"allowed_mime_types":["image/webp","image/jpeg"]}'
+# {"name":"ids"}
+```
+
+Supabase Studio's Storage page does the same: public **off**, file size limit
+**10 MB**, allowed types `image/webp, image/jpeg`, no policies. Booting the API
+without it logs a warning naming the bucket. `media`, if the project lacks it,
+is the same request with `"id":"media","name":"media","public":true`.
+
+---
+
 ## Troubleshooting
 
 **`DATABASE_URL must be a valid postgres:// connection string`**

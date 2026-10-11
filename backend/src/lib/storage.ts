@@ -30,6 +30,25 @@ import { logger } from './logger.js';
  * Missing object (public GET or DELETE):
  *   Body { statusCode: "404", code: "NoSuchKey", ... } with HTTP 400
  *   (not HTTP 404). deleteObject treats that as already-gone.
+ *
+ * Pinned with curl against local Supabase in plan 0053 Step 1.4:
+ *
+ * Signed download (private bucket):
+ *   POST {SUPABASE_URL}/storage/v1/object/sign/{bucket}/{objectKey}
+ *   Authorization: Bearer {SERVICE_ROLE_KEY}
+ *   Content-Type: application/json
+ *   { "expiresIn": 300 }
+ *   → 200 { signedURL: "/object/sign/{bucket}/{objectKey}?token=..." }
+ *   Absolute URL = {SUPABASE_URL}/storage/v1 + signedURL; GET it → 200 bytes.
+ *   A missing object → HTTP 400 { statusCode: "404", code: "NoSuchKey" }.
+ *
+ * List: each object carries metadata { size, mimetype, ... }; a folder comes
+ *   back with id, updated_at and metadata all null.
+ *
+ * Bucket:
+ *   GET {SUPABASE_URL}/storage/v1/bucket/{id}
+ *   → 200 { id, public, file_size_limit, allowed_mime_types, ... }
+ *   A missing bucket → HTTP 400 { statusCode: "404", code: "NoSuchBucket" }.
  */
 
 /** False when the storage env vars are absent. Images are then disabled and the
@@ -113,6 +132,14 @@ export function assertSafeObjectKey(objectKey: string): void {
   }
 }
 
+/**
+ * An ID's object key names the account it belongs to, and a log line is read by
+ * more people than an administrator. Keys in the ID bucket never reach a log.
+ */
+function loggableKey(bucket: string, objectKey: string): string {
+  return bucket === env.SUPABASE_ID_BUCKET ? '[id object]' : objectKey;
+}
+
 function encodeObjectKey(objectKey: string): string {
   return objectKey
     .split('/')
@@ -122,8 +149,8 @@ function encodeObjectKey(objectKey: string): string {
 
 export async function createSignedUpload(
   objectKey: string,
+  bucket: string = env.SUPABASE_STORAGE_BUCKET,
 ): Promise<{ uploadUrl: string; objectKey: string }> {
-  const bucket = env.SUPABASE_STORAGE_BUCKET;
   const path = `${storageBase()}/object/upload/sign/${bucket}/${encodeObjectKey(objectKey)}`;
 
   const response = await fetch(path, {
@@ -138,7 +165,7 @@ export async function createSignedUpload(
     // belong in the client response.
     const body = await response.text();
     logger.error(
-      { status: response.status, body: body.slice(0, 500), objectKey },
+      { status: response.status, body: body.slice(0, 500), objectKey: loggableKey(bucket, objectKey) },
       'Supabase refused to sign an upload',
     );
     throw new AppError(502, 'STORAGE_ERROR', 'Could not prepare the upload. Try again.');
@@ -155,13 +182,49 @@ export async function createSignedUpload(
   };
 }
 
+/**
+ * A URL that reads one object from a private bucket for `expiresIn` seconds.
+ * Issued only to administrators (ADR 0057); never logged, never stored.
+ */
+export async function createSignedDownload(
+  bucket: string,
+  objectKey: string,
+  expiresIn: number,
+): Promise<string> {
+  const path = `${storageBase()}/object/sign/${bucket}/${encodeObjectKey(objectKey)}`;
+
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: { ...serviceHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresIn }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    logger.error(
+      { status: response.status, body: body.slice(0, 500), objectKey: loggableKey(bucket, objectKey) },
+      'Supabase refused to sign a download',
+    );
+    throw new AppError(502, 'STORAGE_ERROR', 'Could not read the image. Try again.');
+  }
+
+  const payload = (await response.json()) as { signedURL?: string };
+  if (!payload.signedURL || !payload.signedURL.startsWith('/')) {
+    throw new AppError(502, 'STORAGE_ERROR', 'Storage sign response was missing a relative url');
+  }
+
+  return `${storageBase()}${payload.signedURL}`;
+}
+
 export function publicUrl(objectKey: string): string {
   const bucket = env.SUPABASE_STORAGE_BUCKET;
   return `${storageBase()}/object/public/${bucket}/${encodeObjectKey(objectKey)}`;
 }
 
-export async function deleteObject(objectKey: string): Promise<void> {
-  const bucket = env.SUPABASE_STORAGE_BUCKET;
+export async function deleteObject(
+  objectKey: string,
+  bucket: string = env.SUPABASE_STORAGE_BUCKET,
+): Promise<void> {
   const path = `${storageBase()}/object/${bucket}/${encodeObjectKey(objectKey)}`;
 
   const response = await fetch(path, {
@@ -196,12 +259,20 @@ export async function deleteObject(objectKey: string): Promise<void> {
   );
 }
 
-/** Lists object names under an optional prefix. Paginates until exhausted. */
-export async function listObjects(prefix = ''): Promise<
-  { name: string; updatedAt: string | null }[]
-> {
-  const bucket = env.SUPABASE_STORAGE_BUCKET;
-  const results: { name: string; updatedAt: string | null }[] = [];
+export interface StoredObject {
+  name: string;
+  updatedAt: string | null;
+  /** Bytes, from the object's metadata; null when storage did not report it. */
+  size: number | null;
+  mimetype: string | null;
+}
+
+/** Lists objects under an optional prefix. Paginates until exhausted. */
+export async function listObjects(
+  prefix = '',
+  bucket: string = env.SUPABASE_STORAGE_BUCKET,
+): Promise<StoredObject[]> {
+  const results: StoredObject[] = [];
   let offset = 0;
   const limit = 100;
 
@@ -223,16 +294,24 @@ export async function listObjects(prefix = ''): Promise<
       name: string;
       updated_at?: string | null;
       id?: string | null;
+      metadata?: { size?: number; mimetype?: string } | null;
     }>;
 
     // Folders come back with id null and no updated_at — recurse into them.
     for (const entry of batch) {
       const path = prefix ? `${prefix}${entry.name}` : entry.name;
       if (entry.id == null && !entry.updated_at) {
-        const nested = await listObjects(`${path}/`);
+        // The bucket must travel with the recursion, or a nested folder of
+        // the ID bucket would be listed from the media bucket.
+        const nested = await listObjects(`${path}/`, bucket);
         results.push(...nested);
       } else {
-        results.push({ name: path, updatedAt: entry.updated_at ?? null });
+        results.push({
+          name: path,
+          updatedAt: entry.updated_at ?? null,
+          size: typeof entry.metadata?.size === 'number' ? entry.metadata.size : null,
+          mimetype: entry.metadata?.mimetype ?? null,
+        });
       }
     }
 
@@ -247,3 +326,61 @@ export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.
 
 export const offerKey = (profileId: string) =>
   `offers/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp
+
+/**
+ * Where an ID photo goes in the ID bucket. The `ids/<userId>/` prefix is what
+ * an upload is scoped to, and the side is in the name so a front can never be
+ * submitted as a back.
+ */
+export const idObjectKey = (userId: string, side: 'front' | 'back', ext: 'webp' | 'jpg') =>
+  `ids/${userId}/${randomUUID()}-${side}.${ext}`;
+
+/**
+ * Whether the ID bucket exists and is safe to put an ID in: private, with a
+ * size limit and an allowed list of types, so the bucket itself refuses
+ * anything else (ADR 0057). Uploads are refused while this is false.
+ *
+ * Cached for 10 minutes, failures included, so a transient storage error
+ * recovers on its own without a check on every request.
+ */
+const ID_READY_TTL_MS = 10 * 60 * 1000;
+let idReadyCache: { value: boolean; at: number } | null = null;
+let idReadyOverride: boolean | null = null;
+
+export async function idStorageReady(): Promise<boolean> {
+  if (idReadyOverride !== null) return idReadyOverride;
+  if (!isStorageConfigured()) return false;
+  if (idReadyCache && Date.now() - idReadyCache.at < ID_READY_TTL_MS) return idReadyCache.value;
+
+  let value = false;
+  try {
+    const response = await fetch(
+      `${storageBase()}/bucket/${encodeURIComponent(env.SUPABASE_ID_BUCKET)}`,
+      { headers: serviceHeaders() },
+    );
+    if (response.ok) {
+      const bucket = (await response.json()) as {
+        public?: boolean;
+        file_size_limit?: number | null;
+        allowed_mime_types?: string[] | null;
+      };
+      value =
+        bucket.public === false
+        && typeof bucket.file_size_limit === 'number'
+        && bucket.file_size_limit > 0
+        && Array.isArray(bucket.allowed_mime_types)
+        && bucket.allowed_mime_types.length > 0;
+    }
+  } catch (error) {
+    logger.warn({ err: error }, 'Could not check the ID bucket');
+  }
+
+  idReadyCache = { value, at: Date.now() };
+  return value;
+}
+
+/** Tests only: force the answer, or `null` to clear the override and the cache. */
+export function overrideIdStorageReady(value: boolean | null): void {
+  idReadyOverride = value;
+  idReadyCache = null;
+}

@@ -16,7 +16,15 @@ export type ModerationActionType =
   | 'account_suspended'
   | 'account_reinstated'
   | 'rating_removed'
-  | 'password_reset';
+  | 'password_reset'
+  // ID verification (ADR 0057). Each of these rows names its id_verifications row.
+  | 'id_viewed'
+  | 'id_verified'
+  | 'id_declined_retry'
+  | 'id_declined_final'
+  | 'id_decision_reversed'
+  | 'id_appeal_granted'
+  | 'id_appeal_upheld';
 
 export type AccountStatus = 'active' | 'suspended';
 

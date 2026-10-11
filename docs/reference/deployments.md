@@ -188,6 +188,8 @@ environments**:
 | `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`). Optional: if absent the API still boots and images are simply disabled |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
+| `SUPABASE_ID_BUCKET` | Defaults to `ids` if omitted. The bucket is **private**, 10 MB, `image/webp, image/jpeg`, no policies — created by reyxdz on both projects (2026-10-10). ID uploads are refused until it is |
+| `ID_HASH_SECRET` | `openssl rand -hex 32`, **a different value on each service**. **Never rotate it** — a new secret makes every stored ID-number hash unmatchable. Needed before plan 0053 Phase 5 merges; until then the API boots and warns |
 | `SENTRY_DSN` | The `bilikha-api` DSN, the same on both services — see [Sentry](#sentry--error-reports). Optional: if absent the API reports nothing and otherwise runs unchanged |
 
 **Never set `PORT`.** Render provides it; overriding it breaks routing.

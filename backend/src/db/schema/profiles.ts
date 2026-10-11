@@ -2,6 +2,7 @@ import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index, in
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { creativeSubdomains } from './taxonomy.js';
+import { idVerifications } from './verification.js';
 
 /** Sprint 1 profiles enter at `pending_review` — without phone verification
  *  there is no spam floor, so nothing auto-publishes. See ADR 0013. */
@@ -101,6 +102,18 @@ export const moderationActionEnum = pgEnum('moderation_action', [
   // recorded: unlike a suspension, nothing about a reset needs explaining to
   // the person it happened to. The row exists so the reset is detectable.
   'password_reset',
+  // ID verification (ADR 0057). Every look at someone's government ID is
+  // recorded, not only decisions: access to it is itself something to answer
+  // for. These rows carry id_verification_id.
+  'id_viewed',
+  'id_verified',
+  'id_declined_retry',
+  'id_declined_final',
+  // A decision changed by an administrator within its 7 days.
+  'id_decision_reversed',
+  // The outcome of a person's one appeal against a *not from Biliran* decline.
+  'id_appeal_granted',
+  'id_appeal_upheld',
 ]);
 
 /**
@@ -126,6 +139,12 @@ export const moderationActions = pgTable(
     adminId: uuid('admin_id').references(() => users.id, { onDelete: 'set null' }),
     action: moderationActionEnum('action').notNull(),
     reason: text('reason'),
+    // Set for the id_* actions, so "which IDs did this administrator view" is a
+    // join rather than a search of `reason`. Set null rather than cascade: the
+    // audit row outlives the record it was about.
+    idVerificationId: uuid('id_verification_id').references(() => idVerifications.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

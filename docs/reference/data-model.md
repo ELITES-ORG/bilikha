@@ -284,11 +284,55 @@ acknowledgement / media-removal decision.
 | `profile_id` | `uuid` FK null | `ON DELETE CASCADE`; null when a client avatar is removed with no creative profile |
 | `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
-| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` |
+| `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` \| `id_viewed` \| `id_verified` \| `id_declined_retry` \| `id_declined_final` \| `id_decision_reversed` \| `id_appeal_granted` \| `id_appeal_upheld` |
 | `reason` | `text` null | Required for rejections |
+| `id_verification_id` | `uuid` FK null → `id_verifications.id` | `ON DELETE SET NULL`. Set for the `id_*` actions, so which IDs an administrator viewed or decided is a join, not a search of `reason` |
 | `created_at` | `timestamptz` | |
 
 Indexes: `profile_id`, `subject_user_id`, `created_at`.
+
+---
+
+## `id_verifications`
+
+One row per ID submission by an account registered after ID verification
+switches on ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md),
+[plan 0053](../plans/0053-id-verification-for-new-accounts.md)). An account's
+state is its **latest** row. **No row means not required**, which is every
+account that existed before — nothing may treat "no row" as pending. A
+resubmission after *try again* is a new row with its own decision and its own
+7 days. Nothing writes a row until plan 0053 Phase 5.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `status` | enum | `pending` \| `verified` \| `declined_retry` \| `declined_final` \| `appealed` (a *not from Biliran* decline whose appeal is open). Default `pending` |
+| `id_type` | `text` null | A slug from `IdType` in `contracts/verification.ts`. Text, not an enum: the accepted list is the issue's and will change |
+| `front_key` / `back_key` | `text` null | Object keys in the **private** ID bucket (`SUPABASE_ID_BUCKET`), under `ids/<user_id>/`. `back_key` null for a single-page document. Never returned by a non-admin endpoint, never logged |
+| `id_consent_at` | `timestamptz` null | When the person agreed to the ID consent sentence, separate from the privacy consent on `users` |
+| `submitted_at` | `timestamptz` null | Null while the open row waits for photos |
+| `decided_at` | `timestamptz` null | The **latest** decision: first decision, reversal or appeal outcome. The 7 days run from it |
+| `images_deleted_at` | `timestamptz` null | Set by the sweep once both objects are gone |
+| `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
+| `decision_reason` | `text` null | Shown to the person when declined |
+| `id_number_hash` | `text` null | HMAC-SHA256 hex of the ID number an administrator typed, keyed with `ID_HASH_SECRET`. Never the number. Outlives the images |
+| `id_number_absent` | `boolean` | Default false. The administrator found no number on the ID |
+| `appeal_message` | `text` null | |
+| `appealed_at` / `appeal_decided_at` | `timestamptz` null | |
+| `created_at` / `updated_at` | `timestamptz` | |
+
+Indexes:
+- `id_verifications_user_created_idx` on `(user_id, created_at)` — the latest
+  row, read by the browse-only gate
+- `id_verifications_queue_idx` on `submitted_at`, partial
+  `where status in ('pending', 'appealed') and submitted_at is not null`
+- `id_verifications_sweep_idx` on `decided_at`, partial
+  `where images_deleted_at is null`
+- `id_verifications_one_open_idx` (unique) on `user_id`, partial
+  `where status = 'pending'` — one open submission per account
+- `id_verifications_id_number_hash_idx` on `id_number_hash`, partial
+  `where id_number_hash is not null`
 
 ---
 
@@ -720,7 +764,6 @@ Sketched only. Nothing below is built, and the shapes will change.
 |---|---|---|
 | `subdomain_aliases` | Everyday terms in Waray/Cebuano/Tagalog/English → sub-domain | [Extend the taxonomy](../guides/extend-the-taxonomy.md) |
 | `verifications` | Tier, evidence, who approved it | [ADR 0008](../decisions/0008-publish-immediately-with-tiers.md) |
-| `id_verifications` | One row per ID submission by a new account: status (including an open appeal), ID type, private-bucket keys until deleted, who decided and when, any appeal, and a keyed hash of the ID number that recognises a repeated ID. Not the same thing as the tiers above | [ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md), [plan 0053](../plans/0053-id-verification-for-new-accounts.md) |
 
 Two constraints already settled and worth carrying into the schema:
 

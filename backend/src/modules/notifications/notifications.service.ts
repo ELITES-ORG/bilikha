@@ -101,6 +101,7 @@ const TITLES: Record<NotificationType, string> = {
   agreement_completed: 'Your work was confirmed complete',
   agreement_cancelled: 'A work agreement was cancelled',
   rating_received: 'A client rated your work',
+  id_verified: 'Your ID was verified',
 };
 
 /**
@@ -248,6 +249,14 @@ export async function listNotifications(
           link = `/agreements/${agreement.id}`;
           detail = agreement.packageTitle;
         }
+        break;
+      }
+      // Points at the id_verifications row, but needs no lookup: a verified
+      // account's next step is always the directory, and the row's contents
+      // are never shown to the account (ADR 0057).
+      case 'id_verified': {
+        link = '/directory';
+        detail = 'You can now message creatives, save offers and post work.';
         break;
       }
     }
