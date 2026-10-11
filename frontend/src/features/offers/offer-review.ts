@@ -1,3 +1,4 @@
+import type { OffersKey } from '@/i18n/catalogs/offers/en';
 import type { OwnOffer } from './api';
 
 export type ReviewState = 'pending' | 'rejected' | 'changesPending' | 'changesRejected' | 'live';
@@ -26,11 +27,11 @@ export function reviewNotice(
   return { state: 'live', reason: null };
 }
 
-/** A save, in the words that fit where the offer stands. */
-export function savedMessage(offer: Pick<OwnOffer, 'status' | 'pendingChanges'>, created: boolean): string {
-  if (created) return 'Offer sent for review';
+/** A save, in the words that fit where the offer stands: a catalogue key, for the toast. */
+export function savedMessage(offer: Pick<OwnOffer, 'status' | 'pendingChanges'>, created: boolean): OffersKey {
+  if (created) return 'offers.saved.created';
   if (offer.status === 'published') {
-    return offer.pendingChanges ? 'Changes sent for review' : 'Changes withdrawn — the approved version stays';
+    return offer.pendingChanges ? 'offers.saved.changesSent' : 'offers.saved.changesWithdrawn';
   }
-  return offer.status === 'pending_review' ? 'Saved and waiting for review' : 'Changes saved';
+  return offer.status === 'pending_review' ? 'offers.saved.waiting' : 'offers.saved.changes';
 }

@@ -114,8 +114,11 @@ const AccountPage = lazy(() =>
 const WorkPage = lazy(() =>
   import('@/pages/account/WorkPage').then((m) => ({ default: m.WorkPage })),
 );
+// The offer editor's copy is a catalogue section of its own (ADR 0055).
 const OffersSettingsPage = lazy(() =>
-  import('@/pages/account/OffersSettingsPage').then((m) => ({ default: m.OffersSettingsPage })),
+  import('@/pages/account/OffersSettingsPage')
+    .then(withSection('offers'))
+    .then((m) => ({ default: m.OffersSettingsPage })),
 );
 const ProfileSettingsPage = lazy(() =>
   import('@/pages/account/ProfileSettingsPage').then((m) => ({ default: m.ProfileSettingsPage })),

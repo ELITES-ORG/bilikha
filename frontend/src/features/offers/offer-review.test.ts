@@ -60,9 +60,10 @@ describe('reviewNotice', () => {
 
 describe('savedMessage', () => {
   it('fits where the offer stands', () => {
-    expect(savedMessage(base, true)).toBe('Offer sent for review');
-    expect(savedMessage({ ...base, pendingChanges: changes }, false)).toBe('Changes sent for review');
-    expect(savedMessage(base, false)).toContain('withdrawn');
-    expect(savedMessage({ ...base, status: 'pending_review' }, false)).toBe('Saved and waiting for review');
+    expect(savedMessage(base, true)).toBe('offers.saved.created');
+    expect(savedMessage({ ...base, pendingChanges: changes }, false)).toBe('offers.saved.changesSent');
+    expect(savedMessage(base, false)).toBe('offers.saved.changesWithdrawn');
+    expect(savedMessage({ ...base, status: 'pending_review' }, false)).toBe('offers.saved.waiting');
+    expect(savedMessage({ ...base, status: 'rejected' }, false)).toBe('offers.saved.changes');
   });
 });

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { CircleCheck, CircleX, Clock, MessageSquareText, TriangleAlert } from 'lucide-react';
 import { Badge } from '@/components/ui';
+import '@/i18n/catalogs/offers';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { Message } from '@/i18n/Message';
 import { cn } from '@/lib/cn';
