@@ -1,5 +1,5 @@
 {
-  "id": "45a149cc-8b69-4545-aa38-68181e177e4f",
+  "id": "271e9e58-17d2-4a30-bb62-18ef3ae27a82",
   "prevId": "4e4889fd-dd1e-4f6f-892d-90f8867ad1bc",
   "version": "7",
   "dialect": "postgresql",
@@ -1230,6 +1230,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "action": {
           "name": "action",
           "type": "moderation_action",
@@ -1240,12 +1246,6 @@
         "reason": {
           "name": "reason",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_verification_id": {
-          "name": "id_verification_id",
-          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1302,6 +1302,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "moderation_actions_organization_idx": {
+          "name": "moderation_actions_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1344,12 +1359,12 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "moderation_actions_id_verification_id_id_verifications_id_fk": {
-          "name": "moderation_actions_id_verification_id_id_verifications_id_fk",
+        "moderation_actions_organization_id_organizations_id_fk": {
+          "name": "moderation_actions_organization_id_organizations_id_fk",
           "tableFrom": "moderation_actions",
-          "tableTo": "id_verifications",
+          "tableTo": "organizations",
           "columnsFrom": [
-            "id_verification_id"
+            "organization_id"
           ],
           "columnsTo": [
             "id"
@@ -3852,6 +3867,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "logo_reviewed_at": {
+          "name": "logo_reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "municipality_id": {
           "name": "municipality_id",
           "type": "uuid",
@@ -3977,246 +3998,26 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.id_verifications": {
-      "name": "id_verifications",
+    "public.retired_organization_slugs": {
+      "name": "retired_organization_slugs",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
+        "slug": {
+          "name": "slug",
+          "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
           "notNull": true
         },
-        "status": {
-          "name": "status",
-          "type": "id_verification_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "id_type": {
-          "name": "id_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "front_key": {
-          "name": "front_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "back_key": {
-          "name": "back_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_consent_at": {
-          "name": "id_consent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "submitted_at": {
-          "name": "submitted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "decided_at": {
-          "name": "decided_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "images_deleted_at": {
-          "name": "images_deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reviewed_by": {
-          "name": "reviewed_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "decision_reason": {
-          "name": "decision_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_number_hash": {
-          "name": "id_number_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_number_absent": {
-          "name": "id_number_absent",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "appeal_message": {
-          "name": "appeal_message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "appealed_at": {
-          "name": "appealed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "appeal_decided_at": {
-          "name": "appeal_decided_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
+        "retired_at": {
+          "name": "retired_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
-      "indexes": {
-        "id_verifications_user_created_idx": {
-          "name": "id_verifications_user_created_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "id_verifications_queue_idx": {
-          "name": "id_verifications_queue_idx",
-          "columns": [
-            {
-              "expression": "submitted_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "status in ('pending', 'appealed') and submitted_at is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "id_verifications_sweep_idx": {
-          "name": "id_verifications_sweep_idx",
-          "columns": [
-            {
-              "expression": "decided_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "images_deleted_at is null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "id_verifications_one_open_idx": {
-          "name": "id_verifications_one_open_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "status = 'pending'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "id_verifications_id_number_hash_idx": {
-          "name": "id_verifications_id_number_hash_idx",
-          "columns": [
-            {
-              "expression": "id_number_hash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "id_number_hash is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "id_verifications_user_id_users_id_fk": {
-          "name": "id_verifications_user_id_users_id_fk",
-          "tableFrom": "id_verifications",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "id_verifications_reviewed_by_users_id_fk": {
-          "name": "id_verifications_reviewed_by_users_id_fk",
-          "tableFrom": "id_verifications",
-          "tableTo": "users",
-          "columnsFrom": [
-            "reviewed_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -4288,14 +4089,7 @@
         "account_suspended",
         "account_reinstated",
         "rating_removed",
-        "password_reset",
-        "id_viewed",
-        "id_verified",
-        "id_declined_retry",
-        "id_declined_final",
-        "id_decision_reversed",
-        "id_appeal_granted",
-        "id_appeal_upheld"
+        "password_reset"
       ]
     },
     "public.profile_status": {
@@ -4362,7 +4156,10 @@
         "agreement_completed",
         "agreement_cancelled",
         "rating_received",
-        "id_verified"
+        "organization_approved",
+        "organization_rejected",
+        "organization_invited",
+        "organization_invitation_accepted"
       ]
     },
     "public.organization_role": {
@@ -4382,17 +4179,6 @@
         "published",
         "rejected",
         "suspended"
-      ]
-    },
-    "public.id_verification_status": {
-      "name": "id_verification_status",
-      "schema": "public",
-      "values": [
-        "pending",
-        "verified",
-        "declined_retry",
-        "declined_final",
-        "appealed"
       ]
     }
   },

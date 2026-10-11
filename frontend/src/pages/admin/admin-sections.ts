@@ -1,4 +1,4 @@
-import { Images, ListChecks, Star, Tags, UserRound } from 'lucide-react';
+import { Images, ListChecks, Star, Tags, UserRound, Users } from 'lucide-react';
 
 /**
  * The admin section list — one array, one file. Adding a moderation surface is
@@ -10,6 +10,7 @@ import { Images, ListChecks, Star, Tags, UserRound } from 'lucide-react';
  */
 export const ADMIN_SECTIONS = [
   { label: 'Review queue', path: '/admin', icon: ListChecks },
+  { label: 'Organisations', path: '/admin/organizations', icon: Users },
   { label: 'Media', path: '/admin/media', icon: Images },
   { label: 'Accounts', path: '/admin/accounts', icon: UserRound },
   { label: 'Ratings', path: '/admin/ratings', icon: Star },

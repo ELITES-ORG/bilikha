@@ -118,8 +118,9 @@ export interface AdminMediaImage {
  * internally and strips it before responding, so it is deliberately absent here.
  */
 export interface AdminMediaRow {
+  /** The user, offer or organisation the image belongs to. */
   id: string;
-  kind: 'avatar' | 'offer';
+  kind: 'avatar' | 'offer' | 'logo';
   createdAt: string;
   url: string | null;
   thumbUrl: string | null;
@@ -133,6 +134,8 @@ export interface AdminMediaRow {
   priceMaxCentavos?: number | null;
   flaggedAt?: string | null;
   images?: AdminMediaImage[];
+  /** For a logo on a published page: its slug, to see the image in context. */
+  organizationSlug?: string;
 }
 
 export interface AdminMediaListResult {

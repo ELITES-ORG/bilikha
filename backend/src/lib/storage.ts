@@ -259,6 +259,23 @@ export async function deleteObject(
   );
 }
 
+/**
+ * Delete an object that nothing refers to any more — a replaced or removed
+ * image — without failing the request that let it go. The row has already
+ * changed by then; refusing the request would not bring the reference back.
+ * Anything left behind (storage down, or not configured, as in tests and on a
+ * laptop) is found by `npm run media:prune`, which deletes unreferenced
+ * objects older than a day.
+ */
+export async function discardObject(objectKey: string): Promise<void> {
+  if (!isStorageConfigured()) return;
+  try {
+    await deleteObject(objectKey);
+  } catch (error) {
+    logger.warn({ err: error, objectKey }, 'Could not delete a replaced image; media:prune will');
+  }
+}
+
 export interface StoredObject {
   name: string;
   updatedAt: string | null;
@@ -323,6 +340,9 @@ export async function listObjects(
 }
 
 export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
+
+export const organizationLogoKey = (organizationId: string) =>
+  `organizations/${organizationId}/${randomUUID()}.webp`;
 
 export const offerKey = (profileId: string) =>
   `offers/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp

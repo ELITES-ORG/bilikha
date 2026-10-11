@@ -6,6 +6,10 @@ import { enLegal } from './legal/en';
 import { filLegal } from './legal/fil';
 import { warLegal } from './legal/war';
 import './legal';
+import { enOrganizations } from './organizations/en';
+import { filOrganizations } from './organizations/fil';
+import { warOrganizations } from './organizations/war';
+import './organizations';
 import { resolveMessage, translate } from '../i18n-context';
 
 /**
@@ -20,6 +24,7 @@ import { resolveMessage, translate } from '../i18n-context';
 const SETS = [
   ['core', en, { fil, war }],
   ['legal', enLegal, { fil: filLegal, war: warLegal }],
+  ['organizations', enOrganizations, { fil: filOrganizations, war: warOrganizations }],
 ] as const;
 
 const CATALOGS = SETS.flatMap(([set, english, translations]) =>

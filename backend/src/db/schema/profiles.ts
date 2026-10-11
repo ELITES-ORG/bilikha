@@ -2,6 +2,7 @@ import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index, in
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { creativeSubdomains } from './taxonomy.js';
+import { organizations } from './organizations.js';
 import { idVerifications } from './verification.js';
 
 /** Sprint 1 profiles enter at `pending_review` — without phone verification
@@ -137,6 +138,14 @@ export const moderationActions = pgTable(
     }),
     // Nullable so the history survives an administrator's account being deleted.
     adminId: uuid('admin_id').references(() => users.id, { onDelete: 'set null' }),
+    // Set when the decision was about an organisation's page rather than a
+    // person's profile (plan 0051). Organisations reuse `approved`, `rejected`
+    // and `acknowledged_edit` — the action means the same thing, and which
+    // column is set says what it was about. `set null` so the record outlives
+    // an organisation that closes.
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
     action: moderationActionEnum('action').notNull(),
     reason: text('reason'),
     // Set for the id_* actions, so "which IDs did this administrator view" is a
@@ -151,6 +160,7 @@ export const moderationActions = pgTable(
     index('moderation_actions_profile_idx').on(table.profileId),
     index('moderation_actions_subject_idx').on(table.subjectUserId),
     index('moderation_actions_created_idx').on(table.createdAt),
+    index('moderation_actions_organization_idx').on(table.organizationId),
   ],
 );
 

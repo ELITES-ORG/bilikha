@@ -10,6 +10,7 @@ import {
   creativeProfiles,
   conversations,
   notifications,
+  organizations,
   postings,
   users,
 } from '../../db/schema/index.js';
@@ -101,6 +102,10 @@ const TITLES: Record<NotificationType, string> = {
   agreement_completed: 'Your work was confirmed complete',
   agreement_cancelled: 'A work agreement was cancelled',
   rating_received: 'A client rated your work',
+  organization_approved: 'Your organisation was approved',
+  organization_rejected: 'Your organisation needs changes',
+  organization_invited: 'You were invited to join an organisation',
+  organization_invitation_accepted: 'Someone joined your organisation',
   id_verified: 'Your ID was verified',
 };
 
@@ -135,7 +140,16 @@ async function resolveTargets(rows: Notification[]) {
     'agreement_cancelled',
   ]);
 
-  const [profiles, threads, agreementRows] = await Promise.all([
+  // Every organisation notification points at the organisation itself, so a
+  // closed one tombstones exactly like a deleted profile does.
+  const organizationIds = byType([
+    'organization_approved',
+    'organization_rejected',
+    'organization_invited',
+    'organization_invitation_accepted',
+  ]);
+
+  const [profiles, threads, agreementRows, organizationRows] = await Promise.all([
     profileIds.length === 0
       ? Promise.resolve([])
       : db
@@ -154,12 +168,19 @@ async function resolveTargets(rows: Notification[]) {
           .select({ id: agreements.id, packageTitle: agreements.packageTitle })
           .from(agreements)
           .where(inArray(agreements.id, agreementIds)),
+    organizationIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ id: organizations.id, slug: organizations.slug, name: organizations.name })
+          .from(organizations)
+          .where(inArray(organizations.id, organizationIds)),
   ]);
 
   return {
     profiles: new Map(profiles.map((p) => [p.id, p])),
     threads: new Map(threads.map((t) => [t.id, t])),
     agreements: new Map(agreementRows.map((a) => [a.id, a])),
+    organizations: new Map(organizationRows.map((o) => [o.id, o])),
   };
 }
 
@@ -248,6 +269,28 @@ export async function listNotifications(
         if (agreement) {
           link = `/agreements/${agreement.id}`;
           detail = agreement.packageTitle;
+        }
+        break;
+      }
+      case 'organization_approved':
+      case 'organization_rejected':
+      case 'organization_invited':
+      case 'organization_invitation_accepted': {
+        const organization = targets.organizations.get(row.targetId);
+        if (organization) {
+          // An invitation is answered in the account hub, where pending ones
+          // are listed; everything else opens the organisation — the public
+          // page once approved, the team's own view otherwise.
+          link =
+            row.type === 'organization_invited'
+              ? '/account'
+              : row.type === 'organization_approved'
+                ? `/organizations/${organization.slug}`
+                : `/organizations/${organization.slug}/manage`;
+          detail =
+            row.type === 'organization_rejected'
+              ? 'Open your organisation to see what needs changing.'
+              : organization.name;
         }
         break;
       }

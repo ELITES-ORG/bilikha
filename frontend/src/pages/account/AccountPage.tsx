@@ -38,6 +38,7 @@ import {
   segmentTrackClass,
 } from '@/components/ui';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
+import { AccountOrganizations } from '@/features/organizations/AccountOrganizations';
 import { useCurrentUser, useLogout } from '@/features/auth/api';
 import type { AuthUser, ViewMode } from '@/features/auth/types';
 import { useOwnProfile, useSetViewMode } from '@/features/me/api';
@@ -457,6 +458,9 @@ export function AccountPage() {
                   />
                 </HubCard>
               </div>
+
+              {/* Founding and joining need a creative profile (ADR 0054). */}
+              {profile.data && <AccountOrganizations />}
 
               {/*
                 From sm the header carries Sign out; on a phone the header has
