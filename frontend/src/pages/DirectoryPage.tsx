@@ -30,6 +30,7 @@ import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBann
 import { useOfferSaving } from '@/features/me/use-offer-saving';
 import { usePublishedOffers } from '@/features/offers/api';
 import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
+import { DirectoryOrganizations } from '@/features/organizations/DirectoryOrganizations';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
 import { subdomainLabel } from '@/features/taxonomy/format';
@@ -680,6 +681,16 @@ export function DirectoryPage() {
                   }
                 />
               )
+            )}
+
+            {/*
+              First page only: the organisations list does not page with the
+              creatives. Hidden during a search, which does not cover
+              organisations yet: an unfiltered list above the results would
+              read as matches, even under "No matches for your search".
+            */}
+            {!creativeHome && view === 'creatives' && page === 1 && !q && (
+              <DirectoryOrganizations domain={domain} subdomain={subdomain} municipality={municipality} />
             )}
 
             {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && !q && (

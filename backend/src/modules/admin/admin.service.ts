@@ -16,6 +16,8 @@ import {
   municipalities,
   offerImages,
   offers,
+  organizationMembers,
+  organizations,
   sessions,
   users,
 } from '../../db/schema/index.js';
@@ -23,7 +25,7 @@ import type { AdminMediaListResult, AdminMediaRow } from '../../contracts/admin.
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword } from '../../lib/password.js';
 import { generateTemporaryPassword } from '../../lib/temporary-password.js';
-import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { deleteObject, discardObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notify } from '../notifications/notifications.service.js';
 import type { NotificationType } from '../notifications/notifications.service.js';
 
@@ -441,9 +443,44 @@ export async function listUnreviewedMedia(
     }
   }
 
-  // Flagged offers first, then remaining unreviewed (avatars + unflagged offers)
-  // by createdAt desc.
-  const merged = [...offerItems, ...avatarItems].sort((a, b) => {
+  // Organisation logos, reviewed like a profile photo: unseen until an
+  // administrator approves or removes the current one.
+  const logoItems: MediaQueueRow[] = [];
+  if (isStorageConfigured()) {
+    const logoRows = await db
+      .select({
+        id: organizations.id,
+        createdAt: organizations.updatedAt,
+        objectKey: organizations.logoKey,
+        name: organizations.name,
+        slug: organizations.slug,
+        status: organizations.status,
+      })
+      .from(organizations)
+      .where(and(isNotNull(organizations.logoKey), isNull(organizations.logoReviewedAt)));
+
+    for (const row of logoRows) {
+      logoItems.push({
+        id: row.id,
+        kind: 'logo',
+        createdAt: row.createdAt.toISOString(),
+        url: row.objectKey ? publicUrl(row.objectKey) : null,
+        thumbUrl: row.objectKey ? publicUrl(row.objectKey) : null,
+        caption: null,
+        ownerName: row.name,
+        profileSlug: null,
+        profileId: null,
+        // Only a published page can be opened; an unpublished one is reviewed
+        // in the organisations queue, where its logo is seen with it.
+        ...(row.status === 'published' ? { organizationSlug: row.slug } : {}),
+        _flagged: false,
+      });
+    }
+  }
+
+  // Flagged offers first, then remaining unreviewed (avatars, logos and
+  // unflagged offers) by createdAt desc.
+  const merged = [...offerItems, ...avatarItems, ...logoItems].sort((a, b) => {
     if (a._flagged !== b._flagged) return a._flagged ? -1 : 1;
     return a.createdAt < b.createdAt ? 1 : -1;
   });
@@ -454,13 +491,16 @@ export async function listUnreviewedMedia(
 }
 
 export async function reviewMedia(input: {
-  kind: 'avatar' | 'offer';
+  kind: 'avatar' | 'offer' | 'logo';
   id: string;
   adminId: string;
   action: 'approve' | 'remove';
 }) {
   if (input.kind === 'offer') {
     return reviewOfferMedia(input);
+  }
+  if (input.kind === 'logo') {
+    return reviewLogoMedia(input);
   }
 
   const [user] = await db
@@ -502,6 +542,55 @@ export async function reviewMedia(input: {
     });
   });
   await deleteObject(key);
+  return { ok: true as const };
+}
+
+/**
+ * Removing a logo takes the image off the page and leaves the page up — the
+ * same as removing a profile photo. The audit names the organisation and its
+ * founder, who is answerable for the page.
+ */
+async function reviewLogoMedia(input: { id: string; adminId: string; action: 'approve' | 'remove' }) {
+  const [organization] = await db
+    .select({ id: organizations.id, logoKey: organizations.logoKey })
+    .from(organizations)
+    .where(eq(organizations.id, input.id))
+    .limit(1);
+  if (!organization?.logoKey) throw AppError.notFound('No such logo.');
+
+  if (input.action === 'approve') {
+    await db
+      .update(organizations)
+      .set({ logoReviewedAt: new Date(), updatedAt: new Date() })
+      .where(eq(organizations.id, organization.id));
+    return { ok: true as const };
+  }
+
+  const [founder] = await db
+    .select({ userId: organizationMembers.userId })
+    .from(organizationMembers)
+    .where(
+      and(
+        eq(organizationMembers.organizationId, organization.id),
+        eq(organizationMembers.role, 'founder'),
+      ),
+    )
+    .limit(1);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(organizations)
+      .set({ logoKey: null, logoReviewedAt: null, updatedAt: new Date() })
+      .where(eq(organizations.id, organization.id));
+    await tx.insert(moderationActions).values({
+      organizationId: organization.id,
+      subjectUserId: founder?.userId ?? null,
+      adminId: input.adminId,
+      action: 'media_removed',
+      reason: 'Organisation logo removed by admin',
+    });
+  });
+  await discardObject(organization.logoKey);
   return { ok: true as const };
 }
 

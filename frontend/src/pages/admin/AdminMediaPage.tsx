@@ -12,6 +12,7 @@ import {
   Search,
   Trash2,
   UserRound,
+  Users,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient, toApiError } from '@/lib/api-client';
@@ -45,11 +46,11 @@ import {
 } from './admin-media-logic';
 
 type MediaKind = AdminMediaRow['kind'];
-const KIND_FILTERS: ReadonlyArray<KindFilter> = ['all', 'avatar', 'offer'];
+const KIND_FILTERS: ReadonlyArray<KindFilter> = ['all', 'avatar', 'offer', 'logo'];
 
 type ListResponse = Paginated<AdminMediaRow>;
 
-const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Avatar', offer: 'Offer' };
+const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Avatar', offer: 'Offer', logo: 'Logo' };
 
 const SORT_OPTIONS: Array<{ value: SortOrder; label: string }> = [
   { value: 'queue', label: 'Flagged first' },
@@ -120,7 +121,7 @@ export function AdminMediaPage() {
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
         title="Media review"
-        description="Avatars and offer photos are live as soon as they are uploaded. Approve one to clear it from the queue, or remove it to take it down."
+        description="Avatars, offer photos and organisation logos are live as soon as they are uploaded. Approve one to clear it from the queue, or remove it to take it down."
         aside={
           list.data &&
           total > 0 && (
@@ -130,6 +131,9 @@ export function AdminMediaPage() {
                 <>
                   <StatItem value={counts.avatar} label={counts.avatar === 1 ? 'Avatar' : 'Avatars'} />
                   <StatItem value={counts.offer} label={counts.offer === 1 ? 'Offer' : 'Offers'} />
+                  {counts.logo > 0 && (
+                    <StatItem value={counts.logo} label={counts.logo === 1 ? 'Logo' : 'Logos'} />
+                  )}
                 </>
               )}
               {counts.flagged > 0 && <StatItem value={counts.flagged} label="Flagged" />}
@@ -179,6 +183,7 @@ export function AdminMediaPage() {
               { value: 'all' as const, label: <AdminTabLabel text="All" count={items.length} active={kind === 'all'} /> },
               { value: 'avatar' as const, label: <AdminTabLabel text="Avatars" count={counts.avatar} active={kind === 'avatar'} /> },
               { value: 'offer' as const, label: <AdminTabLabel text="Offers" count={counts.offer} active={kind === 'offer'} /> },
+              { value: 'logo' as const, label: <AdminTabLabel text="Logos" count={counts.logo} active={kind === 'logo'} /> },
             ]}
           />
         </AdminToolbar>
@@ -216,7 +221,7 @@ export function AdminMediaPage() {
           <EmptyState
             icon={<CheckCircle2 className="size-5" />}
             title="Nothing to review"
-            description="New avatars and offers will appear here."
+            description="New avatars, offers and organisation logos will appear here."
           />
         )}
 
@@ -394,6 +399,8 @@ function MediaCard({
             icon={
               isOffer ? (
                 <Images className="size-3.5" aria-hidden="true" />
+              ) : item.kind === 'logo' ? (
+                <Users className="size-3.5" aria-hidden="true" />
               ) : (
                 <UserRound className="size-3.5" aria-hidden="true" />
               )
@@ -427,11 +434,21 @@ function MediaCard({
         )}
 
         <dl className="grid grid-cols-2 gap-4">
-          <AdminFact term="Owner">{item.ownerName}</AdminFact>
+          <AdminFact term={item.kind === 'logo' ? 'Organisation' : 'Owner'}>{item.ownerName}</AdminFact>
           <AdminFact term="Submitted">
             <time dateTime={item.createdAt}>{formatAdminDate(item.createdAt)}</time>
           </AdminFact>
         </dl>
+
+        {item.kind === 'logo' && item.organizationSlug && (
+          <Link
+            to={`/organizations/${item.organizationSlug}`}
+            className="u-tap mt-4 inline-flex items-center gap-1 self-start text-sm font-semibold text-ink underline-offset-4 hover:underline"
+          >
+            View page
+            <ArrowUpRight className="size-4" aria-hidden="true" />
+          </Link>
+        )}
 
         {item.profileSlug && (
           <Link

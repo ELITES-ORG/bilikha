@@ -66,6 +66,10 @@ export const organizations = pgTable(
     // Storage key, as `users.avatar_key` is. The upload path arrives with the
     // page in plan 0051 phase 4.
     logoKey: text('logo_key'),
+    // Null until an administrator has looked at the current logo in the media
+    // queue, the way `users.avatar_reviewed_at` works for a photo. A new
+    // upload clears it.
+    logoReviewedAt: timestamp('logo_reviewed_at', { withTimezone: true }),
     municipalityId: uuid('municipality_id')
       .notNull()
       .references(() => municipalities.id, { onDelete: 'restrict' }),
@@ -87,6 +91,21 @@ export const organizations = pgTable(
     index('organizations_status_created_idx').on(table.status, table.createdAt),
   ],
 );
+
+/**
+ * Slugs of organisations that have been closed, never to be handed out again.
+ *
+ * A founder alone closes an organisation by leaving, which deletes its row and
+ * would otherwise free its slug. The next organisation of the same name would
+ * then answer every link ever shared for the old one — a different team behind
+ * the same URL. Kept here instead, in the same transaction as the delete, and
+ * `freeSlug` treats them as taken. Only the slug: who the team was is gone with
+ * the organisation, as closing it means.
+ */
+export const retiredOrganizationSlugs = pgTable('retired_organization_slugs', {
+  slug: text('slug').primaryKey(),
+  retiredAt: timestamp('retired_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Who is in a team, and as what.

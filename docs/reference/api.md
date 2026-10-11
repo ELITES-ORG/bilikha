@@ -428,6 +428,41 @@ Rejection requires a non-empty `reason`. Each decision writes a
 to `suspended` and stores the reason for the registrant banner. Acknowledging an
 edit clears `editedSinceReviewAt` without changing the published status.
 
+### `GET /api/v1/admin/organizations`
+
+The organisation review queue ([ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)),
+shaped like the profile queue: oldest first, and `status=edited` for published
+pages with an unacknowledged edit.
+
+Query: `status` (`pending_review`, `published`, `rejected`, `suspended`, or
+`edited`), `page`, `limit` (max 50).
+
+`200` — `{ data: AdminOrganizationRow[], meta: { page, limit, total } }`.
+A row carries `id`, `slug`, `name`, `bio`, `crafts` (names, primary first),
+`status`, `founderUsername`, `municipality`, `memberCount`, `createdAt` and
+`editedSinceReviewAt` — everything the decision needs, so there is no detail
+endpoint.
+
+### `GET /api/v1/admin/organizations/counts`
+
+Counts per status for the tabs, plus `edited`.
+
+### `POST /api/v1/admin/organizations/:id/moderate`
+
+```jsonc
+{ "action": "approved" }
+{ "action": "rejected", "reason": "The name copies a real company." }
+{ "action": "acknowledged_edit" }
+```
+
+Rejection requires a non-empty `reason`. Unlike a profile, a rejected
+organisation gets the real status `rejected`, which stops it counting toward
+its founder's five-organisation cap. Each decision writes a
+`moderation_actions` row with `organization_id` set and the founder as
+`subject_user_id`. Approving and rejecting notify the founder; acknowledging an
+edit does not. `409` on a `suspended` organisation, which review never changes,
+and for `acknowledged_edit` unless the page is published with an edit waiting.
+
 ---
 
 ### `POST /api/v1/admin/error-check`
@@ -475,6 +510,177 @@ see the previous recency order and no `isNearby` field.
 `name`, `singularName`, `domain`), `images[]` with
 `id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
 `GET /creatives` omit `offers` — the offer listing is `GET /offers`.
+
+---
+
+## Organisations
+
+Teams of creatives with one public page
+([ADR 0054](../decisions/0054-organisations-are-teams-of-creatives.md)). Nobody
+signs in as an organisation: every write is made by a creative, as themselves.
+Shapes are in `backend/src/contracts/organizations.ts`.
+
+Three roles: `founder` (exactly one), `co_founder`, `member`. The founder and
+co-founders edit the page and invite; only the founder invites a co-founder,
+removes a co-founder, changes the crafts or hands over the founder role.
+
+### `GET /api/v1/organizations`
+
+Public. Published organisations for the directory, by name, while their
+founder could be seen in public too (see below). Query:
+`domain`, `subdomain`, `municipality` (slugs, optional), `limit` (default 12,
+max 50).
+
+`200` — `{ data: OrganizationCard[] }` — `slug`, `name`, `logoUrl`,
+`municipality`, `primaryCraft`, `memberCount`. A craft carries `name` (the
+official plural) and `singularName` (the label cards show).
+
+The directory hides this list while a search (`q` on the creatives listing) is
+active: search does not cover organisations yet.
+
+### `GET /api/v1/organizations/:slug`
+
+Public. `200` — `{ data: PublicOrganization }`. `404` unless published, and
+while the founder's own account is suspended or their creative profile is not
+published: the founder is the one person a visitor's message reaches, so a page
+with no visible founder would list a team nobody can contact. It returns when
+the founder does, or when the role is handed over.
+`members[]` lists only people whose account is active and whose own creative
+profile is published; it carries `displayName`, `profileSlug`, `avatarUrl`,
+`role` and `title`, and never a user id.
+
+### `POST /api/v1/organizations`
+
+Signed in. Founds an organisation, which starts at `pending_review`.
+
+```jsonc
+{
+  "name": "Naval Light Studio",
+  "bio": "Optional, up to 1000 characters.",
+  "municipalitySlug": "naval",
+  "subdomainSlugs": ["filmmakers", "animators"],
+  "primarySubdomainSlug": "filmmakers"
+}
+```
+
+One to five sub-domains from at most two domains, none archived. The slug is
+made from the name once and never changes, and is never reused: a closed
+organisation's slug stays reserved, so the next one of the same name gets
+`<slug>-2`.
+
+`201` — `{ data: { slug, status } }`. `403` without a published creative
+profile. `409` at the cap: five organisations, counting memberships and not
+counting `rejected` ones. The cap is checked under a per-person lock in the
+same transaction as the insert, so two requests at once cannot both pass it.
+Two foundings of one name at once each get their own slug.
+
+### `PATCH /api/v1/organizations/:slug`
+
+Founder or co-founder. Any of `name`, `bio` (`null` clears it),
+`municipalitySlug`, and `subdomainSlugs` with `primarySubdomainSlug` (founder
+only, always together). Unknown keys are refused, so the slug cannot be sent.
+
+Editing a published page keeps it public and sets `editedSinceReviewAt`
+([ADR 0016](../decisions/0016-edits-never-unpublish.md)). Editing a `rejected`
+page sends it back to `pending_review` — `409` if that would take anyone in the
+team past five organisations, since a `rejected` page stops counting and its
+team may have filled the gap elsewhere. A `suspended` page cannot be edited.
+
+### `GET /api/v1/organizations/:slug/manage`
+
+Any member. `200` — `{ data: ManagedOrganization }`: any status, every member
+with `userId` and `username`, the rejection reason, `myRole`, and — for the
+founder and co-founders — `invitations[]`, each with a computed `expired`.
+`404` for anyone not in it.
+
+### `GET /api/v1/organizations/mine`
+
+Signed in. The organisations the caller belongs to: `slug`, `name`, `status`,
+`role`.
+
+### `POST /api/v1/organizations/:slug/invitations`
+
+Founder or co-founder. Rate-limited per inviter.
+
+```jsonc
+{ "username": "carla", "role": "member", "title": "Composer" }
+```
+
+`role` is `member` (default) or `co_founder`. The invitation expires seven days
+later; expiry is computed when read, with no scheduled job. One `404` message
+covers an unknown username, a suspended account and an account with no published
+creative profile, so the endpoint cannot be used to discover accounts. `409` if
+they are already in the team or already have an open invitation, including one
+sent a moment earlier by someone else in the team — and for 30 days after they
+decline one from this organisation, with the date they can be asked again. One
+query decides the 404 whichever account it is, so the time it takes does not
+tell a suspended account from an unpublished one.
+
+`201` — `{ data: { id, expiresAt, refreshed: false } }`. Re-inviting someone
+whose invitation expired renews the same invitation: `200` with
+`refreshed: true`. The invitee is notified.
+
+### `GET /api/v1/organizations/invitations`
+
+Signed in. Open, unexpired invitations to the caller: `id`, `organization`
+(`slug`, `name`), `role`, `title`, `invitedBy` (a name), `expiresAt`.
+
+### `POST /api/v1/organizations/invitations/:id/accept`
+
+The invitee. Creates the membership — **nobody is on a page without
+accepting**. `409` once expired, at the cap (checked under the same lock as
+founding), or if the same invitation was just accepted. `403` without a
+published creative profile. The inviter is notified. `200` — `{ data: { slug } }`.
+
+### `POST /api/v1/organizations/invitations/:id/decline`
+
+The invitee. `200` — `{ data: { declined: true } }`.
+
+### `POST /api/v1/organizations/:slug/leave`
+
+Any member. A founder with anyone else in the team is refused (`409`) and told
+to hand over first. A founder alone closes the organisation: it is deleted —
+except a `suspended` one (`403`), which only an administrator can resolve.
+Its slug is retired, never to be handed out again.
+Leaving withdraws any unanswered invitations the person sent.
+`200` — `{ data: { closed } }`.
+
+### `DELETE /api/v1/organizations/:slug/members/:userId`
+
+Founder, or a co-founder removing a plain member. Nobody removes the founder,
+and nobody removes themselves (leave instead). Unanswered invitations the
+removed person sent are withdrawn. `200` — `{ data: { removed: true } }`.
+
+### `POST /api/v1/organizations/:slug/logo/upload-url`
+
+Founder or co-founder; not on a suspended organisation. Rate-limited like other
+uploads. `200` — `{ data: { uploadUrl, objectKey } }`: the browser resizes the
+image and PUTs it straight to `uploadUrl`, as for an avatar. `503` when image
+storage is not configured.
+
+### `PUT /api/v1/organizations/:slug/logo`
+
+Founder or co-founder. `{ "objectKey": "organizations/<id>/…" }` — only a key
+under this organisation's own folder is accepted (`403` otherwise, `400` for a
+malformed key). The logo is live straight away and goes to the media queue
+(`logo_reviewed_at` cleared); on a published page it also sets
+`editedSinceReviewAt`, as a new profile photo does. The previous image is
+deleted. `200` — `{ data: { objectKey } }`.
+
+### `DELETE /api/v1/organizations/:slug/logo`
+
+Founder or co-founder. `200` — `{ data: { removed } }`. Closing an
+organisation also deletes its logo.
+
+### `POST /api/v1/organizations/:slug/founder`
+
+Founder only. `{ "userId": "…" }` — someone already in the team whose account
+is active and whose creative profile is published (`400` otherwise), since the
+page is public only while its founder is. In one transaction the old founder
+becomes a co-founder, the new one the founder, and the old founder's unanswered
+co-founder invitations are withdrawn: inviting a co-founder is the founder's
+power. `409` if another hand-over got there first.
+`200` — `{ data: { handedOver: true } }`.
 
 ---
 
@@ -653,19 +859,23 @@ Admin session required (`403` otherwise).
 
 ### `GET /api/v1/admin/media`
 
-Unreviewed avatars and offers (`reviewedAt` null), paginated. Flagged offers
-(`flaggedAt` set) sort first; then remaining unreviewed rows by `createdAt`
-desc. Each row has `kind` (`avatar` \| `offer`), absolute `url`/`thumbUrl`
-when images exist, owner name, and profile slug when present. Offer rows also
+Unreviewed avatars, offers and organisation logos (`reviewedAt` null),
+paginated. Flagged offers (`flaggedAt` set) sort first; then remaining
+unreviewed rows by `createdAt` desc. Each row has `kind` (`avatar` \| `offer`
+\| `logo`), absolute `url`/`thumbUrl` when images exist, owner name (the
+organisation's name for a logo), and profile slug when present. A logo row
+carries `organizationSlug` when the page is published. Offer rows also
 include `title`, `description`, `priceMinCentavos`, `priceMaxCentavos`,
 `flaggedAt`, and `images[]`.
 
 ### `POST /api/v1/admin/media/:kind/:id/review`
 
-`kind` is `avatar` or `offer`. Body `{ "action": "approve" | "remove" }`.
-Approve stamps the reviewed timestamp. Remove deletes the avatar object or the
-offer (and its storage objects) and writes a `media_removed` moderation action
-with `subjectUserId` set to the owner.
+`kind` is `avatar`, `offer` or `logo` (`id` is then the organisation's). Body
+`{ "action": "approve" | "remove" }`. Approve stamps the reviewed timestamp.
+Remove deletes the avatar object, the offer (and its storage objects), or the
+logo — leaving the organisation's page up — and writes a `media_removed`
+moderation action with `subjectUserId` set to the owner, or for a logo to the
+founder with `organizationId` set.
 
 ### `GET /api/v1/admin/accounts`
 

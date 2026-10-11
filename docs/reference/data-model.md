@@ -282,13 +282,14 @@ acknowledgement / media-removal decision.
 |---|---|---|
 | `id` | `uuid` PK | |
 | `profile_id` | `uuid` FK null | `ON DELETE CASCADE`; null when a client avatar is removed with no creative profile |
-| `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals |
+| `subject_user_id` | `uuid` FK null → `users.id` | `ON DELETE CASCADE`; set for media removals, and to the founder for an organisation decision |
+| `organization_id` | `uuid` FK null → `organizations.id` | `ON DELETE SET NULL`; set when the decision was about an organisation page, so the audit outlives a closed organisation |
 | `admin_id` | `uuid` FK null | `ON DELETE SET NULL` |
 | `action` | enum | `approved` \| `rejected` \| `returned_to_pending` \| `acknowledged_edit` \| `media_removed` \| `account_suspended` \| `account_reinstated` \| `rating_removed` \| `password_reset` |
 | `reason` | `text` null | Required for rejections |
 | `created_at` | `timestamptz` | |
 
-Indexes: `profile_id`, `subject_user_id`, `created_at`.
+Indexes: `profile_id`, `subject_user_id`, `organization_id`, `created_at`.
 
 ---
 
@@ -584,7 +585,8 @@ so handing the role over is one write rather than two that can disagree.
 | `slug` | `text` | **Unique.** A public URL — permanent, for the reason ADR 0049 gives for taxonomy slugs |
 | `name` | `text` | |
 | `bio` | `text` null | |
-| `logo_key` | `text` null | Storage key, as `users.avatar_key` |
+| `logo_key` | `text` null | Storage key, as `users.avatar_key`: `organizations/<id>/<uuid>.webp`. Founder or co-founder uploads it; closing deletes it |
+| `logo_reviewed_at` | `timestamptz` null | Null until an administrator has seen the current logo in the media queue, as `users.avatar_reviewed_at` |
 | `municipality_id` | `uuid` FK → `municipalities.id` | `ON DELETE RESTRICT` |
 | `status` | `organization_status` | `pending_review` \| `published` \| `rejected` \| `suspended`. Default `pending_review` |
 | `rejection_reason` | `text` null | Shown to the founder verbatim |
@@ -690,6 +692,24 @@ where `is_primary` — one primary; `subdomain_id`.
 The caps — **one or two** domains, **up to five** sub-domains — are service
 rules, not constraints. They are counts across rows, and a check constraint
 would fight an administrator correcting data.
+
+---
+
+## `retired_organization_slugs`
+
+Slugs of organisations that have been closed. A founder alone closes an
+organisation by leaving, which deletes its row; without this table the next
+organisation of the same name would take the same slug and answer every link
+shared for the old one. Written in the same transaction as the delete, and
+treated as taken when a slug is chosen.
+
+| Column | Type | Notes |
+|---|---|---|
+| `slug` | `text` PK | The closed organisation's slug, never handed out again |
+| `retired_at` | `timestamptz` | Default `now()` |
+
+Only the slug is kept: who the team was goes with the organisation, which is
+what closing it means.
 
 ---
 

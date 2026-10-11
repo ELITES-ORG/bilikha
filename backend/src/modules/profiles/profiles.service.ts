@@ -35,7 +35,7 @@ export interface ListPublishedOptions {
   viewerMunicipalityId?: string | null;
 }
 
-function formatFullName(parts: {
+export function formatFullName(parts: {
   firstName: string;
   middleName: string | null;
   lastName: string;

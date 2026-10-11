@@ -154,3 +154,26 @@ export const adminPasswordResetLimiter = rateLimit({
     },
   },
 });
+
+/**
+ * Organisation invitations — 30 per inviter per hour. Each one notifies someone
+ * else, so without a ceiling an organisation could spam any creative's
+ * notification centre. Generous for building a real team in an afternoon.
+ * Failures do not count: being refused for a wrong username must not cost a
+ * slot.
+ */
+export const organizationInviteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many invitations. Try again in an hour.',
+    },
+  },
+});
