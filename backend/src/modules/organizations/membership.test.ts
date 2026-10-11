@@ -116,14 +116,20 @@ describe('inviting', () => {
     const { founder, slug } = await team();
     const client = await makeUser();
 
-    const unknown = invite({ inviterId: founder.user.id, slug, data: { username: 'zz_no_such_person', role: 'member' } });
-    const notCreative = invite({ inviterId: founder.user.id, slug, data: { username: client.username, role: 'member' } });
+    // Settled together: awaiting one while the other is still unhandled lets
+    // the second rejection land with no handler, which fails the run.
+    const [unknown, notCreative] = await Promise.allSettled([
+      invite({ inviterId: founder.user.id, slug, data: { username: 'zz_no_such_person', role: 'member' } }),
+      invite({ inviterId: founder.user.id, slug, data: { username: client.username, role: 'member' } }),
+    ]);
 
-    await expect(unknown).rejects.toMatchObject({ status: 404 });
-    await expect(notCreative).rejects.toMatchObject({ status: 404 });
-    const a = await unknown.then(() => '', (e: Error) => e.message);
-    const b = await notCreative.then(() => '', (e: Error) => e.message);
-    expect(a.replace('zz_no_such_person', 'X')).toBe(b.replace(client.username, 'X'));
+    expect(unknown).toMatchObject({ status: 'rejected', reason: { status: 404 } });
+    expect(notCreative).toMatchObject({ status: 'rejected', reason: { status: 404 } });
+    const message = (result: PromiseSettledResult<unknown>) =>
+      result.status === 'rejected' ? (result.reason as Error).message : '';
+    expect(message(unknown).replace('zz_no_such_person', 'X')).toBe(
+      message(notCreative).replace(client.username, 'X'),
+    );
   });
 
   it('refuses a second invitation while one is still waiting', async () => {
