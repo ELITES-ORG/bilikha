@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Users } from 'lucide-react';
 import { Avatar, Badge } from '@/components/ui';
 import { Message } from '@/i18n/Message';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import { useOrganizationDirectory } from './api';
 import type { OrganizationListParams } from './types';
 
@@ -55,7 +56,7 @@ export function DirectoryOrganizations(filters: OrganizationListParams) {
                 </span>
                 {organization.primaryCraft && (
                   <Badge tone="brand" className="mt-2">
-                    {organization.primaryCraft.name}
+                    {subdomainLabel(organization.primaryCraft)}
                   </Badge>
                 )}
               </span>

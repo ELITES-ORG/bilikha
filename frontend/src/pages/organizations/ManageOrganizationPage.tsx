@@ -44,6 +44,7 @@ import { Message } from '@/i18n/Message';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { subdomainLabel } from '@/features/taxonomy/format';
 
 /**
  * The team's own view of its organisation (ADR 0054, plan 0051 phase 4).
@@ -243,7 +244,7 @@ function EditSection({ organization }: { organization: ManagedOrganization }) {
             form={form}
             fieldErrors={fieldErrors}
             canEditCrafts={isFounder}
-            craftNames={organization.crafts.map((c) => c.name)}
+            craftNames={organization.crafts.map((c) => subdomainLabel(c))}
             onUpdate={onUpdate}
           />
         </fieldset>

@@ -18,6 +18,7 @@ import '@/i18n/catalogs/organizations';
 import { Message } from '@/i18n/Message';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { subdomainLabel } from '@/features/taxonomy/format';
 
 /**
  * An organisation's public page — a team of creatives (ADR 0054, plan 0051).
@@ -125,7 +126,7 @@ export function OrganizationPage() {
 
             <div className="mt-5 flex flex-col items-center text-center lg:items-start lg:px-8 lg:text-left">
               {data.crafts.length > 0 && (
-                <p className="font-semibold text-ink">{data.crafts.map((c) => c.name).join(' · ')}</p>
+                <p className="font-semibold text-ink">{data.crafts.map((c) => subdomainLabel(c)).join(' · ')}</p>
               )}
               <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-ink-muted">
                 <MapPin className="size-4 text-red-500" aria-hidden="true" />
