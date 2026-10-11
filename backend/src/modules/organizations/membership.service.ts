@@ -404,6 +404,7 @@ export async function leaveOrganization(input: {
         .onConflictDoNothing();
     });
     if (organization.logoKey) await discardObject(organization.logoKey);
+    if (organization.logoPendingKey) await discardObject(organization.logoPendingKey);
     return { closed: true };
   }
 

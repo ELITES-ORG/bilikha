@@ -16,7 +16,8 @@ export type ToastApi = {
   run: <T>(
     pendingMessage: string,
     work: () => Promise<T>,
-    options?: { success?: string; error?: (error: unknown) => string },
+    // success may depend on what the work returned, for wording that fits it.
+    options?: { success?: string | ((result: T) => string); error?: (error: unknown) => string },
   ) => Promise<T>;
 };
 

@@ -15,13 +15,12 @@ import {
   findAccounts,
   getProfile,
   listProfiles,
-  listUnreviewedMedia,
   moderate,
   resetAccountPassword,
-  reviewMedia,
   setAccountStatus,
   statusCounts,
 } from './admin.service.js';
+import { listContentQueue, reviewContent } from './content-review.service.js';
 import type { AdminQueueMeta } from '../../contracts/admin.js';
 import type { ListMeta } from '../../contracts/pagination.js';
 
@@ -66,7 +65,7 @@ adminRouter.get('/profiles/counts', async (_req, res) => {
 adminRouter.get('/media', async (req, res) => {
   const page = z.coerce.number().int().positive().default(1).parse(req.query.page ?? 1);
   const limit = z.coerce.number().int().positive().max(50).default(20).parse(req.query.limit ?? 20);
-  const { data, total } = await listUnreviewedMedia({ page, limit });
+  const { data, total } = await listContentQueue({ page, limit });
   const meta: ListMeta = { page, limit, total };
   res.json({ data, meta });
 });
@@ -74,12 +73,23 @@ adminRouter.get('/media', async (req, res) => {
 adminRouter.post('/media/:kind/:id/review', async (req, res) => {
   const kind = z.enum(['avatar', 'offer', 'logo']).parse(req.params.kind);
   const id = z.string().uuid('Invalid id').parse(req.params.id);
-  const body = z.object({ action: z.enum(['approve', 'remove']) }).parse(req.body);
-  const data = await reviewMedia({
+  // A rejection's reason is shown to the item's owner (ADR 0058); the service
+  // refuses a rejection without one.
+  const body = z
+    .object({
+      action: z.enum(['approve', 'reject']),
+      reason: z.string().trim().max(500, 'Keep the reason under 500 characters').optional(),
+      // The queue row's `version`: the decision is about what was seen.
+      version: z.string().min(1).max(200),
+    })
+    .parse(req.body);
+  const data = await reviewContent({
     kind,
     id,
     adminId: req.session.userId!,
     action: body.action,
+    reason: body.reason,
+    version: body.version,
   });
   res.json({ data });
 });

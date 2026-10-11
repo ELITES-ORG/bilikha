@@ -75,8 +75,17 @@ export const users = pgTable(
     // new password, so a temporary password unlocks nothing else.
     mustChangePassword: boolean('must_change_password').notNull().default(false),
     // One avatar per account — on the user, not the creative profile (ADR 0019).
+    // The approved photo, the only one anyone else sees (ADR 0058).
     avatarKey: text('avatar_key'),
+    // Kept in step for older code; review now uses avatar_pending_key.
     avatarReviewedAt: timestamp('avatar_reviewed_at', { withTimezone: true }),
+    // A new photo waiting for review. Only its owner sees it; the approved one
+    // stays public until an administrator approves this, and stays if they
+    // reject it.
+    avatarPendingKey: text('avatar_pending_key'),
+    // Why the last new photo was not approved, shown to its owner; cleared by
+    // the next upload.
+    avatarRejectionReason: text('avatar_rejection_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

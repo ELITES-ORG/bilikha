@@ -7,6 +7,17 @@
   [0023](./0023-bottom-navigation-on-phones.md) ·
   [operating constraints §3, §4, §6](../explanation/constraints.md)
 
+> **Amended by [0058](./0058-content-waits-for-approval-beside-what-is-public.md)
+> (2026-10-11).** It adds four notifications:
+>
+> - an offer, or a change to one, was approved
+> - an offer, or a change to one, was not approved
+> - a new profile photo was not approved
+> - a new organisation logo was not approved
+>
+> As this record requires, the reason is read from the item when the
+> notifications open, not copied into the notification.
+
 ## Context
 
 Nothing in Bilikha tells anyone that anything happened. The Messages page says

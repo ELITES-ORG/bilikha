@@ -9,6 +9,13 @@
 > rather than on registration. The tier model below is otherwise unchanged and
 > resumes when verification lands.
 
+> **Offers and images superseded by
+> [0058](./0058-content-waits-for-approval-beside-what-is-public.md)
+> (2026-10-11).** Offers, profile photos and organisation logos no longer go
+> live first and get reviewed afterwards. Each one waits for an administrator.
+> A change to something already approved waits beside it, and the approved
+> version stays public until the change is approved.
+
 ## Context
 
 A registry that publishes profiles of named individuals carries reputational

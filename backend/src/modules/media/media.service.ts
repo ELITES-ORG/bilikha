@@ -8,6 +8,7 @@ import {
   avatarKey,
   createSignedUpload,
   deleteObject,
+  discardObject,
   offerKey,
 } from '../../lib/storage.js';
 
@@ -33,21 +34,6 @@ async function requireOwnCreativeProfile(userId: string) {
   }
 
   return profile;
-}
-
-async function markPublishedProfileEdited(userId: string) {
-  const [profile] = await db
-    .select({ id: creativeProfiles.id, status: creativeProfiles.status })
-    .from(creativeProfiles)
-    .where(eq(creativeProfiles.userId, userId))
-    .limit(1);
-
-  if (profile?.status === 'published') {
-    await db
-      .update(creativeProfiles)
-      .set({ editedSinceReviewAt: new Date(), updatedAt: new Date() })
-      .where(eq(creativeProfiles.id, profile.id));
-  }
 }
 
 function assertOwnAvatarKey(userId: string, objectKey: string) {
@@ -92,64 +78,62 @@ export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
   };
 }
 
+/**
+ * A new photo waits for review (ADR 0058). It goes into the pending slot, seen
+ * only by its owner; the approved photo, if there is one, stays public until an
+ * administrator approves the new one — and stays if they reject it. Uploading
+ * again replaces the pending photo, and clears the reason the last one was
+ * declined.
+ */
 export async function setAvatar(userId: string, objectKey: string) {
   assertOwnAvatarKey(userId, objectKey);
 
   const [current] = await db
-    .select({ avatarKey: users.avatarKey })
+    .select({ pendingKey: users.avatarPendingKey })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
   if (!current) throw AppError.unauthorized();
 
-  const previousKey = current.avatarKey;
-
   await db
     .update(users)
-    .set({
-      avatarKey: objectKey,
-      avatarReviewedAt: null,
-      updatedAt: new Date(),
-    })
+    .set({ avatarPendingKey: objectKey, avatarRejectionReason: null, updatedAt: new Date() })
     .where(eq(users.id, userId));
 
-  await markPublishedProfileEdited(userId);
-
-  if (previousKey && previousKey !== objectKey) {
-    await deleteObject(previousKey);
+  if (current.pendingKey && current.pendingKey !== objectKey) {
+    await discardObject(current.pendingKey);
   }
 
   return { objectKey };
 }
 
+/**
+ * Removing. A photo waiting for review is withdrawn; with none waiting, the
+ * approved photo is taken down. Taking a photo away needs no review.
+ */
 export async function clearAvatar(userId: string) {
   const [current] = await db
-    .select({ avatarKey: users.avatarKey })
+    .select({ key: users.avatarKey, pendingKey: users.avatarPendingKey })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
   if (!current) throw AppError.unauthorized();
 
-  const previousKey = current.avatarKey;
-
+  const removing = current.pendingKey ?? current.key;
   await db
     .update(users)
-    .set({
-      avatarKey: null,
-      avatarReviewedAt: null,
-      updatedAt: new Date(),
-    })
+    .set(
+      current.pendingKey
+        ? { avatarPendingKey: null, updatedAt: new Date() }
+        : { avatarKey: null, avatarReviewedAt: null, updatedAt: new Date() },
+    )
     .where(eq(users.id, userId));
 
-  await markPublishedProfileEdited(userId);
+  if (removing) await discardObject(removing);
 
-  if (previousKey) {
-    await deleteObject(previousKey);
-  }
-
-  return { ok: true as const };
+  return { ok: true as const, removed: current.pendingKey ? ('pending' as const) : ('approved' as const) };
 }
 
 /** Deletes an uploaded object that never got attached to an avatar or offer. */

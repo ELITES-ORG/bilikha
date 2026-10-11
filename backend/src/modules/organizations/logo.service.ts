@@ -17,9 +17,9 @@ import { roleIn } from './organizations.service.js';
  * pass through this server.
  *
  * Founder and co-founders manage it, as they manage the rest of the page. A
- * new logo goes to the media queue for review (`logo_reviewed_at` cleared), and
- * on a published page it also flags the page as edited (ADR 0016), as a new
- * profile photo does.
+ * new logo waits for review in the pending slot, seen only by the team; the
+ * approved logo stays public until the new one is approved, and stays if it is
+ * rejected (ADR 0058).
  */
 
 async function editableOrganization(userId: string, slug: string) {
@@ -28,6 +28,7 @@ async function editableOrganization(userId: string, slug: string) {
       id: organizations.id,
       status: organizations.status,
       logoKey: organizations.logoKey,
+      logoPendingKey: organizations.logoPendingKey,
     })
     .from(organizations)
     .where(eq(organizations.slug, slug))
@@ -60,32 +61,32 @@ export async function setLogo(input: { userId: string; slug: string; objectKey: 
     throw AppError.forbidden('That image does not belong to this organisation.');
   }
 
-  const now = new Date();
   await db
     .update(organizations)
-    .set({
-      logoKey: input.objectKey,
-      logoReviewedAt: null,
-      ...(organization.status === 'published' ? { editedSinceReviewAt: now } : {}),
-      updatedAt: now,
-    })
+    .set({ logoPendingKey: input.objectKey, logoRejectionReason: null, updatedAt: new Date() })
     .where(eq(organizations.id, organization.id));
 
-  if (organization.logoKey && organization.logoKey !== input.objectKey) {
-    await discardObject(organization.logoKey);
+  if (organization.logoPendingKey && organization.logoPendingKey !== input.objectKey) {
+    await discardObject(organization.logoPendingKey);
   }
   return { objectKey: input.objectKey };
 }
 
+/** Withdraws a logo waiting for review; with none waiting, takes down the approved one. */
 export async function clearLogo(input: { userId: string; slug: string }) {
   const organization = await editableOrganization(input.userId, input.slug);
-  if (!organization.logoKey) return { removed: false };
+  const removing = organization.logoPendingKey ?? organization.logoKey;
+  if (!removing) return { removed: false };
 
   await db
     .update(organizations)
-    .set({ logoKey: null, logoReviewedAt: null, updatedAt: new Date() })
+    .set(
+      organization.logoPendingKey
+        ? { logoPendingKey: null, updatedAt: new Date() }
+        : { logoKey: null, logoReviewedAt: null, updatedAt: new Date() },
+    )
     .where(eq(organizations.id, organization.id));
 
-  await discardObject(organization.logoKey);
+  await discardObject(removing);
   return { removed: true };
 }

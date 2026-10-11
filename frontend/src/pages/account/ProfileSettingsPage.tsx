@@ -53,6 +53,8 @@ export function ProfileSettingsPage() {
                   <AvatarUploader
                     name={`${user.firstName} ${user.lastName}`}
                     avatarUrl={user.avatarUrl}
+                    pendingAvatarUrl={user.pendingAvatarUrl ?? null}
+                    rejectionReason={user.avatarRejectionReason ?? null}
                   />
                 </CardBody>
               </Card>

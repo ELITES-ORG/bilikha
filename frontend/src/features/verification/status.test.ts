@@ -27,6 +27,8 @@ function user(idVerification: OwnIdVerification | null, mustChangePassword = fal
     profileStatus: null,
     rejectionReason: null,
     avatarUrl: null,
+    pendingAvatarUrl: null,
+    avatarRejectionReason: null,
     mustChangePassword,
     idVerification,
   };

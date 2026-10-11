@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { ProfileOffer } from '../../contracts/offers.js';
 import type {
   PublicProfile,
@@ -97,7 +97,9 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
     .from(offers)
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
-    .where(eq(offers.profileId, profileId))
+    // Only approved offers are public (ADR 0058); a change waiting for review
+    // is not shown until it is approved.
+    .where(and(eq(offers.profileId, profileId), eq(offers.status, 'published')))
     .orderBy(asc(offers.sortOrder), asc(offers.createdAt));
 
   if (rows.length === 0) return [];
@@ -112,7 +114,8 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
         sortOrder: offerImages.sortOrder,
       })
       .from(offerImages)
-      .where(inArray(offerImages.offerId, rows.map((row) => row.id)))
+      // A photo added in a change waiting for review is not public yet.
+      .where(and(inArray(offerImages.offerId, rows.map((row) => row.id)), ne(offerImages.state, 'pending_add')))
       .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt))
     : [];
 
