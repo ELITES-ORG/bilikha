@@ -60,6 +60,35 @@ Read the English in `en.ts` for the same key to see what you are translating.
 - **Names stay as they are** — Bilikha, the municipality names, the nine
   statutory domain names.
 
+## The privacy notice and the terms of use
+
+These are the `privacy.*`, `terms.*` and `legal.*` keys. They are different from
+everything else in the catalogue, because people **consent** to them under
+RA 10173, and a translation a person agreed to is a legal record, not copy.
+
+**Do not translate them until two questions are answered** — both are
+reyxdz's, and both are written at the top of the block in `en.ts`:
+
+1. **Which version wins** if a translation and the English say different
+   things?
+2. **Should an account record which language its owner agreed in?** Today it
+   records only the date (`users.consent_version`).
+
+Once they are, the rule is stricter here than anywhere else: written or
+reviewed by a fluent speaker, no machine translation of any part.
+
+How the text is split, so the English reads exactly as before:
+
+- **`…Lead` is a bold phrase, and `…Rest` continues the same sentence.** A
+  `…Rest` key keeps its own leading space or comma — `', which is how you sign
+  in.'` — so keep that in your translation.
+- **`…Before` and `…After` sit either side of something you do not translate**:
+  a link, a name, a code word or a value. Those are the operator's name
+  (*Provincial Government of Biliran*), *Elites*, the cookie name
+  `bilikha.sid`, the contact address, and the *Last updated* date.
+- **The *Last updated* date stays in English.** It is a fixed value naming when
+  the English documents changed, not text to translate.
+
 ## When you are done
 
 A developer runs:
@@ -86,10 +115,11 @@ English-only visitor nothing (constraint 3).
 
 ## What is not covered yet
 
-- **Most of the app.** Only sign-in and the language control read from a
-  catalogue so far. Everything else is still English in the component.
-- **The privacy notice and terms.** The most important thing to translate and
-  the one place a wrong translation is a legal problem, not a copy problem.
-  They are not wired up yet.
+- **Most of the app.** Sign-in, the privacy notice, the terms of use and the
+  language control read from a catalogue so far. Everything else is still
+  English in the component.
+- **The privacy notice and terms are wired up but must not be translated yet.**
+  See *The privacy notice and the terms of use* above — two questions come
+  first.
 - **Messages from the server.** API errors arrive in English and are shown as
   they come, so a translated screen can still show an English error.

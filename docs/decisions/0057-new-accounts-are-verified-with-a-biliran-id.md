@@ -1,6 +1,6 @@
 # 0057. New accounts are verified with a photo of a Biliran ID
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-11)
 - **Date:** 2026-10-10
 - **Related:** [0020](./0020-location-required-biliran-only.md) ·
   [0021](./0021-image-storage-and-upload-path.md) ·
@@ -74,6 +74,15 @@ still 18 or older).
    their username and password as sign-in does. An open appeal pauses the
    deletion; whoever decides it, the 7 days start again from that decision.
    Granting an appeal verifies the account; upholding it is final.
+7. **A repeated ID is recognised by a keyed hash of its number.** When an
+   administrator verifies or finally declines an ID, they type its number from
+   the photo, or mark that the document has none. The API stores only an
+   HMAC-SHA256 of the ID type and the normalised number, keyed with a server
+   secret (`ID_HASH_SECRET`). It never stores, logs or returns the number. If
+   another account's row has the same hash, the administrator is warned with
+   that account and its status, and must give a reason to verify anyway. The
+   hash is kept for as long as the record, after the photos are gone, and the
+   consent sentence and privacy notice say so.
 
 ## Alternatives considered
 
@@ -94,6 +103,15 @@ still 18 or older).
   ID could end up in an inbox.
 - **Verify by phone call or in person.** Does not scale beyond a handful of
   registrants and leaves no record.
+- **A plain SHA-256 of the ID number.** ID numbers are short enough to
+  brute-force, so an unkeyed hash is the number in disguise. A secret key
+  makes the stored value useless without the server.
+- **Let the person type their ID number.** It could be invented or mistyped,
+  and recognising repeats is the point. The administrator is already reading
+  the photo.
+- **Block a matching ID outright.** A match can be legitimate, such as a person
+  re-registering after losing an account, so it warns, and verifying anyway
+  is on the record.
 
 ## Consequences
 
@@ -106,10 +124,11 @@ signal, and a new registrant can do nothing but browse until an administrator
 gets to them — the queue becomes daily work, and appeals add to it. Deleting
 the images depends on the API being awake: on a sleeping free instance the
 sweep could run hours late, which is why production must be always-on before
-switch-on (an expired ID is unreadable either way). A *not from Biliran*
-decline belongs to an account, not a person: someone declined can register
-again with other details, and once the images are gone nothing recognises the
-same ID (plan 0053, open question 5). Audit rows about an account cascade away
+switch-on (an expired ID is unreadable either way). A repeated ID is
+recognised only by its number: a different ID, or a document with no number,
+is still judged on its own, and the administrator has one more field to fill.
+The hash is personal data kept for as long as the record, and its secret can
+never be rotated without losing every match. Audit rows about an account cascade away
 if the account is ever deleted. A request already in flight at the moment of a
 decline can, narrowly, re-save its session — the same window the password
 reset has; the per-request check still refuses a final decline. Local
@@ -120,4 +139,5 @@ step.
 staging and production, with a 10 MB limit and WebP and JPEG only; the 7 days
 start when the decision is made, which is when the person is told; decisions
 can be reversed, and appealed, within the 7 days; `CONSENT_VERSION` is bumped
-with the privacy notice's ID section.
+with the privacy notice's ID section. **Accepted by reyxdz (2026-10-11),**
+with a repeated ID recognised by a keyed hash of its number (point 7).

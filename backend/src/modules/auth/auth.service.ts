@@ -11,9 +11,12 @@ import type { RegisterInput } from './auth.schema.js';
 
 export type { PublicUser } from '../../contracts/auth.js';
 
-/** Bump when the privacy notice or terms change; existing users then need
- *  re-consent. */
-export const CONSENT_VERSION = '2026-09-15';
+/** Stamped on every account at registration, so an account records which
+ *  version of the privacy notice and terms its owner agreed to. Bump it when
+ *  either changes what they disclose. There is no re-consent flow: a bump
+ *  changes only what new registrations record. Mirrors `CONSENT_VERSION` in
+ *  `frontend/src/lib/legal.ts`. */
+export const CONSENT_VERSION = '2026-10-11';
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);

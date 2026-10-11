@@ -1,6 +1,6 @@
 # 0053. Verify new accounts with a photo of a Biliran ID
 
-- **Status:** Draft
+- **Status:** Ready
 - **Owner:** emanuel
 - **Related:** [ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md) ·
   [ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md) ·
@@ -38,6 +38,8 @@ as long as it takes, and its images are kept while it waits.
 - The admin ID queue and review, with audit rows.
 - Reversal by an administrator, and one appeal by the person, within 7 days of
   a decision.
+- Recognising a repeated ID: a keyed hash of its number, typed by the
+  administrator from the photo, kept after the images are deleted.
 - Automatic deletion 7 days after the latest decision, and no ID readable
   after that point even if deletion is late.
 - The privacy notice section on IDs.
@@ -58,6 +60,10 @@ as long as it takes, and its images are kept while it waits.
   session revocation.
 - **Never log an ID object key or a signed URL**, and never return either from
   any non-admin endpoint. A test asserts this.
+- **Never store, log or return an ID number.** Only its keyed hash is stored
+  (Step 1.7); the raw number exists only inside the request that carries it.
+  The hash is never returned to anyone either: an administrator sees which
+  accounts match, not the hash.
 - **Nothing ships live before Phase 5.** Phases 1–4 are dormant: no row exists
   until registration writes one, so `main` stays releasable after every merge.
   Appeals (Phase 4) come before switch-on so that no final decline is ever made
@@ -73,10 +79,11 @@ as long as it takes, and its images are kept while it waits.
 
 ## Prerequisites
 
-- [ ] ADR 0057 Accepted by reyxdz.
+- [x] ADR 0057 Accepted by reyxdz (2026-10-11).
 - [x] Open questions 1–4 answered by reyxdz (2026-10-10) and written into this
       plan — see Decided.
-- [ ] Open question 5 answered; this plan set to Ready.
+- [x] Open question 5 answered by reyxdz (2026-10-11): recognise a repeated ID
+      by a keyed hash of its number (Decided 5). This plan set to Ready.
 - [ ] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate && npm --prefix backend run db:seed`.
 - [ ] A local private bucket `ids` in Supabase Studio (`http://127.0.0.1:54323`):
@@ -89,14 +96,19 @@ as long as it takes, and its images are kept while it waits.
 - [ ] **Before Phase 5 merges:** `bilikha-production` on an always-on Render
       instance (Starter), so the hourly sweep deletes images on time. On the
       free tier it runs only when traffic wakes the server.
+- [ ] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
+      `openssl rand -hex 32` and set on both Render services, `bilikha` and
+      `bilikha-production`, a different value on each. **Never rotate it:** a
+      new secret makes every stored hash unmatchable. Locally, any value of 32
+      or more characters in `backend/.env`.
 
 ## Progress
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Data and private storage | 0 / 6 | Not started |
+| 1. Data and private storage | 0 / 7 | Not started |
 | 2. Account side | 0 / 9 | Not started |
-| 3. Admin review and retention | 0 / 6 | Not started |
+| 3. Admin review and retention | 0 / 7 | Not started |
 | 4. Reversal and appeals | 0 / 5 | Not started |
 | 5. Switch on | 0 / 5 | Not started |
 
@@ -117,7 +129,8 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
         `id_type` text; `front_key` text; `back_key` text; `id_consent_at`,
         `submitted_at`, `decided_at`, `images_deleted_at` timestamptz;
         `reviewed_by` uuid → `users.id` **on delete set null**;
-        `decision_reason` text; `appeal_message` text; `appealed_at`,
+        `decision_reason` text; `id_number_hash` text; `id_number_absent`
+        boolean not null default false; `appeal_message` text; `appealed_at`,
         `appeal_decided_at` timestamptz; `created_at`, `updated_at` timestamptz
         not null default now. Every nullable column is null until its moment.
         `decided_at` always holds the **latest** decision — first decision,
@@ -126,7 +139,9 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
         `submitted_at` where `status in ('pending', 'appealed') and submitted_at is not null`;
         `id_verifications_sweep_idx` on `decided_at` where
         `images_deleted_at is null`; **unique**
-        `id_verifications_one_open_idx` on `user_id` where `status = 'pending'`.
+        `id_verifications_one_open_idx` on `user_id` where `status = 'pending'`;
+        `id_verifications_id_number_hash_idx` on `id_number_hash` where
+        `id_number_hash is not null`.
       In `backend/src/db/schema/profiles.ts` add `'id_viewed'`, `'id_verified'`,
       `'id_declined_retry'`, `'id_declined_final'`, `'id_decision_reversed'`,
       `'id_appeal_granted'` and `'id_appeal_upheld'` to `moderationActionEnum`,
@@ -209,6 +224,29 @@ Branch `feat/id-verification-data`. Dormant: nothing writes a row yet.
       `docs/reference/data-model.md`.
 - [ ] **Verify.** A test: users made with `makeUser` have no row.
       `npm test` and `npm run docs:check` pass.
+
+### Step 1.7 — The ID-number secret and hash
+
+- [ ] **Action.** `ID_HASH_SECRET` in `backend/src/config/env.ts`: optional at
+      boot, but at least 32 characters when set. Add it to `backend/.env.example`
+      (a placeholder), `docs/reference/environment.md` and the environment
+      table in `docs/reference/deployments.md`, each saying it must never be
+      rotated. New `backend/src/modules/verification/id-number.ts`:
+      - `normalizeIdNumber(raw)`: Unicode NFKC, uppercase, and every character
+        that is not a letter or a digit removed
+      - `hashIdNumber(idType, raw)`: HMAC-SHA256 (Node's `crypto.createHmac`)
+        keyed with `ID_HASH_SECRET`, over `` `${idType}:${normalizeIdNumber(raw)}` ``,
+        as hex. It throws when the secret is unset, and refuses a normalised
+        number shorter than 4 characters
+      - `idHashReady()`: true only when the secret is set. Log a warning at boot
+        in `backend/src/index.ts` when it is not
+
+      A plain hash is not enough: ID numbers are short, so an unkeyed hash can
+      be brute-forced back into the number.
+- [ ] **Verify.** Unit tests: `'1234-5678 9012'` and `'123456789012'` hash the
+      same; the same number under two ID types hashes differently; a different
+      secret gives a different hash; no secret throws; `'A-1'` is refused; the
+      hash never contains the number.
 
 ## Phase 2 — Account side
 
@@ -301,9 +339,11 @@ it.
       accepted IDs; the ID consent sentence, **before** any photo — *"Your ID is
       seen only by Bilikha's administrators, to confirm you are from Biliran. It
       is kept until they review it and for 7 days after you get their decision
-      (longer only while an appeal you make is being reviewed), then deleted."*
-      — the issue's sentence plus the appeal clause, because an open appeal
-      keeps the ID past the 7 days; guidance (all four corners, no glare,
+      (longer only while an appeal you make is being reviewed), then deleted.
+      We keep only a one-way code made from your ID number, so the same ID
+      cannot be used to register again after it is declined."* — the issue's
+      sentence plus two clauses, because an open appeal keeps the ID past the
+      7 days and the code outlives the photos; guidance (all four corners, no glare,
       readable); the ID
       type; the front, and the back when the type has one, each with **Take
       photo** (`accept="image/*" capture="environment"`) and **Choose photo**
@@ -396,7 +436,8 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
 ### Step 3.2 — The decision
 
 - [ ] **Action.** `POST /admin/id-verifications/:id/decision`
-      `{ decision: 'verify' | 'retry' | 'final', reason }` — reason required to
+      `{ decision: 'verify' | 'retry' | 'final', reason, idNumber?, noIdNumber?,
+      acknowledgeMatch? }` (the last three: Step 3.7) — reason required to
       decline, at most 500 characters. Refused (409) for your own submission, a
       suspended account, or a row that is not submitted and pending. One
       transaction: status, `reviewed_by`, `decided_at`, `decision_reason`, the
@@ -435,7 +476,11 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       tabs) and `AdminIdReviewPage` — front and back side by side, the
       registered facts with `AdminFact`, and a decision panel like
       `AdminProfilePage`'s: **Verify**, **Decline — try again**, **Decline — not
-      from Biliran**, the reason labelled as what the person sees. Its query uses
+      from Biliran**, the reason labelled as what the person sees. Above the
+      buttons, an **ID number** field typed by the administrator from the photo,
+      and a **This document has no ID number** checkbox; a `409 ID_NUMBER_MATCH`
+      (Step 3.7) shows as a warning listing each matching account, its status
+      and decision date, and *Verify* then asks for a reason. Its query uses
       `staleTime: 0` and `gcTime: 0`, is never prefetched, and refetches when an
       image fails to load. New `AdminStatus` entries in
       `frontend/src/pages/admin/admin-ui.tsx`; hooks in
@@ -453,6 +498,37 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       minutes.
 - [ ] **Verify.** It is refused. The object's
       `/storage/v1/object/public/ids/…` URL is refused at any time.
+
+### Step 3.7 — Recognise a repeated ID
+
+- [ ] **Action.** In the decision service. This covers Step 3.2 and also the
+      reversal and appeal paths in Steps 4.1 and 4.3.
+      - A decision that ends in `verified` or `declined_final` needs either
+        `idNumber` or `noIdNumber: true`, unless the row already has a hash or
+        `id_number_absent`. *Try again* needs neither, because the photo may be
+        unreadable.
+      - Answer `503 ID_HASH_UNAVAILABLE` when `idHashReady()` is false.
+      - Hash with `hashIdNumber(row.idType, idNumber)` and store only the hash
+        (`id_number_hash`), or `id_number_absent = true`.
+      - Before writing, look up every **other account's** row with the same
+        hash. The person's own earlier rows never count. If there are matches
+        and `acknowledgeMatch` is not `true`, answer `409 ID_NUMBER_MATCH` with
+        `details.matches`: for each match, the account's username, the row's
+        status and its `decided_at`. Never the hash, never the number.
+      - With `acknowledgeMatch: true`, a *verify* also requires `reason`, and its
+        audit row records "Verified despite N matching account(s): <reason>". A
+        *not from Biliran* decline needs no extra reason.
+      - The request body is never logged. Confirm that `pino-http` and Sentry's
+        request capture (ADR 0053) leave the body out, and add `idNumber` to any
+        redaction list that exists.
+- [ ] **Verify.** Tests: *verify* without a number or `noIdNumber` gets 400;
+      *try again* without one gets 200; the stored row holds a 64-character hex
+      hash and the number appears nowhere in it; a second account's ID with the
+      same number written differently (`1234 5678` and `12345678`) gets 409
+      listing the first account; the same with `acknowledgeMatch` and a reason is
+      verified, and the audit row says so; the person's own earlier row never
+      matches; with the secret unset the answer is 503; no response or log line
+      contains the number.
 
 ## Phase 4 — Reversal and appeals
 
@@ -559,12 +635,20 @@ always-on Render instance** (Prerequisites).
 
 ### Step 5.3 — The privacy notice
 
-- [ ] **Action.** In `frontend/src/pages/legal/PrivacyPage.tsx`: the ID photo
-      collected at registration is sensitive personal information under RA
-      10173; what it is for; that only administrators see it; that it is deleted
+- [ ] **Action.** Add an ID section to the privacy notice. Its words are
+      catalogue keys in the `privacy.*` block of
+      `frontend/src/i18n/catalogs/en.ts`, with empty `fil`/`war` entries, read
+      through `LegalSection` and `LegalText` in
+      `frontend/src/pages/legal/PrivacyPage.tsx` like the other sections (plan
+      0050 phase 6, and the warning at the top of that block). The section
+      says: the ID photo collected at registration is sensitive personal
+      information under RA 10173; what it is for; that only administrators see it; that it is deleted
       7 days after the decision, or after an appeal's outcome while one is
       open; that a *not from Biliran* decline can be appealed within 7 days;
-      the controller is `LEGAL_OPERATOR`. Bump `LEGAL_LAST_UPDATED` in
+      that a one-way code made from the ID number (a keyed hash, which cannot be
+      read back as the number) is kept for as long as the verification record
+      exists, so a declined ID cannot be used to register again; the
+      controller is `LEGAL_OPERATOR`. Bump `LEGAL_LAST_UPDATED` in
       `frontend/src/lib/legal.ts`, and bump `CONSENT_VERSION` in both
       `frontend/src/lib/legal.ts` and `backend/src/modules/auth/auth.service.ts`
       to the release date (Decided 4).
@@ -575,8 +659,9 @@ always-on Render instance** (Prerequisites).
 
 - [ ] **Action.** The pull request's Rollout section names
       `SUPABASE_ID_BUCKET` (default `ids`) for both Render services, confirms
-      both buckets exist, and confirms `bilikha-production` is on an always-on
-      instance.
+      both buckets exist, names `ID_HASH_SECRET` as set on both services (a
+      different value on each, never rotated), and confirms
+      `bilikha-production` is on an always-on instance.
 - [ ] **Verify.** `npm run check:pr` passes on the description.
 
 ### Step 5.5 — Verify end to end on staging
@@ -585,7 +670,8 @@ always-on Render instance** (Prerequisites).
       register, photograph both sides, see the banner; verify as an
       administrator; decline (try again) and resubmit; decline (not from
       Biliran), appeal, and both grant and uphold an appeal; reverse a decision;
-      sign in with an account made before the release.
+      register a second account with the same ID and see it flagged; sign in
+      with an account made before the release.
 - [ ] **Verify.** The issue's Verify list, every box, plus the appeal and
       reversal paths.
 
@@ -604,6 +690,9 @@ always-on Render instance** (Prerequisites).
       remains.
 - [ ] A *not from Biliran* decline can be appealed once within 7 days, and any
       decision can be reversed by an administrator in that window.
+- [ ] A repeated ID, meaning the same number on another account, is recognised
+      and shown to the administrator. No ID number is stored, logged or returned
+      anywhere, only its keyed hash.
 - [ ] Accounts from before the release behave exactly as before.
 - [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`,
       `npm run docs:check` pass on every phase.
@@ -619,16 +708,20 @@ always-on Render instance** (Prerequisites).
    decline can be appealed by the person**, within the 7 days (Phase 4).
 4. **`CONSENT_VERSION` is bumped** with the privacy notice's ID section, so a
    new registration records which notice it agreed to.
-
-## Open question (reyxdz)
-
-5. A *not from Biliran* decline belongs to an account, not a person. Someone
-   declined can register again with a different username, email and phone and
-   submit the same ID, and once the images are deleted nothing recognises it.
-   Accept that each submission is judged on its own, or keep something that
-   recognises a repeated ID — a hash of the ID number would, but it is itself
-   personal data to protect and to mention in the privacy notice?
+5. **A repeated ID is recognised by a keyed hash of its number** (2026-10-11).
+   A *not from Biliran* decline belongs to an account, so someone declined
+   could otherwise register again with other details and the same ID.
+   - The administrator types the number from the photo. A number the person
+     typed could be invented.
+   - It is hashed with HMAC-SHA256 and a server secret, never stored, and the
+     hash outlives the photos (Steps 1.7 and 3.7).
+   - A match warns the administrator rather than blocking. Verifying despite a
+     match needs a reason on the record.
+   - It is disclosed in the consent sentence and the privacy notice.
 
 ## Follow-ups
 
 - Translations of the new copy into Filipino and Waray (ADR 0055).
+- When account deletion is built (ADR 0032), decide whether a *not from
+  Biliran* decline's ID hash outlives the deleted account. Today it cascades
+  with the account, and the recognition goes with it.
