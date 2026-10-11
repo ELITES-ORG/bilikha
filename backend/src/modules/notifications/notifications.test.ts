@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { count, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import { notifications, users } from '../../db/schema/index.js';
+import { creativeSubdomains, notifications, organizations, users } from '../../db/schema/index.js';
 import { moderate } from '../admin/admin.service.js';
+import { foundOrganization } from '../organizations/organizations.service.js';
 import {
   listNotifications,
   markRead,
@@ -144,6 +145,40 @@ describe('notifications', () => {
       title: 'Your ID was verified',
       link: '/directory',
     });
+  });
+
+  it('links each organisation notification to where it is answered, not to the directory', async () => {
+    // Organisations and ID verification each added cases to one switch; a
+    // missing `break` between them would send every organisation notification
+    // to the ID case's /directory.
+    const founder = await makeCreative();
+    const [craft] = await db.select({ slug: creativeSubdomains.slug }).from(creativeSubdomains).limit(1);
+    const { slug } = await foundOrganization({
+      userId: founder.user.id,
+      data: {
+        name: `ZZ Notify ${Date.now()}`,
+        municipalitySlug: 'almeria',
+        subdomainSlugs: [craft!.slug],
+        primarySubdomainSlug: craft!.slug,
+      },
+    });
+    const [organization] = await db.select().from(organizations).where(eq(organizations.slug, slug));
+    const recipient = await makeUser();
+
+    const expected = {
+      organization_approved: `/organizations/${slug}`,
+      organization_rejected: `/organizations/${slug}/manage`,
+      organization_invited: '/account',
+      organization_invitation_accepted: `/organizations/${slug}/manage`,
+    } as const;
+    for (const type of Object.keys(expected) as Array<keyof typeof expected>) {
+      await notify({ userId: recipient.id, actorUserId: founder.user.id, type, targetId: organization!.id });
+    }
+
+    const { data } = await listNotifications(recipient.id, { page: 1, limit: 10 });
+    for (const [type, link] of Object.entries(expected)) {
+      expect(data.find((row) => row.type === type)?.link, type).toBe(link);
+    }
   });
 
   it('does not fail the thing that caused it', async () => {
