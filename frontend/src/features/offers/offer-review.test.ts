@@ -20,41 +20,41 @@ const base = {
 };
 
 describe('reviewNotice', () => {
-  it('says a new offer is waiting, and that clients will see it once approved', () => {
-    expect(reviewNotice({ ...base, status: 'pending_review' })).toMatchObject({
-      tone: 'warning',
-      label: 'Waiting for review',
+  it('says a new offer is waiting', () => {
+    expect(reviewNotice({ ...base, status: 'pending_review' })).toEqual({ state: 'pending', reason: null });
+  });
+
+  it("keeps an administrator's reason for a rejected offer apart, exactly as written", () => {
+    expect(reviewNotice({ ...base, status: 'rejected', rejectionReason: 'Irrelevant' })).toEqual({
+      state: 'rejected',
+      reason: 'Irrelevant',
     });
   });
 
-  it("quotes an administrator's reason for a rejected offer, and says how to resubmit", () => {
-    const notice = reviewNotice({ ...base, status: 'rejected', rejectionReason: 'Remove the phone number.' });
-    expect(notice.tone).toBe('danger');
-    expect(notice.detail).toContain('Remove the phone number.');
-    expect(notice.detail).toContain('send it back for review');
+  it('a rejected offer with a blank reason has no reason to show', () => {
+    expect(reviewNotice({ ...base, status: 'rejected', rejectionReason: '   ' }).reason).toBeNull();
   });
 
-  it('says a published offer with a waiting change still shows the approved version', () => {
-    expect(reviewNotice({ ...base, pendingChanges: changes })).toMatchObject({
-      label: 'Changes waiting for review',
-      detail: expect.stringContaining('approved version'),
+  it('says a published offer has a change waiting', () => {
+    expect(reviewNotice({ ...base, pendingChanges: changes })).toEqual({ state: 'changesPending', reason: null });
+  });
+
+  it('keeps why the last change was not approved apart', () => {
+    expect(reviewNotice({ ...base, revisionRejectionReason: 'Blurry photo.' })).toEqual({
+      state: 'changesRejected',
+      reason: 'Blurry photo.',
     });
-  });
-
-  it('quotes why the last change was not approved, and that the approved version still shows', () => {
-    const notice = reviewNotice({ ...base, revisionRejectionReason: 'Blurry photo.' });
-    expect(notice).toMatchObject({ tone: 'danger', label: 'Last changes not approved' });
-    expect(notice.detail).toContain('Blurry photo.');
   });
 
   it('a waiting change outranks an older rejected one', () => {
-    expect(reviewNotice({ ...base, pendingChanges: changes, revisionRejectionReason: 'Old reason.' }).label).toBe(
-      'Changes waiting for review',
-    );
+    expect(reviewNotice({ ...base, pendingChanges: changes, revisionRejectionReason: 'Old reason.' })).toEqual({
+      state: 'changesPending',
+      reason: null,
+    });
   });
 
   it('says a published offer with nothing waiting is live', () => {
-    expect(reviewNotice(base)).toMatchObject({ tone: 'success', label: 'Live' });
+    expect(reviewNotice(base)).toEqual({ state: 'live', reason: null });
   });
 });
 

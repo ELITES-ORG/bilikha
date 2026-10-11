@@ -93,6 +93,23 @@ export const en = {
   'signIn.declined.retry': 'Your ID could not be verified. Sign in to submit it again.',
   'signIn.declined.final': 'Your ID was declined, so this account cannot be used.',
   'signIn.declined.appealed': 'Your appeal is being reviewed. You can sign in if it is granted.',
+
+  // Where a creative's own offer stands in review (ADR 0058). The detail is
+  // the app speaking; an administrator's reason is shown apart from it, under
+  // `reasonLabel`, in their own words.
+  'offers.review.pending.label': 'Waiting for review',
+  'offers.review.pending.detail': 'Clients will see it once an administrator approves it.',
+  'offers.review.rejected.label': 'Not approved',
+  'offers.review.rejected.detail': 'Edit the offer and save it to send it back for review.',
+  'offers.review.changesPending.label': 'Changes waiting for review',
+  'offers.review.changesPending.detail':
+    'Clients see the approved version until your changes are approved.',
+  'offers.review.changesRejected.label': 'Last changes not approved',
+  'offers.review.changesRejected.detail':
+    'Clients still see the approved version. Edit the offer to try again.',
+  'offers.review.live.label': 'Live',
+  'offers.review.live.detail': 'Clients can find it in the directory.',
+  'offers.review.reasonLabel': 'Reason from the administrator',
 } as const;
 
 /**

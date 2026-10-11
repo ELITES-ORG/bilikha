@@ -1,53 +1,29 @@
 import type { OwnOffer } from './api';
 
-export type ReviewNoticeTone = 'neutral' | 'success' | 'warning' | 'danger';
+export type ReviewState = 'pending' | 'rejected' | 'changesPending' | 'changesRejected' | 'live';
 
 export interface ReviewNotice {
-  tone: ReviewNoticeTone;
-  /** A few words, for the badge. */
-  label: string;
-  /** What it means for the creative, and what to do, in a sentence. */
-  detail: string;
+  state: ReviewState;
+  /**
+   * The administrator's own words, exactly as written — never merged into the
+   * app's copy, so the creative can tell what they were told from what to do.
+   */
+  reason: string | null;
 }
 
-/**
- * Where one of the creative's own offers stands in review (ADR 0058), in their
- * terms. A reason an administrator gave is quoted as it was written.
- */
+/** Where one of the creative's own offers stands in review (ADR 0058). */
 export function reviewNotice(
   offer: Pick<OwnOffer, 'status' | 'rejectionReason' | 'revisionRejectionReason' | 'pendingChanges'>,
 ): ReviewNotice {
-  if (offer.status === 'pending_review') {
-    return {
-      tone: 'warning',
-      label: 'Waiting for review',
-      detail: 'Clients will see it once an administrator approves it.',
-    };
-  }
+  if (offer.status === 'pending_review') return { state: 'pending', reason: null };
   if (offer.status === 'rejected') {
-    return {
-      tone: 'danger',
-      label: 'Not approved',
-      detail: offer.rejectionReason
-        ? `${offer.rejectionReason} Change it and save to send it back for review.`
-        : 'Change it and save to send it back for review.',
-    };
+    return { state: 'rejected', reason: offer.rejectionReason?.trim() || null };
   }
-  if (offer.pendingChanges) {
-    return {
-      tone: 'warning',
-      label: 'Changes waiting for review',
-      detail: 'Clients see the approved version until your changes are approved.',
-    };
+  if (offer.pendingChanges) return { state: 'changesPending', reason: null };
+  if (offer.revisionRejectionReason?.trim()) {
+    return { state: 'changesRejected', reason: offer.revisionRejectionReason.trim() };
   }
-  if (offer.revisionRejectionReason) {
-    return {
-      tone: 'danger',
-      label: 'Last changes not approved',
-      detail: `${offer.revisionRejectionReason} The approved version is still showing.`,
-    };
-  }
-  return { tone: 'success', label: 'Live', detail: 'Clients can find it in the directory.' };
+  return { state: 'live', reason: null };
 }
 
 /** A save, in the words that fit where the offer stands. */
