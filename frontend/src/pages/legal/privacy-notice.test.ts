@@ -14,6 +14,9 @@ describe('privacy notice: who receives data', () => {
     expect(sharing).toContain('Sentry');
     expect(sharing).toContain('United States');
     expect(sharing).toContain('blanked');
+    // 30 days on Sentry's free plan, 90 on every paid one, so "within 90 days"
+    // stays true whichever plan Bilikha is on.
+    expect(sharing).toContain('within 90 days');
   });
 
   it('does not claim that nothing goes to a third party', () => {

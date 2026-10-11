@@ -35,9 +35,12 @@ export const LEGAL_LAST_UPDATED = '11 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
- * which is stamped on every account at registration. Kept deliberately equal:
- * these documents describe what the service has done since that date rather
- * than introducing new terms, so bumping it — and with it every stored consent
- * record — would misstate what happened.
+ * which is stamped on every account at registration. Keep the two equal.
+ *
+ * 2026-09-15 stood while the documents described what the service had done
+ * since launch. It moved to 2026-10-11 when the privacy notice began naming
+ * Sentry and the transfer of error reports to the United States: processing
+ * that started after the earlier version, so an account registered before it
+ * agreed to a notice without them, and its stored version says so.
  */
-export const CONSENT_VERSION = '2026-09-15';
+export const CONSENT_VERSION = '2026-10-11';
