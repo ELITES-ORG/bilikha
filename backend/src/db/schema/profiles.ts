@@ -46,6 +46,16 @@ export const creativeProfiles = pgTable(
     uniqueIndex('creative_profiles_slug_idx').on(table.slug),
     index('creative_profiles_status_created_idx').on(table.status, table.createdAt),
     index('creative_profiles_edited_idx').on(table.editedSinceReviewAt),
+    // Directory search (ADR 0003). The expressions must match search-sql.ts
+    // exactly, or the planner cannot use them.
+    index('creative_profiles_search_idx').using(
+      'gin',
+      sql`to_tsvector('simple', coalesce(display_name, '') || ' ' || coalesce(bio, ''))`,
+    ),
+    index('creative_profiles_display_name_trgm_idx').using(
+      'gin',
+      table.displayName.op('gin_trgm_ops'),
+    ),
   ],
 );
 
@@ -155,6 +165,11 @@ export const offers = pgTable(
     index('offers_profile_order_idx').on(table.profileId, table.sortOrder),
     index('offers_subdomain_created_idx').on(table.subdomainId, table.createdAt),
     index('offers_reviewed_idx').on(table.reviewedAt),
+    index('offers_search_idx').using(
+      'gin',
+      sql`to_tsvector('simple', title || ' ' || coalesce(description, ''))`,
+    ),
+    index('offers_title_trgm_idx').using('gin', table.title.op('gin_trgm_ops')),
   ],
 );
 

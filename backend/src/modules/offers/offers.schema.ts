@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from './offers.service.js';
+import { searchQueryField } from '../search/search.schema.js';
 
 const offerFields = {
   title: z.string().trim().min(3).max(80),
@@ -71,6 +72,7 @@ export const addOfferImageBodySchema = z.object({
 
 export const listOffersQuerySchema = z
   .object({
+    q: searchQueryField,
     domain: z.string().trim().min(1).optional(),
     subdomain: z.string().trim().min(1).optional(),
     municipality: z.string().trim().min(1).optional(),

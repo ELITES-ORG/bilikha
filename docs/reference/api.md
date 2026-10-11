@@ -448,9 +448,13 @@ Public payloads never include `email`, `phone`, or `birthDate`.
 
 ### `GET /api/v1/creatives`
 
-Public. Session-aware, not session-required. Query: `domain`, `subdomain`,
+Public. Session-aware, not session-required. Query: `q` (search text,
+optional — see [Directory search](#directory-search)), `domain`, `subdomain`,
 `municipality` (slugs, optional), `page` (default 1), `limit` (default 20,
 max 50).
+
+`q` matches a creative's display name, full name (middle name included), bio,
+any of their sub-domains (plural name or singular label), and their town.
 
 When the caller is signed in and has a municipality, rows from that municipality
 lead the list (`createdAt` desc as tiebreaker). Each row then includes
@@ -954,12 +958,39 @@ Deletes both objects, then the row. Another creative's image → `404`.
 
 ### `GET /api/v1/offers`
 
-Public. Session-aware, not session-required. Query: `domain`, `subdomain`,
+Public. Session-aware, not session-required. Query: `q` (search text,
+optional — see [Directory search](#directory-search)), `domain`, `subdomain`,
 `municipality` (slugs, optional), `budgetMin` / `budgetMax` (pesos as positive
 integers, optional; max must be ≥ min), `page` (default 1), `limit` (default 20,
 max 50). Only offers whose profile is `published` appear. A budget filter keeps
 offers whose price range overlaps and drops "Price on request" rows. When the
 caller is signed in with a municipality, nearby creatives' offers lead the list.
+
+`q` matches an offer's title, description and sub-domain (plural name or
+singular label), and its creative's display name and town.
+
+#### Directory search
+
+`q` on `GET /offers` and `GET /creatives`
+([ADR 0003](../decisions/0003-postgres-native-search.md), issue #22):
+
+- **Input.** Trimmed. Blank is the same as absent. 2–100 characters, else
+  `400 VALIDATION_ERROR`. It is split into words on anything that is not a
+  letter or digit, so query syntax (`& | ! ( ) : *`, quotes) is never
+  interpreted; a `q` with no letters or digits matches nothing. Words past the
+  eighth are ignored.
+- **Matching.** Every word must match some field of the row, either as a word
+  prefix (`photo` finds "Photographers"; no stemming, so English, Filipino and
+  Waray behave alike) or, for words of three characters or more, by trigram
+  similarity on name-like fields (`fotographer` finds "Photographer"). Words
+  may match different fields: `photographer naval` finds a photographer in
+  Naval.
+- **Visibility** is the listing's own: published profiles of active accounts
+  only. `q` combines with every other filter, and `meta.total` counts the
+  matches.
+- **Order.** Nearby-first still leads. Then rows where every word matched as
+  typed come before typo-only matches, then the closest name (offer title, or
+  the creative's display name, else full name), then newest.
 
 ### `GET /api/v1/offers/:id`
 
@@ -1026,7 +1057,6 @@ Listed so the shape of the eventual surface is visible, and so nobody builds a
 parallel version:
 
 - **Organisations** — read, create, membership
-- **Search** — Postgres-native full-text plus fuzzy name matching
 - **Admin report review UI** — reports are stored; the screen is a follow-up
 - **Self-service password reset / phone verification** — deferred until an SMS
   gateway is available (ADR 0013)

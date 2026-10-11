@@ -4,19 +4,19 @@ import { SwitchModeAction } from '@/components/SwitchModeAction';
 import { useCurrentUser } from '@/features/auth/api';
 
 interface ModeAwareEmptyStateProps {
-  title: string;
+  title: ReactNode;
   /**
    * Copy when the account has a creative profile (and the switch button).
    * Names what would fill the list — not the mode (ModeNotice) and not the
    * destination (SwitchModeAction).
    */
-  description: string;
+  description: ReactNode;
   /**
    * Copy when there is no creative profile. Same job as `description`, and
    * must not mention Creative mode — they cannot enter it. Selected by the
    * same `profileSlug` check as the button (plan 0032).
    */
-  descriptionWithoutProfile?: string;
+  descriptionWithoutProfile?: ReactNode;
   extraAction?: ReactNode;
 }
 

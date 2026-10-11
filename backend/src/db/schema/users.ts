@@ -10,6 +10,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { municipalities, barangays } from './geography.js';
+import { sql } from 'drizzle-orm';
 
 /** Organisations are out of scope for sprint 1; the column exists so adding
  *  them later is not a migration of every existing row. */
@@ -84,6 +85,11 @@ export const users = pgTable(
     uniqueIndex('users_email_normalized_idx').on(table.emailNormalized),
     uniqueIndex('users_phone_idx').on(table.phone),
     index('users_municipality_idx').on(table.municipalityId),
+    // Directory search matches a creative's full name with typos (ADR 0003).
+    index('users_full_name_trgm_idx').using(
+      'gin',
+      sql`(first_name || ' ' || coalesce(middle_name, '') || ' ' || last_name) gin_trgm_ops`,
+    ),
   ],
 );
 

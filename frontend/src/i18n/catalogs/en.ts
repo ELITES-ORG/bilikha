@@ -170,6 +170,18 @@ export const en = {
   'terms.changes.body': 'These terms change as the service does, and the date at the top moves when they do. Where a change materially affects you, we will ask you to accept it again rather than relying on you noticing.',
   'terms.law.heading': 'Governing law',
   'terms.law.body': 'These terms are governed by the laws of the Republic of the Philippines.',
+
+  'directory.search.label': 'Search the directory',
+  'directory.search.placeholder': 'Search by craft, name, or town',
+  'directory.search.submit': 'Search',
+  'directory.search.clear': 'Clear search',
+  'directory.search.emptyTitle': 'No matches for your search',
+  'directory.search.emptyDescription':
+    'Check the spelling, try a shorter word, or browse by domain.',
+  'directory.search.tryCreatives': 'Search creatives instead',
+  'directory.search.tryOffers': 'Search offers instead',
+  'directory.search.postingsNote':
+    'Search covers offers and creatives. Client postings are not searched yet.',
 } as const;
 
 /** Every key the app may ask for. Other catalogues are checked against it. */

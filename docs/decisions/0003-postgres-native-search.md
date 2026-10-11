@@ -57,3 +57,43 @@ more for real-world findability than any stemmer would — see
 
 **Revisit if** the registry expands beyond Biliran, or search latency exceeds
 ~200ms at p95 with correct indexes in place. Neither is close.
+
+## Amendment — 2026-10-10: how search is built (issue #22)
+
+Search shipped on `GET /offers` and `GET /creatives` as a `q` parameter. The
+decision above holds; these are the choices made in building it.
+
+- **The `simple` configuration, with prefix words.** English stemming turns
+  "photographer" into `photograph` and mangles Waray and Filipino words, so
+  there is no stemming at all. Each typed word becomes a prefix (`photo:*`), so
+  a partial word still finds the whole one. The query is split on anything
+  that is not a letter or digit before it reaches `to_tsquery`, so no input can
+  be read as query syntax.
+- **Every word must match some field**, and words may match different fields:
+  "photographer naval" is a craft and a town. Comparing the whole query by
+  trigram instead let "dalisay kali" match "Dalisay Ramos" on one strong word.
+- **`pg_trgm` per word, on name-like fields only** — titles, names, sub-domain
+  and town names — for words of three characters or more, at the default word
+  similarity threshold (0.6). Descriptions and bios are long enough that
+  trigrams match noise.
+- **The town is searchable.** The landing page has always promised "craft,
+  name, or town".
+- **A sub-domain matches by both its labels**: the official RA 11904 plural
+  ("Art Galleries and Studios") and the singular label cards show ("Art
+  Gallery or Studio"). A prefix of the singular does not always reach the
+  plural — "gallery" is not the start of "galleries".
+- **Order: nearby-first, then relevance, then newest.** Relevance is two keys:
+  rows where every word matched as typed before typo-only matches, then the
+  word similarity of the main name. No `ts_rank`: at this size the two keys
+  order results the way a person expects, and they cannot float a long bio
+  that happens to repeat a word.
+- **Query time, not generated columns.** The searchable text spans five tables,
+  and a generated column cannot read a joined row. The GIN indexes are
+  expression indexes written exactly as the query is. Because a search ORs
+  across joined tables, Postgres scans the published rows today; the indexes
+  are there for growth.
+- **No `unaccent` yet.** It is not immutable, so it cannot sit in an index
+  expression without a wrapper. Folding accents belongs with the everyday-word
+  aliases (#24), which normalise queries anyway.
+
+Postings, the creative-mode directory, are not searchable yet.

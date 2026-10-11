@@ -169,4 +169,13 @@ export const fil: Catalog = {
   'terms.changes.body': '',
   'terms.law.heading': '',
   'terms.law.body': '',
+  'directory.search.label': '',
+  'directory.search.placeholder': '',
+  'directory.search.submit': '',
+  'directory.search.clear': '',
+  'directory.search.emptyTitle': '',
+  'directory.search.emptyDescription': '',
+  'directory.search.tryCreatives': '',
+  'directory.search.tryOffers': '',
+  'directory.search.postingsNote': '',
 };
