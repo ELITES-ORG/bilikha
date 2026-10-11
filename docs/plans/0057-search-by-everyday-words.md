@@ -56,7 +56,7 @@ were.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Data and matching | 3 / 3 | Done |
-| 2. Admin | 0 / 2 | Not started |
+| 2. Admin | 1 / 2 | In progress |
 | 3. Records | 0 / 2 | Not started |
 
 ---
@@ -91,10 +91,10 @@ were.
 
 ### Step 2.1 — The API
 
-- [ ] **Action.** `POST /admin/taxonomy/subdomains/:slug/aliases`,
-  `DELETE /admin/taxonomy/aliases/:id`, aliases in `GET /admin/taxonomy`,
+- [x] **Action.** `POST /admin/taxonomy/subdomains/:slug/aliases`,
+  `DELETE /admin/taxonomy/subdomains/:slug/aliases/:id`, aliases in `GET /admin/taxonomy`,
   `GET /admin/search-misses`.
-- [ ] **Verify.** `taxonomy.test.ts`: added normalised; a duplicate is 409; an
+- [x] **Verify.** `subdomain-aliases.test.ts`: added normalised; a duplicate is 409; an
   empty term is 400; each writes a `taxonomy_changes` row; a non-admin gets 404.
 
 ### Step 2.2 — The screen

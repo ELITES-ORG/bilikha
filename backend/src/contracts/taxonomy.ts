@@ -38,6 +38,8 @@ export interface CreativeDomain {
  */
 export interface AdminTaxonomySubdomain extends CreativeSubdomain {
   referenceCount: number;
+  /** Everyday words search also matches this sub-domain by (issue #24). */
+  aliases: SubdomainAlias[];
 }
 
 /** An everyday word for a sub-domain, stored lowercase with accents folded. */

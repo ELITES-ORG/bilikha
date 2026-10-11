@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { ALIAS_MAX_LENGTH } from '../search/search-sql.js';
+import { MISSES_DEFAULT_DAYS, RETENTION_DAYS } from '../search/search-misses.js';
 
 /**
  * A slug is kebab-case, spelled out, no abbreviations. It is chosen once, when
@@ -73,3 +75,22 @@ export type CreateDomainInput = z.infer<typeof createDomainSchema>;
 export type CreateSubdomainInput = z.infer<typeof createSubdomainSchema>;
 export type UpdateTaxonomyInput = z.infer<typeof updateTaxonomySchema>;
 export type TaxonomyKind = z.infer<typeof taxonomyKindSchema>;
+
+/**
+ * An everyday word for a sub-domain (issue #24). The length is checked here
+ * and again after folding, which can only shorten it.
+ */
+export const addAliasSchema = z.object({
+  term: z.string().trim().min(1, 'Enter a word').max(ALIAS_MAX_LENGTH),
+});
+
+export const subdomainAliasParamsSchema = z.object({ slug: slugSchema });
+
+export const aliasParamsSchema = z.object({
+  slug: slugSchema,
+  id: z.string().uuid('Invalid alias id'),
+});
+
+export const searchMissesQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(RETENTION_DAYS).default(MISSES_DEFAULT_DAYS),
+});
