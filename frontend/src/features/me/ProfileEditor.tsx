@@ -168,6 +168,8 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
       <AvatarUploader
         name={`${form.firstName} ${form.lastName}`.trim() || profile.displayName || 'You'}
         avatarUrl={user?.avatarUrl ?? null}
+        pendingAvatarUrl={user?.pendingAvatarUrl ?? null}
+        rejectionReason={user?.avatarRejectionReason ?? null}
       />
       <p className="text-xs text-ink-subtle">
         Saved as soon as you upload — no need to press Save profile.

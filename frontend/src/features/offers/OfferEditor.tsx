@@ -20,6 +20,8 @@ import {
 import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from '@/features/offers/limits';
 import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
 import { OfferFormDialog } from '@/features/offers/OfferFormDialog';
+import { savedMessage } from '@/features/offers/offer-review';
+import { OfferReviewNotice } from '@/features/offers/OfferReviewNotice';
 import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
 import { subdomainLabel } from '@/features/taxonomy/format';
@@ -44,15 +46,25 @@ const emptyForm = (): FormState => ({
   priceTo: '',
 });
 
+/** The version the creative is working on: a waiting change, or the offer itself. */
 function offerToForm(offer: OwnOffer): FormState {
+  const current = offer.pendingChanges ?? offer;
   return {
-    title: offer.title,
-    subdomainSlug: offer.subdomainSlug,
-    description: offer.description ?? '',
-    priceFrom: centavosToPesoInput(offer.priceMinCentavos),
-    priceTo: centavosToPesoInput(offer.priceMaxCentavos),
+    title: current.title,
+    subdomainSlug: current.subdomainSlug,
+    description: current.description ?? '',
+    priceFrom: centavosToPesoInput(current.priceMinCentavos),
+    priceTo: centavosToPesoInput(current.priceMaxCentavos),
   };
 }
+
+/** Photos the offer will have once any waiting change is approved. */
+const keptImages = (offer: OwnOffer) => offer.images.filter((image) => image.state !== 'pending_remove');
+
+const IMAGE_STATE_LABEL = {
+  pending_add: 'Waiting for review',
+  pending_remove: 'Removal waiting for review',
+} as const;
 
 function buildWritePayload(form: FormState, mode: 'create' | 'update') {
   const min = pesoInputToCentavos(form.priceFrom);
@@ -213,23 +225,29 @@ export function OfferEditor() {
 
     setBusy(true);
     setError(null);
+    let saved: OwnOffer | null = null;
     try {
       await toast.run(
         creating ? 'Creating offer…' : 'Saving changes…',
         async () => {
           if (creating) {
             const created = await createOffer(buildWritePayload(form, 'create'));
+            saved = created;
             setOffers((current) => [...current, created]);
             setCreating(false);
             setEditingId(created.id);
             setForm(offerToForm(created));
           } else if (editingId) {
             const updated = await updateOffer(editingId, buildWritePayload(form, 'update'));
+            saved = updated;
             setOffers((current) => current.map((o) => (o.id === updated.id ? updated : o)));
             setForm(offerToForm(updated));
           }
         },
-        { success: creating ? 'Offer created' : 'Changes saved', error: describe },
+        {
+          success: () => (saved ? savedMessage(saved, creating) : 'Changes saved'),
+          error: describe,
+        },
       );
     } catch {
       // Already reported in the toast.
@@ -285,7 +303,7 @@ export function OfferEditor() {
 
     const offer = offers.find((o) => o.id === editingId);
     if (!offer) return;
-    if (offer.images.length >= OFFER_IMAGE_LIMIT) {
+    if (keptImages(offer).length >= OFFER_IMAGE_LIMIT) {
       setError(`An offer can have at most ${OFFER_IMAGE_LIMIT} images`);
       return;
     }
@@ -309,16 +327,14 @@ export function OfferEditor() {
         throw thumbError;
       }
 
-      const image = await addOfferImage(editingId, {
+      await addOfferImage(editingId, {
         objectKey: ticket.full.objectKey,
         thumbKey: ticket.thumb.objectKey,
       });
-      setOffers((current) =>
-        current.map((o) =>
-          o.id === editingId ? { ...o, images: [...o.images, image] } : o,
-        ),
-      );
-      }, { success: 'Image added', error: describe });
+      // The server decides whether the photo is simply part of the offer or
+      // waits for review with a change (ADR 0058), so read it back.
+      setOffers(await listMine());
+      }, { success: offer.status === 'published' ? 'Image sent for review' : 'Image added', error: describe });
     } catch {
       // Already reported in the toast.
     } finally {
@@ -335,13 +351,7 @@ export function OfferEditor() {
         'Removing image…',
         async () => {
           await deleteOfferImage(imageId);
-          setOffers((current) =>
-            current.map((o) =>
-              o.id === editingId
-                ? { ...o, images: o.images.filter((img) => img.id !== imageId) }
-                : o,
-            ),
-          );
+          setOffers(await listMine());
         },
         { success: 'Image removed', error: describe },
       );
@@ -483,7 +493,7 @@ export function OfferEditor() {
           {offers.map((offer) => (
             <OfferCard
               key={offer.id}
-              image={offer.images[0] ?? null}
+              image={offer.images.find((image) => image.state !== 'pending_add') ?? null}
               title={offer.title}
               description={offer.description}
               category={subdomainLabel({
@@ -491,6 +501,7 @@ export function OfferEditor() {
                 singularName: offer.subdomainSingularName,
               })}
               price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+              notice={<OfferReviewNotice offer={offer} />}
               footer={
                 <>
                   <Button
@@ -580,6 +591,8 @@ export function OfferEditor() {
               </p>
             )}
 
+            {activeOffer && <OfferReviewNotice offer={activeOffer} />}
+
             <Input
               label="Title"
               required
@@ -634,7 +647,7 @@ export function OfferEditor() {
                   <div>
                     <p className="text-sm font-semibold text-ink">Images</p>
                     <p className="text-xs text-ink-muted" data-numeric>
-                      {activeOffer.images.length} of {OFFER_IMAGE_LIMIT} images used
+                      {keptImages(activeOffer).length} of {OFFER_IMAGE_LIMIT} images used
                     </p>
                   </div>
                   <Button
@@ -642,7 +655,7 @@ export function OfferEditor() {
                     size="sm"
                     variant="secondary"
                     iconLeft={<ImagePlus className="size-4" aria-hidden="true" />}
-                    disabled={busy || activeOffer.images.length >= OFFER_IMAGE_LIMIT}
+                    disabled={busy || keptImages(activeOffer).length >= OFFER_IMAGE_LIMIT}
                     onClick={() => inputRef.current?.click()}
                   >
                     {busy ? 'Uploading…' : 'Add image'}
@@ -655,7 +668,7 @@ export function OfferEditor() {
                     onChange={(event) => void onAddImage(event)}
                   />
                 </div>
-                {activeOffer.images.length >= OFFER_IMAGE_LIMIT && (
+                {keptImages(activeOffer).length >= OFFER_IMAGE_LIMIT && (
                   <p className="text-sm text-ink-muted">
                     An offer can have at most {OFFER_IMAGE_LIMIT} images.
                   </p>
@@ -669,20 +682,28 @@ export function OfferEditor() {
                           alt={`${activeOffer.title}, image ${index + 1}`}
                           width={160}
                           height={120}
-                          className="aspect-4/3 w-full rounded-sm object-cover"
+                          className={cn(
+                            'aspect-4/3 w-full rounded-sm object-cover',
+                            image.state === 'pending_remove' && 'opacity-40',
+                          )}
                           loading="lazy"
                           decoding="async"
                         />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="w-full"
-                          disabled={busy}
-                          onClick={() => void onRemoveImage(image.id)}
-                        >
-                          Remove
-                        </Button>
+                        {image.state !== 'live' && (
+                          <p className="text-xs font-medium text-warning-700">{IMAGE_STATE_LABEL[image.state]}</p>
+                        )}
+                        {image.state !== 'pending_remove' && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="w-full"
+                            disabled={busy}
+                            onClick={() => void onRemoveImage(image.id)}
+                          >
+                            Remove
+                          </Button>
+                        )}
                       </li>
                     ))}
                   </ul>

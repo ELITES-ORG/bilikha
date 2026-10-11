@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Avatar, Button, useToast } from '@/components/ui';
+import { Avatar, Badge, Button, useToast } from '@/components/ui';
 import { authKeys } from '@/features/auth/api';
 import { confirmAvatar, removeAvatar, requestUploadUrl, uploadImage } from '@/features/media/api';
 import { THUMB_EDGE, resizeImage } from '@/lib/image';
@@ -8,7 +8,12 @@ import { toApiError } from '@/lib/api-client';
 
 interface AvatarUploaderProps {
   name: string;
+  /** The approved photo: what everyone else sees. */
   avatarUrl: string | null;
+  /** A new photo waiting for review, seen only by its owner (ADR 0058). */
+  pendingAvatarUrl?: string | null;
+  /** Why the last new photo was not approved. */
+  rejectionReason?: string | null;
 }
 
 /** resizeImage throws plain Errors; everything else is an API failure. */
@@ -16,13 +21,21 @@ function describe(error: unknown): string {
   return error instanceof Error ? error.message : toApiError(error).message;
 }
 
-export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
+/**
+ * The account's photo. A new one waits for an administrator before anyone else
+ * sees it (ADR 0058); until then its owner sees it here, marked as waiting, and
+ * everyone else keeps seeing the approved photo, or initials.
+ */
+export function AvatarUploader({ name, avatarUrl, pendingAvatarUrl = null, rejectionReason = null }: AvatarUploaderProps) {
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
+  // Shown straight after an upload, before the account reloads.
+  const [justUploaded, setJustUploaded] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const pending = justUploaded ?? pendingAvatarUrl;
+  const shown = pending ?? avatarUrl;
 
   async function refreshUser() {
     await queryClient.invalidateQueries({ queryKey: authKeys.me });
@@ -34,8 +47,6 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
     if (!file) return;
 
     setBusy(true);
-    setError(null);
-
     try {
       await toast.run(
         'Uploading photo…',
@@ -47,10 +58,10 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
           }
           await uploadImage(blob, ticket.uploadUrl);
           await confirmAvatar(ticket.objectKey);
-          setPreviewUrl(URL.createObjectURL(blob));
+          setJustUploaded(URL.createObjectURL(blob));
           await refreshUser();
         },
-        { success: 'Photo updated', error: describe },
+        { success: 'Photo sent for review', error: describe },
       );
     } catch {
       // Already reported in the toast.
@@ -60,17 +71,17 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   }
 
   async function onRemove() {
+    const withdrawing = Boolean(pending);
     setBusy(true);
-    setError(null);
     try {
       await toast.run(
-        'Removing photo…',
+        withdrawing ? 'Withdrawing photo…' : 'Removing photo…',
         async () => {
           await removeAvatar();
-          setPreviewUrl(null);
+          setJustUploaded(null);
           await refreshUser();
         },
-        { success: 'Photo removed', error: describe },
+        { success: withdrawing ? 'New photo withdrawn' : 'Photo removed', error: describe },
       );
     } catch {
       // Already reported in the toast.
@@ -81,13 +92,32 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-      <Avatar src={previewUrl} name={name} size="lg" />
+      <Avatar src={shown} name={name} size="lg" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-ink">Profile photo</p>
-        <p className="mt-1 text-sm text-ink-muted">
-          A square-ish headshot works best. Photos are resized on your device
-          before upload.
-        </p>
+        {pending ? (
+          <div className="mt-1.5" role="status">
+            <Badge tone="warning">Waiting for review</Badge>
+            <p className="mt-1.5 text-sm text-ink-muted">
+              {avatarUrl
+                ? 'Others see your previous photo until an administrator approves this one.'
+                : 'Others see your initials until an administrator approves it.'}
+            </p>
+          </div>
+        ) : rejectionReason ? (
+          <div className="mt-1.5" role="status">
+            <Badge tone="danger">New photo not approved</Badge>
+            <p className="mt-1.5 text-sm text-ink-muted">
+              {rejectionReason}
+              {avatarUrl ? ' Your approved photo is still showing.' : ''}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-ink-muted">
+            A square-ish headshot works best. Photos are resized on your device
+            before upload, and an administrator looks at each new one.
+          </p>
+        )}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button
             type="button"
@@ -96,15 +126,14 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
             disabled={busy}
             onClick={() => inputRef.current?.click()}
           >
-            {busy ? 'Working…' : previewUrl ? 'Replace photo' : 'Add photo'}
+            {busy ? 'Working…' : shown ? 'Replace photo' : 'Add photo'}
           </Button>
-          {previewUrl && (
+          {shown && (
             <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={onRemove}>
-              Remove
+              {pending ? 'Withdraw new photo' : 'Remove'}
             </Button>
           )}
         </div>
-        {error && <p className="mt-2 text-sm text-danger-700">{error}</p>}
         <input
           ref={inputRef}
           type="file"
