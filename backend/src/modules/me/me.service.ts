@@ -14,6 +14,7 @@ import {
   moderationActions,
   municipalities,
   offerImages,
+  offerRevisions,
   offers,
   savedOffers,
   userBlocks,
@@ -332,6 +333,22 @@ export async function updateOwnProfile(
     if (inUse && inUse.total > 0) {
       throw AppError.badRequest(
         `Remove your ${inUse.total} ${inUse.total === 1 ? 'offer' : 'offers'} under ${inUse.name} first.`,
+        { field: 'subdomainSlugs' },
+      );
+    }
+
+    // A change waiting for review counts too: approving it would otherwise
+    // put a published offer under a sub-domain the profile no longer has.
+    const [waiting] = await db
+      .select({ name: creativeSubdomains.name })
+      .from(offerRevisions)
+      .innerJoin(offers, eq(offerRevisions.offerId, offers.id))
+      .innerJoin(creativeSubdomains, eq(offerRevisions.subdomainId, creativeSubdomains.id))
+      .where(and(eq(offers.profileId, profileRow.id), inArray(creativeSubdomains.slug, removedSlugs)))
+      .limit(1);
+    if (waiting) {
+      throw AppError.badRequest(
+        `An offer change waiting for review moves an offer to ${waiting.name}. Change that offer first.`,
         { field: 'subdomainSlugs' },
       );
     }

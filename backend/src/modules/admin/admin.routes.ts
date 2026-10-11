@@ -79,6 +79,8 @@ adminRouter.post('/media/:kind/:id/review', async (req, res) => {
     .object({
       action: z.enum(['approve', 'reject']),
       reason: z.string().trim().max(500, 'Keep the reason under 500 characters').optional(),
+      // The queue row's `version`: the decision is about what was seen.
+      version: z.string().min(1).max(200),
     })
     .parse(req.body);
   const data = await reviewContent({
@@ -87,6 +89,7 @@ adminRouter.post('/media/:kind/:id/review', async (req, res) => {
     adminId: req.session.userId!,
     action: body.action,
     reason: body.reason,
+    version: body.version,
   });
   res.json({ data });
 });

@@ -161,6 +161,12 @@ export interface AdminMediaRow {
   currentUrl?: string | null;
   /** For a logo on a published page: its slug, to see the image in context. */
   organizationSlug?: string;
+  /**
+   * What the administrator is shown, as a token. A review is sent back with
+   * it and refused if the item has changed since, so an edit made while the
+   * queue is open is never approved unseen.
+   */
+  version: string;
 }
 
 export interface AdminMediaListResult {

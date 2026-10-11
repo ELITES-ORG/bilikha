@@ -32,6 +32,13 @@ import { getPublishedBySlug } from '../profiles/profiles.service.js';
 import { startOrContinue } from '../conversations/conversations.service.js';
 import { listContentQueue, reviewContent } from './content-review.service.js';
 
+/** As the admin page does: decide on the version the queue showed. */
+async function review(input: Omit<Parameters<typeof reviewContent>[0], 'version'>) {
+  const queue = await listContentQueue({ page: 1, limit: 10_000 });
+  const row = queue.data.find((item) => item.kind === input.kind && item.id === input.id);
+  return reviewContent({ ...input, version: row?.version ?? 'not-in-the-queue' });
+}
+
 /**
  * Content review (ADR 0058): nothing new is public until approved, what is
  * public stays public while a change waits, and a rejection always has a reason
@@ -108,7 +115,7 @@ describe('a new offer', () => {
       'ZZ Brand new mural',
     );
 
-    await reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
 
     expect(await publicTitles()).toContain('ZZ Brand new mural');
     expect((await getPublishedOfferById(offer.id)).title).toBe('ZZ Brand new mural');
@@ -121,9 +128,9 @@ describe('a new offer', () => {
     const admin = await makeAdmin();
 
     await expect(
-      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: '   ' }),
+      review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: '   ' }),
     ).rejects.toMatchObject({ status: 400 });
-    await reviewContent({
+    await review({
       kind: 'offer',
       id: offer.id,
       adminId: admin.id,
@@ -181,7 +188,7 @@ describe('a change to a published offer', () => {
     const admin = await makeAdmin();
     await edit(creative.user.id, offer.id, { title: 'ZZ Edited title', priceMinCentavos: 150_000 });
 
-    await reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
 
     expect((await getPublishedOfferById(offer.id)).title).toBe('ZZ Edited title');
     expect((await getPublishedOfferById(offer.id)).priceMinCentavos).toBe(150_000);
@@ -193,7 +200,7 @@ describe('a change to a published offer', () => {
     const admin = await makeAdmin();
     await edit(creative.user.id, offer.id, { title: 'ZZ Worse title' });
 
-    await reviewContent({
+    await review({
       kind: 'offer',
       id: offer.id,
       adminId: admin.id,
@@ -237,7 +244,7 @@ describe('a change to a published offer', () => {
         .sort();
     expect(await states()).toEqual(['img-1.webp:pending_remove', 'img-2.webp:pending_add']);
 
-    await reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
     expect(await states()).toEqual(['img-2.webp:live']);
     // Only the removed photo's files go.
     const removedKeys = imageKeys(creative.profile.id, 1);
@@ -254,7 +261,7 @@ describe('a change to a published offer', () => {
     await addOfferImage(creative.user.id, offer.id, imageKeys(creative.profile.id, 2));
     await deleteOfferImage(creative.user.id, kept!.id);
 
-    await reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: 'Blurry photo.' });
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: 'Blurry photo.' });
 
     const rows = await db.select().from(offerImages).where(eq(offerImages.offerId, offer.id));
     expect(rows.map((row) => `${row.objectKey.split('/').pop()}:${row.state}`)).toEqual(['img-1.webp:live']);
@@ -277,8 +284,137 @@ describe('a change to a published offer', () => {
     const { offer } = await published();
     const admin = await makeAdmin();
     await expect(
-      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' }),
+      review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' }),
     ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('a decision', () => {
+  /** The queue row's version, as the admin page holds it. */
+  const versionOf = async (kind: 'offer' | 'avatar', id: string) =>
+    (await listContentQueue({ page: 1, limit: 10_000 })).data.find((row) => row.kind === kind && row.id === id)!.version;
+
+  it('is refused when a new offer was edited after the administrator saw it', async () => {
+    const { creative, offer } = await newOffer('ZZ Seen version');
+    const admin = await makeAdmin();
+    const seen = await versionOf('offer', offer.id);
+
+    await edit(creative.user.id, offer.id, { title: 'ZZ Unseen version' });
+
+    await expect(
+      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve', version: seen }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await own(creative.user.id, offer.id)).status).toBe('pending_review');
+    expect(await publicTitles()).not.toContain('ZZ Unseen version');
+
+    // Reloaded, the administrator sees the edit and can decide on it.
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    expect((await getPublishedOfferById(offer.id)).title).toBe('ZZ Unseen version');
+  });
+
+  it('is refused when a change was edited after the administrator saw it, and keeps the newer change', async () => {
+    const { creative, offer } = await newOffer('ZZ Published');
+    const admin = await makeAdmin();
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await edit(creative.user.id, offer.id, { title: 'ZZ First change' });
+    const seen = await versionOf('offer', offer.id);
+
+    await edit(creative.user.id, offer.id, { title: 'ZZ Second change' });
+
+    await expect(
+      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: 'No.', version: seen }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await own(creative.user.id, offer.id)).pendingChanges?.title).toBe('ZZ Second change');
+    expect((await getPublishedOfferById(offer.id)).title).toBe('ZZ Published');
+  });
+
+  it('is refused when a photo was added after the administrator saw the change', async () => {
+    const { creative, offer } = await newOffer();
+    const admin = await makeAdmin();
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await addOfferImage(creative.user.id, offer.id, imageKeys(creative.profile.id, 1));
+    const seen = await versionOf('offer', offer.id);
+
+    await addOfferImage(creative.user.id, offer.id, imageKeys(creative.profile.id, 2));
+
+    await expect(
+      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve', version: seen }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await getPublishedOfferById(offer.id)).images).toHaveLength(0);
+  });
+
+  it('is refused when a photo was replaced after the administrator saw it, and deletes nothing', async () => {
+    const user = await makeUser({ avatarKey: 'avatars/old/approved.webp' });
+    const admin = await makeAdmin();
+    await setAvatar(user.id, `avatars/${user.id}/seen.webp`);
+    const seen = await versionOf('avatar', user.id);
+    await setAvatar(user.id, `avatars/${user.id}/unseen.webp`);
+    deleted = [];
+
+    for (const action of ['approve', 'reject'] as const) {
+      await expect(
+        reviewContent({ kind: 'avatar', id: user.id, adminId: admin.id, action, reason: 'No.', version: seen }),
+      ).rejects.toMatchObject({ status: 409 });
+    }
+    const [row] = await db.select().from(users).where(eq(users.id, user.id));
+    expect(row).toMatchObject({
+      avatarKey: 'avatars/old/approved.webp',
+      avatarPendingKey: `avatars/${user.id}/unseen.webp`,
+      avatarRejectionReason: null,
+    });
+    expect(deleted).toEqual([]);
+  });
+});
+
+describe("a creative's write racing an approval", () => {
+  /**
+   * Holds the offer's row lock, as the review action does, publishes the offer
+   * once `release` is called, and commits. A write started meanwhile must wait
+   * and then see the offer as published — not apply on top of it as though it
+   * were still waiting.
+   */
+  async function approveSlowly(offerId: string) {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let locked!: () => void;
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+    const done = db.transaction(async (tx) => {
+      await tx.select({ id: offers.id }).from(offers).where(eq(offers.id, offerId)).for('update');
+      locked();
+      await held;
+      await tx.update(offers).set({ status: 'published', reviewedAt: new Date() }).where(eq(offers.id, offerId));
+    });
+    await lockTaken;
+    return { release, done };
+  }
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 200));
+
+  it('turns an edit into a change waiting for review', async () => {
+    const { creative, offer } = await newOffer('ZZ Race original');
+    const approval = await approveSlowly(offer.id);
+
+    const editing = edit(creative.user.id, offer.id, { title: 'ZZ Race edit' });
+    await settle();
+    approval.release();
+    await approval.done;
+    await editing;
+
+    expect((await getPublishedOfferById(offer.id)).title).toBe('ZZ Race original');
+    expect((await own(creative.user.id, offer.id)).pendingChanges?.title).toBe('ZZ Race edit');
+  });
+
+  it('keeps a photo added meanwhile out of public view', async () => {
+    const { creative, offer } = await newOffer();
+    const approval = await approveSlowly(offer.id);
+
+    const adding = addOfferImage(creative.user.id, offer.id, imageKeys(creative.profile.id, 1));
+    await settle();
+    approval.release();
+    await approval.done;
+    await adding;
+
+    expect((await getPublishedOfferById(offer.id)).images).toHaveLength(0);
+    expect((await own(creative.user.id, offer.id)).images.map((image) => image.state)).toEqual(['pending_add']);
   });
 });
 
@@ -315,7 +451,7 @@ describe('a new profile photo', () => {
     let [row] = await db.select().from(users).where(eq(users.id, user.id));
     expect(row).toMatchObject({ avatarKey: 'avatars/old/approved.webp', avatarPendingKey: key(user.id, 1) });
 
-    await reviewContent({ kind: 'avatar', id: user.id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'avatar', id: user.id, adminId: admin.id, action: 'approve' });
     [row] = await db.select().from(users).where(eq(users.id, user.id));
     expect(row).toMatchObject({ avatarKey: key(user.id, 1), avatarPendingKey: null });
   });
@@ -325,7 +461,7 @@ describe('a new profile photo', () => {
     const admin = await makeAdmin();
     await setAvatar(user.id, key(user.id, 1));
 
-    await reviewContent({ kind: 'avatar', id: user.id, adminId: admin.id, action: 'reject', reason: 'Not a photo of you.' });
+    await review({ kind: 'avatar', id: user.id, adminId: admin.id, action: 'reject', reason: 'Not a photo of you.' });
 
     const [row] = await db.select().from(users).where(eq(users.id, user.id));
     expect(row).toMatchObject({

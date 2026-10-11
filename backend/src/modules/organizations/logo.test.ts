@@ -3,12 +3,19 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
 import { creativeSubdomains, moderationActions, organizations } from '../../db/schema/index.js';
 import { makeAdmin, makeCreative } from '../../test/factories.js';
-import { reviewContent } from '../admin/content-review.service.js';
+import { listContentQueue, reviewContent } from '../admin/content-review.service.js';
 import { listNotifications } from '../notifications/notifications.service.js';
 import { moderateOrganization } from '../admin/organization-review.service.js';
 import { clearLogo, issueLogoUpload, setLogo } from './logo.service.js';
 import { acceptInvitation, invite, leaveOrganization } from './membership.service.js';
 import { foundOrganization } from './organizations.service.js';
+
+/** As the admin page does: decide on the version the queue showed. */
+async function review(input: Omit<Parameters<typeof reviewContent>[0], 'version'>) {
+  const queue = await listContentQueue({ page: 1, limit: 10_000 });
+  const row = queue.data.find((item) => item.kind === input.kind && item.id === input.id);
+  return reviewContent({ ...input, version: row?.version ?? 'not-in-the-queue' });
+}
 
 /**
  * Organisation logos (plan 0051 follow-up). Storage is not configured under
@@ -134,7 +141,7 @@ describe('reviewing a logo', () => {
     const admin = await makeAdmin();
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
 
-    await reviewContent({ kind: 'logo', id, adminId: admin.id, action: 'approve' });
+    await review({ kind: 'logo', id, adminId: admin.id, action: 'approve' });
 
     expect(await row(id)).toMatchObject({ logoKey: keyFor(id), logoPendingKey: null });
   });
@@ -145,10 +152,10 @@ describe('reviewing a logo', () => {
     await db.update(organizations).set({ logoKey: 'organizations/approved/old.webp' }).where(eq(organizations.id, id));
     await setLogo({ userId: founder.user.id, slug, objectKey: keyFor(id) });
 
-    await expect(reviewContent({ kind: 'logo', id, adminId: admin.id, action: 'reject' })).rejects.toMatchObject({
+    await expect(review({ kind: 'logo', id, adminId: admin.id, action: 'reject' })).rejects.toMatchObject({
       status: 400,
     });
-    await reviewContent({ kind: 'logo', id, adminId: admin.id, action: 'reject', reason: 'This is a stock image.' });
+    await review({ kind: 'logo', id, adminId: admin.id, action: 'reject', reason: 'This is a stock image.' });
 
     expect(await row(id)).toMatchObject({
       logoKey: 'organizations/approved/old.webp',
@@ -171,7 +178,7 @@ describe('reviewing a logo', () => {
   it('is a 404 when no logo is waiting', async () => {
     const { id } = await teamWithMember();
     const admin = await makeAdmin();
-    await expect(reviewContent({ kind: 'logo', id, adminId: admin.id, action: 'approve' })).rejects.toMatchObject({
+    await expect(review({ kind: 'logo', id, adminId: admin.id, action: 'approve' })).rejects.toMatchObject({
       status: 404,
     });
   });

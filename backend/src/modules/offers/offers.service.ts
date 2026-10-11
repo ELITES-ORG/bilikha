@@ -289,6 +289,25 @@ export async function createOffer(userId: string, input: OfferBody) {
   return (await listMine(userId)).find((offer) => offer.id === id)!;
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The offer, locked until the transaction ends. Every owner write that
+ * decides by the offer's status takes this lock, and so does the review
+ * action (admin/content-review.service): an approval can never land between
+ * reading the status and writing, which would put an unreviewed edit or
+ * photo straight onto a published offer.
+ */
+async function lockOwnOffer(tx: Tx, profileId: string, offerId: string) {
+  const [current] = await tx
+    .select()
+    .from(offers)
+    .where(and(eq(offers.id, offerId), eq(offers.profileId, profileId)))
+    .for('update');
+  if (!current) throw AppError.notFound('No such offer.');
+  return current;
+}
+
 async function ownOffer(profileId: string, offerId: string) {
   const [current] = await db
     .select()
@@ -312,17 +331,34 @@ async function ownOffer(profileId: string, offerId: string) {
  */
 export async function updateOffer(userId: string, offerId: string, input: PatchOfferBody) {
   const profile = await requireOwnProfile(userId);
-  const current = await ownOffer(profile.id, offerId);
-  const [revision] = current.status === 'published'
-    ? await db.select().from(offerRevisions).where(eq(offerRevisions.offerId, offerId)).limit(1)
-    : [];
+  const before = await ownOffer(profile.id, offerId);
+  // Checked before the lock: it reads the taxonomy, not the offer's state.
+  const chosenSubdomainId = input.subdomainSlug !== undefined
+    ? (await assertRegisteredSubdomain(profile.id, input.subdomainSlug, before.subdomainId)).id
+    : undefined;
 
+  await db.transaction(async (tx) => {
+    const current = await lockOwnOffer(tx, profile.id, offerId);
+    const [revision] = current.status === 'published'
+      ? await tx.select().from(offerRevisions).where(eq(offerRevisions.offerId, offerId)).limit(1)
+      : [];
+    await applyOfferEdit(tx, current, revision, chosenSubdomainId, input);
+  });
+
+  return (await listMine(userId)).find((offer) => offer.id === offerId)!;
+}
+
+async function applyOfferEdit(
+  tx: Tx,
+  current: typeof offers.$inferSelect,
+  revision: typeof offerRevisions.$inferSelect | undefined,
+  chosenSubdomainId: string | undefined,
+  input: PatchOfferBody,
+) {
+  const offerId = current.id;
   // An edit builds on the change already waiting, if there is one.
   const base = revision ?? current;
-  let subdomainId = base.subdomainId;
-  if (input.subdomainSlug !== undefined) {
-    subdomainId = (await assertRegisteredSubdomain(profile.id, input.subdomainSlug, current.subdomainId)).id;
-  }
+  const subdomainId = chosenSubdomainId ?? base.subdomainId;
   const next = {
     subdomainId,
     title: input.title !== undefined ? input.title : base.title,
@@ -343,7 +379,7 @@ export async function updateOffer(userId: string, offerId: string, input: PatchO
   const flaggedAt = detectContactDetails(next.description) ? now : null;
 
   if (current.status !== 'published') {
-    await db
+    await tx
       .update(offers)
       .set({
         ...next,
@@ -351,8 +387,8 @@ export async function updateOffer(userId: string, offerId: string, input: PatchO
         ...(current.status === 'rejected' ? { status: 'pending_review' as const, rejectionReason: null } : {}),
         updatedAt: now,
       })
-      .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)));
-    return (await listMine(userId)).find((offer) => offer.id === offerId)!;
+      .where(eq(offers.id, offerId));
+    return;
   }
 
   const sameAsPublished =
@@ -362,26 +398,22 @@ export async function updateOffer(userId: string, offerId: string, input: PatchO
     && next.priceMinCentavos === current.priceMinCentavos
     && next.priceMaxCentavos === current.priceMaxCentavos;
 
-  await db.transaction(async (tx) => {
-    if (sameAsPublished) {
-      await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offerId));
-    } else {
-      await tx
-        .insert(offerRevisions)
-        .values({ offerId, ...next, flaggedAt, submittedAt: now })
-        .onConflictDoUpdate({
-          target: offerRevisions.offerId,
-          set: { ...next, flaggedAt, submittedAt: now },
-        });
-    }
-    // A new change supersedes the reason the last one was declined.
+  if (sameAsPublished) {
+    await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offerId));
+  } else {
     await tx
-      .update(offers)
-      .set({ revisionRejectionReason: null, updatedAt: now })
-      .where(eq(offers.id, offerId));
-  });
-
-  return (await listMine(userId)).find((offer) => offer.id === offerId)!;
+      .insert(offerRevisions)
+      .values({ offerId, ...next, flaggedAt, submittedAt: now })
+      .onConflictDoUpdate({
+        target: offerRevisions.offerId,
+        set: { ...next, flaggedAt, submittedAt: now },
+      });
+  }
+  // A new change supersedes the reason the last one was declined.
+  await tx
+    .update(offers)
+    .set({ revisionRejectionReason: null, updatedAt: now })
+    .where(eq(offers.id, offerId));
 }
 
 export async function deleteOffer(userId: string, offerId: string) {
@@ -445,13 +477,14 @@ export async function addOfferImage(
   input: { objectKey: string; thumbKey: string },
 ) {
   const profile = await requireOwnProfile(userId);
-  const current = await ownOffer(profile.id, offerId);
+  await ownOffer(profile.id, offerId);
 
   assertOwnOfferKey(profile.id, input.objectKey);
   assertOwnOfferKey(profile.id, input.thumbKey);
 
   const row = await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${offerId}))`);
+    // Also serialises concurrent uploads, so the limit holds.
+    const current = await lockOwnOffer(tx, profile.id, offerId);
     const [tally] = await tx
       .select({ total: count() })
       .from(offerImages)
@@ -503,7 +536,6 @@ export async function deleteOfferImage(userId: string, imageId: string) {
       objectKey: offerImages.objectKey,
       thumbKey: offerImages.thumbKey,
       state: offerImages.state,
-      offerStatus: offers.status,
     })
     .from(offerImages)
     .innerJoin(offers, eq(offerImages.offerId, offers.id))
@@ -511,28 +543,36 @@ export async function deleteOfferImage(userId: string, imageId: string) {
     .limit(1);
   if (!row) throw AppError.notFound('No such offer image.');
 
-  if (row.offerStatus === 'published' && row.state !== 'pending_add') {
-    if (row.state === 'live') {
-      await db.transaction(async (tx) => {
+  const deleted = await db.transaction(async (tx) => {
+    const offer = await lockOwnOffer(tx, profile.id, row.offerId);
+    const [image] = await tx
+      .select({ state: offerImages.state })
+      .from(offerImages)
+      .where(eq(offerImages.id, row.id))
+      .limit(1);
+    if (!image) throw AppError.notFound('No such offer image.');
+
+    if (offer.status === 'published' && image.state !== 'pending_add') {
+      if (image.state === 'live') {
         await tx.update(offerImages).set({ state: 'pending_remove' }).where(eq(offerImages.id, row.id));
         await tx
           .update(offers)
           .set({ revisionRejectionReason: null, updatedAt: new Date() })
           .where(eq(offers.id, row.offerId));
-      });
+      }
+      return false;
     }
-    return { ok: true as const };
-  }
 
-  await db.transaction(async (tx) => {
     await tx.delete(offerImages).where(eq(offerImages.id, row.id));
-    if (row.offerStatus === 'rejected') {
+    if (offer.status === 'rejected') {
       await tx
         .update(offers)
         .set({ status: 'pending_review', rejectionReason: null, updatedAt: new Date() })
         .where(eq(offers.id, row.offerId));
     }
+    return true;
   });
+  if (!deleted) return { ok: true as const };
 
   // After the row is gone — see deleteOffer.
   await Promise.all([deleteObject(row.objectKey), deleteObject(row.thumbKey)]);

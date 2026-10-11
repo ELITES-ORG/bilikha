@@ -9,6 +9,7 @@ import {
   creativeDomains,
   creativeProfileSubdomains,
   creativeSubdomains,
+  offerRevisions,
   offers,
   organizationSubdomains,
   postings,
@@ -108,6 +109,13 @@ async function referenceCounts(): Promise<Map<string, number>> {
       .select({ subdomainId: offers.subdomainId, total: count() })
       .from(offers)
       .groupBy(offers.subdomainId),
+  );
+  // A change waiting for review holds its sub-domain too (ADR 0058).
+  add(
+    await db
+      .select({ subdomainId: offerRevisions.subdomainId, total: count() })
+      .from(offerRevisions)
+      .groupBy(offerRevisions.subdomainId),
   );
   add(
     await db

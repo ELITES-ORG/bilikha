@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { and, asc, eq, exists, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
 import type { AdminMediaImage, AdminMediaListResult, AdminMediaRow } from '../../contracts/admin.js';
 import { db } from '../../db/index.js';
@@ -30,6 +31,53 @@ import { notify } from '../notifications/notifications.service.js';
  */
 
 export type ReviewAction = 'approve' | 'reject';
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Executor = typeof db | Tx;
+
+const STALE = 'This changed after you opened the queue. Reload to see what is waiting now.';
+
+/**
+ * Each offer's reviewable state — its text, any waiting change, and every
+ * photo with its state — as one token. The queue hands it out and the review
+ * action recomputes it under a row lock: a creative who edits while an
+ * administrator is looking must not have that edit approved unseen.
+ */
+async function offerVersions(executor: Executor, offerIds: string[]): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (offerIds.length === 0) return result;
+
+  const rows = await executor
+    .select({
+      id: offers.id,
+      status: offers.status,
+      subdomainId: offers.subdomainId,
+      title: offers.title,
+      description: offers.description,
+      priceMinCentavos: offers.priceMinCentavos,
+      priceMaxCentavos: offers.priceMaxCentavos,
+      revisionSubdomainId: offerRevisions.subdomainId,
+      revisionTitle: offerRevisions.title,
+      revisionDescription: offerRevisions.description,
+      revisionPriceMinCentavos: offerRevisions.priceMinCentavos,
+      revisionPriceMaxCentavos: offerRevisions.priceMaxCentavos,
+    })
+    .from(offers)
+    .leftJoin(offerRevisions, eq(offerRevisions.offerId, offers.id))
+    .where(inArray(offers.id, offerIds));
+  const images = await executor
+    .select({ offerId: offerImages.offerId, id: offerImages.id, state: offerImages.state })
+    .from(offerImages)
+    .where(inArray(offerImages.offerId, offerIds))
+    .orderBy(asc(offerImages.id));
+
+  for (const row of rows) {
+    const photos = images.filter((image) => image.offerId === row.id).map((image) => `${image.id}:${image.state}`);
+    const { id, ...content } = row;
+    result.set(id, createHash('sha256').update(JSON.stringify([content, photos])).digest('hex').slice(0, 32));
+  }
+  return result;
+}
 
 /** The wire row plus the sort helper, which `listContentQueue` strips. */
 type QueueRow = AdminMediaRow & { _flagged: boolean };
@@ -130,6 +178,7 @@ export async function listContentQueue(options: { page: number; limit: number })
     : new Map<string, string>();
 
   const imageMap = await imagesForQueue(offerRows.map((row) => row.id));
+  const versions = await offerVersions(db, offerRows.map((row) => row.id));
 
   const offerItems: QueueRow[] = offerRows.map((row) => {
     const images = imageMap.get(row.id) ?? [];
@@ -179,6 +228,7 @@ export async function listContentQueue(options: { page: number; limit: number })
             },
           }
         : {}),
+      version: versions.get(row.id) ?? '',
       _flagged: flaggedAt != null,
     };
   });
@@ -208,6 +258,8 @@ export async function listContentQueue(options: { page: number; limit: number })
     profileSlug: row.profileSlug,
     profileId: row.profileId,
     currentUrl: imageUrl(row.key),
+    // A new upload is a new key, so the key is the version.
+    version: row.pendingKey!,
     _flagged: false,
   }));
 
@@ -238,6 +290,7 @@ export async function listContentQueue(options: { page: number; limit: number })
     // Only a published page can be opened; an unpublished one is reviewed in
     // the organisations queue, where its logo is seen with it.
     ...(row.status === 'published' ? { organizationSlug: row.slug } : {}),
+    version: row.pendingKey!,
     _flagged: false,
   }));
 
@@ -267,6 +320,8 @@ export async function reviewContent(input: {
   adminId: string;
   action: ReviewAction;
   reason?: string;
+  /** The queue row's `version`: what the administrator decided on. */
+  version: string;
 }) {
   const reason = requireReason(input.action, input.reason);
   if (input.kind === 'offer') return reviewOffer({ ...input, reason });
@@ -274,34 +329,42 @@ export async function reviewContent(input: {
   return reviewLogo({ ...input, reason });
 }
 
-async function reviewOffer(input: { id: string; adminId: string; action: ReviewAction; reason: string | null }) {
-  const [offer] = await db
-    .select({
-      id: offers.id,
-      status: offers.status,
-      profileId: offers.profileId,
-      ownerUserId: creativeProfiles.userId,
-    })
-    .from(offers)
-    .innerJoin(creativeProfiles, eq(offers.profileId, creativeProfiles.id))
-    .where(eq(offers.id, input.id))
-    .limit(1);
-  if (!offer) throw AppError.notFound('No such offer.');
+type ReviewInput = { id: string; adminId: string; action: ReviewAction; reason: string | null; version: string };
 
-  const audit = {
-    offerId: offer.id,
-    profileId: offer.profileId,
-    subjectUserId: offer.ownerUserId,
-    adminId: input.adminId,
-    action: input.action === 'approve' ? ('approved' as const) : ('rejected' as const),
-    reason: input.reason,
-  };
+async function reviewOffer(input: ReviewInput) {
   const now = new Date();
-  // Files of a change that will never be shown; deleted once the rows are.
-  let discarded: string[] = [];
 
-  if (offer.status === 'pending_review') {
-    await db.transaction(async (tx) => {
+  // One transaction under the offer's row lock: the creative's own writes take
+  // the same lock (offers.service), so nothing changes between checking the
+  // version and applying the decision.
+  const outcome = await db.transaction(async (tx) => {
+    const [offer] = await tx
+      .select({ id: offers.id, status: offers.status, profileId: offers.profileId })
+      .from(offers)
+      .where(eq(offers.id, input.id))
+      .for('update');
+    if (!offer) throw AppError.notFound('No such offer.');
+    if (offer.status === 'rejected') {
+      // A rejected offer waits for its creative, not for review.
+      throw AppError.conflict('This offer is waiting for its creative to change it.');
+    }
+
+    const [owner] = await tx
+      .select({ userId: creativeProfiles.userId })
+      .from(creativeProfiles)
+      .where(eq(creativeProfiles.id, offer.profileId))
+      .limit(1);
+    const audit = {
+      offerId: offer.id,
+      profileId: offer.profileId,
+      subjectUserId: owner?.userId ?? null,
+      adminId: input.adminId,
+      action: input.action === 'approve' ? ('approved' as const) : ('rejected' as const),
+      reason: input.reason,
+    };
+
+    if (offer.status === 'pending_review') {
+      if ((await offerVersions(tx, [offer.id])).get(offer.id) !== input.version) throw AppError.conflict(STALE);
       await tx
         .update(offers)
         .set(
@@ -311,77 +374,80 @@ async function reviewOffer(input: { id: string; adminId: string; action: ReviewA
         )
         .where(eq(offers.id, offer.id));
       await tx.insert(moderationActions).values(audit);
-    });
-  } else if (offer.status === 'published') {
-    const [revision] = await db.select().from(offerRevisions).where(eq(offerRevisions.offerId, offer.id)).limit(1);
-    const pending = await db
+      return { ownerUserId: owner?.userId ?? null, discarded: [] as string[] };
+    }
+
+    const [revision] = await tx.select().from(offerRevisions).where(eq(offerRevisions.offerId, offer.id)).limit(1);
+    const pending = await tx
       .select({ id: offerImages.id, state: offerImages.state, objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
       .from(offerImages)
       .where(and(eq(offerImages.offerId, offer.id), ne(offerImages.state, 'live')));
     if (!revision && pending.length === 0) {
       throw AppError.conflict('There is no change waiting on this offer.');
     }
+    if ((await offerVersions(tx, [offer.id])).get(offer.id) !== input.version) throw AppError.conflict(STALE);
 
     const added = pending.filter((image) => image.state === 'pending_add');
     const removed = pending.filter((image) => image.state === 'pending_remove');
 
-    await db.transaction(async (tx) => {
-      if (input.action === 'approve') {
-        if (revision) {
-          await tx
-            .update(offers)
-            .set({
-              subdomainId: revision.subdomainId,
-              title: revision.title,
-              description: revision.description,
-              priceMinCentavos: revision.priceMinCentavos,
-              priceMaxCentavos: revision.priceMaxCentavos,
-              flaggedAt: revision.flaggedAt,
-            })
-            .where(eq(offers.id, offer.id));
-        }
-        if (added.length) {
-          await tx.update(offerImages).set({ state: 'live' }).where(inArray(offerImages.id, added.map((i) => i.id)));
-        }
-        if (removed.length) {
-          await tx.delete(offerImages).where(inArray(offerImages.id, removed.map((i) => i.id)));
-        }
+    if (input.action === 'approve') {
+      if (revision) {
         await tx
           .update(offers)
-          .set({ reviewedAt: now, revisionRejectionReason: null, updatedAt: now })
-          .where(eq(offers.id, offer.id));
-      } else {
-        if (added.length) {
-          await tx.delete(offerImages).where(inArray(offerImages.id, added.map((i) => i.id)));
-        }
-        if (removed.length) {
-          await tx.update(offerImages).set({ state: 'live' }).where(inArray(offerImages.id, removed.map((i) => i.id)));
-        }
-        await tx
-          .update(offers)
-          .set({ revisionRejectionReason: input.reason, updatedAt: now })
+          .set({
+            subdomainId: revision.subdomainId,
+            title: revision.title,
+            description: revision.description,
+            priceMinCentavos: revision.priceMinCentavos,
+            priceMaxCentavos: revision.priceMaxCentavos,
+            flaggedAt: revision.flaggedAt,
+          })
           .where(eq(offers.id, offer.id));
       }
-      await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offer.id));
-      await tx.insert(moderationActions).values(audit);
-    });
-    discarded = (input.action === 'approve' ? removed : added).flatMap((i) => [i.objectKey, i.thumbKey]);
-  } else {
-    // A rejected offer waits for its creative, not for review.
-    throw AppError.conflict('This offer is waiting for its creative to change it.');
-  }
-
-  await Promise.all(discarded.map((key) => discardObject(key)));
-  await notify({
-    userId: offer.ownerUserId,
-    actorUserId: input.adminId,
-    type: input.action === 'approve' ? 'offer_approved' : 'offer_rejected',
-    targetId: offer.id,
+      if (added.length) {
+        await tx.update(offerImages).set({ state: 'live' }).where(inArray(offerImages.id, added.map((i) => i.id)));
+      }
+      if (removed.length) {
+        await tx.delete(offerImages).where(inArray(offerImages.id, removed.map((i) => i.id)));
+      }
+      await tx
+        .update(offers)
+        .set({ reviewedAt: now, revisionRejectionReason: null, updatedAt: now })
+        .where(eq(offers.id, offer.id));
+    } else {
+      if (added.length) {
+        await tx.delete(offerImages).where(inArray(offerImages.id, added.map((i) => i.id)));
+      }
+      if (removed.length) {
+        await tx.update(offerImages).set({ state: 'live' }).where(inArray(offerImages.id, removed.map((i) => i.id)));
+      }
+      await tx
+        .update(offers)
+        .set({ revisionRejectionReason: input.reason, updatedAt: now })
+        .where(eq(offers.id, offer.id));
+    }
+    await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offer.id));
+    await tx.insert(moderationActions).values(audit);
+    // Files of a change that will never be shown; deleted once the rows are.
+    return {
+      ownerUserId: owner?.userId ?? null,
+      discarded: (input.action === 'approve' ? removed : added).flatMap((i) => [i.objectKey, i.thumbKey]),
+    };
   });
+
+  await Promise.all(outcome.discarded.map((key) => discardObject(key)));
+  if (outcome.ownerUserId) {
+    await notify({
+      userId: outcome.ownerUserId,
+      actorUserId: input.adminId,
+      type: input.action === 'approve' ? 'offer_approved' : 'offer_rejected',
+      targetId: input.id,
+    });
+  }
   return { ok: true as const };
 }
 
-async function reviewAvatar(input: { id: string; adminId: string; action: ReviewAction; reason: string | null }) {
+async function reviewAvatar(input: ReviewInput) {
   const [user] = await db
     .select({
       id: users.id,
@@ -394,22 +460,32 @@ async function reviewAvatar(input: { id: string; adminId: string; action: Review
     .where(eq(users.id, input.id))
     .limit(1);
   if (!user?.pendingKey) throw AppError.notFound('No photo is waiting for review.');
+  // The pending key is the version: a new upload replaces it.
+  if (user.pendingKey !== input.version) throw AppError.conflict(STALE);
 
   const now = new Date();
+  // Each write is conditional on the key the administrator saw, so a photo
+  // replaced in the meantime is neither published nor discarded.
+  const stillPending = and(eq(users.id, user.id), eq(users.avatarPendingKey, input.version));
+
   if (input.action === 'approve') {
-    await db
+    const updated = await db
       .update(users)
-      .set({ avatarKey: user.pendingKey, avatarPendingKey: null, avatarReviewedAt: now, avatarRejectionReason: null, updatedAt: now })
-      .where(eq(users.id, user.id));
-    if (user.key && user.key !== user.pendingKey) await discardObject(user.key);
+      .set({ avatarKey: input.version, avatarPendingKey: null, avatarReviewedAt: now, avatarRejectionReason: null, updatedAt: now })
+      .where(stillPending)
+      .returning({ id: users.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
+    if (user.key && user.key !== input.version) await discardObject(user.key);
     return { ok: true as const };
   }
 
   await db.transaction(async (tx) => {
-    await tx
+    const updated = await tx
       .update(users)
       .set({ avatarPendingKey: null, avatarRejectionReason: input.reason, updatedAt: now })
-      .where(eq(users.id, user.id));
+      .where(stillPending)
+      .returning({ id: users.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
     // profileId stays null for a client with no creative profile; the decision
     // is still recorded against the account.
     await tx.insert(moderationActions).values({
@@ -420,26 +496,31 @@ async function reviewAvatar(input: { id: string; adminId: string; action: Review
       reason: input.reason,
     });
   });
-  await discardObject(user.pendingKey);
+  await discardObject(input.version);
   await notify({ userId: user.id, actorUserId: input.adminId, type: 'avatar_rejected', targetId: user.id });
   return { ok: true as const };
 }
 
-async function reviewLogo(input: { id: string; adminId: string; action: ReviewAction; reason: string | null }) {
+async function reviewLogo(input: ReviewInput) {
   const [organization] = await db
     .select({ id: organizations.id, key: organizations.logoKey, pendingKey: organizations.logoPendingKey })
     .from(organizations)
     .where(eq(organizations.id, input.id))
     .limit(1);
   if (!organization?.pendingKey) throw AppError.notFound('No logo is waiting for review.');
+  if (organization.pendingKey !== input.version) throw AppError.conflict(STALE);
 
   const now = new Date();
+  const stillPending = and(eq(organizations.id, organization.id), eq(organizations.logoPendingKey, input.version));
+
   if (input.action === 'approve') {
-    await db
+    const updated = await db
       .update(organizations)
-      .set({ logoKey: organization.pendingKey, logoPendingKey: null, logoReviewedAt: now, logoRejectionReason: null, updatedAt: now })
-      .where(eq(organizations.id, organization.id));
-    if (organization.key && organization.key !== organization.pendingKey) await discardObject(organization.key);
+      .set({ logoKey: input.version, logoPendingKey: null, logoReviewedAt: now, logoRejectionReason: null, updatedAt: now })
+      .where(stillPending)
+      .returning({ id: organizations.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
+    if (organization.key && organization.key !== input.version) await discardObject(organization.key);
     return { ok: true as const };
   }
 
@@ -450,10 +531,12 @@ async function reviewLogo(input: { id: string; adminId: string; action: ReviewAc
     .limit(1);
 
   await db.transaction(async (tx) => {
-    await tx
+    const updated = await tx
       .update(organizations)
       .set({ logoPendingKey: null, logoRejectionReason: input.reason, updatedAt: now })
-      .where(eq(organizations.id, organization.id));
+      .where(stillPending)
+      .returning({ id: organizations.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
     await tx.insert(moderationActions).values({
       organizationId: organization.id,
       subjectUserId: founder?.userId ?? null,
@@ -462,7 +545,7 @@ async function reviewLogo(input: { id: string; adminId: string; action: ReviewAc
       reason: input.reason,
     });
   });
-  await discardObject(organization.pendingKey);
+  await discardObject(input.version);
   // The founder answers for the page, as for the organisation's own review.
   if (founder) {
     await notify({ userId: founder.userId, actorUserId: input.adminId, type: 'logo_rejected', targetId: organization.id });
