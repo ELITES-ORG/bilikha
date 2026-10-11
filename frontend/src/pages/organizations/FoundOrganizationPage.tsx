@@ -6,8 +6,9 @@ import { useFoundOrganization } from '@/features/organizations/api';
 import {
   OrganizationFields,
   type OrganizationFormState,
-} from '@/features/organizations/OrganizationFields';
+} from './OrganizationFields';
 import { useT } from '@/i18n/i18n-context';
+import '@/i18n/catalogs/organizations';
 import { Message } from '@/i18n/Message';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav } from '@/lib/bottom-nav';

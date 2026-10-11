@@ -68,19 +68,24 @@ const AdminOrganizationsPage = lazy(() =>
   import('@/pages/admin/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })),
 );
 
-/* Lazy: organisations are a minority of pages, and none of them is a first load. */
+/*
+ * Lazy: organisations are a minority of pages, and none of them is a first
+ * load. Their strings come with them, as the legal pages' do (ADR 0055).
+ */
 const OrganizationPage = lazy(() =>
-  import('@/pages/organizations/OrganizationPage').then((m) => ({ default: m.OrganizationPage })),
+  import('@/pages/organizations/OrganizationPage')
+    .then(withSection('organizations'))
+    .then((m) => ({ default: m.OrganizationPage })),
 );
 const FoundOrganizationPage = lazy(() =>
-  import('@/pages/organizations/FoundOrganizationPage').then((m) => ({
-    default: m.FoundOrganizationPage,
-  })),
+  import('@/pages/organizations/FoundOrganizationPage')
+    .then(withSection('organizations'))
+    .then((m) => ({ default: m.FoundOrganizationPage })),
 );
 const ManageOrganizationPage = lazy(() =>
-  import('@/pages/organizations/ManageOrganizationPage').then((m) => ({
-    default: m.ManageOrganizationPage,
-  })),
+  import('@/pages/organizations/ManageOrganizationPage')
+    .then(withSection('organizations'))
+    .then((m) => ({ default: m.ManageOrganizationPage })),
 );
 
 /*

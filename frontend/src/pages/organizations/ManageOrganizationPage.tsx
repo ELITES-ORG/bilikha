@@ -29,7 +29,7 @@ import { ROLE_LABEL, canManage } from '@/features/organizations/labels';
 import {
   OrganizationFields,
   type OrganizationFormState,
-} from '@/features/organizations/OrganizationFields';
+} from './OrganizationFields';
 import { OrganizationStatusBadge } from '@/features/organizations/OrganizationStatusBadge';
 import type {
   ManagedOrganization,
@@ -39,6 +39,7 @@ import type {
 } from '@/features/organizations/types';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { useT } from '@/i18n/i18n-context';
+import '@/i18n/catalogs/organizations';
 import { Message } from '@/i18n/Message';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav } from '@/lib/bottom-nav';

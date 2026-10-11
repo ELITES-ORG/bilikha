@@ -14,6 +14,7 @@ import {
 } from '@/features/organizations/api';
 import { ROLE_LABEL, canManage } from '@/features/organizations/labels';
 import { useT } from '@/i18n/i18n-context';
+import '@/i18n/catalogs/organizations';
 import { Message } from '@/i18n/Message';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';

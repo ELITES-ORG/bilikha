@@ -66,7 +66,10 @@ Choices phases 2–5 made that the steps above did not spell out:
   to the founder's own profile.
 - **Copy is in the catalogue** ([ADR 0055](../decisions/0055-copy-is-translated-per-device-never-by-machine.md))
   for every registrant-facing screen; `fil` and `war` are empty until a speaker
-  fills them. The admin screen stays English like the rest of the admin area.
+  fills them. The organisation pages' own strings are a lazy section in
+  `catalogs/organizations/`, loaded with those routes as the legal pages' are
+  (#76); only the labels, account card and directory section are in the core
+  catalogue. The admin screen stays English like the rest of the admin area.
 
 ## Rules for whoever executes this
 
