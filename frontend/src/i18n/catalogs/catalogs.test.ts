@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { en } from './en';
 import { fil } from './fil';
 import { war } from './war';
+import { enLegal } from './legal/en';
+import { filLegal } from './legal/fil';
+import { warLegal } from './legal/war';
+import './legal';
 import { resolveMessage, translate } from '../i18n-context';
 
 /**
@@ -9,25 +13,45 @@ import { resolveMessage, translate } from '../i18n-context';
  * (ADR 0055). Without it, a key added to English is simply absent elsewhere
  * and nobody finds out until a reader meets an English string on a page they
  * chose to read in Waray.
+ *
+ * Checked per set: the core catalogue in the first-load bundle, and each lazy
+ * route's section, which a translator edits in its own folder.
  */
-const CATALOGS = [
-  ['fil', fil],
-  ['war', war],
+const SETS = [
+  ['core', en, { fil, war }],
+  ['legal', enLegal, { fil: filLegal, war: warLegal }],
 ] as const;
 
+const CATALOGS = SETS.flatMap(([set, english, translations]) =>
+  Object.entries(translations).map(([locale, catalog]) => [`${set}/${locale}`, english, catalog] as const),
+);
+
 describe('catalogues', () => {
-  it.each(CATALOGS)('%s has exactly the English key set', (_name, catalog) => {
-    expect(Object.keys(catalog).sort()).toEqual(Object.keys(en).sort());
+  it.each(CATALOGS)('%s has exactly the English key set', (_name, english, catalog) => {
+    expect(Object.keys(catalog).sort()).toEqual(Object.keys(english).sort());
   });
 
-  it('English has no empty values — it is the fallback', () => {
-    const empty = Object.entries(en)
+  it.each(SETS)('%s English has no empty values — it is the fallback', (_name, english) => {
+    const empty = Object.entries(english)
       .filter(([, value]) => value.trim() === '')
       .map(([key]) => key);
     expect(empty).toEqual([]);
   });
 
-  it.each(CATALOGS)('%s falls back to English for an untranslated key', (_name, catalog) => {
+  it('no key is in two sets, so a key has exactly one English', () => {
+    const shared = Object.keys(enLegal).filter((key) => key in en);
+    expect(shared).toEqual([]);
+  });
+
+  it("falls back to a registered section's English", () => {
+    expect(translate(filLegal, 'privacy.title')).toBe(enLegal['privacy.title']);
+    expect(resolveMessage(warLegal, 'war', 'privacy.title')).toEqual({
+      text: enLegal['privacy.title'],
+      lang: 'en',
+    });
+  });
+
+  it.each([fil, war])('core catalogue %# falls back to English for an untranslated key', (catalog) => {
     expect(translate(catalog, 'signIn.heading')).toBe(en['signIn.heading']);
   });
 

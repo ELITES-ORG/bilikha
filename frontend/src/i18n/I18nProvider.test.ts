@@ -14,7 +14,7 @@ import { I18nProvider } from './I18nProvider';
 import { useI18n, type I18nApi, type ResolvedMessage } from './i18n-context';
 
 type CatalogLocale = Exclude<Locale, 'en'>;
-type CatalogLoader = (locale: CatalogLocale) => Promise<Catalog>;
+type CatalogLoader = (locale: CatalogLocale, section?: string) => Promise<Catalog>;
 
 interface TestableProviderProps {
   children?: ReactNode;
@@ -51,6 +51,7 @@ function Probe() {
     message?: (key: MessageKey) => ResolvedMessage;
   };
   const resolved = api.message?.('signIn.heading');
+  const legal = api.message?.('privacy.title');
 
   return createElement(
     'div',
@@ -62,6 +63,7 @@ function Probe() {
       { 'data-message-language': resolved?.lang ?? 'missing' },
       resolved?.text ?? api.t('signIn.heading'),
     ),
+    createElement('p', { 'data-message-language': legal?.lang ?? 'missing' }, legal?.text),
   );
 }
 
@@ -88,6 +90,9 @@ function mountProvider(catalogLoader: CatalogLoader) {
     },
     output() {
       return container.querySelector('output')!;
+    },
+    legal() {
+      return container.querySelector('p')!;
     },
   };
 }
@@ -144,5 +149,30 @@ describe('I18nProvider', () => {
 
     expect(view.output().textContent).toBe('Sign in');
     expect(view.output().dataset.messageLanguage).toBe('en');
+  });
+
+  // Last: registering a section is module-level and lasts for the whole file.
+  it("fetches a lazy route's translation when the route registers after the language is chosen", async () => {
+    localStorage.setItem('bilikha-locale', 'war');
+    const requested: Array<string | undefined> = [];
+    const view = mountProvider(async (_locale, section) => {
+      requested.push(section);
+      return section === 'legal'
+        ? { 'privacy.title': 'war-test-privacy-title' }
+        : { 'signIn.heading': 'war-test-heading' };
+    });
+    await act(async () => Promise.resolve());
+    expect(requested).toEqual([undefined]);
+
+    // What opening /privacy does: the route's chunk registers its strings.
+    await act(async () => {
+      await import('./catalogs/legal');
+    });
+
+    expect(requested).toContain('legal');
+    expect(view.legal().textContent).toBe('war-test-privacy-title');
+    expect(view.legal().dataset.messageLanguage).toBe('war');
+    // The core translation stays on screen while the section loads and after.
+    expect(view.output().textContent).toBe('war-test-heading');
   });
 });
