@@ -25,6 +25,7 @@ function serializeSubdomain(row: {
   domainId: string;
   slug: string;
   name: string;
+  singularName: string;
   displayOrder: number;
   archivedAt: Date | null;
   createdAt: Date;
@@ -35,6 +36,7 @@ function serializeSubdomain(row: {
     domainId: row.domainId,
     slug: row.slug,
     name: row.name,
+    singularName: row.singularName,
     displayOrder: row.displayOrder,
     archivedAt: row.archivedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),

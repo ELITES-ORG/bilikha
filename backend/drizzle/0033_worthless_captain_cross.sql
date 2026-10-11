@@ -1,0 +1,1 @@
+ALTER TABLE "creative_subdomains" ALTER COLUMN "singular_name" SET NOT NULL;

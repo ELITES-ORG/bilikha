@@ -100,4 +100,49 @@ describe('reference-data seed', () => {
         .where(eq(creativeSubdomains.slug, SUBJECT));
     }
   });
+
+  it('does not overwrite a singular label an administrator changed', async () => {
+    const [before] = await db
+      .select({ singularName: creativeSubdomains.singularName })
+      .from(creativeSubdomains)
+      .where(eq(creativeSubdomains.slug, SUBJECT));
+
+    try {
+      await db
+        .update(creativeSubdomains)
+        .set({ singularName: 'Edited Singular' })
+        .where(eq(creativeSubdomains.slug, SUBJECT));
+
+      await reseed();
+
+      const [after] = await db
+        .select({ singularName: creativeSubdomains.singularName })
+        .from(creativeSubdomains)
+        .where(eq(creativeSubdomains.slug, SUBJECT));
+
+      expect(after?.singularName).toBe('Edited Singular');
+    } finally {
+      await db
+        .update(creativeSubdomains)
+        .set({ singularName: before!.singularName })
+        .where(eq(creativeSubdomains.slug, SUBJECT));
+    }
+  });
+
+  it('writes the singular label when it inserts a missing sub-domain', async () => {
+    try {
+      await db.delete(creativeSubdomains).where(eq(creativeSubdomains.slug, SUBJECT));
+
+      await reseed();
+
+      const [after] = await db
+        .select({ singularName: creativeSubdomains.singularName })
+        .from(creativeSubdomains)
+        .where(eq(creativeSubdomains.slug, SUBJECT));
+
+      expect(after?.singularName).toBe('Filmmaker');
+    } finally {
+      await reseed();
+    }
+  });
 });

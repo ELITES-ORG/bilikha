@@ -29,6 +29,10 @@ export interface ConversationPostingCard {
   available: boolean;
   municipalityName?: string;
   subdomainName?: string;
+  /** Singular label for one offer, posting or creative (issue #17). Optional only
+   *  for deployment skew: an API deployed before #17 omits it. Read it through
+   *  `subdomainLabel()` on the frontend, which falls back to `name`. */
+  subdomainSingularName?: string;
 }
 
 /**

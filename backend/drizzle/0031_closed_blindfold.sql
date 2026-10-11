@@ -1,0 +1,1 @@
+ALTER TABLE "creative_subdomains" ADD COLUMN "singular_name" text;

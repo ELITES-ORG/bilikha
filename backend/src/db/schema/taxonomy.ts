@@ -60,6 +60,10 @@ export const creativeSubdomains = pgTable(
       .references(() => creativeDomains.id, { onDelete: 'cascade' }),
     slug: text('slug').notNull(),
     name: text('name').notNull(),
+    // Singular label for one offer, posting or creative ("Mobile App Developer"
+    // for "Mobile App Developers"); `name` stays the official RA 11904 plural.
+    // Issue #17. Filled for existing rows by the backfill migration.
+    singularName: text('singular_name').notNull(),
     displayOrder: integer('display_order').notNull(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

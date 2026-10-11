@@ -52,6 +52,7 @@ async function subdomainsForProfiles(profileIds: string[]) {
       profileId: creativeProfileSubdomains.profileId,
       slug: creativeSubdomains.slug,
       name: creativeSubdomains.name,
+      singularName: creativeSubdomains.singularName,
       domain: creativeDomains.name,
       isPrimary: creativeProfileSubdomains.isPrimary,
     })
@@ -69,6 +70,7 @@ async function subdomainsForProfiles(profileIds: string[]) {
     list.push({
       slug: row.slug,
       name: row.name,
+      singularName: row.singularName,
       domain: row.domain,
       isPrimary: row.isPrimary,
     });
@@ -87,6 +89,7 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
       priceMaxCentavos: offers.priceMaxCentavos,
       subdomainSlug: creativeSubdomains.slug,
       subdomainName: creativeSubdomains.name,
+      subdomainSingularName: creativeSubdomains.singularName,
       domainName: creativeDomains.name,
     })
     .from(offers)
@@ -132,7 +135,12 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
     description: row.description,
     priceMinCentavos: row.priceMinCentavos,
     priceMaxCentavos: row.priceMaxCentavos,
-    subdomain: { slug: row.subdomainSlug, name: row.subdomainName, domain: row.domainName },
+    subdomain: {
+      slug: row.subdomainSlug,
+      name: row.subdomainName,
+      singularName: row.subdomainSingularName,
+      domain: row.domainName,
+    },
     images: imagesByOffer.get(row.id) ?? [],
   }));
 }

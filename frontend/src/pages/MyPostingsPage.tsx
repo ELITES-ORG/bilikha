@@ -11,6 +11,7 @@ import {
 import { PostingRowsSkeleton } from '@/components/page-skeleton/parts';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
 import { useClosePosting, useDeletePosting, useMyPostings } from '@/features/postings/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import {
   formatTimeLeft,
   expiryTone,
@@ -100,7 +101,7 @@ export function MyPostingsPage() {
                           <p className="mt-1 text-sm text-ink-muted">
                             {formatBudgetRange(row.budgetMinCentavos, row.budgetMaxCentavos)}
                             {' · '}
-                            {row.subdomain.name}
+                            {subdomainLabel(row.subdomain)}
                             {' · '}
                             {row.municipality.name}
                           </p>

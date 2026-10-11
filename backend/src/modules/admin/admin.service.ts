@@ -163,6 +163,7 @@ export async function getProfile(id: string): Promise<AdminProfileDetail> {
   const subdomains = await db
     .select({
       name: creativeSubdomains.name,
+      singularName: creativeSubdomains.singularName,
       slug: creativeSubdomains.slug,
       isPrimary: creativeProfileSubdomains.isPrimary,
     })

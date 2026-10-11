@@ -46,6 +46,7 @@ import { useOwnOffers } from '@/features/offers/api';
 import { OFFER_LIMIT } from '@/features/offers/limits';
 import { useMyPostings } from '@/features/postings/api';
 import { useCreativeDomains } from '@/features/taxonomy/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import type { CreativeDomain } from '@/features/taxonomy/types';
 import { useWorkSummary } from '@/features/work/api';
 import { nextAction } from '@/features/work/next-action';
@@ -546,7 +547,9 @@ const STATUS_BADGE: Record<ProfileStatus, { tone: 'success' | 'warning' | 'neutr
 /** Primary craft first, names resolved from the taxonomy. */
 function professionsOf(profile: OwnProfile | null, domains: CreativeDomain[] | undefined): string[] {
   if (!profile || !domains) return [];
-  const names = new Map(domains.flatMap((d) => d.subdomains.map((s) => [s.slug, s.name] as const)));
+  const names = new Map(
+    domains.flatMap((d) => d.subdomains.map((s) => [s.slug, subdomainLabel(s)] as const)),
+  );
   const ordered = [...profile.subdomainSlugs].sort(
     (a, b) => Number(b === profile.primarySubdomainSlug) - Number(a === profile.primarySubdomainSlug),
   );

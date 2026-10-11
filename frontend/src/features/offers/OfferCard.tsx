@@ -25,7 +25,8 @@ export interface OfferCardProps {
   description: string | null;
   /** Domain — the eyebrow above the title. */
   eyebrow?: string;
-  /** Sub-domain — the pill over the image. Omit when every card would repeat it. */
+  /** Sub-domain — the pill over the image, as the singular label for this one
+   *  offer: `subdomainLabel(offer.subdomain)`. Omit when every card would repeat it. */
   category?: string;
   /** Already formatted with `formatPriceRange`; always present. */
   price: string;

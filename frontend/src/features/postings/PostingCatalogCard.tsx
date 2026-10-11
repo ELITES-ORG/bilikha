@@ -2,6 +2,7 @@ import { ArrowRight, BriefcaseBusiness, Check, Clock, MapPin, MessageSquare } fr
 import { Link } from 'react-router-dom';
 import { Avatar, Badge, Skeleton } from '@/components/ui';
 import type { Posting } from '@/features/postings/types';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import { formatBudgetRange } from '@/lib/money';
 import { expiryTone, formatTimeLeft } from '@/lib/posting-time';
 
@@ -40,7 +41,7 @@ export function PostingCatalogCard({ posting }: { posting: Posting }) {
 
           <div className="mt-2 flex flex-wrap gap-1.5">
             <Badge tone="neutral" className="max-w-full bg-surface break-words whitespace-normal ring-hairline-strong">
-              {posting.subdomain.name}
+              {subdomainLabel(posting.subdomain)}
             </Badge>
             {posting.hasReplied && (
               <Badge tone="accent" icon={<Check className="size-3.5" aria-hidden="true" />}>

@@ -31,6 +31,7 @@ import { usePublishedOffers } from '@/features/offers/api';
 import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
 import { usePublishedProfiles } from '@/features/profiles/api';
 import { useCreativeDomains, useMunicipalities } from '@/features/taxonomy/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
@@ -612,7 +613,7 @@ export function DirectoryPage() {
                       title={offer.title}
                       description={offer.description}
                       eyebrow={offer.subdomain.domain}
-                      category={showSubdomain ? offer.subdomain.name : undefined}
+                      category={showSubdomain ? subdomainLabel(offer.subdomain) : undefined}
                       price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
                       provider={{
                         name: creativeName,
@@ -680,10 +681,10 @@ export function DirectoryPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
-                          {primary && <Badge tone="brand">{primary.name}</Badge>}
+                          {primary && <Badge tone="brand">{subdomainLabel(primary)}</Badge>}
                           {others.map((s) => (
                             <Badge key={s.slug} tone="neutral">
-                              {s.name}
+                              {subdomainLabel(s)}
                             </Badge>
                           ))}
                         </div>

@@ -22,6 +22,7 @@ import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/
 import { OfferFormDialog } from '@/features/offers/OfferFormDialog';
 import { PesoInput } from '@/features/offers/PesoInput';
 import { useCreativeDomains } from '@/features/taxonomy/api';
+import { subdomainLabel } from '@/features/taxonomy/format';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
@@ -485,7 +486,10 @@ export function OfferEditor() {
               image={offer.images[0] ?? null}
               title={offer.title}
               description={offer.description}
-              category={offer.subdomainName}
+              category={subdomainLabel({
+                name: offer.subdomainName,
+                singularName: offer.subdomainSingularName,
+              })}
               price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
               footer={
                 <>

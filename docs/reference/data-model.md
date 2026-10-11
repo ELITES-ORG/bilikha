@@ -52,6 +52,7 @@ Indexes:
 | `domain_id` | `uuid` FK → `creative_domains.id` | `ON DELETE CASCADE` |
 | `slug` | `text` | **Unique across all domains**, not just within one |
 | `name` | `text` | Display label |
+| `singular_name` | `text` | Curated singular label for one offer, posting or creative, e.g. "Mobile App Developer" for "Mobile App Developers" (issue #17). Filled for existing rows by the backfill migration; set in `/admin/taxonomy` |
 | `display_order` | `integer` | Order within its domain |
 | `archived_at` | `timestamptz` null | Null = active. An archived sub-domain stays selectable in a profile that already holds it, and nowhere else |
 | `created_at` | `timestamptz` | |

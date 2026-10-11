@@ -260,6 +260,9 @@ function SubdomainRow({
         <div className="min-w-0">
           <p className="text-base text-ink">{subdomain.name}</p>
           <p className="text-xs text-ink-subtle">
+            Singular: {subdomain.singularName ?? subdomain.name}
+          </p>
+          <p className="text-xs text-ink-subtle">
             {subdomain.slug} · {referencesLabel(subdomain.referenceCount)}
           </p>
         </div>
@@ -281,7 +284,12 @@ function SubdomainRow({
 
       {editing && (
         <div className="mt-3">
-          <EditForm kind="subdomains" slug={subdomain.slug} name={subdomain.name} />
+          <EditForm
+            kind="subdomains"
+            slug={subdomain.slug}
+            name={subdomain.name}
+            singularName={subdomain.singularName ?? ''}
+          />
         </div>
       )}
     </li>
@@ -477,31 +485,61 @@ function ArchivedBadge() {
   return <AdminStatusBadge status="archived" />;
 }
 
-/** Rename only. There is deliberately no slug field — see the page comment. */
-function EditForm({ kind, slug, name }: { kind: TaxonomyKind; slug: string; name: string }) {
+/**
+ * Rename only — and, for a sub-domain, its singular label. There is
+ * deliberately no slug field — see the page comment.
+ */
+function EditForm({
+  kind,
+  slug,
+  name,
+  singularName = '',
+}: {
+  kind: TaxonomyKind;
+  slug: string;
+  name: string;
+  singularName?: string;
+}) {
   const toast = useToast();
   const update = useUpdateTaxonomyItem();
   const [value, setValue] = useState(name);
+  const [singularValue, setSingularValue] = useState(singularName);
   const [error, setError] = useState<string | null>(null);
+  const [singularError, setSingularError] = useState<string | null>(null);
+  const isSubdomain = kind === 'subdomains';
 
   async function submit() {
     setError(null);
+    setSingularError(null);
     const next = value.trim();
+    const nextSingular = singularValue.trim();
 
     if (next.length < 2) {
       setError('A name is at least 2 characters.');
       return;
     }
-    if (next === name) {
-      setError('That is the current name.');
+    if (isSubdomain && nextSingular.length < 2) {
+      setSingularError('A singular label is at least 2 characters.');
+      return;
+    }
+
+    const changes = {
+      ...(next !== name ? { name: next } : {}),
+      ...(isSubdomain && nextSingular !== singularName ? { singularName: nextSingular } : {}),
+    };
+    if (Object.keys(changes).length === 0) {
+      setError(isSubdomain ? 'That is the current name and singular label.' : 'That is the current name.');
       return;
     }
 
     try {
       await toast.run(
         'Renaming…',
-        () => update.mutateAsync({ kind, slug, name: next }),
-        { success: 'Name saved', error: (err) => toApiError(err).message },
+        () => update.mutateAsync({ kind, slug, ...changes }),
+        {
+          success: changes.name === undefined ? 'Singular label saved' : 'Name saved',
+          error: (err) => toApiError(err).message,
+        },
       );
     } catch (err) {
       setError(toApiError(err).message);
@@ -512,7 +550,7 @@ function EditForm({ kind, slug, name }: { kind: TaxonomyKind; slug: string; name
     /* Stacked on a phone. Side by side, the hint wraps to two lines and the
        button bottom-aligns against the wrap instead of the field. */
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-      <div className="min-w-0 sm:flex-1">
+      <div className="min-w-0 space-y-3 sm:flex-1">
         <Input
           label="Name"
           hint={`The slug stays ${slug} — it is in URLs and cannot change.`}
@@ -521,6 +559,17 @@ function EditForm({ kind, slug, name }: { kind: TaxonomyKind; slug: string; name
           onChange={(event) => setValue(event.target.value)}
           error={error ?? undefined}
         />
+        {isSubdomain && (
+          <Input
+            label="Singular label"
+            hint="How one offer or creative in this sub-domain is labelled, e.g. Mobile App Developer."
+            maxLength={120}
+            required
+            value={singularValue}
+            onChange={(event) => setSingularValue(event.target.value)}
+            error={singularError ?? undefined}
+          />
+        )}
       </div>
       <Button
         type="button"
@@ -599,15 +648,28 @@ function CreateSubdomainForm({
   const toast = useToast();
   const create = useCreateSubdomain();
   const [name, setName] = useState('');
+  const [singularName, setSingularName] = useState('');
   const [slug, setSlug] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [singularError, setSingularError] = useState<string | null>(null);
 
   async function submit() {
     setError(null);
+    setSingularError(null);
+    if (singularName.trim().length < 2) {
+      setSingularError('A singular label is at least 2 characters.');
+      return;
+    }
     try {
       await toast.run(
         'Adding the craft…',
-        () => create.mutateAsync({ domainSlug, slug: slug.trim(), name: name.trim() }),
+        () =>
+          create.mutateAsync({
+            domainSlug,
+            slug: slug.trim(),
+            name: name.trim(),
+            singularName: singularName.trim(),
+          }),
         { success: 'Craft added', error: (err) => toApiError(err).message },
       );
       onDone();
@@ -623,6 +685,15 @@ function CreateSubdomainForm({
         maxLength={120}
         value={name}
         onChange={(event) => setName(event.target.value)}
+      />
+      <Input
+        label="Singular label"
+        hint="How one offer or creative in this sub-domain is labelled, e.g. Mobile App Developer."
+        maxLength={120}
+        required
+        value={singularName}
+        onChange={(event) => setSingularName(event.target.value)}
+        error={singularError ?? undefined}
       />
       <Input
         label="Slug"

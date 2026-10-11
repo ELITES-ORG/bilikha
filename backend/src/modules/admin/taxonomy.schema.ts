@@ -28,6 +28,7 @@ export const createSubdomainSchema = z.object({
   domainSlug: slugSchema,
   slug: slugSchema,
   name: nameSchema,
+  singularName: nameSchema,
   displayOrder: z.coerce.number().int().positive().optional(),
 });
 
@@ -46,6 +47,7 @@ export const createSubdomainSchema = z.object({
 export const updateTaxonomySchema = z
   .object({
     name: nameSchema.optional(),
+    singularName: nameSchema.optional(),
     description: descriptionSchema.nullable().optional(),
     displayOrder: z.coerce.number().int().positive().optional(),
   })
