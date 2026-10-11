@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { count, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { municipalities, users } from '../db/schema/index.js';
+import { isStorageConfigured } from '../lib/storage.js';
 import { makeCreative, makeUser } from './factories.js';
 
 describe('the harness', () => {
@@ -32,5 +33,9 @@ describe('the harness', () => {
     const [found] = await db.select().from(users).where(eq(users.id, user.id));
     expect(found?.status).toBe('active');
     expect(profile.status).toBe('published');
+  });
+
+  it("leaves image storage off, even when this machine's backend/.env sets it", () => {
+    expect(isStorageConfigured()).toBe(false);
   });
 });
