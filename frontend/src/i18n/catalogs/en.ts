@@ -45,6 +45,7 @@ export const en = {
   'directory.search.tryOffers': 'Search offers instead',
   'directory.search.postingsNote':
     'Search covers offers and creatives. Client postings are not searched yet.',
+  'directory.search.clearFilters': 'Clear filters',
 } as const;
 
 /**

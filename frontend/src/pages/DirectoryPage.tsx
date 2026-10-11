@@ -88,6 +88,7 @@ export function DirectoryPage() {
     tryCreatives: message('directory.search.tryCreatives'),
     tryOffers: message('directory.search.tryOffers'),
     postingsNote: message('directory.search.postingsNote'),
+    clearFilters: message('directory.search.clearFilters'),
   };
 
   const { data: user } = useCurrentUser();
@@ -315,9 +316,21 @@ export function DirectoryPage() {
             </form>
           )}
 
+          {/*
+            Creative mode hides the box, so a `q` carried in from a link or
+            from client mode would otherwise have no way out but "Clear filters".
+          */}
           {creativeHome && q && (
-            <p className="mt-6 max-w-prose text-sm text-ink-muted" lang={copy.postingsNote.lang}>
-              {copy.postingsNote.text}
+            <p className="mt-6 max-w-prose text-sm text-ink-muted">
+              <span lang={copy.postingsNote.lang}>{copy.postingsNote.text}</span>{' '}
+              <button
+                type="button"
+                lang={copy.clear.lang}
+                className="u-tap font-medium text-ink underline decoration-hairline underline-offset-2 hover:decoration-ink"
+                onClick={clearSearch}
+              >
+                {copy.clear.text}
+              </button>
             </p>
           )}
 
@@ -623,7 +636,7 @@ export function DirectoryPage() {
                     </Button>
                     {activeFilterCount > 0 && (
                       <Button size="sm" variant="secondary" onClick={clearFilters}>
-                        Clear filters
+                        <span lang={copy.clearFilters.lang}>{copy.clearFilters.text}</span>
                       </Button>
                     )}
                   </div>

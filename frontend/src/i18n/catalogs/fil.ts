@@ -34,4 +34,5 @@ export const fil: Catalog = {
   'directory.search.tryCreatives': '',
   'directory.search.tryOffers': '',
   'directory.search.postingsNote': '',
+  'directory.search.clearFilters': '',
 };
