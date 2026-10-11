@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ListFilter, MapPin, TriangleAlert, X } from 'lucide-react';
+import { ListFilter, MapPin, Search, SearchX, TriangleAlert, X } from 'lucide-react';
 import { ModeNotice } from '@/components/ModeNotice';
 import { effectiveViewMode } from '@/lib/view-mode';
 import { ModeAwareEmptyState } from '@/components/ModeAwareEmptyState';
@@ -10,6 +10,7 @@ import {
   Button,
   Container,
   EmptyState,
+  Input,
   SectionHeading,
   Select,
   Skeleton,
@@ -35,6 +36,8 @@ import { subdomainLabel } from '@/features/taxonomy/format';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { formatPriceRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
+import { normalizeSearch, SEARCH_MAX_LENGTH } from '@/lib/search-query';
+import { useI18n } from '@/i18n/i18n-context';
 
 type DirectoryView = 'offers' | 'creatives';
 const DIRECTORY_VIEWS: ReadonlyArray<DirectoryView> = ['offers', 'creatives'];
@@ -53,6 +56,7 @@ function parseView(raw: string | null): DirectoryView {
 export function DirectoryPage() {
   const [params, setParams] = useSearchParams();
   const view = parseView(params.get('view'));
+  const q = normalizeSearch(params.get('q'));
   const domain = params.get('domain') ?? undefined;
   const subdomain = params.get('subdomain') ?? undefined;
   const municipality = params.get('municipality') ?? undefined;
@@ -64,6 +68,28 @@ export function DirectoryPage() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [draftBudgetMin, setDraftBudgetMin] = useState(budgetMin?.toString() ?? '');
   const [draftBudgetMax, setDraftBudgetMax] = useState(budgetMax?.toString() ?? '');
+  // The box follows the URL: back, forward and a shared link all fill it.
+  // Adjusted during render rather than in an effect, so it never paints stale.
+  const [draftQ, setDraftQ] = useState(q ?? '');
+  const [shownQ, setShownQ] = useState(q);
+  if (shownQ !== q) {
+    setShownQ(q);
+    setDraftQ(q ?? '');
+  }
+
+  const { message } = useI18n();
+  const copy = {
+    label: message('directory.search.label'),
+    placeholder: message('directory.search.placeholder'),
+    submit: message('directory.search.submit'),
+    clear: message('directory.search.clear'),
+    emptyTitle: message('directory.search.emptyTitle'),
+    emptyDescription: message('directory.search.emptyDescription'),
+    tryCreatives: message('directory.search.tryCreatives'),
+    tryOffers: message('directory.search.tryOffers'),
+    postingsNote: message('directory.search.postingsNote'),
+    clearFilters: message('directory.search.clearFilters'),
+  };
 
   const { data: user } = useCurrentUser();
   const mode = effectiveViewMode(user);
@@ -74,6 +100,7 @@ export function DirectoryPage() {
   const municipalities = useMunicipalities();
   const offers = usePublishedOffers(
     {
+      q,
       domain,
       subdomain,
       municipality,
@@ -86,6 +113,7 @@ export function DirectoryPage() {
   );
   const creatives = usePublishedProfiles(
     {
+      q,
       domain,
       subdomain,
       municipality,
@@ -178,10 +206,24 @@ export function DirectoryPage() {
     });
   }
 
+  function submitSearch() {
+    const next = normalizeSearch(draftQ);
+    setDraftQ(next ?? '');
+    setFilter({ q: next });
+  }
+
+  function clearSearch() {
+    setDraftQ('');
+    setFilter({ q: undefined });
+  }
+
+  // Also clears the search, though the badge does not count it: "clear" should
+  // leave the whole directory, not a search the person can no longer see.
   function clearFilters() {
     setDraftBudgetMin('');
     setDraftBudgetMax('');
     setFilter({
+      q: undefined,
       domain: undefined,
       subdomain: undefined,
       municipality: undefined,
@@ -231,7 +273,68 @@ export function DirectoryPage() {
             </p>
           )}
 
-          <div className="relative mt-8">
+          {!creativeHome && (
+            <form
+              role="search"
+              className="mt-8 flex gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submitSearch();
+              }}
+            >
+              <div className="min-w-0 flex-1">
+                <Input
+                  name="q"
+                  type="search"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  maxLength={SEARCH_MAX_LENGTH}
+                  value={draftQ}
+                  onChange={(event) => setDraftQ(event.target.value)}
+                  placeholder={copy.placeholder.text}
+                  lang={copy.placeholder.lang}
+                  aria-label={copy.label.text}
+                  iconLeft={<Search className="size-4" />}
+                  trailing={
+                    draftQ !== '' ? (
+                      <button
+                        type="button"
+                        className="inline-flex size-9 items-center justify-center rounded-sm text-ink-muted hover:bg-slate-100 hover:text-ink"
+                        aria-label={copy.clear.text}
+                        lang={copy.clear.lang}
+                        onClick={clearSearch}
+                      >
+                        <X className="size-4" aria-hidden />
+                      </button>
+                    ) : undefined
+                  }
+                />
+              </div>
+              <Button type="submit" variant="secondary" className="shrink-0">
+                <span lang={copy.submit.lang}>{copy.submit.text}</span>
+              </Button>
+            </form>
+          )}
+
+          {/*
+            Creative mode hides the box, so a `q` carried in from a link or
+            from client mode would otherwise have no way out but "Clear filters".
+          */}
+          {creativeHome && q && (
+            <p className="mt-6 max-w-prose text-sm text-ink-muted">
+              <span lang={copy.postingsNote.lang}>{copy.postingsNote.text}</span>{' '}
+              <button
+                type="button"
+                lang={copy.clear.lang}
+                className="u-tap font-medium text-ink underline decoration-hairline underline-offset-2 hover:decoration-ink"
+                onClick={clearSearch}
+              >
+                {copy.clear.text}
+              </button>
+            </p>
+          )}
+
+          <div className={cn('relative', creativeHome ? 'mt-8' : 'mt-6')}>
             <div className="flex items-center justify-between gap-3 border-b border-hairline pb-4">
               {!creativeHome && (
                 <Tabs
@@ -510,7 +613,38 @@ export function DirectoryPage() {
               />
             )}
 
-            {view === 'offers' && offers.data && offers.data.data.length === 0 && !creativeHome && (
+            {!creativeHome && q && list.data && list.data.data.length === 0 && (
+              <SearchEmptyState
+                hasProfile={hasProfile}
+                title={<span lang={copy.emptyTitle.lang}>{copy.emptyTitle.text}</span>}
+                description={
+                  <span lang={copy.emptyDescription.lang}>{copy.emptyDescription.text}</span>
+                }
+                actions={
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {view === 'offers' ? (
+                      <Button size="sm" onClick={() => setView('creatives')}>
+                        <span lang={copy.tryCreatives.lang}>{copy.tryCreatives.text}</span>
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={() => setView('offers')}>
+                        <span lang={copy.tryOffers.lang}>{copy.tryOffers.text}</span>
+                      </Button>
+                    )}
+                    <Button size="sm" variant="secondary" onClick={clearSearch}>
+                      <span lang={copy.clear.lang}>{copy.clear.text}</span>
+                    </Button>
+                    {activeFilterCount > 0 && (
+                      <Button size="sm" variant="secondary" onClick={clearFilters}>
+                        <span lang={copy.clearFilters.lang}>{copy.clearFilters.text}</span>
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            )}
+
+            {view === 'offers' && offers.data && offers.data.data.length === 0 && !creativeHome && !q && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="No offers here yet"
@@ -548,7 +682,7 @@ export function DirectoryPage() {
               )
             )}
 
-            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && (
+            {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && !q && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
                   title="Nobody listed here yet"
@@ -722,6 +856,34 @@ export function DirectoryPage() {
         </Container>
       </main>
     </>
+  );
+}
+
+/**
+ * A search that found nothing (issue #22). Replaces the "nothing here yet"
+ * states while `q` is set: the registry is not empty, the words did not match.
+ */
+function SearchEmptyState({
+  hasProfile,
+  title,
+  description,
+  actions,
+}: {
+  hasProfile: boolean;
+  title: ReactNode;
+  description: ReactNode;
+  actions: ReactNode;
+}) {
+  if (hasProfile) {
+    return <ModeAwareEmptyState title={title} description={description} extraAction={actions} />;
+  }
+  return (
+    <EmptyState
+      icon={<SearchX className="size-5" />}
+      title={title}
+      description={description}
+      action={actions}
+    />
   );
 }
 

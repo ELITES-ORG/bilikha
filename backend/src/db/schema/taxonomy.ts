@@ -75,6 +75,17 @@ export const creativeSubdomains = pgTable(
     index('creative_subdomains_active_idx')
       .on(table.domainId, table.displayOrder)
       .where(sql`archived_at is null`),
+    // Directory search matches the official plural and the singular label
+    // cards show (ADR 0003).
+    index('creative_subdomains_search_idx').using(
+      'gin',
+      sql`to_tsvector('simple', name || ' ' || singular_name)`,
+    ),
+    index('creative_subdomains_name_trgm_idx').using('gin', table.name.op('gin_trgm_ops')),
+    index('creative_subdomains_singular_name_trgm_idx').using(
+      'gin',
+      table.singularName.op('gin_trgm_ops'),
+    ),
   ],
 );
 

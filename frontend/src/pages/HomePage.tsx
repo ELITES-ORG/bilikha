@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, type CSSProperties, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { createSearchParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Blocks, MapPin, Palette, Search, TriangleAlert, type LucideIcon } from 'lucide-react';
 import type { AnimatedStatIconName } from '@/components/animated-icons/AnimatedStatIcon';
 import { CornerBlob, CornerWave } from '@/components/Decor';
@@ -26,6 +26,7 @@ import {
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 import { LEGAL_CONTACT } from '@/lib/legal';
+import { normalizeSearch, SEARCH_MAX_LENGTH } from '@/lib/search-query';
 import { useRevealOnScroll } from '@/lib/use-reveal-on-scroll';
 
 const AnimatedStatIcon = lazy(() => import('@/components/animated-icons/AnimatedStatIcon'));
@@ -283,6 +284,7 @@ function statFigure(stat: HeroStat, onNavy = false): ReactNode {
 
 function Hero() {
   const stats = useHeroStats();
+  const navigate = useNavigate();
 
   return (
     <section className="relative overflow-hidden">
@@ -315,11 +317,19 @@ function Hero() {
             <form
               className="anim-rise-in mt-6 flex flex-col gap-3 sm:mt-9 sm:flex-row"
               style={{ '--i': 3 } as CSSProperties}
-              onSubmit={(event) => event.preventDefault()}
+              onSubmit={(event) => {
+                event.preventDefault();
+                // Submitted, not live: one request per search on metered data
+                // (constraint 3). An empty box still opens the directory.
+                const q = normalizeSearch(new FormData(event.currentTarget).get('q')?.toString());
+                navigate(q ? `/directory?${createSearchParams({ q })}` : '/directory');
+              }}
             >
               <div className="sm:flex-1">
                 <Input
+                  name="q"
                   type="search"
+                  maxLength={SEARCH_MAX_LENGTH}
                   enterKeyHint="search"
                   className="h-12 shadow-sm"
                   placeholder="Search by craft, name, or town"

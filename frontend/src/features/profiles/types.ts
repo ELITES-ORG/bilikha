@@ -27,6 +27,8 @@ export type PublicProfile = ContractPublicProfile & {
 };
 
 export interface ListPublishedParams {
+  /** Search text, already normalised — see `lib/search-query`. */
+  q?: string;
   domain?: string;
   subdomain?: string;
   municipality?: string;

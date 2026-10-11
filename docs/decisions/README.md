@@ -39,7 +39,7 @@ Number sequentially. Never renumber.
 |---|---|---|
 | [0001](./0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](./0002-pern-with-client-rendered-spa.md) | PERN with a client-rendered SPA | Accepted |
-| [0003](./0003-postgres-native-search.md) | Postgres-native search, no PostGIS | Accepted |
+| [0003](./0003-postgres-native-search.md) | Postgres-native search, no PostGIS | Accepted (amended 2026-10-10) |
 | [0004](./0004-unified-account-model.md) | Unified account, creative profile as a role | Accepted (refined by 0015) |
 | [0005](./0005-organization-pages.md) | Public pages for organisations only | Accepted (amended by 0054) |
 | [0006](./0006-asymmetric-reviews.md) | Asymmetric, restrained reputation | Proposed |

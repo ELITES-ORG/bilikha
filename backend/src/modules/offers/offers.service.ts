@@ -25,6 +25,7 @@ export type {
   PublishedOfferCard,
   PublishedOfferDetail,
 } from '../../contracts/offers.js';
+import { offerSearch } from '../search/search-sql.js';
 
 export const OFFER_LIMIT = 6;
 export const OFFER_IMAGE_LIMIT = 4;
@@ -463,14 +464,19 @@ export async function listPublishedOffers(
     }
   }
 
+  // Search narrows and ranks, but never outranks nearby-first (ADR 0003).
+  const search = options.q ? offerSearch(options.q) : null;
+  if (search) filters.push(search.where);
+
   const where = and(...filters);
-  const order = options.viewerMunicipalityId
-    ? [
-        desc(sql`${users.municipalityId} = ${options.viewerMunicipalityId}`),
-        desc(offers.createdAt),
-        asc(offers.id),
-      ]
-    : [desc(offers.createdAt), asc(offers.id)];
+  const order = [
+    ...(options.viewerMunicipalityId
+      ? [desc(sql`${users.municipalityId} = ${options.viewerMunicipalityId}`)]
+      : []),
+    ...(search?.orderBy ?? []),
+    desc(offers.createdAt),
+    asc(offers.id),
+  ];
 
   const rows = await db
     .select({

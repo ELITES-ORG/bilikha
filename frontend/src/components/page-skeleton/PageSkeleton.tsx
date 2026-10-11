@@ -328,7 +328,11 @@ function DirectoryBody() {
   return (
     <PageMain width="wide">
       <SectionHeadingShape title="w-44" description={['w-96']} />
-      <div className="mt-8 flex items-center justify-between gap-3 border-b border-hairline pb-4">
+      <div className="mt-8 flex gap-2">
+        <Skeleton className="h-11 min-w-0 flex-1" />
+        <Skeleton className="h-11 w-20 shrink-0" />
+      </div>
+      <div className="mt-6 flex items-center justify-between gap-3 border-b border-hairline pb-4">
         <TabsShape className="w-52" />
         <Skeleton className="size-11 shrink-0" />
       </div>
