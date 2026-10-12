@@ -100,24 +100,34 @@ async function imagesForQueue(offerIds: string[]) {
     .select({
       id: offerImages.id,
       offerId: offerImages.offerId,
+      kind: offerImages.kind,
       objectKey: offerImages.objectKey,
       thumbKey: offerImages.thumbKey,
       sortOrder: offerImages.sortOrder,
       state: offerImages.state,
+      title: offerImages.title,
+      mimeType: offerImages.mimeType,
+      sizeBytes: offerImages.sizeBytes,
+      durationSeconds: offerImages.durationSeconds,
     })
     .from(offerImages)
-    .where(and(inArray(offerImages.offerId, offerIds), eq(offerImages.kind, 'image')))
+    .where(inArray(offerImages.offerId, offerIds))
     .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
   for (const row of rows) {
     const list = result.get(row.offerId) ?? [];
     list.push({
       id: row.id,
-      url: publicUrl(row.objectKey),
-      // images always have a thumbnail (offer_images_image_has_thumb)
-      thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
+      kind: row.kind,
+      url: publicUrl(row.objectKey, bucketFor(row.kind)),
+      // images always have a thumbnail (offer_images_image_has_thumb); a video's is its poster
+      thumbUrl: row.thumbKey ? publicUrl(row.thumbKey) : row.kind === 'image' ? publicUrl(row.objectKey) : null,
       sortOrder: row.sortOrder,
       state: row.state,
+      title: row.title,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+      durationSeconds: row.durationSeconds,
     });
     result.set(row.offerId, list);
   }
@@ -224,7 +234,7 @@ export async function listContentQueue(options: {
           priceMaxCentavos: row.priceMaxCentavos,
           subdomain: row.subdomain,
         };
-    const shown = images.filter((image) => image.state !== 'pending_remove');
+    const shown = images.filter((image) => image.kind === 'image' && image.state !== 'pending_remove');
     const flaggedAt = (isEdit && hasRevision ? row.revisionFlaggedAt : row.flaggedAt) ?? null;
     return {
       id: row.id,
