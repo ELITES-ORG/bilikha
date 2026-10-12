@@ -11,6 +11,7 @@ import {
 import { listQuerySchema, moderateSchema, profileParamsSchema } from './admin.schema.js';
 import { taxonomyAdminRouter } from './taxonomy.routes.js';
 import { organizationReviewRouter } from './organization-review.routes.js';
+import { idReviewRouter } from './id-review.routes.js';
 import {
   findAccounts,
   getProfile,
@@ -37,6 +38,9 @@ adminRouter.use(taxonomyAdminRouter);
 
 // Organisation pages are reviewed alongside profiles (plan 0051 phase 2).
 adminRouter.use(organizationReviewRouter);
+
+// New accounts' IDs (ADR 0057, plan 0053 phase 3).
+adminRouter.use(idReviewRouter);
 
 // Throws on purpose, so error reporting can be checked on a live environment
 // without breaking anything real (ADR 0053). Render's free tier has no shell,

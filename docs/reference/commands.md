@@ -57,6 +57,7 @@ will re-run migrate and seed afterwards.
 | `migrate:offers` | Manual fallback and verifier for the portfolio → offers move. **The move itself is in migration 0013**, because `db:migrate` applies every pending migration in one pass and leaves no window for a script between creating `offers` and dropping `portfolio_items`. Idempotent; exits 0 if the table is already gone |
 | `media:prune` | Dry-run list of orphaned storage objects older than 24 hours, across the four offer buckets. Pass `--delete` to remove them, after first deleting expired upload reservations. Never touches the ID bucket |
 | `media:buckets` | Creates or updates the four offer buckets so their size limits and allowed types match the upload limits ([ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md)). `-- --check` reports differences and changes nothing (exit 1 if any). `-- --max-file-size <bytes>` caps every bucket's limit, for a plan whose global limit is smaller. Never touches the ID bucket |
+| `ids:purge` | Runs the ID retention passes once, as the API does hourly: deletes the images of IDs decided at least 7 days ago (not while an appeal is open), and ID objects older than a day that no row references. Refuses the second pass when the database is local and storage is hosted ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)) |
 
 ---
 

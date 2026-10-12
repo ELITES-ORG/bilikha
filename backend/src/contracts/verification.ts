@@ -69,6 +69,17 @@ export interface IdDeclinedDetails {
   appealUntil?: string;
 }
 
+/**
+ * Another account whose ID has the same number, in `details.matches` of a
+ * `409 ID_NUMBER_MATCH`. Never the number and never its hash: the
+ * administrator sees which accounts match, not what matched.
+ */
+export interface IdNumberMatch {
+  username: string;
+  status: IdVerificationStatus;
+  decidedAt: string | null;
+}
+
 /** A row in the admin ID queue. No URLs: those are issued only by the detail. */
 export interface AdminIdVerificationRow {
   id: string;

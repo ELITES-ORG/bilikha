@@ -5,6 +5,7 @@ import {
   makeCompletedAgreement,
   makeConversation,
   makeCreative,
+  makeIdVerification,
   makeOffer,
   makeRating,
   makeUser,
@@ -40,8 +41,21 @@ async function waitingOfEveryKind() {
   });
   await makeOffer(live.profile.id, { title: 'ZZ Settled offer' });
 
-  // People: one new photo.
+  // People: one new photo, and one submitted ID. An ID step not yet submitted,
+  // and an ID already decided, wait for nothing.
   const person = await makeUser({ avatarPendingKey: 'avatars/someone/new.webp' });
+  await makeIdVerification((await makeUser()).id, {
+    idType: 'drivers_license',
+    frontKey: 'ids/a/front.webp',
+    backKey: 'ids/a/back.webp',
+    submittedAt: new Date(),
+  });
+  await makeIdVerification((await makeUser()).id);
+  await makeIdVerification((await makeUser()).id, {
+    status: 'verified',
+    submittedAt: new Date(),
+    decidedAt: new Date(),
+  });
 
   // Organisations: a new page, an edited one, and a logo waiting on a third.
   const municipalityId = await municipalityIdAt(0);
@@ -83,7 +97,7 @@ describe('the admin summary', () => {
       creatives: { pending: 1, edited: 1 },
       offers: { new: 1, changes: 2 },
       organizations: { pending: 1, edited: 1, logos: 1 },
-      people: { photos: 1 },
+      people: { photos: 1, ids: 1 },
       reports: { open: 1 },
     });
   });
@@ -93,7 +107,7 @@ describe('the admin summary', () => {
       creatives: { pending: 0, edited: 0 },
       offers: { new: 0, changes: 0 },
       organizations: { pending: 0, edited: 0, logos: 0 },
-      people: { photos: 0 },
+      people: { photos: 0, ids: 0 },
       reports: { open: 0 },
     });
   });

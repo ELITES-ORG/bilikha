@@ -192,6 +192,7 @@ export interface AdminSummary {
   creatives: { pending: number; edited: number };
   offers: { new: number; changes: number };
   organizations: { pending: number; edited: number; logos: number };
-  people: { photos: number };
+  /** Profile photos, and submitted IDs waiting for a decision (ADR 0057). */
+  people: { photos: number; ids: number };
   reports: { open: number };
 }

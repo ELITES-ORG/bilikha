@@ -56,7 +56,7 @@ export const ADMIN_SECTIONS = [
     path: '/admin/people',
     icon: IdCard,
     group: 'decide',
-    waiting: (s: AdminSummary) => s.people.photos,
+    waiting: (s: AdminSummary) => s.people.photos + s.people.ids,
   },
   {
     label: 'Reports',
