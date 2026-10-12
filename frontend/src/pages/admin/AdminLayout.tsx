@@ -139,7 +139,10 @@ function AdminPhoneNav({
     >
       <div
         className={cn(
-          'flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-3 py-2',
+          // `relative`: a badge's screen-reader text is absolutely positioned,
+          // and without a positioned ancestor here it is placed against the
+          // page, not clipped by this scroller, and widens the whole page.
+          'relative flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-3 py-2',
           // Last item fully reachable past the edge; hide the bar, keep keyboard scroll.
           'scroll-px-3',
           '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
