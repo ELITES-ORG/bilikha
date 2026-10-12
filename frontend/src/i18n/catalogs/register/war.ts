@@ -49,7 +49,7 @@ export const warRegister: Catalog = {
   'register.consent.termsAfter': '.',
   'register.errors.municipalityRequired': 'Pili han bungto',
   'register.errors.barangayRequired': 'Pili han barangay',
-  'register.errors.privacyRequired': 'Kinahanglan umuyon ka han  privacy notice',
+  'register.errors.privacyRequired': 'Kinahanglan umuyon ka han pahibaro han pagkapribado',
   'register.errors.termsRequired': 'Kinahanglan umuyon ka han termino han paggamit',
   'register.submit': 'Paghimo han account',
 };
