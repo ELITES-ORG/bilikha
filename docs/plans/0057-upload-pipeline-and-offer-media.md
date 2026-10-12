@@ -1,6 +1,6 @@
 # 0057. The upload pipeline, and audio, video and PDF on offers
 
-- **Status:** In progress
+- **Status:** In progress — rollout remains
 - **Owner:** reyxdz
 - **Related:** [ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md) ·
   [ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md) ·
@@ -60,7 +60,7 @@ upload pipeline that message attachments (#66) will reuse.
 | 2. Offer media in the data | 5 / 5 | Done |
 | 3. The offer editor | 2 / 2 | Done |
 | 4. Players, badges and posters | 3 / 3 | Done |
-| 5. Review previews and the terms | 0 / 2 | Not started |
+| 5. Review previews and the terms | 2 / 2 | Done |
 | 6. Rollout (reyxdz) | 0 / 6 | Not started |
 
 ---
@@ -235,14 +235,16 @@ Probe results:
 ## Phase 5 — Review previews and the terms (pull request 5)
 
 ### Step 5.1 — Review card
-- [ ] **Action.** The queue carries every kind, and the review card plays and
+- [x] **Action.** The queue carries every kind, and the review card plays and
   labels added and removed media.
-- [ ] **Verify.** The tests pass.
+- [x] **Verify.** The tests pass. In a browser, a change that added an MP3
+  through the editor showed under Changes as "1 audio added", with the track
+  labelled Added and playing; Approve made it live on the offer page.
 
 ### Step 5.2 — Terms
-- [ ] **Action.** Correct the limits and review lines, add the rights line, and
+- [x] **Action.** Correct the limits and review lines, add the rights line, and
   move the legal date and consent version.
-- [ ] **Verify.** Key parity passes, and "four images" is gone.
+- [x] **Verify.** Key parity passes, and "four images" is gone.
 
 ## Phase 6 — Rollout (reyxdz)
 

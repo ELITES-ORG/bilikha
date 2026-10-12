@@ -1007,7 +1007,12 @@ Offer rows also include:
 - `change`: `new` or `edit`
 - the proposed `title`, `description`, `priceMinCentavos`,
   `priceMaxCentavos`, `subdomain` and `flaggedAt`
-- `images[]`, each with a `state`: `live`, `pending_add` or `pending_remove`
+- `images[]`: every item on the offer, of every `kind` (`image`, `audio`,
+  `video`, `document`), each with a `state`: `live`, `pending_add` or
+  `pending_remove`. `url` is the file in its own bucket; `thumbUrl` is an
+  image's thumbnail or a video's poster, else `null`. Optional `title`,
+  `mimeType`, `sizeBytes` and `durationSeconds` describe audio, video and PDFs.
+  The row's own `url`/`thumbUrl` are always a photo's, never another kind's
 - for an `edit`, `published`: the public version's `title`, prices and
   `subdomain`
 
