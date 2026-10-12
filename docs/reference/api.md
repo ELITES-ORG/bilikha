@@ -428,7 +428,8 @@ Saved offers for the caller, newest first. Each row:
 
 - `id`, `savedAt`
 - `offer` — `{ id, title, priceMinCentavos, priceMaxCentavos, image }` where
-  `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, or `null`
+  `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, else the
+  first video's poster, or `null`
 - `creative` — `{ slug, displayName, municipality, avatarUrl }`
 
 Deleting an offer cascades the save row away.
@@ -592,7 +593,9 @@ see the previous recency order and no `isNearby` field.
 `singularName`, `domain`, `isPrimary`), `offers[]` (`id`, `title`,
 `description`, `priceMinCentavos`, `priceMaxCentavos`, `subdomain` (`slug`,
 `name`, `singularName`, `domain`), `images[]` with
-`id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
+`id` / `url` / `thumbUrl` / `sortOrder`, optional `mediaBadge` as on
+`GET /offers`, and optional `poster`, the first video's poster in the same shape
+as an image, or `null`), `memberSince`. Directory cards from
 `GET /creatives` omit `offers` — the offer listing is `GET /offers`.
 
 ---
@@ -843,7 +846,8 @@ message). Rejects self-contact (`400`). If the creative has blocked the caller �
 `403` with a neutral “cannot be delivered” message. Unpublished slugs → `404`.
 
 Message payloads include `offer` when present: `{ id, title, priceMinCentavos,
-priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` or `null`;
+priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` for the
+first photo, else the first video's poster, or `null`;
 `available` is `true` while the offer row exists). Deleting an offer nulls
 `messages.offer_id`, so later reads show `offer: null`.
 
@@ -1401,6 +1405,14 @@ max 50). Only `published` offers whose profile is `published` appear. A
 photo waiting to be added is left out. A budget filter keeps
 offers whose price range overlaps and drops "Price on request" rows. When the
 caller is signed in with a municipality, nearby creatives' offers lead the list.
+
+Each card's `image` is the first photo, or the first video's poster when the
+offer has no photo. `mediaBadge` is `{ kind, count, durationSeconds }` for the
+first audio, video or PDF item in the offer's order: its kind, how many items of
+that kind, and the first one's length; `null` when the offer has none. An item
+waiting to be added is left out of both. `mediaBadge` is optional, so a client
+must treat it as absent on an older API
+([ADR 0040](../decisions/0040-a-deploy-must-not-break-an-open-tab.md)).
 
 `q` matches an offer's title, description, sub-domain (plural name or
 singular label) and domain, and its creative's display name and town.

@@ -59,7 +59,7 @@ upload pipeline that message attachments (#66) will reuse.
 | 1. The shared pipeline | 6 / 6 | Done |
 | 2. Offer media in the data | 5 / 5 | Done |
 | 3. The offer editor | 2 / 2 | Done |
-| 4. Players, badges and posters | 0 / 3 | Not started |
+| 4. Players, badges and posters | 3 / 3 | Done |
 | 5. Review previews and the terms | 0 / 2 | Not started |
 | 6. Rollout (reyxdz) | 0 / 6 | Not started |
 
@@ -215,19 +215,22 @@ Probe results:
 ## Phase 4 — Players, badges and posters (pull request 4)
 
 ### Step 4.1 — Backend
-- [ ] **Action.** Media badges on cards, and a video poster as the cover when an
+- [x] **Action.** Media badges on cards, and a video poster as the cover when an
   offer has no image.
-- [ ] **Verify.** The tests pass.
+- [x] **Verify.** The tests pass.
 
 ### Step 4.2 — Players
-- [ ] **Action.** `AudioItem`, `VideoItem` and `DocumentLink`, with nothing
+- [x] **Action.** `AudioItem`, `VideoItem` and `DocumentLink`, with nothing
   preloaded and nothing autoplaying, and a source test.
-- [ ] **Verify.** `players.test.ts` passes.
+- [x] **Verify.** `players.test.ts` passes.
 
 ### Step 4.3 — Pages and cards
-- [ ] **Action.** Listen, Watch and Read on the offer page, and badges on cards.
-- [ ] **Verify.** On a throttled phone profile, only the poster downloads before
-  play.
+- [x] **Action.** Listen, Watch and Read on the offer page, and badges on cards.
+- [x] **Verify.** On a throttled phone profile, only the poster downloads before
+  play. At 375px on Slow 4G with the cache off, scrolling through all three
+  sections fetched the video poster and the gallery photo and nothing else;
+  the MP3 was requested only when play began. Initial JavaScript is 180.75 kB
+  gzip in 9 files (was 178.66 kB).
 
 ## Phase 5 — Review previews and the terms (pull request 5)
 
