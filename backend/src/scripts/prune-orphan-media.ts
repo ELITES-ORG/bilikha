@@ -19,22 +19,14 @@ import { db, closeDatabase } from '../db/index.js';
 import { mediaUploads, offerImages, organizations, users } from '../db/schema/index.js';
 import { AppError } from '../lib/http-error.js';
 import { deleteObject, listObjects, type StoredObject } from '../lib/storage.js';
+import { storageBelongsToDatabase } from '../lib/storage-safety.js';
 import { MEDIA_KINDS, bucketFor } from '../modules/media/media.limits.js';
 
 const AGE_MS = 24 * 60 * 60 * 1000;
 
-/**
- * A development database against the production bucket is the dangerous
- * combination: the local database has none of production's rows, so every
- * production object looks unreferenced and `--delete` would destroy real
- * users' avatars and offer images. Reading is harmless, so only deleting is
- * refused.
- */
+/** Deleting is refused when the database and the bucket are different environments. */
 function assertNotDevDatabaseAgainstRemoteStorage() {
-  const dbIsLocal = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(env.DATABASE_URL);
-  const storageIsRemote = (env.SUPABASE_URL ?? '').includes('.supabase.co');
-
-  if (dbIsLocal && storageIsRemote) {
+  if (!storageBelongsToDatabase()) {
     throw new Error(
       'Refusing to delete: DATABASE_URL is a local database but SUPABASE_URL is a hosted '
         + 'project. Every production object would look like an orphan. Run this where the '

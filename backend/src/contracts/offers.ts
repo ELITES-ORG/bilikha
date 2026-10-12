@@ -9,7 +9,7 @@
  * needs one request rather than two.
  */
 
-import type { OfferMediaItem } from './media.js';
+import type { MediaBadge, OfferMediaItem } from './media.js';
 import type { RatingSummary } from './ratings.js';
 
 export interface OfferSubdomain {
@@ -38,6 +38,10 @@ export interface ProfileOffer {
   priceMaxCentavos: number | null;
   subdomain: OfferSubdomain;
   images: OfferImage[];
+  /** Audio, video or PDF on the offer, for its card (ADR 0046). Optional for deployment skew (ADR 0040). */
+  mediaBadge?: MediaBadge | null;
+  /** The first video's poster, for a card when the offer has no photo. Optional for deployment skew. */
+  poster?: OfferImage | null;
 }
 
 export interface PublishedOfferCreative {
@@ -69,7 +73,10 @@ export interface PublishedOfferCard {
   priceMaxCentavos: number | null;
   createdAt: string;
   subdomain: OfferSubdomain;
+  /** The first photo, or the first video's poster when there is no photo. */
   image: OfferImage | null;
+  /** Audio, video or PDF on the offer (ADR 0046). Optional for deployment skew (ADR 0040). */
+  mediaBadge?: MediaBadge | null;
   creative: PublishedOfferCreative;
 }
 

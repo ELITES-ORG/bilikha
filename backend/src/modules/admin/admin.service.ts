@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNotNull, isNull, like, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNotNull, or, sql } from 'drizzle-orm';
 import type {
   AccountStatus,
   AdminAccount,
@@ -17,6 +17,7 @@ import {
   sessions,
   users,
 } from '../../db/schema/index.js';
+import { accountSessionsWhere } from '../../lib/account-sessions.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword } from '../../lib/password.js';
 import { generateTemporaryPassword } from '../../lib/temporary-password.js';
@@ -506,19 +507,10 @@ export async function resetAccountPassword(input: {
       .set({ passwordHash, mustChangePassword: true, updatedAt: new Date() })
       .where(eq(users.id, input.userId));
 
-    // By `user_id`, and by the serialised session for any row still without
-    // one — a session signed in by the previous build during a deploy, and not
-    // used since, has not had `user_id` written yet. Missing it would let it
-    // back in once the owner sets a new password. `userId` is a validated UUID,
-    // so it carries no LIKE wildcards.
-    await tx
-      .delete(sessions)
-      .where(
-        or(
-          eq(sessions.userId, input.userId),
-          and(isNull(sessions.userId), like(sessions.data, `%"userId":"${input.userId}"%`)),
-        ),
-      );
+    // Every session, including one an earlier build signed in without
+    // `user_id`, which would otherwise let itself back in once the owner sets a
+    // new password. See accountSessionsWhere.
+    await tx.delete(sessions).where(accountSessionsWhere(input.userId));
 
     await tx.insert(moderationActions).values({
       profileId: profile?.id ?? null,

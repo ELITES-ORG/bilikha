@@ -1,12 +1,18 @@
 import { useIsMutating, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import type { AdminSummary } from '@contracts/admin';
+import type {
+  AdminIdVerificationDetail,
+  AdminIdVerificationRow,
+} from '@contracts/verification';
+import type { Paginated } from '@contracts/pagination';
 import { apiClient, toApiError } from '@/lib/api-client';
 import type {
   AdminAccount,
   AdminProfileDetail,
   AdminQueueMeta,
   AdminQueueRow,
+  IdDecisionPayload,
   ModeratePayload,
   ProfileStatus,
   QueueStatus,
@@ -213,5 +219,75 @@ export function useResetAccountPassword() {
     },
     // The account's sessions are gone, which the queues and counts can reflect.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
+  });
+}
+
+/* --- ID review (ADR 0057, plan 0053 Phase 3) ------------------------------ */
+
+export const adminIdKeys = {
+  all: ['admin', 'ids'] as const,
+  queue: (view: 'pending' | 'decided', page: number) => [...adminIdKeys.all, 'queue', view, page] as const,
+  detail: (id: string) => [...adminIdKeys.all, 'detail', id] as const,
+};
+
+export function useAdminIdQueue(view: 'pending' | 'decided', page: number) {
+  return useQuery({
+    queryKey: adminIdKeys.queue(view, page),
+    queryFn: async (): Promise<Paginated<AdminIdVerificationRow>> => {
+      try {
+        const { data } = await apiClient.get<Paginated<AdminIdVerificationRow>>(
+          '/admin/id-verifications',
+          { params: { view, page, limit: 20 } },
+        );
+        return data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}
+
+/**
+ * One ID, with links that last minutes. Never cached and never prefetched: a
+ * link kept in memory would outlive what it was signed for, and every fetch is
+ * a look the server records against this administrator.
+ */
+export function useAdminIdVerification(id: string | undefined) {
+  return useQuery({
+    queryKey: adminIdKeys.detail(id ?? ''),
+    enabled: Boolean(id),
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+    queryFn: async (): Promise<AdminIdVerificationDetail> => {
+      try {
+        const { data } = await apiClient.get<ApiResponse<AdminIdVerificationDetail>>(
+          `/admin/id-verifications/${id}`,
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}
+
+export function useDecideIdVerification(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: IdDecisionPayload): Promise<AdminIdVerificationDetail> => {
+      try {
+        const { data } = await apiClient.post<ApiResponse<AdminIdVerificationDetail>>(
+          `/admin/id-verifications/${id}/decision`,
+          payload,
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminIdKeys.all }),
   });
 }

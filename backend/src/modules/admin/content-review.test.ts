@@ -15,6 +15,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { makeAdmin, makeCreative, makeOffer, makeUser } from '../../test/factories.js';
+import { bucketFor } from '../media/media.limits.js';
 import { clearAvatar, setAvatar } from '../media/media.service.js';
 import { saveOffer, listSavedOffers } from '../me/me.service.js';
 import { listNotifications } from '../notifications/notifications.service.js';
@@ -594,6 +595,36 @@ describe('the queue', () => {
     });
     expect(byId.get(photographer.id)).toMatchObject({ kind: 'avatar' });
     expect(byId.get(organization!.id)).toMatchObject({ kind: 'logo', ownerName: 'ZZ Queue Studio' });
+  });
+
+  it('the queue lists an added audio item with its kind, size and length', async () => {
+    const creative = await creativeWithSlug();
+    const offer = await makeOffer(creative.profile.id, { title: 'ZZ Queue audio' });
+    const photo = imageKeys(creative.profile.id, 1);
+    const audio = audioMedia(creative.profile.id);
+    await db.insert(offerImages).values([
+      { offerId: offer.id, ...photo, sortOrder: 1, state: 'live' },
+      { offerId: offer.id, ...audio, title: 'Demo song', sortOrder: 0, state: 'pending_add' },
+    ]);
+
+    const row = (await listContentQueue({ page: 1, limit: 50 })).data.find((item) => item.id === offer.id);
+
+    const storageUrl = (bucket: string, key: string) => `http://storage.test/storage/v1/object/public/${bucket}/${key}`;
+    expect(row?.images).toEqual([
+      expect.objectContaining({
+        kind: 'audio',
+        state: 'pending_add',
+        url: storageUrl(bucketFor('audio'), audio.objectKey),
+        thumbUrl: null,
+        title: 'Demo song',
+        mimeType: 'audio/mpeg',
+        sizeBytes: 4_000_000,
+        durationSeconds: 120,
+      }),
+      expect.objectContaining({ kind: 'image', state: 'live', thumbUrl: storageUrl(bucketFor('image'), photo.thumbKey) }),
+    ]);
+    // The row's own cover is still a photo, never the audio file.
+    expect(row?.url).toBe(storageUrl(bucketFor('image'), photo.objectKey));
   });
 
   it('puts an offer with contact details first', async () => {

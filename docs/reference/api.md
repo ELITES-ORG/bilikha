@@ -43,6 +43,8 @@ a stable contract — see [ADR 0012](../decisions/0012-versioned-api-prefix.md).
 | `VERIFICATION_PENDING` | 403 | The account may only browse until its ID is verified — see [ID verification](#id-verification) |
 | `ID_DECLINED` | 401 / 403 | The account's ID was declined. `details` is `{ kind, reason, appealUntil? }` — see [ID verification](#id-verification) |
 | `ID_STORAGE_UNAVAILABLE` | 503 | The private ID bucket is missing, public, or has no limits, so ID uploads are refused |
+| `ID_NUMBER_MATCH` | 409 | The ID number an administrator typed is already on another account. `details.matches` lists `{ username, status, decidedAt }` |
+| `ID_HASH_UNAVAILABLE` | 503 | `ID_HASH_SECRET` is not set, so an ID number cannot be recorded |
 | `INTERNAL_SERVER_ERROR` | 500 | Unhandled. `message` is generic in production |
 
 Timestamps are ISO 8601 UTC. IDs are UUID v4.
@@ -342,6 +344,80 @@ Fills the open `pending` row, or after `declined_retry` starts a new one
 | `409` | Nothing open to submit, or a second submission of the same ID racing the first |
 | `503` | `ID_STORAGE_UNAVAILABLE` |
 
+### Admin: `GET /api/v1/admin/id-verifications`
+
+Administrators only (404 for anyone else). Query: `view` (`pending` default, or
+`decided`), `page`, `limit` (max 50).
+
+- `pending` — submitted IDs waiting for a decision, **oldest first**. There is no
+  deadline for a review.
+- `decided` — decided in the last 7 days, newest first.
+
+`200` — `{ data: AdminIdVerificationRow[], meta: { page, limit, total } }`: id,
+account (username, registered full name, municipality, `accountSuspended`), ID
+type, status, `submittedAt`, `decidedAt`. **No object keys or URLs.**
+
+### Admin: `GET /api/v1/admin/id-verifications/:id`
+
+Administrators only. Rate limited to 60 per administrator per hour. Answered
+with `Cache-Control: no-store`.
+
+`200` — `{ data: AdminIdVerificationDetail }`: the registered name, birth date and
+age, municipality, barangay, ID type, status, the decision (who, when, reason,
+`windowEndsAt`), any appeal, whether an ID number was recorded or is absent
+(never the hash), and `frontUrl`/`backUrl`/`urlsExpireAt`.
+
+**The URLs are signed for at most 300 seconds, and never past the 7 days after
+the latest decision.** They are issued only while the row is `pending` or
+`appealed`, or its decision is under 7 days old, and its images are not
+deleted; otherwise they are `null` and storage is not asked. Each side is signed
+on its own: a side storage cannot sign is `null`, and the record still loads so
+the ID can be decided. Every response that carries a URL writes an `id_viewed`
+row to `moderation_actions` naming the administrator. `503 ID_STORAGE_UNAVAILABLE` when URLs are due and the ID bucket
+is not ready.
+
+### Admin: `POST /api/v1/admin/id-verifications/:id/decision`
+
+```jsonc
+{
+  "decision": "verify",          // or "retry" (try again), "final" (not from Biliran)
+  "reason": "…",                 // ≤ 500; required to decline; the person sees it as written
+  "idNumber": "N01-23-456789",   // typed from the photo; stored only as a keyed hash
+  "noIdNumber": false,           // the document has no number
+  "acknowledgeMatch": false      // after seeing ID_NUMBER_MATCH
+}
+```
+
+- `verify` and `final` are refused (`409`) unless this administrator was shown
+  the photos: an `id_viewed` row by them on this row, written only when a photo
+  was signed. `retry` is not, so an ID whose photos will not load can still be
+  sent back.
+- `verify` and `final` need `idNumber` or `noIdNumber: true`; `retry` needs
+  neither.
+- The number is hashed (HMAC-SHA256 with `ID_HASH_SECRET`). If **another
+  account** has the same hash and `acknowledgeMatch` is not `true`: `409
+  ID_NUMBER_MATCH` with `details.matches: [{ username, status, decidedAt }]` —
+  never the number or the hash. Verifying despite a match needs a `reason`,
+  recorded as "Verified despite N matching account(s): …".
+- One transaction: the row's status, `reviewed_by`, `decided_at`, reason and hash,
+  an audit row, and for a decline **every session of the account rewritten** to
+  carry `declineNotice` (the next request answers `401 ID_DECLINED` with the
+  reason). After *verify*, an `id_verified` notification.
+
+`200` — `{ data: AdminIdVerificationDetail }` (no URLs).
+
+| Status | When |
+|---|---|
+| `400` | Validation; a decline without a reason; a number missing, or given with `noIdNumber`; a number too short or not in Latin letters and digits; verifying despite a match without a reason |
+| `404` | No such row, or not an administrator |
+| `409` | Your own ID; a suspended account; not waiting for a decision (including a second decision racing the first); `verify` or `final` without having been shown the photos; `ID_NUMBER_MATCH` |
+| `503` | `ID_HASH_UNAVAILABLE` — `ID_HASH_SECRET` is not set |
+
+**Images are deleted 7 days after the latest decision** by an hourly pass in the
+API (and `npm run ids:purge`), except while an appeal is open; ID objects older
+than a day that no row references are deleted too. The record — outcome, ID
+type, who decided and when, the hash — stays.
+
 ---
 
 ## Account
@@ -428,7 +504,8 @@ Saved offers for the caller, newest first. Each row:
 
 - `id`, `savedAt`
 - `offer` — `{ id, title, priceMinCentavos, priceMaxCentavos, image }` where
-  `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, or `null`
+  `image` is `{ url, thumbUrl }` for the first image by `sortOrder`, else the
+  first video's poster, or `null`
 - `creative` — `{ slug, displayName, municipality, avatarUrl }`
 
 Deleting an offer cascades the save row away.
@@ -592,7 +669,9 @@ see the previous recency order and no `isNearby` field.
 `singularName`, `domain`, `isPrimary`), `offers[]` (`id`, `title`,
 `description`, `priceMinCentavos`, `priceMaxCentavos`, `subdomain` (`slug`,
 `name`, `singularName`, `domain`), `images[]` with
-`id` / `url` / `thumbUrl` / `sortOrder`), `memberSince`. Directory cards from
+`id` / `url` / `thumbUrl` / `sortOrder`, optional `mediaBadge` as on
+`GET /offers`, and optional `poster`, the first video's poster in the same shape
+as an image, or `null`), `memberSince`. Directory cards from
 `GET /creatives` omit `offers` — the offer listing is `GET /offers`.
 
 ---
@@ -843,7 +922,8 @@ message). Rejects self-contact (`400`). If the creative has blocked the caller �
 `403` with a neutral “cannot be delivered” message. Unpublished slugs → `404`.
 
 Message payloads include `offer` when present: `{ id, title, priceMinCentavos,
-priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` or `null`;
+priceMaxCentavos, image, available }` (`image` is `{ url, thumbUrl }` for the
+first photo, else the first video's poster, or `null`;
 `available` is `true` while the offer row exists). Deleting an offer nulls
 `messages.offer_id`, so later reads show `offer: null`.
 
@@ -958,13 +1038,14 @@ How many items wait for a decision under each admin section
     "creatives": { "pending": 2, "edited": 1 },
     "offers": { "new": 3, "changes": 1 },
     "organizations": { "pending": 0, "edited": 1, "logos": 1 },
-    "people": { "photos": 4 },
+    "people": { "photos": 4, "ids": 2 },
     "reports": { "open": 0 }
   }
 }
 ```
 
-Published and suspended rows are not waiting, so they are not counted.
+Published and suspended rows are not waiting, so they are not counted. `people.ids`
+is submitted IDs waiting for a decision ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)).
 
 ### `GET /api/v1/admin/media`
 
@@ -1003,7 +1084,12 @@ Offer rows also include:
 - `change`: `new` or `edit`
 - the proposed `title`, `description`, `priceMinCentavos`,
   `priceMaxCentavos`, `subdomain` and `flaggedAt`
-- `images[]`, each with a `state`: `live`, `pending_add` or `pending_remove`
+- `images[]`: every item on the offer, of every `kind` (`image`, `audio`,
+  `video`, `document`), each with a `state`: `live`, `pending_add` or
+  `pending_remove`. `url` is the file in its own bucket; `thumbUrl` is an
+  image's thumbnail or a video's poster, else `null`. Optional `title`,
+  `mimeType`, `sizeBytes` and `durationSeconds` describe audio, video and PDFs.
+  The row's own `url`/`thumbUrl` are always a photo's, never another kind's
 - for an `edit`, `published`: the public version's `title`, prices and
   `subdomain`
 
@@ -1426,6 +1512,14 @@ max 50). Only `published` offers whose profile is `published` appear. A
 photo waiting to be added is left out. A budget filter keeps
 offers whose price range overlaps and drops "Price on request" rows. When the
 caller is signed in with a municipality, nearby creatives' offers lead the list.
+
+Each card's `image` is the first photo, or the first video's poster when the
+offer has no photo. `mediaBadge` is `{ kind, count, durationSeconds }` for the
+first audio, video or PDF item in the offer's order: its kind, how many items of
+that kind, and the first one's length; `null` when the offer has none. An item
+waiting to be added is left out of both. `mediaBadge` is optional, so a client
+must treat it as absent on an older API
+([ADR 0040](../decisions/0040-a-deploy-must-not-break-an-open-tab.md)).
 
 `q` matches an offer's title, description, sub-domain (plural name, singular
 label or an everyday-word alias) and domain, and its creative's display name

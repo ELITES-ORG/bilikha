@@ -133,6 +133,7 @@ export const warLegal: Catalog = {
   'terms.profiles.limits': '',
   'terms.profiles.honest': '',
   'terms.profiles.ownership': '',
+  'terms.profiles.rights': '',
   'terms.agreements.heading': '',
   'terms.agreements.postings': '',
   'terms.agreements.records': '',

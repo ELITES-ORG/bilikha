@@ -1,6 +1,6 @@
 # 0057. The upload pipeline, and audio, video and PDF on offers
 
-- **Status:** In progress
+- **Status:** In progress — rollout remains
 - **Owner:** reyxdz
 - **Related:** [ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md) ·
   [ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md) ·
@@ -58,9 +58,9 @@ upload pipeline that message attachments (#66) will reuse.
 | 0. Prove the transport | 1 / 1 | Done |
 | 1. The shared pipeline | 6 / 6 | Done |
 | 2. Offer media in the data | 5 / 5 | Done |
-| 3. The offer editor | 0 / 2 | Not started |
-| 4. Players, badges and posters | 0 / 3 | Not started |
-| 5. Review previews and the terms | 0 / 2 | Not started |
+| 3. The offer editor | 2 / 2 | Done |
+| 4. Players, badges and posters | 3 / 3 | Done |
+| 5. Review previews and the terms | 2 / 2 | Done |
 | 6. Rollout (reyxdz) | 0 / 6 | Not started |
 
 ---
@@ -195,47 +195,56 @@ Probe results:
 ## Phase 3 — The offer editor (pull request 3)
 
 ### Step 3.1 — The uploader
-- [ ] **Action.** `MediaUploader` in the offer editor: limits shown before
+- [x] **Action.** `MediaUploader` in the offer editor: limits shown before
   picking, the quota, progress, cancel, resume, the rights reminder, and the
   legacy fallback.
-- [ ] **Verify.** The logic tests pass, and the bundle is within budget.
+- [x] **Verify.** The logic tests pass, and the bundle is within budget.
+  Initial JavaScript is 178.64 kB gzip in 9 files (was 178.38 kB in 8), and
+  `tus-js-client` loads in its own chunk only when an upload starts.
 
 ### Step 3.2 — Tried for real
-- [ ] **Action.** Upload each kind through the local API against staging storage.
-- [ ] **Verify.**
+- [x] **Action.** Upload each kind through the local API against staging storage.
+- [x] **Verify.**
   - Each kind survives a reload.
   - A refusal happens before any request.
   - Cancel leaves no reservation.
-  - A cut connection resumes.
+  - A cut connection resumes. DevTools' offline switch only stalls a request
+    already under way, so the check cut every connection at a proxy instead:
+    the next request resumed at offset 6,291,456, after the first stored chunk.
 
 ## Phase 4 — Players, badges and posters (pull request 4)
 
 ### Step 4.1 — Backend
-- [ ] **Action.** Media badges on cards, and a video poster as the cover when an
+- [x] **Action.** Media badges on cards, and a video poster as the cover when an
   offer has no image.
-- [ ] **Verify.** The tests pass.
+- [x] **Verify.** The tests pass.
 
 ### Step 4.2 — Players
-- [ ] **Action.** `AudioItem`, `VideoItem` and `DocumentLink`, with nothing
+- [x] **Action.** `AudioItem`, `VideoItem` and `DocumentLink`, with nothing
   preloaded and nothing autoplaying, and a source test.
-- [ ] **Verify.** `players.test.ts` passes.
+- [x] **Verify.** `players.test.ts` passes.
 
 ### Step 4.3 — Pages and cards
-- [ ] **Action.** Listen, Watch and Read on the offer page, and badges on cards.
-- [ ] **Verify.** On a throttled phone profile, only the poster downloads before
-  play.
+- [x] **Action.** Listen, Watch and Read on the offer page, and badges on cards.
+- [x] **Verify.** On a throttled phone profile, only the poster downloads before
+  play. At 375px on Slow 4G with the cache off, scrolling through all three
+  sections fetched the video poster and the gallery photo and nothing else;
+  the MP3 was requested only when play began. Initial JavaScript is 180.75 kB
+  gzip in 9 files (was 178.66 kB).
 
 ## Phase 5 — Review previews and the terms (pull request 5)
 
 ### Step 5.1 — Review card
-- [ ] **Action.** The queue carries every kind, and the review card plays and
+- [x] **Action.** The queue carries every kind, and the review card plays and
   labels added and removed media.
-- [ ] **Verify.** The tests pass.
+- [x] **Verify.** The tests pass. In a browser, a change that added an MP3
+  through the editor showed under Changes as "1 audio added", with the track
+  labelled Added and playing; Approve made it live on the offer page.
 
 ### Step 5.2 — Terms
-- [ ] **Action.** Correct the limits and review lines, add the rights line, and
+- [x] **Action.** Correct the limits and review lines, add the rights line, and
   move the legal date and consent version.
-- [ ] **Verify.** Key parity passes, and "four images" is gone.
+- [x] **Verify.** Key parity passes, and "four images" is gone.
 
 ## Phase 6 — Rollout (reyxdz)
 

@@ -30,3 +30,12 @@ export interface ModeratePayload {
   action: ModerationActionType;
   reason?: string;
 }
+
+/** `POST /admin/id-verifications/:id/decision` (plan 0053 Phase 3). */
+export interface IdDecisionPayload {
+  decision: 'verify' | 'retry' | 'final';
+  reason?: string;
+  idNumber?: string;
+  noIdNumber?: boolean;
+  acknowledgeMatch?: boolean;
+}

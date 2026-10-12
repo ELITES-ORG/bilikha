@@ -31,7 +31,7 @@ export const LEGAL_CONTACT: string | null = null;
  * When these documents were last changed. Shown on both pages: a notice with no
  * date cannot be checked against what a person agreed to.
  */
-export const LEGAL_LAST_UPDATED = '12 October 2026';
+export const LEGAL_LAST_UPDATED = '13 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
@@ -43,8 +43,10 @@ export const LEGAL_LAST_UPDATED = '12 October 2026';
  * that started after the earlier version, so an account registered before it
  * agreed to a notice without them, and its stored version says so.
  *
- * 2026-10-12: the notice began saying that searches which find nothing are
- * counted by word and day (issue #24) — again processing that started after
- * the earlier version.
+ * 2026-10-13: the terms began listing audio, video and PDF on offers, and
+ * saying uploads must be the uploader's own work or theirs to share; and the
+ * notice began saying that searches which find nothing are counted by word and
+ * day (issue #24) — again processing that started after the earlier version.
+ * Both changed on staging the same day and reach production together.
  */
-export const CONSENT_VERSION = '2026-10-12';
+export const CONSENT_VERSION = '2026-10-13';
