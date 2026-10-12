@@ -68,4 +68,12 @@ export const war: Catalog = {
   'signIn.declined.retry': '',
   'signIn.declined.final': '',
   'signIn.declined.appealed': '',
+  'media.listen': '',
+  'media.watch': '',
+  'media.read': '',
+  'media.openPdf': '',
+  'media.badge.audio': '',
+  'media.badge.video': '',
+  'media.badge.document': '',
+  'media.noPoster': '',
 };
