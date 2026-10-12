@@ -6,8 +6,11 @@ import {
   Clock,
   FilePen,
   Flag,
+  MessageSquareWarning,
   PencilLine,
+  RotateCcw,
   ShieldCheck,
+  XCircle,
 } from 'lucide-react';
 import { Badge, Button, Eyebrow } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -156,7 +159,12 @@ export type AdminStatus =
   | 'active'
   | 'archived'
   | 'flagged'
-  | 'admin';
+  | 'admin'
+  // ID verification (ADR 0057). A waiting ID uses `pending_review`.
+  | 'verified'
+  | 'declined_retry'
+  | 'declined_final'
+  | 'appealed';
 
 const STATUS: Record<AdminStatus, { label: string; tone: Parameters<typeof Badge>[0]['tone']; icon: ReactNode }> = {
   draft: { label: 'Draft', tone: 'neutral', icon: <FilePen className="size-3.5" aria-hidden="true" /> },
@@ -168,6 +176,10 @@ const STATUS: Record<AdminStatus, { label: string; tone: Parameters<typeof Badge
   archived: { label: 'Archived', tone: 'warning', icon: <Archive className="size-3.5" aria-hidden="true" /> },
   flagged: { label: 'Flagged', tone: 'warning', icon: <Flag className="size-3.5" aria-hidden="true" /> },
   admin: { label: 'Administrator', tone: 'brand', icon: <ShieldCheck className="size-3.5" aria-hidden="true" /> },
+  verified: { label: 'Verified', tone: 'success', icon: <CheckCircle2 className="size-3.5" aria-hidden="true" /> },
+  declined_retry: { label: 'Try again', tone: 'warning', icon: <RotateCcw className="size-3.5" aria-hidden="true" /> },
+  declined_final: { label: 'Not from Biliran', tone: 'danger', icon: <XCircle className="size-3.5" aria-hidden="true" /> },
+  appealed: { label: 'Appealed', tone: 'brand', icon: <MessageSquareWarning className="size-3.5" aria-hidden="true" /> },
 };
 
 /** A status as a word and an icon, never colour alone. */

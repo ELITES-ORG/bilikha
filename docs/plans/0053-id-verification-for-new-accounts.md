@@ -109,7 +109,7 @@ as long as it takes, and its images are kept while it waits.
 |---|---|---|
 | 1. Data and private storage | 7 / 7 | Done |
 | 2. Account side | 9 / 9 | Done |
-| 3. Admin review and retention | 0 / 7 | Not started |
+| 3. Admin review and retention | 7 / 7 | Done |
 | 4. Reversal and appeals | 0 / 5 | Not started |
 | 5. Switch on | 0 / 5 | Not started |
 
@@ -474,9 +474,54 @@ it.
 
 Branch `feat/id-verification-admin`. Dormant until Phase 5.
 
+**Built as (2026-10-12).** Differences from the steps below, found in the code:
+
+- The orphan pass is guarded in the API process too, not only in the script:
+  a local database against a hosted `SUPABASE_URL` would see every real ID as
+  unreferenced. The check, `storageBelongsToDatabase()`, moved to
+  `backend/src/lib/storage-safety.ts` and is shared with `media:prune`. The
+  timer skips the orphan pass with one warning; the decided-images pass only
+  touches keys from the database's own rows and always runs.
+- A signed URL lives `min(300 seconds, the time left in the 7 days)`, so it
+  never outlives the window; under a second left, none is issued.
+- Each side is signed on its own. A side that cannot be signed comes back
+  null and the page says so; if neither can, there is no `id_viewed` row,
+  because nothing was shown. Before this, one missing object made the whole
+  review a 502 and the decision panel unreachable.
+- **An ID is settled only by someone who saw it.** *Verify* and *not from
+  Biliran* are refused (409) unless the deciding administrator has an
+  `id_viewed` row on that row, which is written only when a photo was signed;
+  the page also keeps both disabled until every side the ID type has is on
+  screen. *Try again* stays open, as the way out when photos will not load.
+  The first local run verified an account whose photos did not exist, which is
+  how this was found.
+- Changing the ID number after a match warning withdraws the acknowledgement
+  and clears the warning, so a different number is checked against its own
+  matches (`withNumberChange` in `id-review-logic.ts`).
+- ID audit rows set `subject_user_id` and `id_verification_id` and leave
+  `profile_id` null: a row per view would flood a profile's history.
+- Each view is limited per administrator by `adminIdViewLimiter`, 60 an hour,
+  failures not counted. The detail is sent `Cache-Control: no-store`.
+- The body is already kept out of logs and Sentry: `pino-http` logs only
+  `{ id, method, url }` (now `requestLogFields` in `app.ts`, which the test
+  calls), and Sentry is an allowlist with request bodies off, so there was no
+  redaction list to add `idNumber` to. The test inspects every logger call.
+- A pending row is always a fresh submission (a resubmission inserts a new
+  row), so it never already holds a hash; "unless the row already has a hash"
+  in Step 3.7 applies to the reversal and appeal paths in Phase 4.
+- Tests set `ID_HASH_SECRET` and storage themselves and restore them: CI has
+  no `.env`, and the test setup turns storage off whatever `.env` holds.
+- ID checks live under **People**, as [ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md)
+  (merged while this phase was built) decides, rather than as a section of
+  their own: the queue is a section of the People page (`IdCheckQueue`), a
+  review is at `/admin/people/ids/:id`, and People's badge counts submitted
+  IDs through `people.ids` in `GET /admin/summary`.
+- The pending view is `pending` and submitted. `appealed` rows are already
+  treated as open by the URL rule and the sweep; their queue is Phase 4.
+
 ### Step 3.1 — The queue and the review
 
-- [ ] **Action.** In the admin module (all routes behind `requireAdmin`):
+- [x] **Action.** In the admin module (all routes behind `requireAdmin`):
       - `GET /admin/id-verifications?view=pending|decided` — `pending`:
         submitted, oldest first, suspended accounts flagged; `decided`: rows
         whose latest decision is under 7 days old. `Paginated`, no URLs.
@@ -491,14 +536,14 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
         the detail still returns the record, with `frontUrl` and `backUrl`
         null and no `id_viewed` row, even if the sweep has not yet deleted the
         images.
-- [ ] **Verify.** Tests: a non-admin and a signed-out caller get 404; each view
+- [x] **Verify.** Tests: a non-admin and a signed-out caller get 404; each view
       writes one `id_viewed` row; the signed-download call asks for 300 seconds;
       a row decided 7 days and one minute ago whose images still exist gets no
       URLs and no storage call.
 
 ### Step 3.2 — The decision
 
-- [ ] **Action.** `POST /admin/id-verifications/:id/decision`
+- [x] **Action.** `POST /admin/id-verifications/:id/decision`
       `{ decision: 'verify' | 'retry' | 'final', reason, idNumber?, noIdNumber?,
       acknowledgeMatch? }` (the last three: Step 3.7) — reason required to
       decline, at most 500 characters. Refused (409) for your own submission, a
@@ -510,14 +555,14 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       `user_id = null`, cookie kept. The helper is shared with
       `resetAccountPassword` in `backend/src/modules/admin/admin.service.ts`,
       which keeps deleting. After commit, `notify` the account `id_verified`.
-- [ ] **Verify.** Tests: each decision writes its audit row; a decline rewrites
+- [x] **Verify.** Tests: each decision writes its audit row; a decline rewrites
       every session including a legacy one, and the next request gets
       `ID_DECLINED` with the reason; after *verify*, a write on the same session
       succeeds; self, suspended and double decisions are refused.
 
 ### Step 3.3 — Deleting the images
 
-- [ ] **Action.** `backend/src/modules/verification/retention.ts`:
+- [x] **Action.** `backend/src/modules/verification/retention.ts`:
       `purgeDecidedIdImages(now)` deletes the images of rows decided at least 7
       days before `now` and **not `appealed`** (an open appeal keeps its ID),
       then nulls the keys and sets `images_deleted_at` (conditional on it being
@@ -526,14 +571,14 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       every error. Start an hourly timer, plus one run a minute after start, in
       `backend/src/index.ts` (never in `createApp`), `unref`'d. Add
       `npm run ids:purge` (`backend/src/scripts/purge-id-images.ts`).
-- [ ] **Verify.** Tests: a row decided 8 days ago loses its images and keeps its
+- [x] **Verify.** Tests: a row decided 8 days ago loses its images and keeps its
       record; one decided 6 days ago keeps both; an `appealed` row decided 8
       days ago keeps both; a fresh orphan and a referenced key are kept; a
       storage error is logged, not thrown.
 
 ### Step 3.4 — The admin pages
 
-- [ ] **Action.** Section **ID checks** at `/admin/ids` in
+- [x] **Action.** Section **ID checks** at `/admin/ids` in
       `frontend/src/pages/admin/admin-sections.ts` (and its test) and lazy
       routes in `frontend/src/App.tsx`: `AdminIdQueuePage` (Pending and Decided
       tabs) and `AdminIdReviewPage` — front and back side by side, the
@@ -548,23 +593,26 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       image fails to load. New `AdminStatus` entries in
       `frontend/src/pages/admin/admin-ui.tsx`; hooks in
       `frontend/src/features/admin/api.ts`.
-- [ ] **Verify.** At 1280px and 375px, light and dark.
+- [x] **Verify.** At 1280px and 375px, light and dark.
 
 ### Step 3.5 — Document the admin side
 
-- [ ] **Action.** `docs/reference/api.md` for the three admin routes.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Action.** `docs/reference/api.md` for the three admin routes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ### Step 3.6 — Check signed-URL expiry by hand
 
-- [ ] **Action.** Open a review, copy a signed URL, and `curl` it after 5
+- [x] **Action.** Open a review, copy a signed URL, and `curl` it after 5
       minutes.
-- [ ] **Verify.** It is refused. The object's
+- [x] **Verify.** It is refused. The object's
       `/storage/v1/object/public/ids/…` URL is refused at any time.
+      *Done 2026-10-12 against the local stack:* the signed URL answered 200 at
+      75 seconds and `400 InvalidJWT` ("exp" claim timestamp check failed) at
+      310; the public URL answered 400 from the start.
 
 ### Step 3.7 — Recognise a repeated ID
 
-- [ ] **Action.** In the decision service. This covers Step 3.2 and also the
+- [x] **Action.** In the decision service. This covers Step 3.2 and also the
       reversal and appeal paths in Steps 4.1 and 4.3.
       - A decision that ends in `verified` or `declined_final` needs either
         `idNumber` or `noIdNumber: true`, unless the row already has a hash or
@@ -584,7 +632,7 @@ Branch `feat/id-verification-admin`. Dormant until Phase 5.
       - The request body is never logged. Confirm that `pino-http` and Sentry's
         request capture (ADR 0053) leave the body out, and add `idNumber` to any
         redaction list that exists.
-- [ ] **Verify.** Tests: *verify* without a number or `noIdNumber` gets 400;
+- [x] **Verify.** Tests: *verify* without a number or `noIdNumber` gets 400;
       *try again* without one gets 200; the stored row holds a 64-character hex
       hash and the number appears nowhere in it; a second account's ID with the
       same number written differently (`1234 5678` and `12345678`) gets 409

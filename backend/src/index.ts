@@ -9,6 +9,7 @@ import {
   storageKeyClaims,
 } from './lib/storage.js';
 import { idHashReady } from './modules/verification/id-number.js';
+import { startIdRetention } from './modules/verification/retention.js';
 import { closeDatabase } from './db/index.js';
 
 // Before anything takes a request, so the first failure is not the one missed.
@@ -60,6 +61,10 @@ const server = app.listen(env.PORT, () => {
       }
     });
   }
+
+  // Deletes ID photos 7 days after their decision (ADR 0057). Here, never in
+  // createApp, so nothing that only builds the app ever starts it.
+  startIdRetention();
 
   if (!idHashReady()) {
     logger.warn(

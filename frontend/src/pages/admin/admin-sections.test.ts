@@ -27,6 +27,14 @@ describe('which admin section is marked', () => {
     ]);
   });
 
+  it('keeps People marked on an ID review, and nothing else', () => {
+    const review = '/admin/people/ids/0f2c8f1e-1111-2222-3333-444455556666';
+
+    expect(ADMIN_SECTIONS.filter((s) => isAdminSectionActive(review, s.path)).map((s) => s.path)).toEqual([
+      '/admin/people',
+    ]);
+  });
+
   it('marks a section on its own sub-paths', () => {
     expect(isAdminSectionActive('/admin/offers/anything', '/admin/offers')).toBe(true);
   });
@@ -42,11 +50,11 @@ describe('the sections by subject', () => {
     creatives: { pending: 2, edited: 1 },
     offers: { new: 3, changes: 4 },
     organizations: { pending: 1, edited: 2, logos: 5 },
-    people: { photos: 6 },
+    people: { photos: 6, ids: 2 },
     reports: { open: 7 },
   };
 
-  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers', () => {
+  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers, an ID with photos', () => {
     const waiting = Object.fromEntries(
       ADMIN_SECTIONS.map((section) => [section.label, section.waiting ? section.waiting(summary) : null]),
     );
@@ -55,11 +63,18 @@ describe('the sections by subject', () => {
       Creatives: 3,
       Offers: 7,
       Organisations: 8,
-      People: 6,
+      People: 8,
       Reports: 7,
       'Find an account': null,
       Taxonomy: null,
     });
+  });
+
+  it('still counts People when an API from before ID review sends no ids', () => {
+    const people = ADMIN_SECTIONS.find((section) => section.label === 'People')!;
+    const older: AdminSummary = { ...summary, people: { photos: 6 } };
+
+    expect(people.waiting!(older)).toBe(6);
   });
 
   it('lists every section of work before the tools, and gives only the work a badge', () => {

@@ -67,6 +67,9 @@ const AdminTaxonomyPage = lazy(() =>
 const AdminProfilePage = lazy(() =>
   import('@/pages/admin/AdminProfilePage').then((m) => ({ default: m.AdminProfilePage })),
 );
+const AdminIdReviewPage = lazy(() =>
+  import('@/pages/admin/AdminIdReviewPage').then((m) => ({ default: m.AdminIdReviewPage })),
+);
 const AdminOrganizationsPage = lazy(() =>
   import('@/pages/admin/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })),
 );
@@ -423,6 +426,7 @@ export default function App() {
                 <Route path="organizations" element={<AdminOrganizationsPage />} />
                 <Route path="people" element={<AdminPeoplePage />} />
                 <Route path="reports" element={<AdminRatingsPage />} />
+                <Route path="people/ids/:id" element={<AdminIdReviewPage />} />
                 <Route path="accounts" element={<AdminAccountsPage />} />
                 <Route path="taxonomy" element={<AdminTaxonomyPage />} />
                 <Route path="media" element={<Navigate to="/admin/offers" replace />} />

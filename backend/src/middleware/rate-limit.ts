@@ -162,6 +162,28 @@ export const adminPasswordResetLimiter = rateLimit({
 });
 
 /**
+ * An administrator opening ID reviews. Each view signs fresh links to someone's
+ * government ID (ADR 0057), so a stolen admin session should not be able to
+ * page through every ID in an afternoon. Sixty an hour is far beyond a real
+ * review day's pace. Failures do not count.
+ */
+export const adminIdViewLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipFailedRequests: true,
+  keyGenerator: (req) => req.session.userId!,
+  validate: { keyGeneratorIpFallback: false },
+  message: {
+    error: {
+      code: 'RATE_LIMITED',
+      message: 'Too many ID reviews opened. Try again in an hour.',
+    },
+  },
+});
+
+/**
  * Organisation invitations — 30 per inviter per hour. Each one notifies someone
  * else, so without a ceiling an organisation could spam any creative's
  * notification centre. Generous for building a real team in an afternoon.

@@ -24,6 +24,15 @@ export function redactSearch(url: string): string {
   return `${url.slice(0, queryAt)}?${params.toString()}`;
 }
 
+/**
+ * What the request log records about a request: its id, method and URL — never
+ * the body, which can hold an ID number an administrator typed (ADR 0057) or a
+ * password, and never the headers, which hold the session cookie.
+ */
+export function requestLogFields(req: { id?: unknown; method?: string; url?: string }) {
+  return { id: req.id, method: req.method, url: redactSearch(req.url ?? '') };
+}
+
 export function createApp(): Express {
   const app = express();
 
@@ -80,7 +89,7 @@ export function createApp(): Express {
         remove: true,
       },
       serializers: {
-        req: (req) => ({ id: req.id, method: req.method, url: redactSearch(req.url) }),
+        req: requestLogFields,
         res: (res) => ({ statusCode: res.statusCode }),
       },
     }),

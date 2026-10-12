@@ -201,6 +201,11 @@ export interface AdminSummary {
   creatives: { pending: number; edited: number };
   offers: { new: number; changes: number };
   organizations: { pending: number; edited: number; logos: number };
-  people: { photos: number };
+  /**
+   * Profile photos, and submitted IDs waiting for a decision (ADR 0057).
+   * `ids` is optional for deployment skew (ADR 0040): an API from before ID
+   * review does not send it.
+   */
+  people: { photos: number; ids?: number };
   reports: { open: number };
 }
