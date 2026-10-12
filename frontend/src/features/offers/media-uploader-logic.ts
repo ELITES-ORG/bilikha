@@ -1,6 +1,7 @@
 import type { MediaKind, MediaLimits } from '@contracts/media';
 import { formatBytes, formatDuration, type RefusalReason } from '@/features/media/checks';
 import type { MessageKey } from '@/i18n/catalogs/en';
+import { ApiError } from '@/lib/api-client';
 import type { OwnOffer, OwnOfferImage, OwnOfferMediaItem } from './api';
 
 /**
@@ -52,6 +53,8 @@ export interface RefusalContext {
   durationSeconds?: number | null;
   /** The limit the file broke: bytes for size, seconds for duration. */
   limit?: number | null;
+  /** Only images can be added, so a refused type names the image types. */
+  imagesOnly?: boolean;
 }
 
 const REFUSAL_KEYS: Readonly<Record<Refusal, MessageKey>> = {
@@ -77,6 +80,7 @@ export function fill(text: string, values: Readonly<Record<string, string>>): st
 export function refusalMessage(reason: string, context: RefusalContext, t: (key: MessageKey) => string): string {
   const key = (REFUSAL_KEYS as Readonly<Record<string, MessageKey>>)[reason];
   if (!key) return t('offers.media.failed');
+  if (reason === 'type' && context.imagesOnly) return t('offers.media.refused.typeImagesOnly');
   if (reason === 'size') {
     return fill(t(key), {
       size: formatBytes(context.sizeBytes ?? 0),
@@ -90,6 +94,24 @@ export function refusalMessage(reason: string, context: RefusalContext, t: (key:
     });
   }
   return t(key);
+}
+
+/** Where an upload was when it failed: still resizing an image in the browser, or sending it. */
+export type UploadStage = 'preparing' | 'sending';
+
+/**
+ * The sentence for an upload that failed after its checks passed. A refusal
+ * the catalogue words reads as that refusal, and any other API error as the
+ * API's own message. An image the browser could not resize keeps the message
+ * written for it (a HEIC that will not decode, say). Only a transfer that
+ * broke off reads as "The upload stopped".
+ */
+export function uploadFailureMessage(error: unknown, stage: UploadStage, t: (key: MessageKey) => string): string {
+  if (error instanceof ApiError) {
+    return error.code in REFUSAL_KEYS ? refusalMessage(error.code, {}, t) : error.message;
+  }
+  if (stage === 'preparing' && error instanceof Error) return error.message;
+  return t('offers.media.failed');
 }
 
 type ItemState = OwnOfferImage['state'];

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { KindLimitView, MediaKind, MediaLimits } from '@contracts/media';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { enOffers } from '@/i18n/catalogs/offers/en';
+import { ApiError } from '@/lib/api-client';
 import type { OwnOfferImage, OwnOfferMediaItem } from './api';
 import { offerImageLimit } from './limits';
 import {
@@ -10,6 +11,7 @@ import {
   isFull,
   itemsForOffer,
   refusalMessage,
+  uploadFailureMessage,
 } from './media-uploader-logic';
 
 const MB = 1_000_000;
@@ -94,6 +96,52 @@ describe('refusalMessage', () => {
   it('reads any other failure as an upload that stopped', () => {
     expect(refusalMessage('MEDIA_VERIFICATION_FAILED', {}, t)).toBe('The upload stopped. Try again.');
     expect(refusalMessage('UNKNOWN', {}, t)).toBe('The upload stopped. Try again.');
+  });
+
+  it('names only the image types when nothing but images can be added', () => {
+    const imagesOnly = acceptsOnlyImages(limits([]));
+    expect(refusalMessage('type', { imagesOnly }, t)).toBe(
+      'This file type can’t be added. Use a JPEG, PNG, WebP or HEIC image.',
+    );
+    expect(refusalMessage('type', { imagesOnly: acceptsOnlyImages(null) }, t)).toBe(
+      'This file type can’t be added. Use a JPEG, PNG, WebP or HEIC image.',
+    );
+  });
+
+  it('names the other kinds when any of them can be added', () => {
+    const imagesOnly = acceptsOnlyImages(limits(['audio']));
+    expect(refusalMessage('type', { imagesOnly }, t)).toBe(
+      'This file type can’t be added. Use MP3, M4A or OGG audio, MP4 or WebM video, or a PDF.',
+    );
+  });
+});
+
+describe('uploadFailureMessage', () => {
+  it('reads an API refusal the catalogue words as that refusal', () => {
+    const error = new ApiError('Offer media limit reached.', 409, 'MEDIA_LIMIT_REACHED');
+    expect(uploadFailureMessage(error, 'sending', t)).toBe('This offer already has as many of these as it can hold.');
+    const quota = new ApiError('Storage quota exceeded.', 409, 'MEDIA_QUOTA_EXCEEDED');
+    expect(uploadFailureMessage(quota, 'sending', t)).toBe('Your storage is full. Remove something first.');
+  });
+
+  it("shows any other API error's own message", () => {
+    const error = new ApiError('The uploaded file does not match what was reserved.', 422, 'MEDIA_VERIFICATION_FAILED');
+    expect(uploadFailureMessage(error, 'sending', t)).toBe('The uploaded file does not match what was reserved.');
+  });
+
+  it('shows the message of an image the browser could not prepare', () => {
+    const heic = new Error('That file could not be read as an image. Try a JPEG or PNG instead.');
+    expect(uploadFailureMessage(heic, 'preparing', t)).toBe(
+      'That file could not be read as an image. Try a JPEG or PNG instead.',
+    );
+  });
+
+  it('reads a transfer that broke off as an upload that stopped', () => {
+    expect(uploadFailureMessage(new Error('Upload failed (500)'), 'sending', t)).toBe('The upload stopped. Try again.');
+    expect(uploadFailureMessage(new Error('tus: failed to upload chunk'), 'sending', t)).toBe(
+      'The upload stopped. Try again.',
+    );
+    expect(uploadFailureMessage('not an error', 'preparing', t)).toBe('The upload stopped. Try again.');
   });
 });
 

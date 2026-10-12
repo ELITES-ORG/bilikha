@@ -41,6 +41,7 @@ export const warOffers: Catalog = {
   'offers.media.leaveWarning': '',
   'offers.media.untitled': '',
   'offers.media.refused.type': '',
+  'offers.media.refused.typeImagesOnly': '',
   'offers.media.refused.size': '',
   'offers.media.refused.duration': '',
   'offers.media.refused.codec': '',

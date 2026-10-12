@@ -21,7 +21,7 @@ import { initialUploadState, uploadReducer, type UploadEvent, type UploadState }
 import '@/i18n/catalogs/offers';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { useT } from '@/i18n/i18n-context';
-import { ApiError, toApiError } from '@/lib/api-client';
+import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
 import { addOfferImage, deleteOfferImage, type OwnOffer } from './api';
@@ -33,7 +33,9 @@ import {
   isFull,
   itemsForOffer,
   refusalMessage,
+  uploadFailureMessage,
   type OfferEditorItem,
+  type UploadStage,
 } from './media-uploader-logic';
 
 interface Upload {
@@ -151,9 +153,12 @@ export function MediaUploader({ offer, onChanged }: { offer: OwnOffer; onChanged
       return ticket;
     };
 
+    let stage: UploadStage = 'sending';
     try {
       if (kind === 'image') {
+        stage = 'preparing';
         const [display, thumb] = await Promise.all([resizeImage(file, DISPLAY_EDGE), resizeImage(file, THUMB_EDGE)]);
+        stage = 'sending';
         if (signal.aborted) throw cancelled();
         const ticket = await ticketFor({ mimeType: display.type, sizeBytes: display.size, thumbSizeBytes: thumb.size });
         if (ticket.transport !== 'put') throw new Error('Unexpected upload ticket.');
@@ -204,10 +209,7 @@ export function MediaUploader({ offer, onChanged }: { offer: OwnOffer; onChanged
     } catch (error) {
       const reservationId = reservations.current.get(key);
       if (reservationId) void abandonUploadTicket(reservationId).catch(() => undefined);
-      if (!isAbort(error) && !signal.aborted) {
-        const code = error instanceof ApiError ? error.code : '';
-        setNotice(refusalMessage(code, {}, t));
-      }
+      if (!isAbort(error) && !signal.aborted) setNotice(uploadFailureMessage(error, stage, t));
     } finally {
       finish(key);
     }
@@ -228,7 +230,7 @@ export function MediaUploader({ offer, onChanged }: { offer: OwnOffer; onChanged
     const kind = classifyFile(file);
     const limit = kind ? limits.destinations.offer[kind] : null;
     if (!kind || !limit?.enabled) {
-      setNotice(refusalMessage('type', {}, t));
+      setNotice(refusalMessage('type', { imagesOnly }, t));
       return;
     }
     const timed = kind === 'audio' || kind === 'video';
@@ -236,7 +238,7 @@ export function MediaUploader({ offer, onChanged }: { offer: OwnOffer; onChanged
     const codec = kind === 'video' ? await videoCodec(file) : null;
     const check = checkBeforeUpload(file, kind, limit, { durationSeconds, codec });
     if (!check.ok) {
-      setNotice(refusalMessage(check.reason, { sizeBytes: file.size, durationSeconds, limit: check.limit }, t));
+      setNotice(refusalMessage(check.reason, { sizeBytes: file.size, durationSeconds, limit: check.limit, imagesOnly }, t));
       return;
     }
     if (isFull(offer, kind, limits)) {

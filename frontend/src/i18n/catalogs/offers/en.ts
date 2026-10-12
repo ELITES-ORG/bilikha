@@ -53,6 +53,7 @@ export const enOffers = {
   'offers.media.untitled': 'Untitled',
   'offers.media.refused.type':
     'This file type can’t be added. Use MP3, M4A or OGG audio, MP4 or WebM video, or a PDF.',
+  'offers.media.refused.typeImagesOnly': 'This file type can’t be added. Use a JPEG, PNG, WebP or HEIC image.',
   'offers.media.refused.size': 'This file is {size}. This kind can be up to {limit}.',
   'offers.media.refused.duration': 'This recording is {length} long. This kind can be up to {limit}.',
   'offers.media.refused.codec':
