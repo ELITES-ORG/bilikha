@@ -1,11 +1,14 @@
 import type { AdminMediaRow } from '@contracts/admin';
+import type { OfferMediaItem } from '@contracts/media';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, Check, ImageOff, Images, UserRound, Users, X } from 'lucide-react';
 import { Badge, Button, ProgressiveImage, Skeleton, Textarea } from '@/components/ui';
+import { AudioItem, DocumentLink, VideoItem } from '@/features/media/MediaPlayer';
 import { formatPriceRange } from '@/lib/money';
 import { AdminFact, AdminStatusBadge } from '../admin-ui';
 import { formatAdminDate } from '../admin-format';
+import { mediaChanges } from './review-list-logic';
 
 /**
  * One item waiting for a decision (ADR 0058): what it is, what the public sees
@@ -36,8 +39,11 @@ function NoPreview({ text }: { text: string }) {
 }
 
 function MediaPreview({ item }: { item: AdminMediaRow }) {
-  const images = item.kind === 'offer' ? (item.images ?? []).filter((image) => image.state !== 'pending_remove') : [];
-  const [cover, ...rest] = images;
+  const shown = item.kind === 'offer' ? (item.images ?? []).filter((entry) => entry.state !== 'pending_remove') : [];
+  const images = shown.filter((entry) => entry.kind === 'image');
+  // An offer with only a video is covered by its poster, as the public sees it.
+  const poster = shown.find((entry) => entry.kind === 'video' && entry.thumbUrl);
+  const [cover, ...rest] = images.length > 0 ? images : poster ? [poster] : [];
   const alt = item.caption ?? item.title ?? `${KIND_LABEL[item.kind]} by ${item.ownerName}`;
 
   if (item.kind === 'offer') {
@@ -45,7 +51,7 @@ function MediaPreview({ item }: { item: AdminMediaRow }) {
     return (
       <>
         <ProgressiveImage
-          src={cover.thumbUrl}
+          src={cover.thumbUrl ?? cover.url}
           alt={`Cover image for ${item.title ?? 'an offer'} by ${item.ownerName}`}
           width={400}
           height={300}
@@ -59,7 +65,7 @@ function MediaPreview({ item }: { item: AdminMediaRow }) {
             {rest.slice(0, 3).map((image) => (
               <li key={image.id} className="size-11 overflow-hidden rounded-xs ring-2 ring-surface">
                 <ProgressiveImage
-                  src={image.thumbUrl}
+                  src={image.thumbUrl ?? image.url}
                   alt=""
                   width={44}
                   height={44}
@@ -99,15 +105,49 @@ function MediaPreview({ item }: { item: AdminMediaRow }) {
   );
 }
 
-/** For a change: what it does to the offer's photos, in a few words. */
-function photoChanges(item: AdminMediaRow): string | null {
-  const added = (item.images ?? []).filter((image) => image.state === 'pending_add').length;
-  const removed = (item.images ?? []).filter((image) => image.state === 'pending_remove').length;
-  const parts = [
-    added ? `${added} photo${added === 1 ? '' : 's'} added` : null,
-    removed ? `${removed} photo${removed === 1 ? '' : 's'} removed` : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(', ') : null;
+type QueueMedia = NonNullable<AdminMediaRow['images']>[number];
+
+/** An audio, video or PDF item in the shape the public players take. */
+function playable(entry: QueueMedia): OfferMediaItem | null {
+  if (entry.kind === 'image') return null;
+  return {
+    id: entry.id,
+    kind: entry.kind,
+    url: entry.url,
+    posterUrl: entry.kind === 'video' ? entry.thumbUrl : null,
+    title: entry.title ?? null,
+    mimeType: entry.mimeType ?? '',
+    sizeBytes: entry.sizeBytes ?? 0,
+    durationSeconds: entry.durationSeconds ?? null,
+    sortOrder: entry.sortOrder,
+  };
+}
+
+/**
+ * Every audio, video and PDF item on the offer, played as the public would
+ * hear it, so a change is judged on what it adds. What the change adds or
+ * takes off is labelled; the rest is already public.
+ */
+function OfferMediaList({ media }: { media: ReadonlyArray<QueueMedia> }) {
+  const items = media.flatMap((entry) => {
+    const item = playable(entry);
+    return item ? [{ item, state: entry.state }] : [];
+  });
+  if (items.length === 0) return null;
+
+  return (
+    <ul className="mt-4 space-y-4" aria-label="Audio, video and PDFs">
+      {items.map(({ item, state }) => (
+        <li key={item.id} className="space-y-2">
+          {state === 'pending_add' && <Badge tone="success">Added</Badge>}
+          {state === 'pending_remove' && <Badge tone="danger">Removed</Badge>}
+          {item.kind === 'audio' && <AudioItem item={item} />}
+          {item.kind === 'video' && <VideoItem item={item} />}
+          {item.kind === 'document' && <DocumentLink item={item} />}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function ReviewCard({
@@ -129,7 +169,7 @@ export function ReviewCard({
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
   const published = item.published;
-  const photos = isOffer && item.change === 'edit' ? photoChanges(item) : null;
+  const changes = isOffer && item.change === 'edit' ? mediaChanges(item) : null;
 
   return (
     <li className="group flex flex-col overflow-hidden rounded-md border border-hairline bg-surface transition-[border-color,box-shadow] duration-200 hover:border-hairline-strong hover:shadow-sm">
@@ -174,7 +214,8 @@ export function ReviewCard({
               </p>
             )}
             {item.subdomain && <p className="mt-2 text-xs text-ink-subtle">{item.subdomain}</p>}
-            {photos && <p className="mt-2 text-sm font-medium text-warning-700">{photos}</p>}
+            {changes && <p className="mt-2 text-sm font-medium text-warning-700">{changes}</p>}
+            <OfferMediaList media={item.images ?? []} />
             {published && (
               <div className="mt-3 rounded-sm border border-hairline bg-surface-sunken px-3 py-2">
                 <p className="text-xs font-semibold tracking-wide text-ink-subtle uppercase">Public now</p>
