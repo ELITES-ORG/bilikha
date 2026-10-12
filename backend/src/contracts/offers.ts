@@ -9,6 +9,7 @@
  * needs one request rather than two.
  */
 
+import type { OfferMediaItem } from './media.js';
 import type { RatingSummary } from './ratings.js';
 
 export interface OfferSubdomain {
@@ -82,6 +83,8 @@ export interface PublishedOfferDetail {
   updatedAt: string;
   subdomain: OfferSubdomain;
   images: OfferImage[];
+  /** Audio, video and PDF (ADR 0046). Optional for deployment skew (ADR 0040). */
+  media?: OfferMediaItem[];
   creative: PublishedOfferDetailCreative;
 }
 

@@ -284,14 +284,17 @@ it. Approval copies it onto `offers` and deletes it. Rejection deletes it.
 
 ## `offer_images`
 
-Up to four images per offer. Cascade deletes when the offer goes.
+An offer's photos, audio, video and PDFs. Per offer: up to ten images, five
+audio, two videos and three PDFs (`UPLOAD_LIMITS` in
+`backend/src/modules/media/media.limits.ts`). Cascade deletes when the offer
+goes.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
 | `offer_id` | `uuid` FK → `offers.id` | `ON DELETE CASCADE` |
 | `object_key` | `text` | Display-size object (`offers/<profileId>/…` or legacy `portfolio/…`) |
-| `thumb_key` | `text` | Thumbnail object |
+| `thumb_key` | `text` null | An image's thumbnail or a video's poster. Audio, a PDF and a video without a poster have none. An image always has one (check `offer_images_image_has_thumb`) |
 | `sort_order` | `integer` | Default 0 |
 | `state` | `offer_image_state` | `live` \| `pending_add` \| `pending_remove`. Default `live`. On a published offer, a new photo is `pending_add` (not public) and a removed one `pending_remove` (still public) until the change is reviewed |
 | `kind` | `media_kind` | `image` \| `audio` \| `video` \| `document`. Default `image`. Every row from before the upload pipeline is an image |
@@ -301,7 +304,12 @@ Up to four images per offer. Cascade deletes when the offer goes.
 | `title` | `text` null | The uploader's label for audio, video or a PDF |
 | `created_at` | `timestamptz` | |
 
-Indexes: `(offer_id, sort_order)`.
+Indexes: `(offer_id, sort_order)`. Check `offer_images_image_has_thumb`:
+`kind <> 'image' OR thumb_key IS NOT NULL`.
+
+The readers of photos (offer cards, the offer and profile pages, saved offers,
+conversation offer cards, the review queue's photos) read `kind = 'image'` rows
+only. The offer page and the owner's list return the other kinds as `media`.
 
 **Buckets.** `object_key` lives in the bucket for its `kind`: `image` in
 `SUPABASE_STORAGE_BUCKET` (today `media`), `audio` in `media-audio`, `video` in

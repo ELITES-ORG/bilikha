@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from './offers.service.js';
+import { UPLOAD_LIMITS } from '../media/media.limits.js';
+import { OFFER_LIMIT } from './offers.service.js';
 import { searchQueryField } from '../search/search.schema.js';
 
 const offerFields = {
@@ -88,9 +89,16 @@ export const listOffersQuerySchema = z
   );
 
 export const reorderOfferImagesBodySchema = z.object({
-  ids: z.array(z.string().uuid()).min(1).max(OFFER_IMAGE_LIMIT),
+  ids: z.array(z.string().uuid()).min(1).max(UPLOAD_LIMITS.offer.image.perTarget),
+});
+
+/** `POST /offers/:id/media`: attaches a verified upload (ADR 0046). */
+export const attachOfferMediaBodySchema = z.object({
+  reservationId: z.string().uuid(),
+  title: z.string().trim().min(1).max(120).optional(),
 });
 
 export type OfferBody = z.infer<typeof offerBodySchema>;
 export type PatchOfferBody = z.infer<typeof patchOfferBodySchema>;
 export type ListOffersQuery = z.infer<typeof listOffersQuerySchema>;
+export type AttachOfferMediaBody = z.infer<typeof attachOfferMediaBodySchema>;

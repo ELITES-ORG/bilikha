@@ -1271,11 +1271,13 @@ In every posting response, `subdomain` is `{ slug, name, singularName, domain }`
 
 Signed-in creatives manage their own offers. Public listing and detail need no
 auth (session-aware for nearby ranking, like creatives). Cap: 6 offers per
-profile, 4 images per offer.
+profile; per offer, 10 images, 5 audio, 2 videos and 3 PDFs (see
+[`GET /media/limits`](#get-apiv1medialimits)).
 
 ### `GET /api/v1/offers/mine`
 
-Own offers in `sortOrder`, with images (`url`, `thumbUrl`, `state`),
+Own offers in `sortOrder`, with images (`url`, `thumbUrl`, `state`), `media`
+(audio, video and PDF items, each as on the offer page plus `state`),
 subdomain, and moderation fields (`flaggedAt`, `reviewedAt`). Requires a
 creative profile.
 
@@ -1289,8 +1291,9 @@ Review fields
 - `pendingChanges`: the waiting version of a published offer (`title`,
   `description`, prices, sub-domain and `submittedAt`), or `null`
 
-A published offer's images include photos that are waiting to be added
-(`pending_add`) or removed (`pending_remove`).
+A published offer's images and media include items that are waiting to be
+added (`pending_add`) or removed (`pending_remove`). Any item not `live` makes
+`pendingChanges` non-null.
 The sub-domain is flat: `subdomainSlug`, `subdomainName` and
 `subdomainSingularName` (the singular label for this one offer, issue #17).
 
@@ -1329,7 +1332,9 @@ Contact-detail patterns in the description set `flaggedAt`.
 
 ### `DELETE /api/v1/offers/:id`
 
-Deletes images from storage, then the row. Another creative's id → `404`.
+Deletes the row, then each file from its own bucket, with any thumbnail or
+poster from the image bucket. A file storage fails to delete is left for
+`media:prune`. Another creative's id → `404`.
 
 ### `PUT /api/v1/offers/order`
 
@@ -1345,22 +1350,46 @@ Rewrites `sortOrder`. The list must be exactly the caller's current offers.
 { "objectKey": "offers/<profileId>/<uuid>.webp", "thumbKey": "…-thumb.webp" }
 ```
 
-`201`. Enforces the four-image cap; photos waiting to be removed do not count.
+`201`. Enforces the ten-image cap; photos waiting to be removed do not count.
+Over it → `400 BAD_REQUEST` ("An offer can have at most 10 images").
 On a published offer, the new photo is `pending_add` until approved. On a
 rejected offer, it sends the offer back to `pending_review`. Keys must start with
 `offers/<callerProfileId>/` (migrated legacy `portfolio/…` keys are never
 re-asserted on upload).
 
+### `POST /api/v1/offers/:id/media`
+
+Attaches an upload made with a ticket from
+[`POST /media/uploads`](#post-apiv1mediauploads): an image, audio, video or PDF.
+
+```jsonc
+{ "reservationId": "uuid", "title": "optional, 1–120 characters" }
+```
+
+`201` `{ "data": { "id": "uuid", "kind": "audio" } }`. The stored file is
+verified first. The item counts against the offer's per-kind limit again, since
+the offer may have filled up since the ticket. On a published offer it is
+`pending_add` until approved; on a rejected offer it sends the offer back to
+`pending_review`.
+
+| Status | Code | When |
+|---|---|---|
+| `404` | `NOT_FOUND` | No such offer, or another creative's |
+| `410` | `MEDIA_UPLOAD_EXPIRED` | The reservation expired, was already attached, or is another user's |
+| `422` | `MEDIA_VERIFICATION_FAILED` | The stored file is missing or is not what the ticket allowed |
+| `409` | `CONFLICT` | The reservation is for a different offer |
+| `409` | `MEDIA_LIMIT_REACHED` | The offer already holds as many of this kind as it can |
+
 ### `DELETE /api/v1/offers/images/:imageId`
 
-On a published offer:
+Removes a photo, audio, video or PDF item. On a published offer:
 
-- a live photo becomes `pending_remove` and stays public until the change is
+- a live item becomes `pending_remove` and stays public until the change is
   approved
-- a photo waiting to be added is deleted straight away
+- an item waiting to be added is deleted straight away
 
-On any other offer, it deletes both objects, then the row. Another creative's
-image → `404`.
+On any other offer, it deletes the row, then the file from its own bucket and
+any thumbnail or poster. Another creative's item → `404`.
 
 ### `GET /api/v1/offers`
 
@@ -1405,6 +1434,12 @@ singular label) and domain, and its creative's display name and town.
 
 Public detail for one published offer, including all images and creative
 summary. `404` when missing or the profile is not published.
+
+`media` lists its audio, video and PDF items in order: `id`, `kind`, `url`
+(public, in the kind's bucket), `posterUrl` (a video's poster, else `null`),
+`title`, `mimeType`, `sizeBytes`, `durationSeconds` and `sortOrder`. An item
+waiting to be added is left out. Optional, so a client must treat it as absent
+on an older API ([ADR 0040](../decisions/0040-a-deploy-must-not-break-an-open-tab.md)).
 
 In both offer responses, `subdomain` is `{ slug, name, singularName, domain }`.
 
