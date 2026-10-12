@@ -1,0 +1,2 @@
+ALTER TABLE "offer_images" ALTER COLUMN "thumb_key" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "offer_images" ADD CONSTRAINT "offer_images_image_has_thumb" CHECK ("offer_images"."kind" <> 'image' OR "offer_images"."thumb_key" IS NOT NULL);
