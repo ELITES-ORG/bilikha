@@ -55,7 +55,8 @@ will re-run migrate and seed afterwards.
 | `admin:reset-password` | Sets a new password for a username. **Prefer the admin area** (Accounts → Reset password), which audits the reset and revokes sessions ([ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md)). This is for the first administrator and for a broken environment — verify identity out of band first |
 | `admin:grant` | Promotes an existing account to `admin`. **The only way to create the first administrator** |
 | `migrate:offers` | Manual fallback and verifier for the portfolio → offers move. **The move itself is in migration 0013**, because `db:migrate` applies every pending migration in one pass and leaves no window for a script between creating `offers` and dropping `portfolio_items`. Idempotent; exits 0 if the table is already gone |
-| `media:prune` | Dry-run list of orphaned storage objects older than 24 hours. Pass `--delete` to remove them |
+| `media:prune` | Dry-run list of orphaned storage objects older than 24 hours, across the four offer buckets. Pass `--delete` to remove them, after first deleting expired upload reservations. Never touches the ID bucket |
+| `media:buckets` | Creates or updates the four offer buckets so their size limits and allowed types match the upload limits ([ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md)). `-- --check` reports differences and changes nothing (exit 1 if any). `-- --max-file-size <bytes>` caps every bucket's limit, for a plan whose global limit is smaller. Never touches the ID bucket |
 
 ---
 

@@ -304,7 +304,7 @@ rewrote (Phase 3) answers the same once, before anything else.
 
 ### `POST /api/v1/verification/upload-url`
 
-Signed in. `uploadLimiter` (40 per hour, shared with media).
+Signed in. `uploadLimiter` (30 per hour, shared with media).
 
 ```jsonc
 { "side": "front", "contentType": "image/webp" } // or "back"; or "image/jpeg"
@@ -1412,13 +1412,110 @@ In both offer responses, `subdomain` is `{ slug, name, singularName, domain }`.
 
 ## Media
 
-Signed-in only. Image bytes never pass through the API — the backend issues a
-signed upload URL and later records the object key. The service role key never
-appears in responses.
+Signed-in only, except `GET /media/limits`. File bytes never pass through the
+API — the backend issues a ticket to upload straight to storage and later
+records the object key. The service role key never appears in responses
+([ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md)).
+
+The legacy POST /media/upload-url and POST /offers/:id/images keep working for open tabs until the follow-up that retires them.
+
+### `GET /api/v1/media/limits`
+
+Public. Every upload limit, so the browser checks a file before sending a byte
+and never keeps its own copy. MB is 1,000,000 bytes.
+
+```jsonc
+{
+  "data": {
+    "quotaBytes": 1000000000,
+    "destinations": {
+      "offer": {
+        "image":    { "enabled": true,  "maxBytes": 2000000,   "maxPickedBytes": 20000000, "maxDurationSeconds": null, "mimeTypes": ["image/webp", "image/jpeg"], "perTarget": 10, "transport": "put" },
+        "audio":    { "enabled": false, "maxBytes": 15000000,  "maxPickedBytes": null, "maxDurationSeconds": 600, "mimeTypes": ["audio/mpeg", "audio/mp4", "audio/aac", "audio/ogg"], "perTarget": 5, "transport": "tus" },
+        "video":    { "enabled": false, "maxBytes": 300000000, "maxPickedBytes": null, "maxDurationSeconds": 300, "mimeTypes": ["video/mp4", "video/webm"], "perTarget": 2, "transport": "tus" },
+        "document": { "enabled": false, "maxBytes": 10000000,  "maxPickedBytes": null, "maxDurationSeconds": null, "mimeTypes": ["application/pdf"], "perTarget": 3, "transport": "tus" }
+      }
+    }
+  }
+}
+```
+
+Images are always enabled; the other kinds as `MEDIA_UPLOAD_KINDS` says
+([environment](./environment.md)).
+
+### `GET /api/v1/media/usage`
+
+`{ data: { usedBytes, reservedBytes, quotaBytes } }`. `usedBytes` sums the sizes
+recorded on the creative's offers (images from before the pipeline count as 0);
+`reservedBytes` sums the caller's unexpired reservations. Zeros for an account
+with no creative profile.
+
+### `POST /api/v1/media/uploads`
+
+Reserves room for one upload and returns where to send it. `uploadLimiter` (30
+per user per hour, shared with avatars, organisation logos and ID photos).
+
+```jsonc
+{
+  "destination": "offer",
+  "offerId": "<uuid>",
+  "kind": "audio",              // image | audio | video | document
+  "mimeType": "audio/mpeg",     // browser aliases such as audio/x-m4a are normalised
+  "sizeBytes": 4200000,         // the main file; for an image, the display image
+  "thumbSizeBytes": 38000,      // an image's thumbnail (required) or a video's poster (optional)
+  "durationSeconds": 245.3      // required for audio and video
+}
+```
+
+`201`. An image answers with two signed `PUT` URLs:
+
+```jsonc
+{ "data": { "reservationId", "expiresAt", "kind": "image", "transport": "put",
+            "file": { "uploadUrl", "objectKey" }, "thumb": { "uploadUrl", "objectKey" } } }
+```
+
+Audio, video and PDF answer with a resumable (TUS) upload, sent in 6 MiB chunks
+with the token as `x-signature`, plus a signed `PUT` for a video's poster when
+its size was declared:
+
+```jsonc
+{ "data": { "reservationId", "expiresAt", "kind": "video", "transport": "tus",
+            "tus": { "endpoint", "token", "bucket", "objectKey" },
+            "poster": { "uploadUrl", "objectKey" } } }
+```
+
+The reservation counts toward the quota and the offer's per-kind limit until it
+is attached, abandoned, or expires after 24 hours. Checks run in this order; the
+first failure answers:
+
+| Code | Status | Message | `details` |
+|---|---|---|---|
+| `FORBIDDEN` | 403 | A creative profile is required to manage offers | — |
+| `NOT_FOUND` | 404 | No such offer. | — |
+| `MEDIA_KIND_DISABLED` | 403 | This kind of file can't be uploaded yet. | `{ enabledKinds }` |
+| `MEDIA_TYPE_NOT_ALLOWED` | 422 | This file type isn't allowed. | `{ mimeTypes }` |
+| `MEDIA_TOO_LARGE` | 422 | This file is too large. | `{ maxBytes }` |
+| `MEDIA_TOO_LONG` | 422 | This recording is too long. | `{ maxDurationSeconds }` |
+| `MEDIA_LIMIT_REACHED` | 409 | This offer already has as many of these as it can hold. | `{ perTarget }` |
+| `MEDIA_QUOTA_EXCEEDED` | 409 | Your storage is full. Remove something first. | `{ quotaBytes }` |
+| `RATE_LIMITED` | 429 | — | — |
+
+Attaching an upload checks what storage holds against the ticket, and answers
+`410 MEDIA_UPLOAD_EXPIRED` ("This upload expired. Start it again.", `details:
+{ expiresAfterSeconds: 86400 }`) for a reservation that is gone or expired, or
+`422 MEDIA_VERIFICATION_FAILED` ("This file didn't upload correctly. Try
+again.", `details: { reason }`, one of `missing`, `size`, `type`, `signature`).
+A failed check deletes the reservation and what was stored with it.
+
+### `DELETE /api/v1/media/uploads/:id`
+
+Cancels an upload: the reservation goes, and anything already stored with it.
+`{ data: { ok: true } }`. `404` ("No such upload.") for an unknown id or another
+account's reservation.
 
 ### `POST /api/v1/media/upload-url`
 
-Rate-limited to 40 requests per user per hour.
+Rate-limited to 30 requests per user per hour, shared with `POST /media/uploads`.
 
 ```jsonc
 { "kind": "avatar" }        // or "offer"

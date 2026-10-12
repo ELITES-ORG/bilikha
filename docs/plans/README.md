@@ -104,7 +104,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0042](./0042-the-creative-profile-page.md) | The creative profile page | In progress |
 | [0043](./0043-the-account-hub-redesign.md) | The account hub redesign | In progress |
 | [0044](./0044-messaging-redesign.md) | Messaging redesign | In progress |
-| [0045](./0045-audio-video-and-pdf-uploads.md) | Audio, video and PDF uploads, with limits per media type | Draft |
+| [0045](./0045-audio-video-and-pdf-uploads.md) | Audio, video and PDF uploads, with limits per media type | Superseded by 0057 |
 | [0046](./0046-responsive-on-every-screen.md) | Responsive on every screen | In progress |
 | [0047](./0047-admin-managed-taxonomy.md) | Admin-managed taxonomy — create, edit, archive domains and sub-domains | In progress |
 | [0048](./0048-postings-as-a-card-catalog.md) | Client postings as a card catalog | Complete |
@@ -116,6 +116,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0054](./0054-search.md) | Search the directory | Complete |
 | [0055](./0055-approve-before-public.md) | Offers and photos wait for approval before they are public | In progress |
 | [0056](./0056-admin-by-subject.md) | The admin area by subject | In progress |
+| [0057](./0057-upload-pipeline-and-offer-media.md) | The upload pipeline, and audio, video and PDF on offers | In progress |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.
