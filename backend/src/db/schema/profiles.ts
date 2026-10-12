@@ -1,6 +1,7 @@
-import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index, integer } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, boolean, timestamp, uniqueIndex, index, integer, bigint } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users.js';
+import { mediaKindEnum } from './media-enums.js';
 import { creativeSubdomains } from './taxonomy.js';
 import { organizations } from './organizations.js';
 import { idVerifications } from './verification.js';
@@ -268,6 +269,16 @@ export const offerImages = pgTable(
     thumbKey: text('thumb_key').notNull(),
     sortOrder: integer('sort_order').notNull().default(0),
     state: offerImageStateEnum('state').notNull().default('live'),
+    // Images, and from ADR 0046 audio, video and PDF. The kind decides the
+    // bucket the object is in; a thumbnail or poster is always in the image
+    // bucket.
+    kind: mediaKindEnum('kind').notNull().default('image'),
+    mimeType: text('mime_type'),
+    // The main file plus its thumbnail or poster. Null for images recorded
+    // before ADR 0046, which count as nothing toward the quota.
+    sizeBytes: bigint('size_bytes', { mode: 'number' }),
+    durationSeconds: integer('duration_seconds'),
+    title: text('title'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('offer_images_offer_order_idx').on(table.offerId, table.sortOrder)],
