@@ -34,6 +34,40 @@ export const enOffers = {
   'offers.saved.changesWithdrawn': 'Changes withdrawn — the approved version stays',
   'offers.saved.waiting': 'Saved and waiting for review',
   'offers.saved.changes': 'Changes saved',
+
+  // Media in the offer editor
+  'offers.media.heading': 'Photos, audio, video and documents',
+  'offers.media.add': 'Add media',
+  'offers.media.addImage': 'Add image',
+  'offers.media.limits':
+    'Images up to 20 MB · Audio up to 15 MB and 10 minutes · Video up to 300 MB and 5 minutes · PDF up to 10 MB',
+  'offers.media.limitsImagesOnly': 'Images up to 20 MB.',
+  'offers.media.quota': '{used} of {total} used',
+  'offers.media.rights': 'Only upload work you made or have the rights to share.',
+  'offers.media.rightsLink': 'Terms of use',
+  'offers.media.uploading': 'Uploading {name}',
+  'offers.media.progress': '{sent} of {total} · {percent}%',
+  'offers.media.cancel': 'Cancel',
+  'offers.media.remove': 'Remove',
+  'offers.media.leaveWarning': 'An upload is still in progress.',
+  'offers.media.untitled': 'Untitled',
+  'offers.media.refused.type':
+    'This file type can’t be added. Use MP3, M4A or OGG audio, MP4 or WebM video, or a PDF.',
+  'offers.media.refused.typeImagesOnly': 'This file type can’t be added. Use a JPEG, PNG, WebP or HEIC image.',
+  'offers.media.refused.size': 'This file is {size}. This kind can be up to {limit}.',
+  'offers.media.refused.duration': 'This recording is {length} long. This kind can be up to {limit}.',
+  'offers.media.refused.codec':
+    'This video uses a format many phones can’t play. Export it as MP4 (H.264) and try again.',
+  'offers.media.refused.unreadable': 'This file couldn’t be read. Try another copy.',
+  'offers.media.refused.count': 'This offer already has as many of these as it can hold.',
+  'offers.media.refused.quota': 'Your storage is full. Remove something first.',
+  'offers.media.failed': 'The upload stopped. Try again.',
+  'offers.media.kind.image': 'Image',
+  'offers.media.kind.audio': 'Audio',
+  'offers.media.kind.video': 'Video',
+  'offers.media.kind.document': 'PDF',
+  'offers.media.state.pendingAdd': 'Waiting for review',
+  'offers.media.state.pendingRemove': 'Removal waiting for review',
 } as const;
 
 export type OffersKey = keyof typeof enOffers;
