@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { en } from './en';
+import { en, type MessageKey } from './en';
 import { fil } from './fil';
 import { war } from './war';
 import { enLegal } from './legal/en';
@@ -18,6 +18,10 @@ import { enVerification } from './verification/en';
 import { filVerification } from './verification/fil';
 import { warVerification } from './verification/war';
 import './verification';
+import { enRegister } from './register/en';
+import { filRegister } from './register/fil';
+import { warRegister } from './register/war';
+import './register';
 import { resolveMessage, translate } from '../i18n-context';
 
 /**
@@ -35,6 +39,7 @@ const SETS = [
   ['offers', enOffers, { fil: filOffers, war: warOffers }],
   ['organizations', enOrganizations, { fil: filOrganizations, war: warOrganizations }],
   ['verification', enVerification, { fil: filVerification, war: warVerification }],
+  ['register', enRegister, { fil: filRegister, war: warRegister }],
 ] as const;
 
 const CATALOGS = SETS.flatMap(([set, english, translations]) =>
@@ -54,7 +59,12 @@ describe('catalogues', () => {
   });
 
   it('no key is in two sets, so a key has exactly one English', () => {
-    const shared = Object.keys(enLegal).filter((key) => key in en);
+    // Every section's keys, from the table above, so a new section is covered
+    // without anyone remembering to list it here.
+    const sections = SETS.filter(([name]) => name !== 'core').flatMap(([, english]) =>
+      Object.keys(english),
+    );
+    const shared = sections.filter((key, i) => key in en || sections.indexOf(key) !== i);
     expect(shared).toEqual([]);
   });
 
@@ -66,8 +76,19 @@ describe('catalogues', () => {
     });
   });
 
-  it.each([fil, war])('core catalogue %# falls back to English for an untranslated key', (catalog) => {
-    expect(translate(catalog, 'signIn.heading')).toBe(en['signIn.heading']);
+  it.each(CATALOGS)('%s falls back to English for an untranslated key', (_name, english, catalog) => {
+    // Find a key this catalogue has genuinely left empty, rather than assume
+    // one: a hard-coded `signIn.heading` broke the moment a speaker translated
+    // sign-in. A fully translated catalogue has nothing to fall back on.
+    const untranslated = (Object.keys(english) as MessageKey[]).find((key) => !catalog[key]);
+    if (!untranslated) return;
+    expect(translate(catalog, untranslated)).toBe((english as Record<string, string>)[untranslated]);
+  });
+
+  it.each(CATALOGS)('%s uses its own translation wherever one is written', (_name, _english, catalog) => {
+    for (const [key, value] of Object.entries(catalog) as [MessageKey, string][]) {
+      if (value) expect(translate(catalog, key)).toBe(value);
+    }
   });
 
   it('prefers a real translation over the English fallback', () => {

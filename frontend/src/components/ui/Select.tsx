@@ -257,8 +257,11 @@ export function Select({
           onClick={() => (open ? closeList(false) : openList())}
           onKeyDown={onKeyDown}
           className={cn(
-            'flex h-11 w-full items-center justify-between gap-2 rounded-sm border',
-            'bg-surface px-3.5 text-left text-base text-ink',
+            // At least one line high, growing to a second rather than cutting
+            // the text off: a translated placeholder or a long barangay name
+            // is often longer than the English it was laid out for (ADR 0055 §5).
+            'flex min-h-11 w-full items-center justify-between gap-2 rounded-sm border',
+            'bg-surface px-3.5 py-2 text-left text-base text-ink',
             'transition-[border-color,box-shadow]',
             'focus:outline-none focus-visible:outline-none',
             error
@@ -269,7 +272,7 @@ export function Select({
           )}
           style={{ transitionDuration: 'var(--duration-fast)' }}
         >
-          <span className={cn('truncate', !selected && 'text-ink-subtle')}>
+          <span className={cn('line-clamp-2 min-w-0 break-words', !selected && 'text-ink-subtle')}>
             {selected?.label ?? placeholder}
           </span>
           <ChevronDown
