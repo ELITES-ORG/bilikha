@@ -57,7 +57,7 @@ upload pipeline that message attachments (#66) will reuse.
 |---|---|---|
 | 0. Prove the transport | 1 / 1 | Done |
 | 1. The shared pipeline | 6 / 6 | Done |
-| 2. Offer media in the data | 0 / 5 | Not started |
+| 2. Offer media in the data | 5 / 5 | Done |
 | 3. The offer editor | 0 / 2 | Not started |
 | 4. Players, badges and posters | 0 / 3 | Not started |
 | 5. Review previews and the terms | 0 / 2 | Not started |
@@ -171,26 +171,26 @@ Probe results:
 ## Phase 2 — Offer media in the data (pull request 2)
 
 ### Step 2.1 — Optional thumbnails
-- [ ] **Action.** `thumb_key` becomes nullable, with an image-has-thumb check.
-- [ ] **Verify.** It migrates.
+- [x] **Action.** `thumb_key` becomes nullable, with an image-has-thumb check.
+- [x] **Verify.** It migrates.
 
 ### Step 2.2 — Readers
-- [ ] **Action.** Every image reader filters `kind = 'image'`. `mediaForOffers`
+- [x] **Action.** Every image reader filters `kind = 'image'`. `mediaForOffers`
   serves the rest.
-- [ ] **Verify.** `offer-media.test.ts` passes.
+- [x] **Verify.** `offer-media.test.ts` passes.
 
 ### Step 2.3 — Attaching
-- [ ] **Action.** `POST /offers/:id/media` verifies and records an upload under
+- [x] **Action.** `POST /offers/:id/media` verifies and records an upload under
   ADR 0058's states. The legacy image route allows 10.
-- [ ] **Verify.** The attach tests pass.
+- [x] **Verify.** The attach tests pass.
 
 ### Step 2.4 — Deleting
-- [ ] **Action.** Files are deleted from their own bucket.
-- [ ] **Verify.** The bucket-deletion test passes.
+- [x] **Action.** Files are deleted from their own bucket.
+- [x] **Verify.** The bucket-deletion test passes.
 
 ### Step 2.5 — Review
-- [ ] **Action.** The version token, approve and reject cover every kind.
-- [ ] **Verify.** The `content-review.test.ts` additions pass.
+- [x] **Action.** The version token, approve and reject cover every kind.
+- [x] **Verify.** The `content-review.test.ts` additions pass.
 
 ## Phase 3 — The offer editor (pull request 3)
 
