@@ -18,6 +18,7 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { offerCardMedia } from '../offers/offers.service.js';
 import { creativeSearch } from '../search/search-sql.js';
 
 export type { PublicProfile, PublicProfileDetail } from '../../contracts/profiles.js';
@@ -140,6 +141,7 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
     });
     imagesByOffer.set(row.offerId, list);
   }
+  const cardMedia = await offerCardMedia(rows.map((row) => row.id));
 
   return rows.map((row) => ({
     id: row.id,
@@ -154,6 +156,8 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
       domain: row.domainName,
     },
     images: imagesByOffer.get(row.id) ?? [],
+    mediaBadge: cardMedia.get(row.id)?.mediaBadge ?? null,
+    poster: cardMedia.get(row.id)?.poster ?? null,
   }));
 }
 
