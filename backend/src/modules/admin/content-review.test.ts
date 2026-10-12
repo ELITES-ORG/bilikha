@@ -103,6 +103,23 @@ const imageKeys = (profileId: string, n: number) => ({
   thumbKey: `offers/${profileId}/img-${n}-thumb.webp`,
 });
 
+const audioMedia = (profileId: string) => ({
+  kind: 'audio' as const,
+  objectKey: `offers/${profileId}/song.mp3`,
+  mimeType: 'audio/mpeg',
+  sizeBytes: 4_000_000,
+  durationSeconds: 120,
+});
+
+const videoMedia = (profileId: string) => ({
+  kind: 'video' as const,
+  objectKey: `offers/${profileId}/clip.mp4`,
+  thumbKey: `offers/${profileId}/clip-poster.webp`,
+  mimeType: 'video/mp4',
+  sizeBytes: 40_000_000,
+  durationSeconds: 90,
+});
+
 describe('a new offer', () => {
   it('is hidden everywhere public until approved, then appears, and its creative is told', async () => {
     const { creative, offer } = await newOffer('ZZ Brand new mural');
@@ -280,6 +297,47 @@ describe('a change to a published offer', () => {
     expect((await own(creative.user.id, offer.id)).pendingChanges).toBeNull();
   });
 
+  it('an offer change that adds an audio item is waiting, and approving it makes the item live', async () => {
+    const { creative, offer } = await published();
+    const admin = await makeAdmin();
+    const [audio] = await db
+      .insert(offerImages)
+      .values({ offerId: offer.id, ...audioMedia(creative.profile.id), state: 'pending_add' })
+      .returning();
+
+    expect((await own(creative.user.id, offer.id)).pendingChanges).not.toBeNull();
+    expect((await listContentQueue({ page: 1, limit: 50 })).data.map((row) => row.id)).toContain(offer.id);
+    expect((await getPublishedOfferById(offer.id)).media).toEqual([]);
+
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+
+    const [row] = await db.select().from(offerImages).where(eq(offerImages.id, audio!.id));
+    expect(row?.state).toBe('live');
+    expect((await getPublishedOfferById(offer.id)).media?.map((item) => item.id)).toEqual([audio!.id]);
+    expect(deleted).toEqual([]);
+  });
+
+  it('rejecting an offer change that added a video discards the video and its poster from their buckets', async () => {
+    const { creative, offer } = await published();
+    const admin = await makeAdmin();
+    const video = videoMedia(creative.profile.id);
+    await db.insert(offerImages).values({ offerId: offer.id, ...video, state: 'pending_add' });
+
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'reject', reason: 'The clip shows a phone number.' });
+
+    expect(await db.select().from(offerImages).where(eq(offerImages.offerId, offer.id))).toEqual([]);
+    const deletedUrls = vi
+      .mocked(fetch)
+      .mock.calls.filter(([, init]) => init?.method === 'DELETE')
+      .map(([url]) => String(url));
+    expect(deletedUrls.sort()).toEqual(
+      [
+        `http://storage.test/storage/v1/object/media-video/${video.objectKey}`,
+        `http://storage.test/storage/v1/object/media/${video.thumbKey}`,
+      ].sort(),
+    );
+  });
+
   it('cannot be reviewed when nothing is waiting', async () => {
     const { offer } = await published();
     const admin = await makeAdmin();
@@ -341,6 +399,24 @@ describe('a decision', () => {
       reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve', version: seen }),
     ).rejects.toMatchObject({ status: 409 });
     expect((await getPublishedOfferById(offer.id)).images).toHaveLength(0);
+  });
+
+  it('the version changes when a media item is added, so a stale approval is refused', async () => {
+    const { creative, offer } = await newOffer();
+    const admin = await makeAdmin();
+    await review({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve' });
+    await addOfferImage(creative.user.id, offer.id, imageKeys(creative.profile.id, 1));
+    const seen = await versionOf('offer', offer.id);
+
+    await db
+      .insert(offerImages)
+      .values({ offerId: offer.id, ...audioMedia(creative.profile.id), state: 'pending_add', sortOrder: 1 });
+
+    expect(await versionOf('offer', offer.id)).not.toBe(seen);
+    await expect(
+      reviewContent({ kind: 'offer', id: offer.id, adminId: admin.id, action: 'approve', version: seen }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await getPublishedOfferById(offer.id)).media).toEqual([]);
   });
 
   it('is refused when a photo was replaced after the administrator saw it, and deletes nothing', async () => {

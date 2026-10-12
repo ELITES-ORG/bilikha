@@ -205,7 +205,7 @@ function throwMedia(status: number, code: MediaCode, message: string, details: u
   return new AppError(status, code, message, details);
 }
 
-const mediaError = (status: number, code: MediaCode, details: unknown) =>
+export const mediaError = (status: number, code: MediaCode, details: unknown) =>
   throwMedia(status, code, MEDIA_MESSAGES[code], details);
 
 const expired = () =>
