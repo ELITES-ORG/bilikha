@@ -1,23 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { EllipsisVertical, ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { EllipsisVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button, EmptyState, Input, Select, Textarea, useToast } from '@/components/ui';
 import { useOwnProfile } from '@/features/me/api';
 import {
-  abandonUpload,
-  requestUploadUrl,
-  uploadImage,
-} from '@/features/media/api';
-import {
-  addOfferImage,
   createOffer,
   deleteOffer,
-  deleteOfferImage,
   listMine,
   reorderOffers,
   updateOffer,
   type OwnOffer,
 } from '@/features/offers/api';
-import { OFFER_IMAGE_LIMIT, OFFER_LIMIT } from '@/features/offers/limits';
+import { OFFER_LIMIT } from '@/features/offers/limits';
+import { MediaUploader } from '@/features/offers/MediaUploader';
 import { OfferCard, OfferCardSkeleton, offerGridClass } from '@/features/offers/OfferCard';
 import { OfferFormDialog } from '@/features/offers/OfferFormDialog';
 import { savedMessage } from '@/features/offers/offer-review';
@@ -28,7 +22,6 @@ import { subdomainLabel } from '@/features/taxonomy/format';
 import { useT } from '@/i18n/i18n-context';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
-import { DISPLAY_EDGE, THUMB_EDGE, resizeImage } from '@/lib/image';
 import { centavosToPesoInput, formatPriceRange, pesoInputToCentavos } from '@/lib/money';
 
 type FormState = {
@@ -58,14 +51,6 @@ function offerToForm(offer: OwnOffer): FormState {
     priceTo: centavosToPesoInput(current.priceMaxCentavos),
   };
 }
-
-/** Photos the offer will have once any waiting change is approved. */
-const keptImages = (offer: OwnOffer) => offer.images.filter((image) => image.state !== 'pending_remove');
-
-const IMAGE_STATE_LABEL = {
-  pending_add: 'Waiting for review',
-  pending_remove: 'Removal waiting for review',
-} as const;
 
 function buildWritePayload(form: FormState, mode: 'create' | 'update') {
   const min = pesoInputToCentavos(form.priceFrom);
@@ -105,7 +90,6 @@ export function OfferEditor() {
   const t = useT();
   const profile = useOwnProfile();
   const domains = useCreativeDomains();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [offers, setOffers] = useState<OwnOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -295,72 +279,6 @@ export function OfferEditor() {
     } catch (err) {
       toast.error(describe(err));
       setOffers(await listMine());
-    }
-  }
-
-  async function onAddImage(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file || !editingId) return;
-
-    const offer = offers.find((o) => o.id === editingId);
-    if (!offer) return;
-    if (keptImages(offer).length >= OFFER_IMAGE_LIMIT) {
-      setError(`An offer can have at most ${OFFER_IMAGE_LIMIT} images`);
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
-    try {
-      await toast.run('Uploading image…', async () => {
-      const [fullBlob, thumbBlob] = await Promise.all([
-        resizeImage(file, DISPLAY_EDGE),
-        resizeImage(file, THUMB_EDGE),
-      ]);
-      const ticket = await requestUploadUrl('offer');
-      if (ticket.kind !== 'offer') throw new Error('Unexpected upload ticket.');
-
-      await uploadImage(fullBlob, ticket.full.uploadUrl);
-      try {
-        await uploadImage(thumbBlob, ticket.thumb.uploadUrl);
-      } catch (thumbError) {
-        await abandonUpload(ticket.full.objectKey);
-        throw thumbError;
-      }
-
-      await addOfferImage(editingId, {
-        objectKey: ticket.full.objectKey,
-        thumbKey: ticket.thumb.objectKey,
-      });
-      // The server decides whether the photo is simply part of the offer or
-      // waits for review with a change (ADR 0058), so read it back.
-      setOffers(await listMine());
-      }, { success: offer.status === 'published' ? 'Image sent for review' : 'Image added', error: describe });
-    } catch {
-      // Already reported in the toast.
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onRemoveImage(imageId: string) {
-    if (!editingId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await toast.run(
-        'Removing image…',
-        async () => {
-          await deleteOfferImage(imageId);
-          setOffers(await listMine());
-        },
-        { success: 'Image removed', error: describe },
-      );
-    } catch {
-      // Already reported in the toast.
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -644,73 +562,7 @@ export function OfferEditor() {
             </div>
 
             {activeOffer && (
-              <section className="space-y-3 border-t border-hairline pt-5" aria-label="Images">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Images</p>
-                    <p className="text-xs text-ink-muted" data-numeric>
-                      {keptImages(activeOffer).length} of {OFFER_IMAGE_LIMIT} images used
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    iconLeft={<ImagePlus className="size-4" aria-hidden="true" />}
-                    disabled={busy || keptImages(activeOffer).length >= OFFER_IMAGE_LIMIT}
-                    onClick={() => inputRef.current?.click()}
-                  >
-                    {busy ? 'Uploading…' : 'Add image'}
-                  </Button>
-                  <input
-                    ref={inputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-                    className="sr-only"
-                    onChange={(event) => void onAddImage(event)}
-                  />
-                </div>
-                {keptImages(activeOffer).length >= OFFER_IMAGE_LIMIT && (
-                  <p className="text-sm text-ink-muted">
-                    An offer can have at most {OFFER_IMAGE_LIMIT} images.
-                  </p>
-                )}
-                {activeOffer.images.length > 0 && (
-                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {activeOffer.images.map((image, index) => (
-                      <li key={image.id} className="space-y-1.5">
-                        <img
-                          src={image.thumbUrl}
-                          alt={`${activeOffer.title}, image ${index + 1}`}
-                          width={160}
-                          height={120}
-                          className={cn(
-                            'aspect-4/3 w-full rounded-sm object-cover',
-                            image.state === 'pending_remove' && 'opacity-40',
-                          )}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        {image.state !== 'live' && (
-                          <p className="text-xs font-medium text-warning-700">{IMAGE_STATE_LABEL[image.state]}</p>
-                        )}
-                        {image.state !== 'pending_remove' && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="w-full"
-                            disabled={busy}
-                            onClick={() => void onRemoveImage(image.id)}
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
+              <MediaUploader offer={activeOffer} onChanged={async () => setOffers(await listMine())} />
             )}
           </div>
 

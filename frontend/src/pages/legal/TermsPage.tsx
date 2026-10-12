@@ -49,6 +49,7 @@ export function TermsPage() {
             <LegalText key="terms.profiles.limits" k="terms.profiles.limits" />,
             <LegalText key="terms.profiles.honest" k="terms.profiles.honest" />,
             <LegalText key="terms.profiles.ownership" k="terms.profiles.ownership" />,
+            <LegalText key="terms.profiles.rights" k="terms.profiles.rights" />,
           ]}
         />
       </LegalSection>

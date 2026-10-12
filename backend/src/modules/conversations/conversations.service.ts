@@ -24,6 +24,7 @@ import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notifyOnce } from '../notifications/notifications.service.js';
 import { loadAgreementCards } from '../agreements/agreements.service.js';
+import { coverPoster } from '../offers/offers.service.js';
 import type {
   EnsureConversationInput,
   ListHistoryInput,
@@ -214,6 +215,10 @@ async function loadOfferCards(offerIds: string[]): Promise<Map<string, Conversat
         thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
       });
     }
+  }
+  const posters = await coverPoster(offerRows.map((offer) => offer.id).filter((id) => !firstImageByOfferId.has(id)));
+  for (const [offerId, poster] of posters) {
+    firstImageByOfferId.set(offerId, { url: poster.url, thumbUrl: poster.thumbUrl });
   }
 
   for (const offer of offerRows) {

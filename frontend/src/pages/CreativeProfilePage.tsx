@@ -295,12 +295,13 @@ export function CreativeProfilePage() {
                                 <OfferCard
                                   key={offer.id}
                                   href={`/offers/${offer.id}`}
-                                  image={offer.images[0] ?? null}
+                                  image={offer.images[0] ?? offer.poster ?? null}
                                   title={offer.title}
                                   description={offer.description}
                                   eyebrow={offer.subdomain.domain}
                                   category={subdomainLabel(offer.subdomain)}
                                   price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                                  mediaBadge={offer.mediaBadge}
                                   fallbackName={name}
                                 />
                               ))}

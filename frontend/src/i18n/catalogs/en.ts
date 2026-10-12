@@ -95,6 +95,17 @@ export const en = {
   'signIn.declined.retry': 'Your ID could not be verified. Sign in to submit it again.',
   'signIn.declined.final': 'Your ID was declined, so this account cannot be used.',
   'signIn.declined.appealed': 'Your appeal is being reviewed. You can sign in if it is granted.',
+
+  // An offer's audio, video and PDF (ADR 0046): on the offer page, and as a
+  // badge on its card.
+  'media.listen': 'Listen',
+  'media.watch': 'Watch',
+  'media.read': 'Read',
+  'media.openPdf': 'Open PDF',
+  'media.badge.audio': 'Audio',
+  'media.badge.video': 'Video',
+  'media.badge.document': 'PDF',
+  'media.noPoster': 'Video',
 } as const;
 
 /**

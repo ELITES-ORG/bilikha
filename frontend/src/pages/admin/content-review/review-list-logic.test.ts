@@ -1,6 +1,6 @@
 import type { AdminMediaRow } from '@contracts/admin';
 import { describe, expect, it } from 'vitest';
-import { countFlagged, filterAndSortReview } from './review-list-logic';
+import { countFlagged, filterAndSortReview, mediaChanges, mediaKindOf } from './review-list-logic';
 
 function row(overrides: Partial<AdminMediaRow> & Pick<AdminMediaRow, 'id'>): AdminMediaRow {
   const { id, ...rest } = overrides;
@@ -107,5 +107,54 @@ describe('media review counts', () => {
     const withLogo = [...items, row({ id: 'logo', kind: 'logo', ownerName: 'Naval Light Studio' })];
 
     expect(filterAndSortReview(withLogo, 'naval light', 'queue').map((item) => item.id)).toEqual(['logo']);
+  });
+});
+
+describe('media changes', () => {
+  type Media = NonNullable<AdminMediaRow['images']>[number];
+  const media = (kind: Media['kind'], state: Media['state'], n = 1): Media[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `${kind}-${state}-${i}`,
+      kind,
+      url: `https://cdn.test/${kind}-${i}`,
+      thumbUrl: null,
+      sortOrder: i,
+      state,
+    }));
+  const change = (...images: Media[][]) => row({ id: 'change', kind: 'offer', change: 'edit', images: images.flat() });
+
+  it('counts each kind added and removed, photos first', () => {
+    expect(
+      mediaChanges(change(media('video', 'pending_add'), media('audio', 'pending_remove'), media('image', 'pending_add'))),
+    ).toBe('1 photo added, 1 audio removed, 1 video added');
+  });
+
+  it('pluralises as it counts, and leaves out what stays', () => {
+    expect(
+      mediaChanges(
+        change(
+          media('image', 'live', 3),
+          media('image', 'pending_remove', 2),
+          media('audio', 'pending_add', 2),
+          media('video', 'pending_add', 2),
+          media('document', 'pending_add', 2),
+          media('document', 'pending_remove'),
+        ),
+      ),
+    ).toBe('2 photos removed, 2 audio added, 2 videos added, 2 PDFs added, 1 PDF removed');
+  });
+
+  it('reads items from a backend that sends no kind as photos, so none drops out during a release', () => {
+    const old = (state: Media['state'], n: number) =>
+      media('image', state, n).map(({ kind: _kind, ...rest }) => rest as Media);
+    const fromOldBackend = change(old('live', 1), old('pending_add', 2), old('pending_remove', 1));
+
+    expect(fromOldBackend.images!.map(mediaKindOf)).toEqual(['image', 'image', 'image', 'image']);
+    expect(mediaChanges(fromOldBackend)).toBe('2 photos added, 1 photo removed');
+  });
+
+  it('is nothing when the change touches no media', () => {
+    expect(mediaChanges(change(media('image', 'live'), media('audio', 'live')))).toBeNull();
+    expect(mediaChanges(row({ id: 'plain', kind: 'offer', change: 'edit' }))).toBeNull();
   });
 });

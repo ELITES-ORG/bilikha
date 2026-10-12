@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Bookmark, BookmarkCheck, MapPin } from 'lucide-react';
+import type { OfferMediaItem } from '@contracts/media';
 import {
   Avatar,
   Badge,
@@ -29,7 +30,9 @@ import {
   usePublishedOffers,
   type PublishedOfferDetail,
 } from '@/features/offers/api';
+import { AudioItem, DocumentLink, VideoItem } from '@/features/media/MediaPlayer';
 import { useOfferSaving, type OfferSaving } from '@/features/me/use-offer-saving';
+import { useT } from '@/i18n/i18n-context';
 import { formatPriceRange } from '@/lib/money';
 import {
   fixedOfferActionDockAboveNav,
@@ -350,6 +353,8 @@ export function OfferDetailPage() {
                       </div>
                     </section>
                   )}
+
+                  <OfferMediaSections media={data.media ?? []} />
                 </div>
               </div>
 
@@ -363,6 +368,63 @@ export function OfferDetailPage() {
           )}
         </Container>
       </main>
+    </>
+  );
+}
+
+/** Listen, Watch and Read: the offer's audio, video and PDF, each section only when it has something. */
+function OfferMediaSections({ media }: { media: OfferMediaItem[] }) {
+  const t = useT();
+  const audio = media.filter((item) => item.kind === 'audio');
+  const video = media.filter((item) => item.kind === 'video');
+  const documents = media.filter((item) => item.kind === 'document');
+
+  return (
+    <>
+      {audio.length > 0 && (
+        <section aria-labelledby="offer-listen">
+          <h2 id="offer-listen" className="text-xl text-ink">
+            {t('media.listen')}
+          </h2>
+          <ul className="mt-4 space-y-6">
+            {audio.map((item) => (
+              <li key={item.id}>
+                <AudioItem item={item} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {video.length > 0 && (
+        <section aria-labelledby="offer-watch">
+          <h2 id="offer-watch" className="text-xl text-ink">
+            {t('media.watch')}
+          </h2>
+          <ul className="mt-4 space-y-6">
+            {video.map((item) => (
+              <li key={item.id}>
+                <VideoItem item={item} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {documents.length > 0 && (
+        <section aria-labelledby="offer-read">
+          <h2 id="offer-read" className="text-xl text-ink">
+            {t('media.read')}
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {documents.map((item) => (
+              <li key={item.id}>
+                <DocumentLink item={item} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }
@@ -412,6 +474,7 @@ function SimilarOffers({
             description={null}
             eyebrow={row.subdomain.domain}
             price={formatPriceRange(row.priceMinCentavos, row.priceMaxCentavos)}
+            mediaBadge={row.mediaBadge}
             provider={{
               name: row.creative.displayName ?? row.creative.slug,
               avatarUrl: row.creative.avatarUrl,
