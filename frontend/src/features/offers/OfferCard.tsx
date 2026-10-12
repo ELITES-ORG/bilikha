@@ -1,9 +1,14 @@
 import type { ReactNode } from 'react';
-import { ArrowRight, Heart, MapPin } from 'lucide-react';
+import { ArrowRight, FileText, Film, Heart, MapPin, Music } from 'lucide-react';
+import type { MediaBadge } from '@contracts/media';
 import { Avatar, Badge, ButtonLink, Card, Eyebrow, ProgressiveImage, Skeleton } from '@/components/ui';
+import { mediaBadgeText } from '@/features/media/badge';
 import type { OfferImage } from '@/features/offers/api';
+import { useT } from '@/i18n/i18n-context';
 import { cn } from '@/lib/cn';
 import { initialsFromName } from '@/lib/initials';
+
+const MEDIA_ICONS = { audio: Music, video: Film, document: FileText } as const;
 
 export interface OfferCardProvider {
   name: string;
@@ -30,6 +35,8 @@ export interface OfferCardProps {
   category?: string;
   /** Already formatted with `formatPriceRange`; always present. */
   price: string;
+  /** Audio, video or PDF on the offer (ADR 0046): a label beside the category, never a player. */
+  mediaBadge?: MediaBadge | null;
   provider?: OfferCardProvider;
   /** Public cards: the offer page. Renders the "View offer" link. */
   href?: string;
@@ -96,6 +103,7 @@ export function OfferCard({
   eyebrow,
   category,
   price,
+  mediaBadge,
   provider,
   href,
   save,
@@ -105,7 +113,9 @@ export function OfferCard({
   fallbackName,
   className,
 }: OfferCardProps) {
+  const t = useT();
   const fallbackText = provider?.name ?? fallbackName ?? title;
+  const MediaIcon = mediaBadge ? MEDIA_ICONS[mediaBadge.kind] : null;
 
   return (
     <Card
@@ -130,12 +140,23 @@ export function OfferCard({
         ) : (
           <OfferImageFallback text={fallbackText} />
         )}
-        {category && (
-          <div className="absolute inset-x-3 bottom-3 flex">
+        {(category || mediaBadge) && (
+          <div className="absolute inset-x-3 bottom-3 flex min-w-0 gap-2">
             {/* Navy on a photo; the light pill on the navy no-photo panel. */}
-            <Badge tone="brand" variant={image ? 'solid' : 'soft'} className="truncate">
-              {category}
-            </Badge>
+            {category && (
+              <Badge tone="brand" variant={image ? 'solid' : 'soft'} className="min-w-0 truncate">
+                {category}
+              </Badge>
+            )}
+            {mediaBadge && MediaIcon && (
+              <Badge
+                className="shrink-0"
+                icon={<MediaIcon className="size-3" aria-hidden="true" />}
+                data-numeric
+              >
+                {mediaBadgeText(mediaBadge, t)}
+              </Badge>
+            )}
           </div>
         )}
       </div>
