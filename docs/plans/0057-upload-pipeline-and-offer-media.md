@@ -58,7 +58,7 @@ upload pipeline that message attachments (#66) will reuse.
 | 0. Prove the transport | 1 / 1 | Done |
 | 1. The shared pipeline | 6 / 6 | Done |
 | 2. Offer media in the data | 5 / 5 | Done |
-| 3. The offer editor | 0 / 2 | Not started |
+| 3. The offer editor | 2 / 2 | Done |
 | 4. Players, badges and posters | 0 / 3 | Not started |
 | 5. Review previews and the terms | 0 / 2 | Not started |
 | 6. Rollout (reyxdz) | 0 / 6 | Not started |
@@ -195,18 +195,22 @@ Probe results:
 ## Phase 3 — The offer editor (pull request 3)
 
 ### Step 3.1 — The uploader
-- [ ] **Action.** `MediaUploader` in the offer editor: limits shown before
+- [x] **Action.** `MediaUploader` in the offer editor: limits shown before
   picking, the quota, progress, cancel, resume, the rights reminder, and the
   legacy fallback.
-- [ ] **Verify.** The logic tests pass, and the bundle is within budget.
+- [x] **Verify.** The logic tests pass, and the bundle is within budget.
+  Initial JavaScript is 178.64 kB gzip in 9 files (was 178.38 kB in 8), and
+  `tus-js-client` loads in its own chunk only when an upload starts.
 
 ### Step 3.2 — Tried for real
-- [ ] **Action.** Upload each kind through the local API against staging storage.
-- [ ] **Verify.**
+- [x] **Action.** Upload each kind through the local API against staging storage.
+- [x] **Verify.**
   - Each kind survives a reload.
   - A refusal happens before any request.
   - Cancel leaves no reservation.
-  - A cut connection resumes.
+  - A cut connection resumes. DevTools' offline switch only stalls a request
+    already under way, so the check cut every connection at a proxy instead:
+    the next request resumed at offset 6,291,456, after the first stored chunk.
 
 ## Phase 4 — Players, badges and posters (pull request 4)
 
