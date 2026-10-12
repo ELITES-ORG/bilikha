@@ -49,6 +49,21 @@ import { logger } from './logger.js';
  *   GET {SUPABASE_URL}/storage/v1/bucket/{id}
  *   → 200 { id, public, file_size_limit, allowed_mime_types, ... }
  *   A missing bucket → HTTP 400 { statusCode: "404", code: "NoSuchBucket" }.
+ *
+ * Probed against staging in plan 0057 Step 0.1:
+ *
+ * Resumable upload (TUS), authorised by the sign response's token:
+ *   POST {SUPABASE_URL}/storage/v1/upload/resumable/sign
+ *   x-signature: {token}
+ *   Upload-Metadata: bucketName, objectName, contentType, cacheControl
+ *   Chunks of exactly 6 MiB. An interrupted upload resumes from the last
+ *   accepted chunk. Over the bucket's size limit → 413 at creation.
+ *
+ * Range read:
+ *   GET {SUPABASE_URL}/storage/v1/object/authenticated/{bucket}/{objectKey}
+ *   Authorization: Bearer {SERVICE_ROLE_KEY}
+ *   Range: bytes=0-63
+ *   → 206 with the first 64 bytes.
  */
 
 /** False when the storage env vars are absent. Images are then disabled and the
@@ -182,7 +197,7 @@ function encodeObjectKey(objectKey: string): string {
 export async function createSignedUpload(
   objectKey: string,
   bucket: string = env.SUPABASE_STORAGE_BUCKET,
-): Promise<{ uploadUrl: string; objectKey: string }> {
+): Promise<{ uploadUrl: string; objectKey: string; token: string }> {
   assertSafeObjectKey(objectKey);
   assertBucketFitsKey(bucket, objectKey);
   const path = `${storageBase()}/object/upload/sign/${encodeURIComponent(bucket)}/${encodeObjectKey(objectKey)}`;
@@ -209,10 +224,15 @@ export async function createSignedUpload(
   if (!payload.url || !payload.url.startsWith('/')) {
     throw new AppError(502, 'STORAGE_ERROR', 'Storage sign response was missing a relative url');
   }
+  // The resumable upload is authorised by the token alone (plan 0057 Step 0.1).
+  if (!payload.token) {
+    throw new AppError(502, 'STORAGE_ERROR', 'Storage sign response was missing a token');
+  }
 
   return {
     uploadUrl: `${storageBase()}${payload.url}`,
     objectKey,
+    token: payload.token,
   };
 }
 
@@ -256,9 +276,8 @@ export async function createSignedDownload(
   return `${storageBase()}${payload.signedURL}`;
 }
 
-export function publicUrl(objectKey: string): string {
-  const bucket = env.SUPABASE_STORAGE_BUCKET;
-  // The media bucket is public; an ID key here would be a readable ID.
+export function publicUrl(objectKey: string, bucket: string = env.SUPABASE_STORAGE_BUCKET): string {
+  // The media buckets are public; an ID key here would be a readable ID.
   assertBucketFitsKey(bucket, objectKey);
   return `${storageBase()}/object/public/${bucket}/${encodeObjectKey(objectKey)}`;
 }
@@ -310,13 +329,16 @@ export async function deleteObject(
  * laptop) is found by `npm run media:prune`, which deletes unreferenced
  * objects older than a day.
  */
-export async function discardObject(objectKey: string): Promise<void> {
+export async function discardObject(
+  objectKey: string,
+  bucket: string = env.SUPABASE_STORAGE_BUCKET,
+): Promise<void> {
   if (!isStorageConfigured()) return;
   try {
-    await deleteObject(objectKey);
+    await deleteObject(objectKey, bucket);
   } catch (error) {
     logger.warn(
-      { err: error, objectKey: loggableKey(env.SUPABASE_STORAGE_BUCKET, objectKey) },
+      { err: error, bucket, objectKey: loggableKey(bucket, objectKey) },
       'Could not delete a replaced image; media:prune will',
     );
   }
@@ -385,6 +407,135 @@ export async function listObjects(
   return results;
 }
 
+/**
+ * One object's stored size and type, or null when it is not there. Read from
+ * the listing of its folder: the listing reports what storage actually holds,
+ * whatever the uploader declared.
+ */
+export async function storedObject(bucket: string, objectKey: string): Promise<StoredObject | null> {
+  assertSafeObjectKey(objectKey);
+  assertBucketFitsKey(bucket, objectKey);
+  const prefix = objectKey.slice(0, objectKey.lastIndexOf('/') + 1);
+  const objects = await listObjects(prefix, bucket);
+  return objects.find((object) => object.name === objectKey) ?? null;
+}
+
+/**
+ * The first `count` bytes of a stored object, for checking its file signature.
+ * Asks for a byte range and stops reading once it has enough, so a 300 MB video
+ * costs 64 bytes. Fewer come back only when the object is shorter.
+ */
+export async function readFirstBytes(bucket: string, objectKey: string, count = 64): Promise<Uint8Array> {
+  assertSafeObjectKey(objectKey);
+  assertBucketFitsKey(bucket, objectKey);
+  const path = `${storageBase()}/object/authenticated/${encodeURIComponent(bucket)}/${encodeObjectKey(objectKey)}`;
+
+  const response = await fetch(path, {
+    headers: { ...serviceHeaders(), Range: `bytes=0-${count - 1}` },
+  });
+
+  if (response.status !== 200 && response.status !== 206) {
+    const body = await response.text();
+    logger.error(
+      { status: response.status, body: loggableBody(bucket, objectKey, body), objectKey: loggableKey(bucket, objectKey) },
+      'Supabase refused to read the start of an object',
+    );
+    throw new AppError(502, 'STORAGE_ERROR', 'Could not check the upload. Try again.');
+  }
+
+  const bytes = new Uint8Array(count);
+  let filled = 0;
+  const reader = response.body?.getReader();
+  if (reader) {
+    while (filled < count) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const take = Math.min(value.length, count - filled);
+      bytes.set(value.subarray(0, take), filled);
+      filled += take;
+    }
+    await reader.cancel();
+  }
+  return bytes.slice(0, filled);
+}
+
+/** Where the browser sends a resumable upload, with the sign response's token. */
+export function tusEndpoint(): string {
+  return `${storageBase()}/upload/resumable/sign`;
+}
+
+export interface BucketSettings {
+  public: boolean;
+  fileSizeLimit: number | null;
+  allowedMimeTypes: string[] | null;
+}
+
+/** A bucket's settings, or null when there is no such bucket. */
+export async function bucketSettings(bucket: string): Promise<BucketSettings | null> {
+  const response = await fetch(`${storageBase()}/bucket/${encodeURIComponent(bucket)}`, {
+    headers: serviceHeaders(),
+  });
+
+  if (response.ok) {
+    const body = (await response.json()) as {
+      public?: boolean;
+      file_size_limit?: number | null;
+      allowed_mime_types?: string[] | null;
+    };
+    return {
+      public: body.public === true,
+      fileSizeLimit: typeof body.file_size_limit === 'number' ? body.file_size_limit : null,
+      allowedMimeTypes: Array.isArray(body.allowed_mime_types) ? body.allowed_mime_types : null,
+    };
+  }
+
+  // Observed: a missing bucket answers HTTP 400, with 404 in the body.
+  const text = await response.text();
+  let body: { statusCode?: string | number; code?: string; error?: string; message?: string } = {};
+  try {
+    body = JSON.parse(text) as typeof body;
+  } catch {
+    // non-JSON body — fall through to throw
+  }
+  if (
+    response.status === 404
+    || String(body.statusCode) === '404'
+    || body.code === 'NoSuchBucket'
+    || body.error === 'Bucket not found'
+    || body.message === 'Bucket not found'
+  ) {
+    return null;
+  }
+  throw new AppError(502, 'STORAGE_ERROR', `Could not read bucket ${bucket} (${response.status}): ${text.slice(0, 200)}`);
+}
+
+/** Creates the bucket, or updates it when it exists. */
+export async function saveBucket(
+  id: string,
+  settings: { public: boolean; fileSizeLimit: number; allowedMimeTypes: string[] },
+  exists: boolean,
+): Promise<void> {
+  const body = {
+    ...(exists ? {} : { id, name: id }),
+    public: settings.public,
+    file_size_limit: settings.fileSizeLimit,
+    allowed_mime_types: settings.allowedMimeTypes,
+  };
+  const response = await fetch(
+    exists ? `${storageBase()}/bucket/${encodeURIComponent(id)}` : `${storageBase()}/bucket`,
+    {
+      method: exists ? 'PUT' : 'POST',
+      headers: { ...serviceHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new AppError(502, 'STORAGE_ERROR', `Could not save bucket ${id} (${response.status}): ${text.slice(0, 200)}`);
+  }
+}
+
 export const avatarKey = (userId: string) => `avatars/${userId}/${randomUUID()}.webp`;
 
 export const organizationLogoKey = (organizationId: string) =>
@@ -392,6 +543,12 @@ export const organizationLogoKey = (organizationId: string) =>
 
 export const offerKey = (profileId: string) =>
   `offers/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp
+
+/** An offer's audio, video or PDF. Under the same prefix in whichever bucket it lives. */
+export const offerMediaKey = (profileId: string, ext: string) => `offers/${profileId}/${randomUUID()}.${ext}`;
+
+/** A video's poster, which lives in the image bucket. */
+export const offerPosterKey = (profileId: string) => `offers/${profileId}/${randomUUID()}-poster.webp`;
 
 /**
  * Where an ID photo goes in the ID bucket. The `ids/<userId>/` prefix is what

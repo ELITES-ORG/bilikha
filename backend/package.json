@@ -26,6 +26,7 @@
     "migrate:inquiries": "tsx src/scripts/migrate-inquiries.ts",
     "migrate:offers": "tsx src/scripts/migrate-portfolio-to-offers.ts",
     "media:prune": "tsx src/scripts/prune-orphan-media.ts",
+    "media:buckets": "tsx src/scripts/configure-media-buckets.ts",
     "notifications:prune": "tsx src/scripts/prune-notifications.ts"
   },
   "dependencies": {

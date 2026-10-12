@@ -55,6 +55,17 @@ export const envSchema = z
       )
       .default('ids'),
 
+    // Kinds besides images that accept uploads (ADR 0046). Empty or unset: images
+    // only. Set on staging first, and on production only once Supabase Pro is
+    // active there. Turning a kind off stops new uploads; published items stay.
+    MEDIA_UPLOAD_KINDS: z.preprocess(
+      (value) => (typeof value === 'string' ? value : ''),
+      z
+        .string()
+        .transform((value) => value.split(',').map((part) => part.trim()).filter(Boolean))
+        .pipe(z.array(z.enum(['audio', 'video', 'document']))),
+    ),
+
     // Keys the hash that recognises a repeated ID number (plan 0053 Step 1.7).
     // Optional at boot like storage, so a deploy without it keeps everything
     // else working; deciding an ID then answers 503. **Never rotate it**: a new

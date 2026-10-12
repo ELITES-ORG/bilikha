@@ -116,11 +116,12 @@ export const ratingCreateLimiter = rateLimit({
   },
 });
 
-/** Upload tickets — 40 per user per hour. Covers a full ten-image portfolio
- *  with retries, and caps how fast one account can fill a 1 GB bucket. */
+/** Upload tickets — 30 per user per hour, shared by every media kind, avatars,
+ *  organisation logos and ID photos (ADR 0046). Caps how fast one account can
+ *  fill its quota, and how much one stolen session can upload. */
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 40,
+  limit: 30,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: (req) => req.session.userId!,
