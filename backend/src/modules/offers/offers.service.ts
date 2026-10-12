@@ -1,7 +1,8 @@
 import { and, asc, count, desc, eq, gt, inArray, max, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import type { OfferMediaItem } from '../../contracts/media.js';
+import type { MediaBadge, OfferMediaItem } from '../../contracts/media.js';
 import type {
+  OfferImage,
   PublishedOfferDetail,
   PublishedOfferListResult,
 } from '../../contracts/offers.js';
@@ -221,6 +222,45 @@ async function mediaForOffers(
 function withoutState<T extends { state: ImageState }>(image: T): Omit<T, 'state'> {
   const { state: _state, ...rest } = image;
   return rest;
+}
+
+/** The first kind in the offer's order, how many of that kind, and the first one's length. */
+function mediaBadgeFrom(media: readonly OfferMediaItem[]): MediaBadge | null {
+  const first = media[0];
+  if (!first) return null;
+  return {
+    kind: first.kind,
+    count: media.filter((item) => item.kind === first.kind).length,
+    durationSeconds: first.durationSeconds,
+  };
+}
+
+/** The first video's poster in the shape of a photo. */
+function posterFrom(media: readonly OfferMediaItem[]): OfferImage | null {
+  const video = media.find((item) => item.kind === 'video' && item.posterUrl);
+  if (!video?.posterUrl) return null;
+  return { id: video.id, url: video.posterUrl, thumbUrl: video.posterUrl, sortOrder: video.sortOrder };
+}
+
+/** What each offer's card shows of its public audio, video and PDF: a badge, and a poster for want of a photo. */
+export async function offerCardMedia(
+  offerIds: string[],
+): Promise<Map<string, { mediaBadge: MediaBadge | null; poster: OfferImage | null }>> {
+  const media = await mediaForOffers(offerIds, { audience: 'public' });
+  const result = new Map<string, { mediaBadge: MediaBadge | null; poster: OfferImage | null }>();
+  for (const [offerId, items] of media) {
+    result.set(offerId, { mediaBadge: mediaBadgeFrom(items), poster: posterFrom(items) });
+  }
+  return result;
+}
+
+/** Each offer's first public video poster, the cover of a card whose offer has no photo. */
+export async function coverPoster(offerIds: string[]): Promise<Map<string, OfferImage>> {
+  const result = new Map<string, OfferImage>();
+  for (const [offerId, { poster }] of await offerCardMedia(offerIds)) {
+    if (poster) result.set(offerId, poster);
+  }
+  return result;
 }
 
 /**
@@ -830,7 +870,11 @@ export async function listPublishedOffers(
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .where(where);
-  const imageMap = await imagesForOffers(rows.map((row) => row.id), { firstOnly: true });
+  const offerIds = rows.map((row) => row.id);
+  const [imageMap, mediaMap] = await Promise.all([
+    imagesForOffers(offerIds, { firstOnly: true }),
+    offerCardMedia(offerIds),
+  ]);
 
   return {
     data: rows.map((row) => ({
@@ -848,8 +892,9 @@ export async function listPublishedOffers(
       },
       image: (() => {
         const first = imageMap.get(row.id)?.[0];
-        return first ? withoutState(first) : null;
+        return first ? withoutState(first) : (mediaMap.get(row.id)?.poster ?? null);
       })(),
+      mediaBadge: mediaMap.get(row.id)?.mediaBadge ?? null,
       creative: {
         slug: row.creativeSlug,
         displayName: row.creativeDisplayName,

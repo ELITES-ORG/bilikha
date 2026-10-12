@@ -760,6 +760,7 @@ export function DirectoryPage() {
                       eyebrow={offer.subdomain.domain}
                       category={showSubdomain ? subdomainLabel(offer.subdomain) : undefined}
                       price={formatPriceRange(offer.priceMinCentavos, offer.priceMaxCentavos)}
+                      mediaBadge={offer.mediaBadge}
                       provider={{
                         name: creativeName,
                         avatarUrl: offer.creative.avatarUrl,

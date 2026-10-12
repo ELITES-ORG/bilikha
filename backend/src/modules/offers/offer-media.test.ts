@@ -57,11 +57,19 @@ async function insertMedia(
     objectKey,
     thumbKey = null,
     sortOrder = 0,
-  }: { kind: Kind; state?: State; objectKey: string; thumbKey?: string | null; sortOrder?: number },
+    durationSeconds = null,
+  }: {
+    kind: Kind;
+    state?: State;
+    objectKey: string;
+    thumbKey?: string | null;
+    sortOrder?: number;
+    durationSeconds?: number | null;
+  },
 ) {
   const [row] = await db
     .insert(offerImages)
-    .values({ offerId, kind, state, objectKey, thumbKey, sortOrder, mimeType: MIME[kind], sizeBytes: 1_000 })
+    .values({ offerId, kind, state, objectKey, thumbKey, sortOrder, durationSeconds, mimeType: MIME[kind], sizeBytes: 1_000 })
     .returning();
   return row!;
 }
@@ -161,6 +169,80 @@ describe('non-image media', () => {
     ]);
     expect(mine.media[1]!.url).toContain('/object/public/media-documents/');
     expect(mine.pendingChanges).not.toBeNull();
+  });
+});
+
+describe('cards', () => {
+  it('cards carry a media badge for an offer with audio', async () => {
+    const creative = await makeCreative();
+    const offer = await makeOffer(creative.profile.id, { title: 'ZZ Badged' });
+    const plain = await makeOffer(creative.profile.id, { title: 'ZZ Plain' });
+    const p = creative.profile.id;
+    await insertMedia(offer.id, { kind: 'audio', objectKey: `offers/${p}/one.mp3`, durationSeconds: 222 });
+    await insertMedia(offer.id, { kind: 'video', objectKey: `offers/${p}/clip.mp4`, sortOrder: 1, durationSeconds: 30 });
+    await insertMedia(offer.id, { kind: 'audio', objectKey: `offers/${p}/two.mp3`, sortOrder: 2, durationSeconds: 95 });
+    await insertMedia(offer.id, {
+      kind: 'audio',
+      state: 'pending_add',
+      objectKey: `offers/${p}/three.mp3`,
+      sortOrder: 3,
+      durationSeconds: 60,
+    });
+    const badge = { kind: 'audio', count: 2, durationSeconds: 222 };
+
+    const cards = (await listPublishedOffers({ page: 1, limit: 50 })).data;
+    expect(cards.find((o) => o.id === offer.id)!.mediaBadge).toEqual(badge);
+    expect(cards.find((o) => o.id === plain.id)!.mediaBadge).toBeNull();
+
+    const onProfile = (await getPublishedBySlug(creative.profile.slug)).offers;
+    expect(onProfile.find((o) => o.id === offer.id)!.mediaBadge).toEqual(badge);
+    expect(onProfile.find((o) => o.id === plain.id)!.mediaBadge).toBeNull();
+  });
+
+  it('an offer with only a video shows its poster on cards and in saved offers and messages', async () => {
+    const creative = await makeCreative();
+    const offer = await makeOffer(creative.profile.id, { title: 'ZZ Video only' });
+    const client = await makeUser();
+    const p = creative.profile.id;
+    await insertMedia(offer.id, {
+      kind: 'video',
+      objectKey: `offers/${p}/clip.mp4`,
+      thumbKey: `offers/${p}/clip-poster.webp`,
+      durationSeconds: 42,
+    });
+    const posterUrl = `http://storage.test/storage/v1/object/public/media/offers/${p}/clip-poster.webp`;
+
+    const card = (await listPublishedOffers({ page: 1, limit: 50 })).data.find((o) => o.id === offer.id)!;
+    expect(card.image).toMatchObject({ url: posterUrl, thumbUrl: posterUrl });
+    expect(card.mediaBadge).toEqual({ kind: 'video', count: 1, durationSeconds: 42 });
+
+    const onProfile = (await getPublishedBySlug(creative.profile.slug)).offers.find((o) => o.id === offer.id)!;
+    expect(onProfile.images).toEqual([]);
+    expect(onProfile.poster).toMatchObject({ url: posterUrl, thumbUrl: posterUrl });
+
+    await saveOffer(client.id, offer.id);
+    const saved = (await listSavedOffers(client.id)).data.find((s) => s.offer.id === offer.id)!;
+    expect(saved.offer.image).toEqual({ url: posterUrl, thumbUrl: posterUrl });
+
+    const started = await startOrContinue(client.id, {
+      profileSlug: creative.profile.slug,
+      body: 'Hello, I would like to ask about this offer please.',
+      offerId: offer.id,
+    });
+    expect(started.message.offer?.image).toEqual({ url: posterUrl, thumbUrl: posterUrl });
+  });
+
+  it('a photo stays the cover when the offer also has a video', async () => {
+    const { creative, offer } = await offerWithImageAndAudio();
+    await insertMedia(offer.id, {
+      kind: 'video',
+      objectKey: `offers/${creative.profile.id}/clip.mp4`,
+      thumbKey: `offers/${creative.profile.id}/clip-poster.webp`,
+      sortOrder: 2,
+    });
+
+    const card = (await listPublishedOffers({ page: 1, limit: 50 })).data.find((o) => o.id === offer.id)!;
+    expect(card.image?.url).toContain('photo.webp');
   });
 });
 

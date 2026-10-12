@@ -23,6 +23,7 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { coverPoster } from '../offers/offers.service.js';
 import type {
   ChangePasswordInput,
   CreateProfileInput,
@@ -643,6 +644,10 @@ export async function listSavedOffers(userId: string): Promise<SavedOfferListRes
         thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
       });
     }
+  }
+  const posters = await coverPoster(offerIds.filter((id) => !firstImageByOfferId.has(id)));
+  for (const [offerId, poster] of posters) {
+    firstImageByOfferId.set(offerId, { url: poster.url, thumbUrl: poster.thumbUrl });
   }
 
   return {
