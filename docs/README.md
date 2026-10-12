@@ -12,6 +12,7 @@ drawer nobody reads twice.
 | [Explanation](./explanation/) | "Why is it shaped like this?" | You're about to change something structural | You understand a constraint others don't |
 | [Decisions](./decisions/) | "Why did we choose this over that?" | You're about to re-litigate a past choice | You make a decision with consequences |
 | [Plans](./plans/) | "How do we build this specific thing?" | You're implementing a planned feature | You're about to build something multi-step |
+| [Handoffs](./handoffs/) | "Exactly how do I execute this issue here?" | You're picking up an issue cold | You brief someone else to carry out an issue end to end |
 
 The UI design system lives separately, next to the code it governs:
 [`frontend/DESIGN.md`](../frontend/DESIGN.md).
@@ -77,6 +78,9 @@ Different categories rot at different speeds. Treat them accordingly.
 
 **Decisions**
 - [Decision log](./decisions/)
+
+**Handoffs**
+- [Handoff index](./handoffs/)
 
 **Plans**
 - [Plan index](./plans/)
