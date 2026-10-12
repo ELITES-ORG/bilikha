@@ -1,6 +1,6 @@
 import type { AdminMediaRow } from '@contracts/admin';
 import { describe, expect, it } from 'vitest';
-import { countFlagged, filterAndSortReview, mediaChanges } from './review-list-logic';
+import { countFlagged, filterAndSortReview, mediaChanges, mediaKindOf } from './review-list-logic';
 
 function row(overrides: Partial<AdminMediaRow> & Pick<AdminMediaRow, 'id'>): AdminMediaRow {
   const { id, ...rest } = overrides;
@@ -142,6 +142,15 @@ describe('media changes', () => {
         ),
       ),
     ).toBe('2 photos removed, 2 audio added, 2 videos added, 2 PDFs added, 1 PDF removed');
+  });
+
+  it('reads items from a backend that sends no kind as photos, so none drops out during a release', () => {
+    const old = (state: Media['state'], n: number) =>
+      media('image', state, n).map(({ kind: _kind, ...rest }) => rest as Media);
+    const fromOldBackend = change(old('live', 1), old('pending_add', 2), old('pending_remove', 1));
+
+    expect(fromOldBackend.images!.map(mediaKindOf)).toEqual(['image', 'image', 'image', 'image']);
+    expect(mediaChanges(fromOldBackend)).toBe('2 photos added, 1 photo removed');
   });
 
   it('is nothing when the change touches no media', () => {

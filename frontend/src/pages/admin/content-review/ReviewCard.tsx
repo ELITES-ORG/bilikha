@@ -8,7 +8,7 @@ import { AudioItem, DocumentLink, VideoItem } from '@/features/media/MediaPlayer
 import { formatPriceRange } from '@/lib/money';
 import { AdminFact, AdminStatusBadge } from '../admin-ui';
 import { formatAdminDate } from '../admin-format';
-import { mediaChanges } from './review-list-logic';
+import { mediaChanges, mediaKindOf } from './review-list-logic';
 
 /**
  * One item waiting for a decision (ADR 0058): what it is, what the public sees
@@ -40,9 +40,9 @@ function NoPreview({ text }: { text: string }) {
 
 function MediaPreview({ item }: { item: AdminMediaRow }) {
   const shown = item.kind === 'offer' ? (item.images ?? []).filter((entry) => entry.state !== 'pending_remove') : [];
-  const images = shown.filter((entry) => entry.kind === 'image');
+  const images = shown.filter((entry) => mediaKindOf(entry) === 'image');
   // An offer with only a video is covered by its poster, as the public sees it.
-  const poster = shown.find((entry) => entry.kind === 'video' && entry.thumbUrl);
+  const poster = shown.find((entry) => mediaKindOf(entry) === 'video' && entry.thumbUrl);
   const [cover, ...rest] = images.length > 0 ? images : poster ? [poster] : [];
   const alt = item.caption ?? item.title ?? `${KIND_LABEL[item.kind]} by ${item.ownerName}`;
 
@@ -109,12 +109,13 @@ type QueueMedia = NonNullable<AdminMediaRow['images']>[number];
 
 /** An audio, video or PDF item in the shape the public players take. */
 function playable(entry: QueueMedia): OfferMediaItem | null {
-  if (entry.kind === 'image') return null;
+  const kind = mediaKindOf(entry);
+  if (kind === 'image') return null;
   return {
     id: entry.id,
-    kind: entry.kind,
+    kind,
     url: entry.url,
-    posterUrl: entry.kind === 'video' ? entry.thumbUrl : null,
+    posterUrl: kind === 'video' ? entry.thumbUrl : null,
     title: entry.title ?? null,
     mimeType: entry.mimeType ?? '',
     sizeBytes: entry.sizeBytes ?? 0,

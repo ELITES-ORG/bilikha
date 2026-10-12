@@ -113,7 +113,8 @@ export interface AdminProfileListResult {
  */
 export interface AdminMediaImage {
   id: string;
-  kind: MediaKind;
+  /** Absent from a backend older than the field (ADR 0040), whose items are all images. */
+  kind?: MediaKind;
   url: string;
   thumbUrl: string | null;
   sortOrder: number;

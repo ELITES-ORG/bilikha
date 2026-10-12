@@ -9,6 +9,13 @@ export function countFlagged(items: ReadonlyArray<AdminMediaRow>): number {
   return items.filter((item) => item.flaggedAt).length;
 }
 
+type QueueMedia = NonNullable<AdminMediaRow['images']>[number];
+
+/** An item's kind. A backend from before `kind` sends only images, and none says so. */
+export function mediaKindOf(entry: QueueMedia): MediaKind {
+  return entry.kind ?? 'image';
+}
+
 /** Singular and plural, in the order a change is described. */
 const MEDIA_NOUNS: ReadonlyArray<[MediaKind, string, string]> = [
   ['image', 'photo', 'photos'],
@@ -26,7 +33,7 @@ export function mediaChanges(item: AdminMediaRow): string | null {
   const parts: string[] = [];
   for (const [kind, one, many] of MEDIA_NOUNS) {
     for (const [state, verb] of [['pending_add', 'added'], ['pending_remove', 'removed']] as const) {
-      const n = media.filter((entry) => entry.kind === kind && entry.state === state).length;
+      const n = media.filter((entry) => mediaKindOf(entry) === kind && entry.state === state).length;
       if (n) parts.push(`${n} ${n === 1 ? one : many} ${verb}`);
     }
   }
