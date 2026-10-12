@@ -3,6 +3,7 @@ import type { KindLimitView, MediaKind, MediaLimits } from '@contracts/media';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { enOffers } from '@/i18n/catalogs/offers/en';
 import type { OwnOfferImage, OwnOfferMediaItem } from './api';
+import { offerImageLimit } from './limits';
 import {
   acceptAttribute,
   acceptsOnlyImages,
@@ -158,5 +159,12 @@ describe('isFull', () => {
     };
     expect(isFull(offer, 'video', all)).toBe(false);
     expect(isFull({ ...offer, media: [...offer.media, media('d', 'video', 3, 'pending_add')] }, 'video', all)).toBe(true);
+  });
+});
+
+describe('offerImageLimit', () => {
+  it("takes the API's image limit, and the old limit of 4 when the API cannot say", () => {
+    expect(offerImageLimit({ available: true, limits: limits([]) })).toBe(10);
+    expect(offerImageLimit({ available: false, loading: false })).toBe(4);
   });
 });
