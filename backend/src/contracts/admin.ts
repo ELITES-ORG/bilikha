@@ -2,6 +2,7 @@
  * Admin queue, profile detail, and account lookup responses (ADR 0037).
  */
 
+import type { MediaKind } from './media.js';
 import type { ListMeta } from './pagination.js';
 
 export type AdminProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
@@ -104,16 +105,24 @@ export interface AdminProfileListResult {
 }
 
 /**
- * One image on an offer awaiting review. `state` says what the change does to
- * it (ADR 0058): `live` is published and stays, `pending_add` would be added,
- * `pending_remove` would be taken off.
+ * One item on an offer awaiting review — an image, audio, video or PDF (ADR
+ * 0046). `state` says what the change does to it (ADR 0058): `live` is
+ * published and stays, `pending_add` would be added, `pending_remove` would be
+ * taken off. `url` is the file in its own bucket; `thumbUrl` is an image's
+ * thumbnail or a video's poster, and null for anything else.
  */
 export interface AdminMediaImage {
   id: string;
+  /** Absent from a backend older than the field (ADR 0040), whose items are all images. */
+  kind?: MediaKind;
   url: string;
-  thumbUrl: string;
+  thumbUrl: string | null;
   sortOrder: number;
   state: 'live' | 'pending_add' | 'pending_remove';
+  title?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  durationSeconds?: number | null;
 }
 
 /** The published version of an offer, shown beside a change waiting for review. */
