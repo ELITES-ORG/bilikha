@@ -14,6 +14,8 @@ import {
 import { Button, ButtonLink, Eyebrow, Input, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { withNextParam } from '@/lib/return-path';
+import '@/i18n/catalogs/register';
+import { useI18n } from '@/i18n/i18n-context';
 
 const DRAFT_KEY = 'bilikha:register-draft';
 
@@ -92,6 +94,7 @@ function clearDraft(): void {
 }
 
 export function RegisterPage() {
+  const { message } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const nextRaw = searchParams.get('next');
@@ -129,10 +132,16 @@ export function RegisterPage() {
     const origin = submitOrigin(event);
 
     const nextErrors: Record<string, string> = {};
-    if (!form.municipalitySlug) nextErrors.municipalitySlug = 'Select a municipality';
-    if (!form.barangaySlug) nextErrors.barangaySlug = 'Select a barangay';
-    if (!form.privacyConsent) nextErrors.privacyConsent = 'You must accept the privacy notice';
-    if (!form.termsAccepted) nextErrors.termsAccepted = 'You must accept the terms';
+    // Client-side checks only. Field errors that come back from the API are
+    // still English — server copy is not covered by ADR 0055.
+    if (!form.municipalitySlug) {
+      nextErrors.municipalitySlug = message('register.errors.municipalityRequired').text;
+    }
+    if (!form.barangaySlug) nextErrors.barangaySlug = message('register.errors.barangayRequired').text;
+    if (!form.privacyConsent) {
+      nextErrors.privacyConsent = message('register.errors.privacyRequired').text;
+    }
+    if (!form.termsAccepted) nextErrors.termsAccepted = message('register.errors.termsRequired').text;
     if (Object.keys(nextErrors).length > 0) {
       setFieldErrors(nextErrors);
       return;
@@ -168,6 +177,36 @@ export function RegisterPage() {
     }
   }
 
+  const copy = {
+    signIn: message('register.signIn'),
+    eyebrow: message('register.eyebrow'),
+    heading: message('register.heading'),
+    intro: message('register.intro'),
+    nameHeading: message('register.name.heading'),
+    firstName: message('register.name.first'),
+    middleName: message('register.name.middle'),
+    lastName: message('register.name.last'),
+    suffix: message('register.name.suffix'),
+    accountHeading: message('register.account.heading'),
+    username: message('register.account.username'),
+    password: message('register.account.password'),
+    confirmPassword: message('register.account.confirmPassword'),
+    contactHeading: message('register.contact.heading'),
+    email: message('register.contact.email'),
+    phone: message('register.contact.phone'),
+    birthDate: message('register.contact.birthDate'),
+    locationHeading: message('register.location.heading'),
+    locationIntro: message('register.location.intro'),
+    consentHeading: message('register.consent.heading'),
+    privacyBefore: message('register.consent.privacyBefore'),
+    privacyLink: message('register.consent.privacyLink'),
+    privacyAfter: message('register.consent.privacyAfter'),
+    termsBefore: message('register.consent.termsBefore'),
+    termsLink: message('register.consent.termsLink'),
+    termsAfter: message('register.consent.termsAfter'),
+    submit: message('register.submit'),
+  };
+
   return (
     <AuthShell
       action={
@@ -177,15 +216,18 @@ export function RegisterPage() {
           size="sm"
           onClick={transitionTo('bloom')}
         >
-          Sign in
+          <span lang={copy.signIn.lang}>{copy.signIn.text}</span>
         </ButtonLink>
       }
     >
-      <Eyebrow>Join the registry</Eyebrow>
-      <h1 className="u-serif mt-4 text-4xl text-ink md:text-5xl">Create your account</h1>
-      <p className="mt-3 max-w-xl text-md text-ink-muted">
-        You can list your creative work in the next step, or add a profile
-        later from your account.
+      <Eyebrow>
+        <span lang={copy.eyebrow.lang}>{copy.eyebrow.text}</span>
+      </Eyebrow>
+      <h1 lang={copy.heading.lang} className="u-serif mt-4 text-4xl text-ink md:text-5xl">
+        {copy.heading.text}
+      </h1>
+      <p lang={copy.intro.lang} className="mt-3 max-w-xl text-md text-ink-muted">
+        {copy.intro.text}
       </p>
 
       <form onSubmit={(event) => void onSubmit(event)} className="mt-10 space-y-10" noValidate>
@@ -199,10 +241,12 @@ export function RegisterPage() {
         )}
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-ink">Your name</h2>
+          <h2 lang={copy.nameHeading.lang} className="text-lg font-bold text-ink">
+            {copy.nameHeading.text}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="First name"
+              label={<span lang={copy.firstName.lang}>{copy.firstName.text}</span>}
               required
               autoComplete="given-name"
               value={form.firstName}
@@ -210,13 +254,13 @@ export function RegisterPage() {
               error={fieldErrors.firstName}
             />
             <Input
-              label="Middle name"
+              label={<span lang={copy.middleName.lang}>{copy.middleName.text}</span>}
               value={form.middleName}
               onChange={(e) => update('middleName', e.target.value)}
               error={fieldErrors.middleName}
             />
             <Input
-              label="Last name"
+              label={<span lang={copy.lastName.lang}>{copy.lastName.text}</span>}
               required
               autoComplete="family-name"
               value={form.lastName}
@@ -224,8 +268,8 @@ export function RegisterPage() {
               error={fieldErrors.lastName}
             />
             <Input
-              label="Suffix"
-              placeholder="Jr., Sr., III"
+              label={<span lang={copy.suffix.lang}>{copy.suffix.text}</span>}
+              placeholder={message('register.name.suffixPlaceholder').text}
               value={form.suffix}
               onChange={(e) => update('suffix', e.target.value)}
               error={fieldErrors.suffix}
@@ -234,29 +278,31 @@ export function RegisterPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-ink">Account</h2>
+          <h2 lang={copy.accountHeading.lang} className="text-lg font-bold text-ink">
+            {copy.accountHeading.text}
+          </h2>
           <Input
-            label="Username"
+            label={<span lang={copy.username.lang}>{copy.username.text}</span>}
             required
             autoComplete="username"
-            hint="3–30 characters. Letters, numbers, dots and underscores."
+            hint={message('register.account.usernameHint').text}
             value={form.username}
             onChange={(e) => update('username', e.target.value)}
             error={fieldErrors.username}
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input
-              label="Password"
+              label={<span lang={copy.password.lang}>{copy.password.text}</span>}
               type="password"
               required
               autoComplete="new-password"
-              hint="At least 10 characters."
+              hint={message('register.account.passwordHint').text}
               value={form.password}
               onChange={(e) => update('password', e.target.value)}
               error={fieldErrors.password}
             />
             <Input
-              label="Confirm password"
+              label={<span lang={copy.confirmPassword.lang}>{copy.confirmPassword.text}</span>}
               type="password"
               required
               autoComplete="new-password"
@@ -268,9 +314,11 @@ export function RegisterPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-ink">Contact</h2>
+          <h2 lang={copy.contactHeading.lang} className="text-lg font-bold text-ink">
+            {copy.contactHeading.text}
+          </h2>
           <Input
-            label="Email"
+            label={<span lang={copy.email.lang}>{copy.email.text}</span>}
             type="email"
             required
             inputMode="email"
@@ -280,7 +328,7 @@ export function RegisterPage() {
             error={fieldErrors.email}
           />
           <Input
-            label="Phone number"
+            label={<span lang={copy.phone.lang}>{copy.phone.text}</span>}
             required
             inputMode="tel"
             autoComplete="tel"
@@ -290,7 +338,7 @@ export function RegisterPage() {
             error={fieldErrors.phone}
           />
           <Input
-            label="Date of birth"
+            label={<span lang={copy.birthDate.lang}>{copy.birthDate.text}</span>}
             type="date"
             required
             autoComplete="bday"
@@ -301,16 +349,18 @@ export function RegisterPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-ink">Location</h2>
-          <p className="text-sm text-ink-muted">
-            Bilikha is for Biliran. Choose your municipality and barangay.
+          <h2 lang={copy.locationHeading.lang} className="text-lg font-bold text-ink">
+            {copy.locationHeading.text}
+          </h2>
+          <p lang={copy.locationIntro.lang} className="text-sm text-ink-muted">
+            {copy.locationIntro.text}
           </p>
           <Select
             id="register-municipality"
-            label="Municipality"
+            label={message('register.location.municipality').text}
             required
             value={form.municipalitySlug}
-            placeholder="Select a municipality"
+            placeholder={message('register.location.municipalityPlaceholder').text}
             error={fieldErrors.municipalitySlug}
             onValueChange={onMunicipalityChange}
             options={(municipalities.data ?? []).map((town) => ({
@@ -321,21 +371,21 @@ export function RegisterPage() {
 
           <Select
             id="register-barangay"
-            label="Barangay"
+            label={message('register.location.barangay').text}
             required
             value={form.barangaySlug}
             disabled={!form.municipalitySlug || barangays.isPending || barangaysFailed}
             placeholder={
               !form.municipalitySlug
-                ? 'Select a municipality first'
+                ? message('register.location.barangayNeedsMunicipality').text
                 : barangays.isPending
-                  ? 'Loading…'
-                  : 'Select a barangay'
+                  ? message('register.location.barangayLoading').text
+                  : message('register.location.barangayPlaceholder').text
             }
             error={
               fieldErrors.barangaySlug
               ?? (barangaysFailed
-                ? 'Could not load barangays for that municipality. Try again.'
+                ? message('register.location.barangaysFailed').text
                 : undefined)
             }
             onValueChange={(next) => update('barangaySlug', next)}
@@ -347,7 +397,9 @@ export function RegisterPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-ink">Consent</h2>
+          <h2 lang={copy.consentHeading.lang} className="text-lg font-bold text-ink">
+            {copy.consentHeading.text}
+          </h2>
           <label className="flex items-start gap-3 text-sm text-ink">
             <input
               type="checkbox"
@@ -356,15 +408,16 @@ export function RegisterPage() {
               className="mt-0.5 size-4 rounded-xs accent-primary"
             />
             <span>
-              I have read and accept the{' '}
+              <span lang={copy.privacyBefore.lang}>{copy.privacyBefore.text}</span>
               <Link
                 to="/privacy"
+                lang={copy.privacyLink.lang}
                 className="link-underline text-navy-700"
                 onClick={transitionTo('wave')}
               >
-                privacy notice
+                {copy.privacyLink.text}
               </Link>
-              .
+              <span lang={copy.privacyAfter.lang}>{copy.privacyAfter.text}</span>
             </span>
           </label>
           {fieldErrors.privacyConsent && (
@@ -379,15 +432,16 @@ export function RegisterPage() {
               className="mt-0.5 size-4 rounded-xs accent-primary"
             />
             <span>
-              I accept the{' '}
+              <span lang={copy.termsBefore.lang}>{copy.termsBefore.text}</span>
               <Link
                 to="/terms"
+                lang={copy.termsLink.lang}
                 className="link-underline text-navy-700"
                 onClick={transitionTo('wave')}
               >
-                terms of use
+                {copy.termsLink.text}
               </Link>
-              .
+              <span lang={copy.termsAfter.lang}>{copy.termsAfter.text}</span>
             </span>
           </label>
           {fieldErrors.termsAccepted && (
@@ -404,7 +458,7 @@ export function RegisterPage() {
           disabled={register.isPending}
           iconRight={<ArrowRight className="size-4" aria-hidden="true" />}
         >
-          Create account
+          <span lang={copy.submit.lang}>{copy.submit.text}</span>
         </Button>
       </form>
     </AuthShell>

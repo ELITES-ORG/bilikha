@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from './logger.js';
 import {
   SIGNED_DOWNLOAD_MAX_SECONDS,
+  bucketSettings,
   createSignedDownload,
   createSignedUpload,
   deleteObject,
@@ -10,8 +11,14 @@ import {
   idObjectKey,
   idStorageReady,
   listObjects,
+  offerMediaKey,
+  offerPosterKey,
   overrideIdStorageReady,
   publicUrl,
+  readFirstBytes,
+  saveBucket,
+  storedObject,
+  tusEndpoint,
 } from './storage.js';
 
 /**
@@ -303,6 +310,147 @@ describe("storage's own error text", () => {
     const written = JSON.stringify(logged.mock.calls);
     expect(written).not.toContain('0b6f1d2e');
     expect(written).toContain('InvalidKey');
+  });
+});
+
+describe('the upload pipeline (plan 0057)', () => {
+  const AUDIO_KEY = 'offers/profile-1/0b6f1d2e-0000-4000-8000-000000000002.mp3';
+
+  it('returns the sign response\'s token with the upload URL', async () => {
+    answer({ body: { url: `/object/upload/sign/media-audio/${AUDIO_KEY}?token=t0k3n`, token: 't0k3n' } });
+
+    const signed = await createSignedUpload(AUDIO_KEY, 'media-audio');
+
+    expect(calls()[0]?.url).toBe(`${STORAGE}/storage/v1/object/upload/sign/media-audio/${AUDIO_KEY}`);
+    expect(signed).toEqual({
+      uploadUrl: `${STORAGE}/storage/v1/object/upload/sign/media-audio/${AUDIO_KEY}?token=t0k3n`,
+      objectKey: AUDIO_KEY,
+      token: 't0k3n',
+    });
+  });
+
+  it('builds a public URL in the bucket it is given, and the media bucket by default', () => {
+    expect(publicUrl(AUDIO_KEY, 'media-audio')).toBe(`${STORAGE}/storage/v1/object/public/media-audio/${AUDIO_KEY}`);
+    expect(publicUrl('offers/p/x.webp')).toBe(`${STORAGE}/storage/v1/object/public/media/offers/p/x.webp`);
+  });
+
+  it('discards from the bucket it is given', async () => {
+    answer({ body: { message: 'Successfully deleted' } });
+
+    await discardObject('offers/p/x.mp4', 'media-video');
+
+    expect(calls()[0]).toMatchObject({
+      url: `${STORAGE}/storage/v1/object/media-video/offers/p/x.mp4`,
+      method: 'DELETE',
+    });
+  });
+
+  it('finds a stored object by listing its folder, with its real size and type', async () => {
+    answer({
+      body: [
+        { name: 'other.mp3', id: 'a', updated_at: '2026-10-12T00:00:00Z', metadata: { size: 1, mimetype: 'audio/mpeg' } },
+        {
+          name: '0b6f1d2e-0000-4000-8000-000000000002.mp3',
+          id: 'b',
+          updated_at: '2026-10-12T00:00:00Z',
+          metadata: { size: 500000, mimetype: 'audio/mpeg' },
+        },
+      ],
+    });
+
+    const object = await storedObject('media-audio', AUDIO_KEY);
+
+    expect(calls()[0]?.url).toBe(`${STORAGE}/storage/v1/object/list/media-audio`);
+    expect(calls()[0]?.body).toMatchObject({ prefix: 'offers/profile-1/' });
+    expect(object).toEqual({ name: AUDIO_KEY, updatedAt: '2026-10-12T00:00:00Z', size: 500000, mimetype: 'audio/mpeg' });
+  });
+
+  it('answers null for an object that is not stored', async () => {
+    answer({ body: [] });
+
+    expect(await storedObject('media-audio', AUDIO_KEY)).toBeNull();
+  });
+
+  it('reads exactly the first 64 bytes, asking for a range', async () => {
+    const body = new Uint8Array(200).map((_, index) => index);
+    fetchMock.mockResolvedValueOnce(new Response(body, { status: 206 }));
+
+    const bytes = await readFirstBytes('media-audio', AUDIO_KEY);
+
+    expect(bytes.length).toBe(64);
+    expect(bytes[0]).toBe(0);
+    expect(bytes[63]).toBe(63);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${STORAGE}/storage/v1/object/authenticated/media-audio/${AUDIO_KEY}`);
+    expect((init.headers as Record<string, string>).Range).toBe('bytes=0-63');
+  });
+
+  it('fails a range read storage refuses', async () => {
+    answer({ status: 400, body: { statusCode: '404', code: 'NoSuchKey' } });
+
+    await expect(readFirstBytes('media-audio', AUDIO_KEY)).rejects.toMatchObject({
+      status: 502,
+      code: 'STORAGE_ERROR',
+    });
+  });
+
+  it('sends resumable uploads to the project URL, with or without a trailing slash', () => {
+    env.SUPABASE_URL = 'https://abcdefghijklmnopqrst.supabase.co';
+    expect(tusEndpoint()).toBe('https://abcdefghijklmnopqrst.supabase.co/storage/v1/upload/resumable/sign');
+
+    env.SUPABASE_URL = 'http://127.0.0.1:54321/';
+    expect(tusEndpoint()).toBe('http://127.0.0.1:54321/storage/v1/upload/resumable/sign');
+  });
+
+  it("reads a bucket's settings", async () => {
+    answer({
+      body: { id: 'media-audio', public: true, file_size_limit: 15000000, allowed_mime_types: ['audio/mpeg'] },
+    });
+
+    expect(await bucketSettings('media-audio')).toEqual({
+      public: true,
+      fileSizeLimit: 15000000,
+      allowedMimeTypes: ['audio/mpeg'],
+    });
+    expect(calls()[0]?.url).toBe(`${STORAGE}/storage/v1/bucket/media-audio`);
+  });
+
+  it('answers null for a bucket that does not exist', async () => {
+    answer({ status: 400, body: { statusCode: '404', error: 'Bucket not found', message: 'Bucket not found' } });
+
+    expect(await bucketSettings('media-video')).toBeNull();
+  });
+
+  it('creates a missing bucket and updates one that exists', async () => {
+    answer({ body: { name: 'media-video' } }, { body: { message: 'Successfully updated' } });
+    const settings = { public: true, fileSizeLimit: 50000000, allowedMimeTypes: ['video/mp4', 'video/webm'] };
+
+    await saveBucket('media-video', settings, false);
+    await saveBucket('media-video', settings, true);
+
+    expect(calls()).toEqual([
+      {
+        url: `${STORAGE}/storage/v1/bucket`,
+        method: 'POST',
+        body: {
+          id: 'media-video',
+          name: 'media-video',
+          public: true,
+          file_size_limit: 50000000,
+          allowed_mime_types: ['video/mp4', 'video/webm'],
+        },
+      },
+      {
+        url: `${STORAGE}/storage/v1/bucket/media-video`,
+        method: 'PUT',
+        body: { public: true, file_size_limit: 50000000, allowed_mime_types: ['video/mp4', 'video/webm'] },
+      },
+    ]);
+  });
+
+  it('puts media and posters under the offer prefix', () => {
+    expect(offerMediaKey('profile-1', 'm4a')).toMatch(/^offers\/profile-1\/[0-9a-f-]{36}\.m4a$/);
+    expect(offerPosterKey('profile-1')).toMatch(/^offers\/profile-1\/[0-9a-f-]{36}-poster\.webp$/);
   });
 });
 

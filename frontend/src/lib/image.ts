@@ -9,7 +9,7 @@ export const ID_EDGE = 2000;
 
 const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
 
-function encodeCanvas(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+export function encodeCanvas(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), type, quality);
   });

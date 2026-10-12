@@ -20,6 +20,7 @@ import {
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { discardObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { bucketFor } from '../media/media.limits.js';
 import { notify } from '../notifications/notifications.service.js';
 
 /**
@@ -71,13 +72,15 @@ async function offerVersions(executor: Executor, offerIds: string[]): Promise<Ma
     .leftJoin(offerRevisions, eq(offerRevisions.offerId, offers.id))
     .where(inArray(offers.id, offerIds));
   const images = await executor
-    .select({ offerId: offerImages.offerId, id: offerImages.id, state: offerImages.state })
+    .select({ offerId: offerImages.offerId, id: offerImages.id, kind: offerImages.kind, state: offerImages.state })
     .from(offerImages)
     .where(inArray(offerImages.offerId, offerIds))
     .orderBy(asc(offerImages.id));
 
   for (const row of rows) {
-    const photos = images.filter((image) => image.offerId === row.id).map((image) => `${image.id}:${image.state}`);
+    const photos = images
+      .filter((image) => image.offerId === row.id)
+      .map((image) => `${image.id}:${image.kind}:${image.state}`);
     const { id, ...content } = row;
     result.set(id, createHash('sha256').update(JSON.stringify([content, photos])).digest('hex').slice(0, 32));
   }
@@ -103,7 +106,7 @@ async function imagesForQueue(offerIds: string[]) {
       state: offerImages.state,
     })
     .from(offerImages)
-    .where(inArray(offerImages.offerId, offerIds))
+    .where(and(inArray(offerImages.offerId, offerIds), eq(offerImages.kind, 'image')))
     .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
   for (const row of rows) {
@@ -111,7 +114,8 @@ async function imagesForQueue(offerIds: string[]) {
     list.push({
       id: row.id,
       url: publicUrl(row.objectKey),
-      thumbUrl: publicUrl(row.thumbKey),
+      // images always have a thumbnail (offer_images_image_has_thumb)
+      thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
       sortOrder: row.sortOrder,
       state: row.state,
     });
@@ -416,12 +420,18 @@ async function reviewOffer(input: ReviewInput) {
         )
         .where(eq(offers.id, offer.id));
       await tx.insert(moderationActions).values(audit);
-      return { ownerUserId: owner?.userId ?? null, discarded: [] as string[] };
+      return { ownerUserId: owner?.userId ?? null, discarded: [] as Array<{ key: string; bucket: string }> };
     }
 
     const [revision] = await tx.select().from(offerRevisions).where(eq(offerRevisions.offerId, offer.id)).limit(1);
     const pending = await tx
-      .select({ id: offerImages.id, state: offerImages.state, objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
+      .select({
+        id: offerImages.id,
+        kind: offerImages.kind,
+        state: offerImages.state,
+        objectKey: offerImages.objectKey,
+        thumbKey: offerImages.thumbKey,
+      })
       .from(offerImages)
       .where(and(eq(offerImages.offerId, offer.id), ne(offerImages.state, 'live')));
     if (!revision && pending.length === 0) {
@@ -471,13 +481,17 @@ async function reviewOffer(input: ReviewInput) {
     await tx.delete(offerRevisions).where(eq(offerRevisions.offerId, offer.id));
     await tx.insert(moderationActions).values(audit);
     // Files of a change that will never be shown; deleted once the rows are.
+    // Each file is in its kind's bucket; a thumbnail or poster is in the image bucket.
     return {
       ownerUserId: owner?.userId ?? null,
-      discarded: (input.action === 'approve' ? removed : added).flatMap((i) => [i.objectKey, i.thumbKey]),
+      discarded: (input.action === 'approve' ? removed : added).flatMap((i) => [
+        { key: i.objectKey, bucket: bucketFor(i.kind) },
+        ...(i.thumbKey ? [{ key: i.thumbKey, bucket: bucketFor('image') }] : []),
+      ]),
     };
   });
 
-  await Promise.all(outcome.discarded.map((key) => discardObject(key)));
+  await Promise.all(outcome.discarded.map(({ key, bucket }) => discardObject(key, bucket)));
   if (outcome.ownerUserId) {
     await notify({
       userId: outcome.ownerUserId,

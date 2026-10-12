@@ -1,6 +1,6 @@
 # 0045. Audio, video and PDF uploads, with limits per media type
 
-- **Status:** Draft
+- **Status:** Superseded by 0057
 - **Owner:** reyxdz
 - **Related:** [ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md) ·
   [ADR 0021](../decisions/0021-image-storage-and-upload-path.md) ·
@@ -10,6 +10,11 @@
   [Change the database schema](../guides/change-the-database-schema.md) ·
   [`frontend/DESIGN.md`](../../frontend/DESIGN.md) ·
   [issue #34](https://github.com/ELITES-ORG/bilikha/issues/34)
+
+> **Superseded by [plan 0057](./0057-upload-pipeline-and-offer-media.md)
+> (2026-10-12).** Written before ADR 0058 (content waits for approval) and
+> the decision to build the upload pipeline first. Kept as the record of the
+> original design; do not execute it.
 
 ## Goal
 

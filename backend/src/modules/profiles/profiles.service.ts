@@ -116,7 +116,13 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
       })
       .from(offerImages)
       // A photo added in a change waiting for review is not public yet.
-      .where(and(inArray(offerImages.offerId, rows.map((row) => row.id)), ne(offerImages.state, 'pending_add')))
+      .where(
+        and(
+          inArray(offerImages.offerId, rows.map((row) => row.id)),
+          eq(offerImages.kind, 'image'),
+          ne(offerImages.state, 'pending_add'),
+        ),
+      )
       .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt))
     : [];
 
@@ -129,7 +135,8 @@ async function offersForProfile(profileId: string): Promise<ProfileOffer[]> {
     list.push({
       id: row.id,
       url: publicUrl(row.objectKey),
-      thumbUrl: publicUrl(row.thumbKey),
+      // images always have a thumbnail (offer_images_image_has_thumb)
+      thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
       sortOrder: row.sortOrder,
     });
     imagesByOffer.set(row.offerId, list);

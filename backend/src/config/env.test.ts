@@ -74,3 +74,28 @@ describe('env: ID verification settings', () => {
     expect(result.data?.ID_HASH_SECRET).toBe(secret);
   });
 });
+
+describe('env: media upload kinds', () => {
+  it('means images only when unset', () => {
+    const result = envSchema.safeParse(BASE);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.MEDIA_UPLOAD_KINDS).toEqual([]);
+  });
+
+  it('reads a comma-separated list, trimmed', () => {
+    const result = envSchema.safeParse({ ...BASE, MEDIA_UPLOAD_KINDS: 'audio, video' });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.MEDIA_UPLOAD_KINDS).toEqual(['audio', 'video']);
+  });
+
+  it('refuses a kind it does not know', () => {
+    const result = envSchema.safeParse({ ...BASE, MEDIA_UPLOAD_KINDS: 'audio,gif' });
+
+    expect(result.success).toBe(false);
+    expect(
+      result.error?.issues.some((issue) => issue.path.join('.').startsWith('MEDIA_UPLOAD_KINDS')),
+    ).toBe(true);
+  });
+});

@@ -48,7 +48,8 @@ async function editableOrganization(userId: string, slug: string) {
 
 export async function issueLogoUpload(input: { userId: string; slug: string }) {
   const organization = await editableOrganization(input.userId, input.slug);
-  return createSignedUpload(organizationLogoKey(organization.id));
+  const { uploadUrl, objectKey } = await createSignedUpload(organizationLogoKey(organization.id));
+  return { uploadUrl, objectKey };
 }
 
 export async function setLogo(input: { userId: string; slug: string; objectKey: string }) {

@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, inArray, max, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, max, ne, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import type { OfferMediaItem } from '../../contracts/media.js';
 import type {
   PublishedOfferDetail,
   PublishedOfferListResult,
@@ -10,6 +11,7 @@ import {
   creativeProfiles,
   creativeProfileSubdomains,
   creativeSubdomains,
+  mediaUploads,
   municipalities,
   offerImages,
   offerRevisions,
@@ -17,10 +19,11 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
-import { deleteObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
-import { assertOwnOfferKey } from '../media/media.service.js';
+import { discardObject, isStorageConfigured, publicUrl } from '../../lib/storage.js';
+import { UPLOAD_LIMITS, bucketFor } from '../media/media.limits.js';
+import { assertOwnOfferKey, consumeReservation, mediaError, verifyReservation } from '../media/media.service.js';
 import { summaryForProfile } from '../ratings/ratings.service.js';
-import type { ListOffersQuery, OfferBody, PatchOfferBody } from './offers.schema.js';
+import type { AttachOfferMediaBody, ListOffersQuery, OfferBody, PatchOfferBody } from './offers.schema.js';
 
 export type {
   ProfileOffer,
@@ -31,7 +34,6 @@ import { recordMiss } from '../search/search-misses.js';
 import { offerSearch } from '../search/search-sql.js';
 
 export const OFFER_LIMIT = 6;
-export const OFFER_IMAGE_LIMIT = 4;
 
 type ProfileOwner = {
   id: string;
@@ -108,11 +110,12 @@ export function detectContactDetails(description: string | null | undefined): bo
   return phone.test(description) || url.test(description) || social.test(description);
 }
 
-function imagePublic(row: { id: string; objectKey: string; thumbKey: string; sortOrder: number }) {
+function imagePublic(row: { id: string; objectKey: string; thumbKey: string | null; sortOrder: number }) {
   return {
     id: row.id,
     url: publicUrl(row.objectKey),
-    thumbUrl: publicUrl(row.thumbKey),
+    // images always have a thumbnail (offer_images_image_has_thumb)
+    thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
     sortOrder: row.sortOrder,
   };
 }
@@ -132,8 +135,12 @@ async function imagesForOffers(
   if (offerIds.length === 0 || !isStorageConfigured()) return result;
 
   const visible = options.audience === 'owner'
-    ? inArray(offerImages.offerId, offerIds)
-    : and(inArray(offerImages.offerId, offerIds), ne(offerImages.state, 'pending_add'));
+    ? and(inArray(offerImages.offerId, offerIds), eq(offerImages.kind, 'image'))
+    : and(
+        inArray(offerImages.offerId, offerIds),
+        eq(offerImages.kind, 'image'),
+        ne(offerImages.state, 'pending_add'),
+      );
 
   const rows = await db
     .select({
@@ -152,6 +159,60 @@ async function imagesForOffers(
     const list = result.get(row.offerId) ?? [];
     if (options.firstOnly && list.length > 0) continue;
     list.push({ ...imagePublic(row), state: row.state });
+    result.set(row.offerId, list);
+  }
+  return result;
+}
+
+type OwnOfferMediaItem = OfferMediaItem & { state: ImageState };
+
+/**
+ * An offer's audio, video and PDF (ADR 0046), with the same visibility as its
+ * photos: the public does not see an item added in a change waiting for review.
+ */
+async function mediaForOffers(
+  offerIds: string[],
+  options: { audience: 'public' | 'owner' },
+): Promise<Map<string, OwnOfferMediaItem[]>> {
+  const result = new Map<string, OwnOfferMediaItem[]>();
+  if (offerIds.length === 0 || !isStorageConfigured()) return result;
+
+  const filters = [inArray(offerImages.offerId, offerIds), ne(offerImages.kind, 'image')];
+  if (options.audience === 'public') filters.push(ne(offerImages.state, 'pending_add'));
+
+  const rows = await db
+    .select({
+      id: offerImages.id,
+      offerId: offerImages.offerId,
+      kind: offerImages.kind,
+      objectKey: offerImages.objectKey,
+      thumbKey: offerImages.thumbKey,
+      title: offerImages.title,
+      mimeType: offerImages.mimeType,
+      sizeBytes: offerImages.sizeBytes,
+      durationSeconds: offerImages.durationSeconds,
+      sortOrder: offerImages.sortOrder,
+      state: offerImages.state,
+    })
+    .from(offerImages)
+    .where(and(...filters))
+    .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
+
+  for (const row of rows) {
+    if (row.kind === 'image') continue;
+    const list = result.get(row.offerId) ?? [];
+    list.push({
+      id: row.id,
+      kind: row.kind,
+      url: publicUrl(row.objectKey, bucketFor(row.kind)),
+      posterUrl: row.thumbKey ? publicUrl(row.thumbKey) : null,
+      title: row.title,
+      mimeType: row.mimeType ?? '',
+      sizeBytes: row.sizeBytes ?? 0,
+      durationSeconds: row.durationSeconds,
+      sortOrder: row.sortOrder,
+      state: row.state,
+    });
     result.set(row.offerId, list);
   }
   return result;
@@ -207,11 +268,16 @@ export async function listMine(userId: string) {
     .where(eq(offers.profileId, profile.id))
     .orderBy(asc(offers.sortOrder), asc(offers.createdAt));
 
-  const imageMap = await imagesForOffers(rows.map((row) => row.id), { audience: 'owner' });
+  const offerIds = rows.map((row) => row.id);
+  const [imageMap, mediaMap] = await Promise.all([
+    imagesForOffers(offerIds, { audience: 'owner' }),
+    mediaForOffers(offerIds, { audience: 'owner' }),
+  ]);
   return rows.map((row) => {
     const images = imageMap.get(row.id) ?? [];
+    const media = mediaMap.get(row.id) ?? [];
     const hasRevision = row.revisionTitle !== null;
-    const imagesPending = images.some((image) => image.state !== 'live');
+    const imagesPending = [...images, ...media].some((item) => item.state !== 'live');
     return {
       id: row.id,
       title: row.title,
@@ -246,6 +312,7 @@ export async function listMine(userId: string) {
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
       images,
+      media,
     };
   });
 }
@@ -420,7 +487,7 @@ async function applyOfferEdit(
 export async function deleteOffer(userId: string, offerId: string) {
   const profile = await requireOwnProfile(userId);
   const rows = await db
-    .select({ objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
+    .select({ kind: offerImages.kind, objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
     .from(offers)
     .leftJoin(offerImages, eq(offers.id, offerImages.offerId))
     .where(and(eq(offers.id, offerId), eq(offers.profileId, profile.id)));
@@ -436,8 +503,12 @@ export async function deleteOffer(userId: string, offerId: string) {
   // pointing at nothing if the delete fails, and a broken image cannot be
   // recovered — whereas an object with no row is just an orphan the prune
   // script collects.
-  await Promise.all(rows.flatMap((row) => row.objectKey
-    ? [deleteObject(row.objectKey), deleteObject(row.thumbKey!)]
+  // best-effort; media:prune catches any miss
+  await Promise.all(rows.flatMap((row) => row.objectKey && row.kind
+    ? [
+        discardObject(row.objectKey, bucketFor(row.kind)),
+        ...(row.thumbKey ? [discardObject(row.thumbKey)] : []),
+      ]
     : []));
 
   return { ok: true as const };
@@ -486,12 +557,19 @@ export async function addOfferImage(
   const row = await db.transaction(async (tx) => {
     // Also serialises concurrent uploads, so the limit holds.
     const current = await lockOwnOffer(tx, profile.id, offerId);
+    const imageLimit = UPLOAD_LIMITS.offer.image.perTarget;
     const [tally] = await tx
       .select({ total: count() })
       .from(offerImages)
-      .where(and(eq(offerImages.offerId, offerId), ne(offerImages.state, 'pending_remove')));
-    if ((tally?.total ?? 0) >= OFFER_IMAGE_LIMIT) {
-      throw AppError.badRequest(`An offer can have at most ${OFFER_IMAGE_LIMIT} images`);
+      .where(
+        and(
+          eq(offerImages.offerId, offerId),
+          eq(offerImages.kind, 'image'),
+          ne(offerImages.state, 'pending_remove'),
+        ),
+      );
+    if ((tally?.total ?? 0) >= imageLimit) {
+      throw AppError.badRequest(`An offer can have at most ${imageLimit} images`);
     }
     const [peak] = await tx
       .select({ maxOrder: max(offerImages.sortOrder) })
@@ -523,6 +601,86 @@ export async function addOfferImage(
 }
 
 /**
+ * Attaches an upload the pipeline has verified (ADR 0046): an image, audio,
+ * video or PDF. Like a photo, it waits as `pending_add` on a published offer,
+ * and a rejected offer goes back to review. The limit is counted again under
+ * the offer's lock, since the offer may have filled up since the ticket.
+ */
+export async function attachOfferMedia(userId: string, offerId: string, body: AttachOfferMediaBody) {
+  const profile = await requireOwnProfile(userId);
+  await ownOffer(profile.id, offerId);
+
+  const verified = await verifyReservation(userId, body.reservationId);
+  if (verified.destination !== 'offer' || verified.offerId !== offerId) {
+    throw AppError.conflict('That upload belongs to a different offer.');
+  }
+
+  const created = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
+    const current = await lockOwnOffer(tx, profile.id, offerId);
+
+    const limit = UPLOAD_LIMITS.offer[verified.kind].perTarget;
+    const [recorded] = await tx
+      .select({ total: count() })
+      .from(offerImages)
+      .where(
+        and(
+          eq(offerImages.offerId, offerId),
+          eq(offerImages.kind, verified.kind),
+          ne(offerImages.state, 'pending_remove'),
+        ),
+      );
+    const [held] = await tx
+      .select({ total: count() })
+      .from(mediaUploads)
+      .where(
+        and(
+          eq(mediaUploads.offerId, offerId),
+          eq(mediaUploads.kind, verified.kind),
+          gt(mediaUploads.expiresAt, new Date()),
+          ne(mediaUploads.id, verified.reservationId),
+        ),
+      );
+    if ((recorded?.total ?? 0) + (held?.total ?? 0) >= limit) {
+      throw mediaError(409, 'MEDIA_LIMIT_REACHED', { perTarget: limit });
+    }
+
+    const [peak] = await tx
+      .select({ maxOrder: max(offerImages.sortOrder) })
+      .from(offerImages)
+      .where(eq(offerImages.offerId, offerId));
+    const [row] = await tx
+      .insert(offerImages)
+      .values({
+        offerId,
+        kind: verified.kind,
+        objectKey: verified.objectKey,
+        thumbKey: verified.thumbKey,
+        mimeType: verified.mimeType,
+        sizeBytes: verified.sizeBytes,
+        durationSeconds: verified.durationSeconds,
+        title: body.title ?? null,
+        sortOrder: (peak?.maxOrder ?? -1) + 1,
+        state: current.status === 'published' ? 'pending_add' : 'live',
+      })
+      .returning({ id: offerImages.id, kind: offerImages.kind });
+    await consumeReservation(tx, verified.reservationId);
+    await tx
+      .update(offers)
+      .set(
+        current.status === 'published'
+          ? { revisionRejectionReason: null, updatedAt: new Date() }
+          : current.status === 'rejected'
+            ? { status: 'pending_review', rejectionReason: null, updatedAt: new Date() }
+            : { updatedAt: new Date() },
+      )
+      .where(eq(offers.id, offerId));
+    return row!;
+  });
+  return { id: created.id, kind: created.kind };
+}
+
+/**
  * Removing a photo. From a published offer, an approved photo stays public as
  * `pending_remove` until the change is reviewed; a photo that was itself only
  * waiting is withdrawn at once. From an offer not yet published it simply
@@ -534,6 +692,7 @@ export async function deleteOfferImage(userId: string, imageId: string) {
     .select({
       id: offerImages.id,
       offerId: offerImages.offerId,
+      kind: offerImages.kind,
       objectKey: offerImages.objectKey,
       thumbKey: offerImages.thumbKey,
       state: offerImages.state,
@@ -576,7 +735,11 @@ export async function deleteOfferImage(userId: string, imageId: string) {
   if (!deleted) return { ok: true as const };
 
   // After the row is gone — see deleteOffer.
-  await Promise.all([deleteObject(row.objectKey), deleteObject(row.thumbKey)]);
+  // best-effort; media:prune catches any miss
+  await Promise.all([
+    discardObject(row.objectKey, bucketFor(row.kind)),
+    ...(row.thumbKey ? [discardObject(row.thumbKey)] : []),
+  ]);
 
   return { ok: true as const };
 }
@@ -749,8 +912,9 @@ export async function getPublishedOfferById(
   // One offer means one creative, so this is a single extra aggregate rather
   // than a query per row — which is exactly why the directory card does not
   // carry a summary (plan 0038).
-  const [imageMap, rating] = await Promise.all([
+  const [imageMap, mediaMap, rating] = await Promise.all([
     imagesForOffers([row.id]),
+    mediaForOffers([row.id], { audience: 'public' }),
     summaryForProfile(row.creativeSlug),
   ]);
 
@@ -769,6 +933,7 @@ export async function getPublishedOfferById(
       domain: row.domainName,
     },
     images: (imageMap.get(row.id) ?? []).map(withoutState),
+    media: (mediaMap.get(row.id) ?? []).map(withoutState),
     creative: {
       slug: row.creativeSlug,
       displayName: row.creativeDisplayName,

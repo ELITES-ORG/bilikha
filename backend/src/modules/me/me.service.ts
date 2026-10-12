@@ -626,14 +626,21 @@ export async function listSavedOffers(userId: string): Promise<SavedOfferListRes
         thumbKey: offerImages.thumbKey,
       })
       .from(offerImages)
-      .where(and(inArray(offerImages.offerId, offerIds), ne(offerImages.state, 'pending_add')))
+      .where(
+        and(
+          inArray(offerImages.offerId, offerIds),
+          eq(offerImages.kind, 'image'),
+          ne(offerImages.state, 'pending_add'),
+        ),
+      )
       .orderBy(asc(offerImages.offerId), asc(offerImages.sortOrder), asc(offerImages.createdAt));
 
     for (const row of imageRows) {
       if (firstImageByOfferId.has(row.offerId)) continue;
       firstImageByOfferId.set(row.offerId, {
         url: publicUrl(row.objectKey),
-        thumbUrl: publicUrl(row.thumbKey),
+        // images always have a thumbnail (offer_images_image_has_thumb)
+        thumbUrl: publicUrl(row.thumbKey ?? row.objectKey),
       });
     }
   }

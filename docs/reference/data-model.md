@@ -284,19 +284,72 @@ it. Approval copies it onto `offers` and deletes it. Rejection deletes it.
 
 ## `offer_images`
 
-Up to four images per offer. Cascade deletes when the offer goes.
+An offer's photos, audio, video and PDFs. Per offer: up to ten images, five
+audio, two videos and three PDFs (`UPLOAD_LIMITS` in
+`backend/src/modules/media/media.limits.ts`). Cascade deletes when the offer
+goes.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
 | `offer_id` | `uuid` FK → `offers.id` | `ON DELETE CASCADE` |
 | `object_key` | `text` | Display-size object (`offers/<profileId>/…` or legacy `portfolio/…`) |
-| `thumb_key` | `text` | Thumbnail object |
+| `thumb_key` | `text` null | An image's thumbnail or a video's poster. Audio, a PDF and a video without a poster have none. An image always has one (check `offer_images_image_has_thumb`) |
 | `sort_order` | `integer` | Default 0 |
 | `state` | `offer_image_state` | `live` \| `pending_add` \| `pending_remove`. Default `live`. On a published offer, a new photo is `pending_add` (not public) and a removed one `pending_remove` (still public) until the change is reviewed |
+| `kind` | `media_kind` | `image` \| `audio` \| `video` \| `document`. Default `image`. Every row from before the upload pipeline is an image |
+| `mime_type` | `text` null | Normalised stored type (`audio/x-m4a` is stored as `audio/mp4`). Null on images from before the pipeline |
+| `size_bytes` | `bigint` null | The file plus its thumbnail or poster, as stored. Counts toward the 1 GB quota; null (counted as 0) on images from before the pipeline |
+| `duration_seconds` | `integer` null | Audio and video, whole seconds rounded up |
+| `title` | `text` null | The uploader's label for audio, video or a PDF |
 | `created_at` | `timestamptz` | |
 
-Indexes: `(offer_id, sort_order)`.
+Indexes: `(offer_id, sort_order)`. Check `offer_images_image_has_thumb`:
+`kind <> 'image' OR thumb_key IS NOT NULL`.
+
+The readers of photos (offer cards, the offer and profile pages, saved offers,
+conversation offer cards, the review queue's photos) read `kind = 'image'` rows
+only. The offer page and the owner's list return the other kinds as `media`.
+
+**Buckets.** `object_key` lives in the bucket for its `kind`: `image` in
+`SUPABASE_STORAGE_BUCKET` (today `media`), `audio` in `media-audio`, `video` in
+`media-video`, `document` in `media-documents`. A `thumb_key` — an image's
+thumbnail or a video's poster — is always in the image bucket, beside avatars and
+organisation logos. ID photos are in their own private bucket and never in these
+four. `npm --prefix backend run media:buckets` keeps each bucket's size limit and
+allowed types in line with the upload limits.
+
+---
+
+## `media_uploads`
+
+An upload ticket that has been issued and not yet attached
+([ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md)).
+It reserves its kind's largest size against the uploader's quota, and counts
+toward the target's per-kind limit, until it is attached, abandoned, or expires
+after 24 hours. Attaching deletes it. `media:prune -- --delete` removes expired
+rows.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
+| `destination` | `upload_destination` | `offer` (the only destination so far) |
+| `offer_id` | `uuid` FK null → `offers.id` | `ON DELETE CASCADE`. Required when `destination` is `offer` |
+| `kind` | `media_kind` | |
+| `bucket` | `text` | The main file's bucket |
+| `object_key` | `text` | The main file; for an image, the display image |
+| `thumb_key` | `text` null | An image's thumbnail or a video's poster. Always in the image bucket |
+| `mime_type` | `text` | Normalised declared type. Verification requires the stored object to match it |
+| `size_bytes` | `bigint` | Declared size of the main file. Verification requires the stored object to match it |
+| `thumb_size_bytes` | `integer` null | Declared size of the thumbnail or poster |
+| `duration_seconds` | `integer` null | Audio and video, whole seconds rounded up |
+| `reserved_bytes` | `bigint` | Counted against the quota while the row lives |
+| `expires_at` | `timestamptz` | Issue time plus 24 hours |
+| `created_at` | `timestamptz` | |
+
+Checks: `media_uploads_offer_has_offer_id` (`destination <> 'offer' OR offer_id IS NOT NULL`).
+Indexes: unique `object_key`; `(user_id, expires_at)`; `(offer_id, kind)`.
 
 ---
 

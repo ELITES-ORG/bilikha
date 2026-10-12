@@ -5,6 +5,7 @@ import { users } from '../../db/schema/index.js';
 import { requireAuth } from '../../middleware/require-auth.js';
 import {
   addOfferImageBodySchema,
+  attachOfferMediaBodySchema,
   listOffersQuerySchema,
   offerBodySchema,
   offerIdSchema,
@@ -14,6 +15,7 @@ import {
 } from './offers.schema.js';
 import {
   addOfferImage,
+  attachOfferMedia,
   createOffer,
   deleteOffer,
   deleteOfferImage,
@@ -67,6 +69,12 @@ ownOffersRouter.post('/:id/images', requireAuth, async (req, res) => {
   const id = offerIdSchema.parse(req.params.id);
   const input = addOfferImageBodySchema.parse(req.body);
   res.status(201).json({ data: await addOfferImage(req.session.userId!, id, input) });
+});
+
+ownOffersRouter.post('/:id/media', requireAuth, async (req, res) => {
+  const id = offerIdSchema.parse(req.params.id);
+  const input = attachOfferMediaBodySchema.parse(req.body);
+  res.status(201).json({ data: await attachOfferMedia(req.session.userId!, id, input) });
 });
 
 ownOffersRouter.delete('/images/:imageId', requireAuth, async (req, res) => {

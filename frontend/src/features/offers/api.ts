@@ -8,6 +8,7 @@ import type {
   PublishedOfferDetail,
 } from '@contracts/offers';
 import { apiClient, toApiError } from '@/lib/api-client';
+import type { OfferMediaItem } from '@contracts/media';
 import type { Paginated } from '@contracts/pagination';
 
 export type {
@@ -49,6 +50,8 @@ export type OwnOffer = {
   /** A change to a published offer waiting for review, as it would leave the offer. */
   pendingChanges: OfferPendingChanges | null;
   images: OwnOfferImage[];
+  /** Audio, video and PDF (ADR 0046). Optional: an API deployed before them omits it. */
+  media?: OwnOfferMediaItem[];
 };
 
 export type OfferStatus = 'pending_review' | 'published' | 'rejected';
@@ -58,6 +61,9 @@ export type OfferStatus = 'pending_review' | 'published' | 'rejected';
  * `pending_remove` waits to be taken off (it stays public until then).
  */
 export type OwnOfferImage = OfferImage & { state: 'live' | 'pending_add' | 'pending_remove' };
+
+/** An offer's audio, video or PDF, with the same states as its photos. */
+export type OwnOfferMediaItem = OfferMediaItem & { state: 'live' | 'pending_add' | 'pending_remove' };
 
 export type OfferPendingChanges = {
   title: string;
