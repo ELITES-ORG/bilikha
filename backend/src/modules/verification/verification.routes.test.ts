@@ -58,6 +58,7 @@ describe('/api/v1/verification', () => {
     signUpload.mockReset().mockImplementation(async (objectKey: string) => ({
       uploadUrl: `http://storage.test/upload/${objectKey}?token=t`,
       objectKey,
+      token: 't',
     }));
     list.mockReset().mockResolvedValue([]);
   });

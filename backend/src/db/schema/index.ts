@@ -11,3 +11,5 @@ export * from './ratings.js';
 export * from './notifications.js';
 export * from './organizations.js';
 export * from './verification.js';
+export * from './media-enums.js';
+export * from './media.js';
