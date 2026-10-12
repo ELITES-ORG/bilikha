@@ -70,6 +70,13 @@ describe('the sections by subject', () => {
     });
   });
 
+  it('still counts People when an API from before ID review sends no ids', () => {
+    const people = ADMIN_SECTIONS.find((section) => section.label === 'People')!;
+    const older: AdminSummary = { ...summary, people: { photos: 6 } };
+
+    expect(people.waiting!(older)).toBe(6);
+  });
+
   it('lists every section of work before the tools, and gives only the work a badge', () => {
     const groups = ADMIN_SECTIONS.map((section) => section.group);
     const firstTool = groups.indexOf('manage');
