@@ -202,10 +202,11 @@ export interface AdminSummary {
   offers: { new: number; changes: number };
   organizations: { pending: number; edited: number; logos: number };
   /**
-   * Profile photos, and submitted IDs waiting for a decision (ADR 0057).
-   * `ids` is optional for deployment skew (ADR 0040): an API from before ID
-   * review does not send it.
+   * Profile photos, submitted IDs waiting for a decision, and appeals waiting
+   * for an answer (ADR 0057). `ids` and `appeals` are optional for deployment
+   * skew (ADR 0040): an API from before ID review, or before appeals, does not
+   * send them.
    */
-  people: { photos: number; ids?: number };
+  people: { photos: number; ids?: number; appeals?: number };
   reports: { open: number };
 }

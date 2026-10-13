@@ -100,7 +100,11 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
    */
   const notice = req.session.declineNotice;
   if (notice) {
-    endWithDecline(req, next, { kind: notice.kind, reason: notice.reason });
+    endWithDecline(req, next, {
+      kind: notice.kind,
+      reason: notice.reason,
+      ...(notice.appealUntil ? { appealUntil: notice.appealUntil } : {}),
+    });
     return;
   }
 

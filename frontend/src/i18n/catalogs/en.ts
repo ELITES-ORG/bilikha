@@ -98,6 +98,17 @@ export const en = {
   'signIn.declined.retry': 'Your ID could not be verified. Sign in to submit it again.',
   'signIn.declined.final': 'Your ID was declined, so this account cannot be used.',
   'signIn.declined.appealed': 'Your appeal is being reviewed. You can sign in if it is granted.',
+  // The one appeal against a *not from Biliran* decline (ADR 0057, plan 0053 Step 4.2).
+  'signIn.appeal.until': 'You can appeal this decision once, until',
+  'signIn.appeal.open': 'Appeal this decision',
+  'signIn.appeal.messageLabel': 'Your appeal',
+  'signIn.appeal.messageHint': 'Say why the decision is wrong: for example, that you live in Biliran and how your ID shows it. At least 20 characters.',
+  'signIn.appeal.credentials': 'Your appeal is sent with the username and password below, so we know it is yours.',
+  'signIn.appeal.needsCredentials': 'Type your username and password below first.',
+  'signIn.appeal.tooShort': 'Write at least 20 characters.',
+  'signIn.appeal.submit': 'Send appeal',
+  'signIn.appeal.cancel': 'Cancel',
+  'signIn.appeal.sent': 'Your appeal has been sent. An administrator will look at your ID again; try signing in in a few days. If the appeal is granted, you can sign in.',
 
   // An offer's audio, video and PDF (ADR 0046): on the offer page, and as a
   // badge on its card.

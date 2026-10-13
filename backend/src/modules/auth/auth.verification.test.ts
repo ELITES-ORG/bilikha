@@ -50,10 +50,11 @@ describe('sign-in and the current user with ID verification', () => {
 
   it('tells the reason only to the right password, and records no sign-in', async () => {
     const user = await account();
+    const decidedAt = new Date();
     await makeIdVerification(user.id, {
       status: 'declined_final',
       submittedAt: new Date(),
-      decidedAt: new Date(),
+      decidedAt,
       decisionReason: 'The address is outside Biliran.',
     });
 
@@ -64,9 +65,11 @@ describe('sign-in and the current user with ID verification', () => {
     expect(wrong.text).not.toContain('Biliran');
     expect(right.status).toBe(403);
     expect(right.body.error?.code).toBe('ID_DECLINED');
+    // Until when it can be appealed: the 7 days from the decision.
     expect(right.body.error?.details).toEqual({
       kind: 'final',
       reason: 'The address is outside Biliran.',
+      appealUntil: new Date(decidedAt.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
     expect(right.cookie).toBeNull();
 

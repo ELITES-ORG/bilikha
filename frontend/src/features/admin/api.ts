@@ -12,6 +12,7 @@ import type {
   AdminProfileDetail,
   AdminQueueMeta,
   AdminQueueRow,
+  IdAppealPayload,
   IdDecisionPayload,
   ModeratePayload,
   ProfileStatus,
@@ -224,13 +225,16 @@ export function useResetAccountPassword() {
 
 /* --- ID review (ADR 0057, plan 0053 Phase 3) ------------------------------ */
 
+/** The ID checks queue's tabs (plan 0053 Phases 3 and 4). */
+export type IdQueueView = 'pending' | 'appeals' | 'decided';
+
 export const adminIdKeys = {
   all: ['admin', 'ids'] as const,
-  queue: (view: 'pending' | 'decided', page: number) => [...adminIdKeys.all, 'queue', view, page] as const,
+  queue: (view: IdQueueView, page: number) => [...adminIdKeys.all, 'queue', view, page] as const,
   detail: (id: string) => [...adminIdKeys.all, 'detail', id] as const,
 };
 
-export function useAdminIdQueue(view: 'pending' | 'decided', page: number) {
+export function useAdminIdQueue(view: IdQueueView, page: number) {
   return useQuery({
     queryKey: adminIdKeys.queue(view, page),
     queryFn: async (): Promise<Paginated<AdminIdVerificationRow>> => {
@@ -281,6 +285,26 @@ export function useDecideIdVerification(id: string) {
       try {
         const { data } = await apiClient.post<ApiResponse<AdminIdVerificationDetail>>(
           `/admin/id-verifications/${id}/decision`,
+          payload,
+        );
+        return data.data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminIdKeys.all }),
+  });
+}
+
+/** The answer to a person's appeal (plan 0053 Step 4.3). */
+export function useDecideAppeal(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: IdAppealPayload): Promise<AdminIdVerificationDetail> => {
+      try {
+        const { data } = await apiClient.post<ApiResponse<AdminIdVerificationDetail>>(
+          `/admin/id-verifications/${id}/appeal`,
           payload,
         );
         return data.data;

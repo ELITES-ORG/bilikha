@@ -62,3 +62,26 @@ export function useSubmitId() {
     },
   });
 }
+
+export interface IdAppeal {
+  username: string;
+  password: string;
+  message: string;
+}
+
+/**
+ * Appeals a *not from Biliran* decline (plan 0053 Step 4.2). The account
+ * cannot sign in, so the appeal brings its username and password; no session
+ * comes back, and nothing in the cache changes.
+ */
+export function useIdAppeal() {
+  return useMutation({
+    mutationFn: async (appeal: IdAppeal): Promise<void> => {
+      try {
+        await apiClient.post('/auth/id-appeal', appeal);
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}

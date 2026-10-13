@@ -41,8 +41,8 @@ async function waitingOfEveryKind() {
   });
   await makeOffer(live.profile.id, { title: 'ZZ Settled offer' });
 
-  // People: one new photo, and one submitted ID. An ID step not yet submitted,
-  // and an ID already decided, wait for nothing.
+  // People: one new photo, one submitted ID and one appeal. An ID step not yet
+  // submitted, and an ID already decided, wait for nothing.
   const person = await makeUser({ avatarPendingKey: 'avatars/someone/new.webp' });
   await makeIdVerification((await makeUser()).id, {
     idType: 'drivers_license',
@@ -55,6 +55,15 @@ async function waitingOfEveryKind() {
     status: 'verified',
     submittedAt: new Date(),
     decidedAt: new Date(),
+  });
+  // And one open appeal, waiting for an answer.
+  await makeIdVerification((await makeUser()).id, {
+    status: 'appealed',
+    submittedAt: new Date(),
+    decidedAt: new Date(),
+    decisionReason: 'Outside Biliran.',
+    appealMessage: 'I moved to Naval last year.',
+    appealedAt: new Date(),
   });
 
   // Organisations: a new page, an edited one, and a logo waiting on a third.
@@ -97,7 +106,7 @@ describe('the admin summary', () => {
       creatives: { pending: 1, edited: 1 },
       offers: { new: 1, changes: 2 },
       organizations: { pending: 1, edited: 1, logos: 1 },
-      people: { photos: 1, ids: 1 },
+      people: { photos: 1, ids: 1, appeals: 1 },
       reports: { open: 1 },
     });
   });
@@ -107,7 +116,7 @@ describe('the admin summary', () => {
       creatives: { pending: 0, edited: 0 },
       offers: { new: 0, changes: 0 },
       organizations: { pending: 0, edited: 0, logos: 0 },
-      people: { photos: 0, ids: 0 },
+      people: { photos: 0, ids: 0, appeals: 0 },
       reports: { open: 0 },
     });
   });
