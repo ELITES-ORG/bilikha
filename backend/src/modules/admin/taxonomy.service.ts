@@ -19,6 +19,7 @@ import {
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { brokenUniqueIndex } from '../organizations/unique-violation.js';
 import { ALIAS_MAX_LENGTH, normalizeTerm } from '../search/search-sql.js';
 import type {
   CreateDomainInput,
@@ -697,30 +698,36 @@ export async function addAlias({
     throw AppError.badRequest(`At most ${ALIAS_MAX_LENGTH} characters`, { field: 'term' });
   }
 
-  return db.transaction(async (tx) => {
-    const before = await aliasTermsOf(tx, subdomain.id);
-    if (before.includes(folded)) {
-      throw AppError.conflict(`"${folded}" is already a word for ${subdomain.name}.`, {
-        field: 'term',
+  const alreadyThere = () =>
+    AppError.conflict(`"${folded}" is already a word for ${subdomain.name}.`, { field: 'term' });
+
+  try {
+    return await db.transaction(async (tx) => {
+      const before = await aliasTermsOf(tx, subdomain.id);
+      if (before.includes(folded)) throw alreadyThere();
+
+      const [row] = await tx
+        .insert(subdomainAliases)
+        .values({ subdomainId: subdomain.id, term: folded })
+        .returning({ id: subdomainAliases.id, term: subdomainAliases.term });
+
+      await tx.insert(taxonomyChanges).values({
+        itemKind: 'subdomain',
+        itemSlug: slug,
+        action: 'updated',
+        adminId,
+        before: { aliases: before },
+        after: { aliases: [...before, folded].sort() },
       });
-    }
 
-    const [row] = await tx
-      .insert(subdomainAliases)
-      .values({ subdomainId: subdomain.id, term: folded })
-      .returning({ id: subdomainAliases.id, term: subdomainAliases.term });
-
-    await tx.insert(taxonomyChanges).values({
-      itemKind: 'subdomain',
-      itemSlug: slug,
-      action: 'updated',
-      adminId,
-      before: { aliases: before },
-      after: { aliases: [...before, folded].sort() },
+      return row!;
     });
-
-    return row!;
-  });
+  } catch (error) {
+    // Two administrators adding the same word at once both pass the read
+    // above; the unique index stops the second, which gets the same answer.
+    if (brokenUniqueIndex(error) === 'subdomain_aliases_subdomain_term_idx') throw alreadyThere();
+    throw error;
+  }
 }
 
 /** Removes one alias from the sub-domain it belongs to, recorded like `addAlias`. */

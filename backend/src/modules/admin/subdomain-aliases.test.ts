@@ -1,7 +1,7 @@
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq, like, sql } from 'drizzle-orm';
+import { and, asc, eq, like, ne, sql } from 'drizzle-orm';
 import { createApp } from '../../app.js';
 import { db } from '../../db/index.js';
 import {
@@ -85,6 +85,21 @@ describe('adding and removing an everyday word', () => {
     ).rejects.toMatchObject({ status: 409 });
   });
 
+  it('answers 409, not 500, when two administrators add the same word at once', async () => {
+    const admin = await makeAdmin();
+    const sub = await makeSubdomain(admin.id);
+
+    const results = await Promise.allSettled([
+      addAlias({ slug: sub.slug, adminId: admin.id, term: 'kulitero' }),
+      addAlias({ slug: sub.slug, adminId: admin.id, term: 'Kulitéro' }),
+    ]);
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    const [refused] = results.filter((result) => result.status === 'rejected');
+    expect(refused?.reason).toMatchObject({ status: 409 });
+    expect(await changesFor(sub.slug)).toHaveLength(1);
+  });
+
   it('refuses a word that is only marks or spaces', async () => {
     const admin = await makeAdmin();
     const sub = await makeSubdomain(admin.id);
@@ -114,7 +129,14 @@ describe('adding and removing an everyday word', () => {
   it("will not remove another sub-domain's word through this one", async () => {
     const admin = await makeAdmin();
     const sub = await makeSubdomain(admin.id);
-    const [seeded] = await db.select().from(creativeSubdomains).limit(1);
+    // A seeded sub-domain, never this test's own: an unordered pick could return
+    // either, and a word planted on `sub` itself would be removed, not refused.
+    const [seeded] = await db
+      .select()
+      .from(creativeSubdomains)
+      .where(ne(creativeSubdomains.id, sub.id))
+      .orderBy(asc(creativeSubdomains.slug))
+      .limit(1);
     const [elsewhere] = await db
       .insert(subdomainAliases)
       .values({ subdomainId: seeded!.id, term: 'zqelsewhere' })
