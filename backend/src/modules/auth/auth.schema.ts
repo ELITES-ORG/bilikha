@@ -76,5 +76,18 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Required'),
 });
 
+/**
+ * An appeal against a *not from Biliran* decline (plan 0053 Step 4.2). A
+ * declined account cannot sign in, so it proves itself with its credentials,
+ * exactly as sign-in does.
+ */
+export const idAppealSchema = loginSchema.extend({
+  message: z
+    .string()
+    .trim()
+    .min(20, 'Say a little more: at least 20 characters')
+    .max(1000, 'Keep the appeal under 1000 characters'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

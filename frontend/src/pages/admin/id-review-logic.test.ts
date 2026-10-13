@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { decisionBody, decisionProblem, withNumberChange, type DecisionDraft } from './id-review-logic';
+import {
+  appealBody,
+  appealProblem,
+  changeBody,
+  changeNeedsNumber,
+  changeOptions,
+  changeProblem,
+  decisionBody,
+  decisionProblem,
+  withNumberChange,
+  type DecisionDraft,
+} from './id-review-logic';
 
 const empty: DecisionDraft = { reason: '', idNumber: '', noIdNumber: false, acknowledgeMatch: false };
 
@@ -73,5 +84,59 @@ describe('changing the number after a match', () => {
 
   it('withdraws it for the no-number box too', () => {
     expect(withNumberChange(seen, { noIdNumber: true, idNumber: '' }).acknowledgeMatch).toBe(false);
+  });
+});
+
+describe('changing a decision', () => {
+  const none = { idNumberRecorded: false, idNumberAbsent: false };
+  const recorded = { idNumberRecorded: true, idNumberAbsent: false };
+
+  it('offers every decision but the current one', () => {
+    expect(changeOptions('verified')).toEqual(['retry', 'final']);
+    expect(changeOptions('declined_retry')).toEqual(['verify', 'final']);
+    expect(changeOptions('declined_final')).toEqual(['verify', 'retry']);
+  });
+
+  it('always needs a reason', () => {
+    expect(changeProblem('retry', empty, recorded)).toMatch(/why the decision is changing/);
+    expect(changeProblem('retry', { ...empty, reason: 'Blurred after all.' }, recorded)).toBeNull();
+  });
+
+  it('asks for a number only when the row has none on record', () => {
+    expect(changeNeedsNumber('verify', none)).toBe(true);
+    expect(changeNeedsNumber('verify', recorded)).toBe(false);
+    expect(changeNeedsNumber('final', { idNumberRecorded: false, idNumberAbsent: true })).toBe(false);
+    expect(changeNeedsNumber('retry', none)).toBe(false);
+
+    const reasoned = { ...empty, reason: 'Second look.' };
+    expect(changeProblem('verify', reasoned, none)).toMatch(/ID number/);
+    expect(changeProblem('verify', reasoned, recorded)).toBeNull();
+    expect(changeProblem('verify', { ...reasoned, idNumber: '1', noIdNumber: true }, recorded)).toMatch(/not both/);
+  });
+
+  it('sends the reason, and a number only when one was given', () => {
+    expect(changeBody('verify', { ...empty, reason: ' Second look. ' })).toEqual({
+      decision: 'verify',
+      reason: 'Second look.',
+    });
+    expect(changeBody('final', { ...empty, reason: 'Ormoc.', idNumber: ' N01 ' })).toEqual({
+      decision: 'final',
+      reason: 'Ormoc.',
+      idNumber: 'N01',
+    });
+  });
+});
+
+describe('answering an appeal', () => {
+  it('needs a reason either way, within the limit', () => {
+    expect(appealProblem({ reason: '  ', acknowledgeMatch: false })).toMatch(/reason/);
+    expect(appealProblem({ reason: 'x'.repeat(501), acknowledgeMatch: false })).toMatch(/500/);
+    expect(appealProblem({ reason: 'The certificate shows Naval.', acknowledgeMatch: false })).toBeNull();
+  });
+
+  it('acknowledges a match only when granting', () => {
+    const draft = { reason: ' Same household. ', acknowledgeMatch: true };
+    expect(appealBody('grant', draft)).toEqual({ outcome: 'grant', reason: 'Same household.', acknowledgeMatch: true });
+    expect(appealBody('uphold', draft)).toEqual({ outcome: 'uphold', reason: 'Same household.' });
   });
 });

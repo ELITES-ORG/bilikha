@@ -400,8 +400,8 @@ resubmission after *try again* is a new row with its own decision and its own
 | `decision_reason` | `text` null | Shown to the person when declined |
 | `id_number_hash` | `text` null | HMAC-SHA256 hex of the ID number an administrator typed, keyed with `ID_HASH_SECRET`. Never the number. Outlives the images |
 | `id_number_absent` | `boolean` | Default false. The administrator found no number on the ID |
-| `appeal_message` | `text` null | |
-| `appealed_at` / `appeal_decided_at` | `timestamptz` null | |
+| `appeal_message` | `text` null | The person's one appeal against a *not from Biliran* decline, 20–1000 characters |
+| `appealed_at` / `appeal_decided_at` | `timestamptz` null | When the appeal was made, and answered. Either one set closes the appeal: there is only one per decision |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes:

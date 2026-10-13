@@ -7,7 +7,7 @@ import { idVerifications } from '../../db/schema/index.js';
 import { logger } from '../../lib/logger.js';
 import { deleteObject, listObjects, type StoredObject } from '../../lib/storage.js';
 import { makeIdVerification, makeUser } from '../../test/factories.js';
-import { purgeDecidedIdImages, purgeOrphanIdObjects } from './retention.js';
+import { claimForDeletion, purgeDecidedIdImages, purgeOrphanIdObjects } from './retention.js';
 
 /**
  * Deleting ID photos (ADR 0057, plan 0053 Step 3.3). Storage is mocked; the
@@ -52,6 +52,15 @@ async function decidedRow(daysAgo: number, overrides: Parameters<typeof makeIdVe
   });
 }
 
+function object(name: string, ageMs: number): StoredObject {
+  return {
+    name,
+    updatedAt: new Date(NOW.getTime() - ageMs).toISOString(),
+    size: 1000,
+    mimetype: 'image/webp',
+  };
+}
+
 async function reload(id: string) {
   const [row] = await db.select().from(idVerifications).where(eq(idVerifications.id, id));
   return row!;
@@ -87,7 +96,7 @@ describe('deleting decided ID images', () => {
     }
   });
 
-  it('logs a storage failure and carries on with the next row', async () => {
+  it('logs a storage failure, carries on, and leaves the object to the unreferenced pass', async () => {
     const failing = await decidedRow(9);
     const fine = await decidedRow(8);
     const logged = vi.spyOn(logger, 'error');
@@ -95,13 +104,44 @@ describe('deleting decided ID images', () => {
       if (key === failing.frontKey) throw new Error('storage is down');
     });
 
-    await expect(purgeDecidedIdImages(NOW)).resolves.toBe(1);
+    await expect(purgeDecidedIdImages(NOW)).resolves.toBe(2);
 
-    expect((await reload(failing.id)).frontKey).not.toBeNull();
+    // Claimed before the delete, so no row points at the object that failed...
+    expect(await reload(failing.id)).toMatchObject({ frontKey: null, backKey: null });
     expect((await reload(fine.id)).imagesDeletedAt).not.toBeNull();
     expect(logged).toHaveBeenCalled();
     // By row, never by key.
     expect(JSON.stringify(logged.mock.calls[0]![0])).not.toContain('ids/');
+
+    // ...and the unreferenced-object pass deletes it.
+    remove.mockReset().mockResolvedValue(undefined);
+    list.mockResolvedValue([object(failing.frontKey!, 9 * DAY)]);
+    expect(await purgeOrphanIdObjects(NOW)).toBe(1);
+    expect(remove).toHaveBeenCalledWith(failing.frontKey, env.SUPABASE_ID_BUCKET);
+  });
+
+  it('cannot claim a row appealed, or decided again, after it was found', async () => {
+    // The purge finds rows first and claims each one after: these are the
+    // states an appeal or a changed decision leaves in between.
+    const appealed = await decidedRow(8, {
+      status: 'appealed',
+      appealMessage: 'I moved to Naval last year.',
+      appealedAt: new Date(),
+    });
+    const changed = await decidedRow(8);
+    await db.update(idVerifications).set({ decidedAt: NOW }).where(eq(idVerifications.id, changed.id));
+    const due = await decidedRow(8);
+
+    expect(await claimForDeletion(appealed.id, NOW)).toBe(false);
+    expect(await claimForDeletion(changed.id, NOW)).toBe(false);
+    expect(await claimForDeletion(due.id, NOW)).toBe(true);
+    // Once: a second pass finds it already claimed.
+    expect(await claimForDeletion(due.id, NOW)).toBe(false);
+
+    for (const row of [appealed, changed]) {
+      expect(await reload(row.id)).toMatchObject({ frontKey: row.frontKey, imagesDeletedAt: null });
+    }
+    expect(await reload(due.id)).toMatchObject({ frontKey: null, backKey: null });
   });
 
   it('does nothing without storage', async () => {
@@ -114,12 +154,6 @@ describe('deleting decided ID images', () => {
 });
 
 describe('deleting unreferenced ID objects', () => {
-  const object = (name: string, ageMs: number): StoredObject => ({
-    name,
-    updatedAt: new Date(NOW.getTime() - ageMs).toISOString(),
-    size: 1000,
-    mimetype: 'image/webp',
-  });
 
   it('deletes an old object no row points at, and keeps a fresh one and a referenced one', async () => {
     const referenced = await decidedRow(2);

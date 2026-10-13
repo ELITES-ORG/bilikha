@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Inbox, MapPin } from 'lucide-react';
 import type { AdminIdVerificationRow } from '@contracts/verification';
 import { Badge, Button, EmptyState, Skeleton, TabPanels, Tabs } from '@/components/ui';
-import { useAdminIdQueue } from '@/features/admin/api';
+import { useAdminIdQueue, useAdminSummary, type IdQueueView } from '@/features/admin/api';
 import { idTypeOption } from '@/features/verification/id-types';
 import {
   AdminPagination,
@@ -16,24 +16,46 @@ import {
 } from './admin-ui';
 import { formatAdminDate } from './admin-format';
 
-type View = 'pending' | 'decided';
+type View = IdQueueView;
 
 const TABS: { view: View; label: string }[] = [
   { view: 'pending', label: 'Waiting' },
-  { view: 'decided', label: 'Decided this week' },
+  { view: 'appeals', label: 'Appeals' },
+  { view: 'decided', label: 'Decided' },
 ];
+
+const EMPTY: Record<View, { title: string; description: string }> = {
+  pending: { title: 'No IDs waiting', description: 'Every submitted ID has a decision.' },
+  appeals: {
+    title: 'No appeals waiting',
+    description: 'A person declined as not from Biliran can appeal once, within 7 days, from the sign-in screen.',
+  },
+  decided: {
+    title: 'Nothing decided this week',
+    description: 'IDs decided in the last 7 days appear here, while a decision can still be changed.',
+  },
+};
 
 /**
  * New accounts' IDs waiting for a decision (ADR 0057), oldest first — there is
- * no deadline for a review, so nobody should wait longest. Decided shows the
- * last 7 days, while a decision can still be looked at again. Part of People
- * (ADR 0059): an ID check asks who someone is. English only, like every admin
- * screen.
+ * no deadline for a review, so nobody should wait longest. Appeals, oldest
+ * first too, are a person's one challenge to a *not from Biliran* decline.
+ * Decided shows the last 7 days, while a decision can still be changed. Part of
+ * People (ADR 0059): an ID check asks who someone is. English only, like every
+ * admin screen.
  */
 export function IdCheckQueue() {
   const [view, setView] = useState<View>('pending');
   const [page, setPage] = useState(1);
   const queue = useAdminIdQueue(view, page);
+  // The waiting tabs show their counts from the summary, so an appeal is seen
+  // from the Waiting tab; Decided counts only once it is open.
+  const summary = useAdminSummary();
+  const counts: Record<View, number | undefined> = {
+    pending: summary.data?.people.ids,
+    appeals: summary.data?.people.appeals,
+    decided: view === 'decided' ? queue.data?.meta.total : undefined,
+  };
 
   const pages = useMemo(() => {
     const total = queue.data?.meta.total ?? 0;
@@ -58,7 +80,7 @@ export function IdCheckQueue() {
             label: (
               <AdminTabLabel
                 text={tab.label}
-                count={view === tab.view ? queue.data?.meta.total : undefined}
+                count={counts[tab.view]}
                 active={view === tab.view}
               />
             ),
@@ -94,12 +116,8 @@ export function IdCheckQueue() {
         {queue.data && queue.data.data.length === 0 && (
           <EmptyState
             icon={<CheckCircle2 className="size-5" />}
-            title={view === 'pending' ? 'No IDs waiting' : 'Nothing decided this week'}
-            description={
-              view === 'pending'
-                ? 'Every submitted ID has a decision.'
-                : 'IDs decided in the last 7 days appear here, while they can still be looked at again.'
-            }
+            title={EMPTY[view].title}
+            description={EMPTY[view].description}
           />
         )}
 
@@ -119,7 +137,7 @@ export function IdCheckQueue() {
 
 function IdRow({ row }: { row: AdminIdVerificationRow }) {
   const label = idTypeOption(row.idType)?.label ?? 'ID type not given';
-  const when = row.decidedAt ?? row.submittedAt;
+  const when = (row.status === 'appealed' ? row.appealedAt : null) ?? row.decidedAt ?? row.submittedAt;
   return (
     <li className={adminRowLinkClass}>
       <Link
