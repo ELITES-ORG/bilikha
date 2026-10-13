@@ -440,6 +440,15 @@ it.
       and dark, with and without the staging banner; sticky headers and toasts
       sit below it.
 
+> **Added after Phase 4 (#99): a fourth state, *ID verified*.** "Your ID is
+> verified. You can now message creatives, save offers and post work." It shows
+> on every page for 7 days after the latest decision that verified the ID, until
+> the person closes it — the only state that can be closed. A closed notice is
+> remembered on the device for that decision, so a later verification (a changed
+> decision, or a granted appeal) shows it again. The account's `idVerification`
+> carries `decidedAt` for it; the rules are in
+> `frontend/src/features/verification/status.ts`, with tests.
+
 ### Step 2.7 — Routing to the ID step
 
 - [x] **Action.** `frontend/src/features/auth/RequireAuth.tsx`: when
@@ -820,7 +829,8 @@ always-on Render instance** (Prerequisites).
 
 - [ ] **Action.** On a real Android phone, including Facebook's in-app browser:
       register, photograph both sides, see the banner; verify as an
-      administrator; decline (try again) and resubmit; decline (not from
+      administrator, and see the person told so by the *ID verified* notice;
+      decline (try again) and resubmit; decline (not from
       Biliran), appeal, and both grant and uphold an appeal; reverse a decision;
       register a second account with the same ID and see it flagged; sign in
       with an account made before the release.
