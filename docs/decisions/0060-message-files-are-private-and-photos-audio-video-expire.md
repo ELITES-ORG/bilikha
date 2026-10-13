@@ -1,6 +1,6 @@
 # 0060. Message files are private, and photos, audio and video expire after 30 days
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-14
 - **Related:** [0046](./0046-offers-and-profiles-carry-audio-video-and-pdf.md) ·
   [0029](./0029-work-agreements-not-invoices.md) ·

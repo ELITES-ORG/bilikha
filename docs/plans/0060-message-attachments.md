@@ -1,6 +1,6 @@
 # 0060. Attachments in messages
 
-- **Status:** Draft
+- **Status:** Ready
 - **Owner:** userMarcPaul
 - **Related:** [ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md) ·
   [ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md) ·
@@ -50,7 +50,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Decide and record | 0 / 1 | Not started |
+| 1. Decide and record | 1 / 1 | Done |
 | 2. Data and the `message` destination | 0 / 4 | Not started |
 | 3. Sending and reading | 0 / 4 | Not started |
 | 4. Composer and thread | 0 / 3 | Not started |
@@ -63,8 +63,8 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 
 ### Step 1.1 — ADR 0060 and this plan
 
-- [ ] **Action.** ADR 0060 (Proposed) and this plan, with their index rows.
-- [ ] **Verify.** `npm run docs:check` passes; reyxdz accepts ADR 0060 and moves
+- [x] **Action.** ADR 0060 (Proposed) and this plan, with their index rows.
+- [x] **Verify.** `npm run docs:check` passes; reyxdz accepts ADR 0060 and moves
   this plan to Ready.
 
 ## Phase 2 — Data and the `message` destination (pull request 2)
