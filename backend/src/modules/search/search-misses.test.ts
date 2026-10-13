@@ -5,7 +5,7 @@ import { searchMisses } from '../../db/schema/index.js';
 import { listPublishedOffers } from '../offers/offers.service.js';
 import { listPublished } from '../profiles/profiles.service.js';
 import { makeCreative } from '../../test/factories.js';
-import { RETENTION_DAYS, recordMiss, topMisses } from './search-misses.js';
+import { DAILY_NEW_TERMS_MAX, RETENTION_DAYS, recordMiss, topMisses } from './search-misses.js';
 
 /**
  * Unmatched searches (issue #24). Each case searches its own made-up word, so a
@@ -70,6 +70,23 @@ describe('counting searches that found nothing', () => {
 
     expect(await countFor('zqold')).toBe(0);
     expect(await countFor('zqkept')).toBe(1);
+  });
+
+  it(`stops recording new words after ${DAILY_NEW_TERMS_MAX} in a day, and keeps counting the ones it has`, async () => {
+    await db.execute(sql`
+      insert into search_misses (term, listing, day)
+      select 'zqfill' || n, 'creatives', current_date from generate_series(1, ${DAILY_NEW_TERMS_MAX}) as n`);
+
+    await recordMiss('zqoneover', 'creatives');
+    await recordMiss('zqfill7', 'creatives');
+
+    expect(await countFor('zqoneover')).toBe(0);
+    expect(await countFor('zqfill7')).toBe(2);
+    const [today] = await db
+      .select({ rows: sql<number>`count(*)::int` })
+      .from(searchMisses)
+      .where(eq(searchMisses.day, sql`current_date`));
+    expect(today?.rows).toBe(DAILY_NEW_TERMS_MAX);
   });
 
   it('is counted by the listings only when the first page found nothing', async () => {

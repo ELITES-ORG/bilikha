@@ -475,10 +475,13 @@ to whoever searched.
 | `term` | `text` | The search's words, lowercased and joined by a space |
 | `listing` | `text` | `offers` or `creatives` |
 | `day` | `date` | |
-| `count` | `integer` | Default 1; incremented by an upsert |
+| `count` | `integer` | Default 1; incremented each time the word misses again that day |
 
 Primary key `(term, listing, day)`; index on `day`. Rows older than 90 days are
-deleted each time a miss is counted.
+deleted each time a miss is counted. At most 1,000 new rows a day
+(`DAILY_NEW_TERMS_MAX`): search is public and not rate-limited, so a script
+searching random words cannot fill the table. A word already counted that day
+keeps counting past the ceiling.
 
 ---
 

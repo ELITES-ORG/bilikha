@@ -1,4 +1,4 @@
-import { desc, gte, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import type { SearchListing, SearchMiss } from '../../contracts/taxonomy.js';
 import { db } from '../../db/index.js';
 import { searchMisses } from '../../db/schema/index.js';
@@ -16,6 +16,14 @@ import { searchWords } from './search-sql.js';
  */
 
 export const RETENTION_DAYS = 90;
+/**
+ * New words recorded per day, across both listings. Search is public and not
+ * rate-limited, so without a ceiling a script searching random words could
+ * write a row per request and fill the database. A word already counted today
+ * keeps counting past it; only new words stop. Real use in a province of
+ * 180,000 is far below it.
+ */
+export const DAILY_NEW_TERMS_MAX = 1000;
 /** The unmatched-search list's default window and length. */
 export const MISSES_DEFAULT_DAYS = 30;
 export const MISSES_LIMIT = 50;
@@ -33,13 +41,26 @@ export async function recordMiss(q: string, listing: SearchListing): Promise<voi
   const term = missTerm(q);
   if (!term) return;
   try {
-    await db
-      .insert(searchMisses)
-      .values({ term, listing, day: sql`current_date` })
-      .onConflictDoUpdate({
-        target: [searchMisses.term, searchMisses.listing, searchMisses.day],
-        set: { count: sql`${searchMisses.count} + 1` },
-      });
+    const [counted] = await db
+      .update(searchMisses)
+      .set({ count: sql`${searchMisses.count} + 1` })
+      .where(
+        and(
+          eq(searchMisses.term, term),
+          eq(searchMisses.listing, listing),
+          eq(searchMisses.day, sql`current_date`),
+        ),
+      )
+      .returning({ term: searchMisses.term });
+    if (!counted) {
+      // A new word for today, while today has room. Two at once still meet the
+      // primary key, and the second adds to the first.
+      await db.execute(sql`
+        insert into ${searchMisses} (term, listing, day)
+        select ${term}, ${listing}, current_date
+        where (select count(*) from ${searchMisses} where day = current_date) < ${DAILY_NEW_TERMS_MAX}
+        on conflict (term, listing, day) do update set count = ${searchMisses}.count + 1`);
+    }
     await db
       .delete(searchMisses)
       .where(lt(searchMisses.day, sql`current_date - ${RETENTION_DAYS}::int`));

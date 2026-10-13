@@ -35,7 +35,8 @@ were.
 - Search matches a word against aliases — by prefix and by typo, like a
   sub-domain's own name — for offers and creatives.
 - `search_misses`: searches with no results, counted per word, listing and day,
-  with no link to who searched; kept 90 days.
+  with no link to who searched; kept 90 days, and at most 1,000 new words a
+  day, so random searches cannot fill it.
 - Admin: add and remove aliases per sub-domain, audited in `taxonomy_changes`;
   the most common unmatched searches.
 - A sentence in the privacy notice saying unmatched searches are counted.
