@@ -212,7 +212,10 @@ export function LoginPage() {
                 }}
               />
             </div>
-            <p className="text-right text-xs text-ink-subtle" aria-live="polite">
+            {/* Not a live region: a screen reader would read it out on every
+                keystroke. The hint already gives the minimum, and the field
+                stops at the maximum. */}
+            <p className="text-right text-xs text-ink-subtle" data-numeric>
               {appealMessage.trim().length} / {APPEAL_MAX}
             </p>
             <p lang={copy.appeal.credentials.lang} className="text-sm text-ink-muted">
