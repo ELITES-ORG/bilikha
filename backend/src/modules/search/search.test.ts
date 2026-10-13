@@ -9,11 +9,12 @@ import {
   creativeProfileSubdomains,
   creativeSubdomains,
   municipalities,
+  subdomainAliases,
 } from '../../db/schema/index.js';
 import { listPublishedOffers } from '../offers/offers.service.js';
 import { listPublished } from '../profiles/profiles.service.js';
 import { makeCreative, makeOffer, municipalityIdAt, suspend } from '../../test/factories.js';
-import { searchWords } from './search-sql.js';
+import { normalizeTerm, searchWords } from './search-sql.js';
 
 /**
  * Directory search (ADR 0003, issue #22). Fixtures use made-up words so nothing
@@ -81,6 +82,97 @@ describe('the search query words', () => {
     expect(searchWords('&|!():*')).toEqual([]);
     expect(searchWords("'' \"\"")).toEqual([]);
     expect(searchWords('a b c d e f g h i j')).toHaveLength(8);
+  });
+});
+
+describe('the alias spelling', () => {
+  it('folds accents and case, and collapses spaces', () => {
+    expect(normalizeTerm('  Zábalo   Kíno ')).toBe('zabalo kino');
+    expect(normalizeTerm('NIÑO')).toBe('nino');
+    expect(normalizeTerm('   ')).toBe('');
+  });
+});
+
+/** Attach an everyday word to a sub-domain, as an administrator would. */
+async function addAlias(subdomainId: string, term: string) {
+  await db.insert(subdomainAliases).values({ subdomainId, term: normalizeTerm(term) });
+}
+
+/** A creative whose only extra sub-domain is `sub`. */
+async function creativeIn(sub: { id: string }, displayName = 'Zyrel Ocampo') {
+  const creative = await makeCreative({ profile: { displayName } });
+  await db.insert(creativeProfileSubdomains).values({
+    profileId: creative.profile.id,
+    subdomainId: sub.id,
+    isPrimary: false,
+  });
+  return creative;
+}
+
+describe('searching by an everyday word', () => {
+  it("finds a creative and an offer by their sub-domain's alias", async () => {
+    const sub = await subdomainAt(3);
+    await addAlias(sub.id, 'kulitero');
+    const creative = await creativeIn(sub);
+    await makeOffer(creative.profile.id, { title: 'Zxq package', subdomainId: sub.id });
+
+    expect(await creativeSlugs('kulitero')).toEqual([creative.profile.slug]);
+    expect(await offerTitles('kulitero')).toEqual(['Zxq package']);
+  });
+
+  it('matches an alias by prefix, without its accents, and with a typo', async () => {
+    const sub = await subdomainAt(3);
+    await addAlias(sub.id, 'Mabalóngkos');
+    const creative = await creativeIn(sub);
+
+    expect(await creativeSlugs('mabalo')).toEqual([creative.profile.slug]);
+    expect(await creativeSlugs('mabalongkos')).toEqual([creative.profile.slug]);
+    expect(await creativeSlugs('MABALÓNGKOS')).toEqual([creative.profile.slug]);
+    expect(await creativeSlugs('mabalonkos')).toEqual([creative.profile.slug]);
+  });
+
+  it('lets one word point at two sub-domains', async () => {
+    const first = await subdomainAt(3);
+    const second = await subdomainAt(4);
+    await addAlias(first.id, 'tabliyo');
+    await addAlias(second.id, 'tabliyo');
+    const a = await creativeIn(first, 'Zyrel Ocampo');
+    const b = await creativeIn(second, 'Marisol Quintana');
+
+    expect((await creativeSlugs('tabliyo')).sort()).toEqual([a.profile.slug, b.profile.slug].sort());
+  });
+
+  it("does not match a sub-domain the creative does not have", async () => {
+    const theirs = await subdomainAt(3);
+    const other = await subdomainAt(4);
+    await addAlias(other.id, 'kulitero');
+    await creativeIn(theirs);
+
+    expect(await creativeSlugs('kulitero')).toEqual([]);
+  });
+
+  it('lets an alias and another field each match a word', async () => {
+    const sub = await subdomainAt(3);
+    await addAlias(sub.id, 'kulitero');
+    const creative = await creativeIn(sub, 'Tindog Studio');
+    await creativeIn(sub, 'Ana Baker');
+
+    expect(await creativeSlugs('kulitero tindog')).toEqual([creative.profile.slug]);
+  });
+
+  it('never brings back an unpublished or suspended creative', async () => {
+    const sub = await subdomainAt(3);
+    await addAlias(sub.id, 'kulitero');
+    const hidden = await makeCreative({ profile: { status: 'pending_review' } });
+    await db.insert(creativeProfileSubdomains).values({
+      profileId: hidden.profile.id,
+      subdomainId: sub.id,
+      isPrimary: false,
+    });
+    const gone = await creativeIn(sub);
+    await suspend(gone.user.id);
+
+    expect(await creativeSlugs('kulitero')).toEqual([]);
   });
 });
 

@@ -106,3 +106,23 @@ decision above holds; these are the choices made in building it.
   aliases (#24), which normalise queries anyway.
 
 Postings, the creative-mode directory, are not searchable yet.
+
+## Amendment — 2026-10-12: everyday words (issue #24)
+
+[Plan 0058](../plans/0058-search-by-everyday-words.md) adds the alias table this ADR's consequences promised.
+
+- **Aliases attach to sub-domains**, many terms to one, and one term may sit on
+  two. They are matched as one more way a word can match — through the same
+  prefix and typo rules as the sub-domain's own name — so they need no ranking
+  of their own.
+- **Accents are folded for aliases only**, in application code: the stored term
+  and the query word both go through `normalizeTerm`. The other fields are
+  still matched as typed, and `unaccent` stays out of the index expressions.
+- **Administrators maintain them**, in the admin area, audited in
+  `taxonomy_changes` as the sub-domain's `updated`. Nothing is seeded: the
+  table fills from what people actually search, which the next point shows.
+- **Unmatched searches are counted, not logged.** A search whose first page
+  finds nothing adds one to a row of word, listing and day. No user, session,
+  address or time of day is kept, rows go after 90 days, and the privacy notice
+  says so. A per-search log would have said more about timing and nothing more
+  about which words are missing.

@@ -89,6 +89,8 @@ export const enLegal = {
   'privacy.usage.reportsRest': ' you make, and ones made about you.',
   'privacy.usage.sessionsLead': 'Sign-in sessions',
   'privacy.usage.sessionsRest': ', and the date you last signed in.',
+  'privacy.usage.searchesLead': 'Searches that find nothing',
+  'privacy.usage.searchesRest': ': the words searched, counted per day and kept for 90 days, with nothing that says who searched. They show which everyday words the directory does not know yet.',
   'privacy.cookies.heading': 'Cookies',
   'privacy.cookies.oneBefore': 'One cookie, ',
   'privacy.cookies.oneAfter': ', which keeps you signed in. It is set only after you sign in, expires after 30 days, cannot be read by JavaScript, and is sent only to this site.',

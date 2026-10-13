@@ -25,6 +25,10 @@ import {
  * So "photographer naval" finds a photographer in Naval: one word matches the
  * craft, the other the town.
  *
+ * A sub-domain also matches by its **aliases** — everyday words administrators
+ * attach to it, such as "nagkukulit" (issue #24). They match by prefix and by
+ * typo like the sub-domain's own name, with accents folded on both sides.
+ *
  * The documents below are written exactly as the GIN index expressions in the
  * schema files are. Change one, change the other, or the index goes unused.
  */
@@ -60,6 +64,23 @@ export function searchWords(q: string): string[] {
     .slice(0, SEARCH_MAX_WORDS);
 }
 
+/** The longest alias an administrator may add. */
+export const ALIAS_MAX_LENGTH = 60;
+
+/**
+ * How an alias is stored, and how a query word is compared with one: accents
+ * folded, lowercase, single spaces. "Mananáyaw" and "mananayaw" are one term.
+ * Only aliases are folded; ADR 0003 keeps `unaccent` off the other fields.
+ */
+export function normalizeTerm(term: string): string {
+  return term
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export interface SearchSql {
   /** Add to the listing's filters. */
   where: SQL;
@@ -88,6 +109,22 @@ function typoMatch(field: SQL, word: string): SQL {
   return word.length >= LONG_WORD_LENGTH
     ? sql`word_similarity(${word}::text, (${field})) >= ${LONG_WORD_SIMILARITY}`
     : sql`${word}::text <% (${field})`;
+}
+
+/**
+ * A word matching one of a sub-domain's aliases, by prefix and — for a word long
+ * enough — by typo. `subdomainId` is the sub-domain column of the outer query.
+ */
+function aliasMatch(subdomainId: SQL, word: string, typos: boolean): { prefix: SQL; any: SQL } {
+  const folded = normalizeTerm(word);
+  if (!folded) return { prefix: sql`false`, any: sql`false` };
+  const exists = (match: SQL) =>
+    sql`exists (select 1 from subdomain_aliases a where a.subdomain_id = ${subdomainId} and ${match})`;
+  const prefix = prefixMatch(sql`a.term`, folded);
+  return {
+    prefix: exists(prefix),
+    any: exists(typos ? or(prefix, typoMatch(sql`a.term`, folded))! : prefix),
+  };
 }
 
 function build(q: string, fields: Fields): SearchSql {
@@ -123,7 +160,7 @@ function build(q: string, fields: Fields): SearchSql {
   return { where, orderBy };
 }
 
-/** Title, description, sub-domain, domain, the creative's display name, and their town. */
+/** Title, description, sub-domain and its aliases, domain, the creative's display name, and their town. */
 export function offerSearch(q: string): SearchSql {
   return build(q, {
     documents: [
@@ -144,10 +181,11 @@ export function offerSearch(q: string): SearchSql {
       sql`${municipalities.name}`,
     ],
     main: sql`${offers.title}`,
+    related: (word, typos) => aliasMatch(sql`${creativeSubdomains.id}`, word, typos),
   });
 }
 
-/** Display name, full name, bio, any of their sub-domains and those domains, and their town. */
+/** Display name, full name, bio, any of their sub-domains (and aliases) and those domains, and their town. */
 export function creativeSearch(q: string): SearchSql {
   // The middle name is usually the mother's surname, and people know
   // creatives by it, so it is searchable too.
@@ -168,16 +206,19 @@ export function creativeSearch(q: string): SearchSql {
         where cps.profile_id = ${creativeProfiles.id}
           and ${match}
       )`;
+      const alias = aliasMatch(sql`cs.id`, word, typos);
       const prefix = subdomainWhere(
         or(
           prefixMatch(sql`cs.name || ' ' || cs.singular_name`, word),
           prefixMatch(sql`cd.name`, word),
+          alias.prefix,
         )!,
       );
       const typo = or(
         typoMatch(sql`cs.name`, word),
         typoMatch(sql`cs.singular_name`, word),
         typoMatch(sql`cd.name`, word),
+        alias.any,
       )!;
       return { prefix, any: typos ? subdomainWhere(typo) : prefix };
     },

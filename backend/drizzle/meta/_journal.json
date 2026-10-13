@@ -288,6 +288,13 @@
       "when": 1791790836238,
       "tag": "0040_mute_sir_ram",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791817321045,
+      "tag": "0041_lumpy_hellfire_club",
+      "breakpoints": true
     }
   ]
 }

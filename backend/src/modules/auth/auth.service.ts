@@ -19,7 +19,8 @@ export type { PublicUser } from '../../contracts/auth.js';
  *  changes only what new registrations record. Mirrors `CONSENT_VERSION` in
  *  `frontend/src/lib/legal.ts`. It moved to 2026-10-13 when the terms began
  *  listing audio, video and PDF on offers, and saying uploads must be the
- *  uploader's own work or theirs to share. */
+ *  uploader's own work or theirs to share, and the privacy notice began saying
+ *  that searches which find nothing are counted (issue #24). */
 export const CONSENT_VERSION = '2026-10-13';
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {

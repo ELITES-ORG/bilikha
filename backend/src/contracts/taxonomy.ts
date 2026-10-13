@@ -38,6 +38,24 @@ export interface CreativeDomain {
  */
 export interface AdminTaxonomySubdomain extends CreativeSubdomain {
   referenceCount: number;
+  /** Everyday words search also matches this sub-domain by (issue #24). */
+  aliases: SubdomainAlias[];
+}
+
+/** An everyday word for a sub-domain, stored lowercase with accents folded. */
+export interface SubdomainAlias {
+  id: string;
+  term: string;
+}
+
+/** Which listing a search ran on. */
+export type SearchListing = 'offers' | 'creatives';
+
+/** A search that found nothing, summed over the window asked for. */
+export interface SearchMiss {
+  term: string;
+  listing: SearchListing;
+  count: number;
 }
 
 export interface AdminTaxonomyDomain extends Omit<CreativeDomain, 'subdomains'> {

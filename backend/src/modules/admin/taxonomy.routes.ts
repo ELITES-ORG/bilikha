@@ -1,19 +1,26 @@
 import { Router } from 'express';
 import type { ListMeta } from '../../contracts/pagination.js';
+import { topMisses } from '../search/search-misses.js';
 import {
+  addAliasSchema,
+  aliasParamsSchema,
   createDomainSchema,
   createSubdomainSchema,
+  searchMissesQuerySchema,
+  subdomainAliasParamsSchema,
   taxonomyChangesQuerySchema,
   taxonomyParamsSchema,
   updateTaxonomySchema,
 } from './taxonomy.schema.js';
 import {
+  addAlias,
   archiveTaxonomyItem,
   createDomain,
   createSubdomain,
   deleteTaxonomyItem,
   listTaxonomyChanges,
   listTaxonomyForAdmin,
+  removeAlias,
   restoreTaxonomyItem,
   updateTaxonomyItem,
 } from './taxonomy.service.js';
@@ -37,6 +44,26 @@ taxonomyAdminRouter.get('/taxonomy/changes', async (req, res) => {
   const { rows, total } = await listTaxonomyChanges(query);
   const meta: ListMeta = { page: query.page, limit: query.limit, total };
   res.json({ data: rows, meta });
+});
+
+// Everyday words (issue #24). Declared before the `:kind/:slug` routes below,
+// which would otherwise read "subdomains/<slug>/aliases" as something else.
+taxonomyAdminRouter.post('/taxonomy/subdomains/:slug/aliases', async (req, res) => {
+  const { slug } = subdomainAliasParamsSchema.parse(req.params);
+  const { term } = addAliasSchema.parse(req.body);
+  const data = await addAlias({ slug, adminId: req.session.userId!, term });
+  res.status(201).json({ data });
+});
+
+taxonomyAdminRouter.delete('/taxonomy/subdomains/:slug/aliases/:id', async (req, res) => {
+  const { slug, id } = aliasParamsSchema.parse(req.params);
+  res.json({ data: await removeAlias({ slug, id, adminId: req.session.userId! }) });
+});
+
+/** The most common searches that found nothing — where aliases are missing. */
+taxonomyAdminRouter.get('/search-misses', async (req, res) => {
+  const { days } = searchMissesQuerySchema.parse(req.query);
+  res.json({ data: await topMisses(days) });
 });
 
 taxonomyAdminRouter.post('/taxonomy/domains', async (req, res) => {

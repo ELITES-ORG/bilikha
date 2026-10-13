@@ -2,6 +2,7 @@ import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type {
   AdminTaxonomyDomain,
   AdminTaxonomySubdomain,
+  SubdomainAlias,
   TaxonomyChangeEntry,
 } from '../../contracts/taxonomy.js';
 import { db } from '../../db/index.js';
@@ -13,10 +14,13 @@ import {
   offers,
   organizationSubdomains,
   postings,
+  subdomainAliases,
   taxonomyChanges,
   users,
 } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
+import { brokenUniqueIndex } from '../organizations/unique-violation.js';
+import { ALIAS_MAX_LENGTH, normalizeTerm } from '../search/search-sql.js';
 import type {
   CreateDomainInput,
   CreateSubdomainInput,
@@ -139,16 +143,33 @@ async function referenceCounts(): Promise<Map<string, number>> {
  * archived sub-domain is the bug archiving exists to avoid.
  */
 export async function listTaxonomyForAdmin(): Promise<AdminTaxonomyDomain[]> {
-  const [domains, subdomains, totals] = await Promise.all([
+  const [domains, subdomains, totals, aliases] = await Promise.all([
     db.select().from(creativeDomains).orderBy(asc(creativeDomains.displayOrder)),
     db.select().from(creativeSubdomains).orderBy(asc(creativeSubdomains.displayOrder)),
     referenceCounts(),
+    db
+      .select({
+        id: subdomainAliases.id,
+        term: subdomainAliases.term,
+        subdomainId: subdomainAliases.subdomainId,
+      })
+      .from(subdomainAliases)
+      .orderBy(asc(subdomainAliases.term)),
   ]);
+
+  const aliasesBySubdomain = new Map<string, SubdomainAlias[]>();
+  for (const { subdomainId, ...alias } of aliases) {
+    aliasesBySubdomain.set(subdomainId, [...(aliasesBySubdomain.get(subdomainId) ?? []), alias]);
+  }
 
   return domains.map((domain) => {
     const children: AdminTaxonomySubdomain[] = subdomains
       .filter((sub) => sub.domainId === domain.id)
-      .map((sub) => ({ ...serializeSubdomain(sub), referenceCount: totals.get(sub.id) ?? 0 }));
+      .map((sub) => ({
+        ...serializeSubdomain(sub),
+        referenceCount: totals.get(sub.id) ?? 0,
+        aliases: aliasesBySubdomain.get(sub.id) ?? [],
+      }));
 
     return {
       ...serializeDomain(domain),
@@ -642,4 +663,102 @@ export async function listTaxonomyChanges({
     })),
     total: totals?.total ?? 0,
   };
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** A sub-domain's alias terms, sorted, for the change log's before and after. */
+async function aliasTermsOf(tx: Tx, subdomainId: string): Promise<string[]> {
+  const rows = await tx
+    .select({ term: subdomainAliases.term })
+    .from(subdomainAliases)
+    .where(eq(subdomainAliases.subdomainId, subdomainId))
+    .orderBy(asc(subdomainAliases.term));
+  return rows.map((row) => row.term);
+}
+
+/**
+ * Attaches an everyday word to a sub-domain (issue #24), folded as search
+ * folds it. Recorded as the sub-domain's `updated`, with the alias list before
+ * and after — the change log already reads that way.
+ */
+export async function addAlias({
+  slug,
+  adminId,
+  term,
+}: {
+  slug: string;
+  adminId: string;
+  term: string;
+}): Promise<SubdomainAlias> {
+  const subdomain = await findSubdomain(slug);
+  const folded = normalizeTerm(term);
+  if (!folded) throw AppError.badRequest('Enter a word', { field: 'term' });
+  if (folded.length > ALIAS_MAX_LENGTH) {
+    throw AppError.badRequest(`At most ${ALIAS_MAX_LENGTH} characters`, { field: 'term' });
+  }
+
+  const alreadyThere = () =>
+    AppError.conflict(`"${folded}" is already a word for ${subdomain.name}.`, { field: 'term' });
+
+  try {
+    return await db.transaction(async (tx) => {
+      const before = await aliasTermsOf(tx, subdomain.id);
+      if (before.includes(folded)) throw alreadyThere();
+
+      const [row] = await tx
+        .insert(subdomainAliases)
+        .values({ subdomainId: subdomain.id, term: folded })
+        .returning({ id: subdomainAliases.id, term: subdomainAliases.term });
+
+      await tx.insert(taxonomyChanges).values({
+        itemKind: 'subdomain',
+        itemSlug: slug,
+        action: 'updated',
+        adminId,
+        before: { aliases: before },
+        after: { aliases: [...before, folded].sort() },
+      });
+
+      return row!;
+    });
+  } catch (error) {
+    // Two administrators adding the same word at once both pass the read
+    // above; the unique index stops the second, which gets the same answer.
+    if (brokenUniqueIndex(error) === 'subdomain_aliases_subdomain_term_idx') throw alreadyThere();
+    throw error;
+  }
+}
+
+/** Removes one alias from the sub-domain it belongs to, recorded like `addAlias`. */
+export async function removeAlias({
+  slug,
+  id,
+  adminId,
+}: {
+  slug: string;
+  id: string;
+  adminId: string;
+}): Promise<{ removed: true }> {
+  const subdomain = await findSubdomain(slug);
+
+  return db.transaction(async (tx) => {
+    const before = await aliasTermsOf(tx, subdomain.id);
+    const [removed] = await tx
+      .delete(subdomainAliases)
+      .where(and(eq(subdomainAliases.id, id), eq(subdomainAliases.subdomainId, subdomain.id)))
+      .returning({ term: subdomainAliases.term });
+    if (!removed) throw AppError.notFound(`No such word for ${subdomain.name}.`);
+
+    await tx.insert(taxonomyChanges).values({
+      itemKind: 'subdomain',
+      itemSlug: slug,
+      action: 'updated',
+      adminId,
+      before: { aliases: before },
+      after: { aliases: before.filter((t) => t !== removed.term) },
+    });
+
+    return { removed: true as const };
+  });
 }

@@ -19,6 +19,7 @@ import {
 import { AppError } from '../../lib/http-error.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { offerCardMedia } from '../offers/offers.service.js';
+import { recordMiss } from '../search/search-misses.js';
 import { creativeSearch } from '../search/search-sql.js';
 
 export type { PublicProfile, PublicProfileDetail } from '../../contracts/profiles.js';
@@ -241,6 +242,10 @@ export async function listPublished(
     .innerJoin(municipalities, eq(users.municipalityId, municipalities.id))
     .where(where);
 
+  // Nothing matched the first page of a search: count it (issue #24).
+  if (options.q && options.page === 1 && (totals?.total ?? 0) === 0) {
+    void recordMiss(options.q, 'creatives');
+  }
   const subdomainMap = await subdomainsForProfiles(rows.map((row) => row.id));
   const data: PublicProfile[] = rows.map((row) => {
     const profile: PublicProfile = {

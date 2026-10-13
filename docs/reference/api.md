@@ -650,8 +650,8 @@ optional — see [Directory search](#directory-search)), `domain`, `subdomain`,
 max 50).
 
 `q` matches a creative's display name, full name (middle name included), bio,
-any of their sub-domains (plural name or singular label) and those
-sub-domains' domains, and their town.
+any of their sub-domains (plural name, singular label or an everyday-word
+alias) and those sub-domains' domains, and their town.
 
 When the caller is signed in and has a municipality, rows from that municipality
 lead the list (`createdAt` desc as tiebreaker). Each row then includes
@@ -1278,6 +1278,31 @@ the delete.
 The item's rows in `taxonomy_changes` survive it: `item_slug` is text, not a
 foreign key.
 
+### `POST /api/v1/admin/taxonomy/subdomains/:slug/aliases`
+
+Adds an everyday word that search also finds the sub-domain by (issue #24).
+Body: `{ "term": "Videographer" }`, 1–60 characters. Stored folded — lowercase,
+accents removed, single spaces — and returned as `201` with
+`{ data: { id, term } }`. A term that folds to nothing is `400`; one the
+sub-domain already has, however accented, is `409`. The same term may sit on
+two sub-domains. Recorded in the change log as the sub-domain's `updated`, with
+`before`/`after` `{ aliases: [...] }`.
+
+`GET /api/v1/admin/taxonomy` lists each sub-domain's `aliases` as `{ id, term }`.
+
+### `DELETE /api/v1/admin/taxonomy/subdomains/:slug/aliases/:id`
+
+Removes one alias of that sub-domain; `404` if the id belongs to another one.
+Recorded like an addition.
+
+### `GET /api/v1/admin/search-misses`
+
+The most common searches that found nothing, summed over the last `days` days
+(1–90, default 30), most frequent first, at most 50:
+`{ data: [{ term, listing, count }] }`, where `listing` is `offers` or
+`creatives`. Counted per day with nothing that identifies who searched; rows
+older than 90 days are removed as new ones are written.
+
 ### `GET /api/v1/admin/taxonomy/changes`
 
 Paginated audit trail, newest first. Each entry carries `itemKind`, `itemSlug`,
@@ -1496,8 +1521,9 @@ waiting to be added is left out of both. `mediaBadge` is optional, so a client
 must treat it as absent on an older API
 ([ADR 0040](../decisions/0040-a-deploy-must-not-break-an-open-tab.md)).
 
-`q` matches an offer's title, description, sub-domain (plural name or
-singular label) and domain, and its creative's display name and town.
+`q` matches an offer's title, description, sub-domain (plural name, singular
+label or an everyday-word alias) and domain, and its creative's display name
+and town.
 
 #### Directory search
 
@@ -1517,6 +1543,14 @@ singular label) and domain, and its creative's display name and town.
   "Developer"). Words
   may match different fields: `photographer naval` finds a photographer in
   Naval.
+- **Aliases** (issue #24). A sub-domain also matches by the everyday words
+  administrators attach to it, by prefix and by typo like its own name, with
+  accents folded on both sides: an alias `videographer` on Filmmakers lets
+  `videografer` and `VIDEÓ` find filmmakers.
+- **Unmatched searches.** When page 1 of a search matches nothing, the words
+  are counted in `search_misses` for that listing and day — never who searched
+  — without delaying the response. See
+  [`GET /api/v1/admin/search-misses`](#get-apiv1adminsearch-misses).
 - **Visibility** is the listing's own: published profiles of active accounts
   only. `q` combines with every other filter, and `meta.total` counts the
   matches.

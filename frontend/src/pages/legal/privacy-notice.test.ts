@@ -19,6 +19,14 @@ describe('privacy notice: who receives data', () => {
     expect(sharing).toContain('within 90 days');
   });
 
+  it('says unmatched searches are counted, and not by whom (issue #24)', () => {
+    const searches = enLegal['privacy.usage.searchesRest'];
+
+    expect(searches).toContain('counted per day');
+    expect(searches).toContain('90 days');
+    expect(searches).toContain('nothing that says who searched');
+  });
+
   it('does not claim that nothing goes to a third party', () => {
     expect(enLegal['privacy.cookies.noTracking']).not.toMatch(/no third-party/i);
     expect(enLegal['privacy.cookies.noTracking']).toContain('report of an error');

@@ -31,6 +31,7 @@ export type {
   PublishedOfferCard,
   PublishedOfferDetail,
 } from '../../contracts/offers.js';
+import { recordMiss } from '../search/search-misses.js';
 import { offerSearch } from '../search/search-sql.js';
 
 export const OFFER_LIMIT = 6;
@@ -870,6 +871,10 @@ export async function listPublishedOffers(
     .innerJoin(creativeSubdomains, eq(offers.subdomainId, creativeSubdomains.id))
     .innerJoin(creativeDomains, eq(creativeSubdomains.domainId, creativeDomains.id))
     .where(where);
+  // Nothing matched the first page of a search: count it (issue #24).
+  if (options.q && options.page === 1 && (totals?.total ?? 0) === 0) {
+    void recordMiss(options.q, 'offers');
+  }
   const offerIds = rows.map((row) => row.id);
   const [imageMap, mediaMap] = await Promise.all([
     imagesForOffers(offerIds, { firstOnly: true }),
