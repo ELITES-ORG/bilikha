@@ -1,6 +1,6 @@
 # 0059. Translate the empty states
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** userMarcPaul
 - **Related:** [ADR 0055](../decisions/0055-copy-is-translated-per-device-never-by-machine.md) ·
   [plan 0050](./0050-language-choice-and-the-first-translated-screen.md) ·
@@ -58,7 +58,7 @@ core key, shared.
 |---|---|---|
 | 1. First-load pages | 1 / 1 | Done |
 | 2. Lazy pages | 1 / 1 | Done |
-| 3. Check and record | 0 / 2 | Not started |
+| 3. Check and record | 2 / 2 | Done |
 
 ---
 
@@ -86,26 +86,26 @@ core key, shared.
 
 ### Step 3.1 — In the browser
 
-- [ ] **Action.** The directory's empty states, a missing offer and an empty
+- [x] **Action.** The directory's empty states, a missing offer and an empty
   notifications list at 375px, light and dark, in English and with Waray chosen.
-- [ ] **Verify.** No raw key on screen; English unchanged; with Waray chosen
+- [x] **Verify.** No raw key on screen; English unchanged; with Waray chosen
   the English fallback is marked `lang="en"`.
 
 ### Step 3.2 — The translator guide
 
-- [ ] **Action.** `docs/guides/translate-the-interface.md` lists the new
+- [x] **Action.** `docs/guides/translate-the-interface.md` lists the new
   folders and what is now covered.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ---
 
 ## Acceptance
 
-- [ ] No user-facing empty state in the files above writes its English in the
+- [x] No user-facing empty state in the files above writes its English in the
       component.
-- [ ] Initial JS stays within budget, and grows only by the first-load pages'
+- [x] Initial JS stays within budget, and grows only by the first-load pages'
       strings.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check`
+- [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run docs:check`
       pass.
 
 ## Follow-ups
