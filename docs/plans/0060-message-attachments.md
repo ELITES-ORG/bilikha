@@ -75,8 +75,13 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
   `file_deleted_at is null`); `upload_destination` gains `message`;
   `media_uploads` gains `conversation_id` (`ON DELETE CASCADE`) with a check that
   a `message` reservation has one; `notification_type` gains
-  `attachment_expiring`. One generated migration.
-- [ ] **Verify.** It migrates; a second `db:generate` has nothing to do.
+  `attachment_expiring`. One generated migration. **Write that check as
+  `destination::text <> 'message' OR conversation_id IS NOT NULL`.** Drizzle
+  runs every pending migration in one transaction, and Postgres refuses a new
+  enum value in the transaction that added it ("unsafe use of new value"), so
+  comparing the enum itself would stop the deploy.
+- [ ] **Verify.** It migrates; a second `db:generate` has nothing to do; the
+  generated SQL's check casts `destination` to text.
 
 ### Step 2.2 — The limits row and the switch
 - [ ] **Action.** `UPLOAD_LIMITS.message` with #66's caps and private bucket
