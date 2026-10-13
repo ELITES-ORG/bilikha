@@ -45,6 +45,7 @@ a stable contract — see [ADR 0012](../decisions/0012-versioned-api-prefix.md).
 | `ID_STORAGE_UNAVAILABLE` | 503 | The private ID bucket is missing, public, or has no limits, so ID uploads are refused |
 | `ID_NUMBER_MATCH` | 409 | The ID number an administrator typed is already on another account. `details.matches` lists `{ username, status, decidedAt }` |
 | `ID_HASH_UNAVAILABLE` | 503 | `ID_HASH_SECRET` is not set, so an ID number cannot be recorded |
+| `ID_APPEAL_CLOSED` | 409 | The right password, but nothing to appeal: no *not from Biliran* decline, an appeal already open or answered, the photos gone, or the 7 days over — see [the appeal](#post-apiv1authid-appeal) |
 | `INTERNAL_SERVER_ERROR` | 500 | Unhandled. `message` is generic in production |
 
 Timestamps are ISO 8601 UTC. IDs are UUID v4.
@@ -242,14 +243,40 @@ exists only under another municipality (e.g. Naval + Culaba's `looc`) is a
 ```
 
 `200` — same `data` shape as register. Rate limited to 10 failed attempts per
-IP per 15 minutes (`skipSuccessfulRequests`). An `ID_DECLINED` refusal answers
-the right password, so it is not counted as a failure.
+IP per 15 minutes (`skipSuccessfulRequests`), shared with
+[`POST /auth/id-appeal`](#post-apiv1authid-appeal). An `ID_DECLINED` refusal
+answers the right password, so it is not counted as a failure.
 
 | Status | When |
 |---|---|
 | `401` | Incorrect username or password |
 | `403` | Account suspended |
-| `403` | `ID_DECLINED`: the latest ID verification is `declined_final` (`details: { kind: 'final', reason }`) or `appealed` (`details: { kind: 'appealed', reason }`). Checked only after the right password, and before `lastLoginAt` is written. A `declined_retry` account signs in normally, to resubmit |
+| `403` | `ID_DECLINED`: the latest ID verification is `declined_final` (`details: { kind: 'final', reason, appealUntil? }`) or `appealed` (`details: { kind: 'appealed', reason }`). Checked only after the right password, and before `lastLoginAt` is written. `appealUntil` is present while the decline can still be appealed: never appealed, its photos kept, and within 7 days of the decision. A `declined_retry` account signs in normally, to resubmit |
+| `429` | Rate limited |
+
+### `POST /api/v1/auth/id-appeal`
+
+A person's one appeal against a *not from Biliran* decline
+([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md),
+plan 0053 Step 4.2). Not behind a session: a declined account cannot sign in, so
+the appeal brings its credentials, checked exactly as sign-in checks them.
+
+```jsonc
+{ "username": "juancruz", "password": "correct horse battery", "message": "…" } // message 20–1000 characters, trimmed
+```
+
+`200` — `{ data: { status: 'appealed' } }`. The row becomes `appealed` with the
+message; **no session is made**, and signing in answers `403 ID_DECLINED` with
+`kind: 'appealed'` until an administrator answers. Rate limited with
+`/auth/login`, sharing its count; `ID_APPEAL_CLOSED` is not counted, since it
+answers the right password.
+
+| Status | When |
+|---|---|
+| `400` | Validation, including a message under 20 or over 1000 characters |
+| `401` | Incorrect username or password |
+| `403` | Account suspended |
+| `409` | `ID_APPEAL_CLOSED`: the latest ID verification is not a *not from Biliran* decline, or it was already appealed, or its appeal was answered, or its photos are gone, or its 7 days are over |
 | `429` | Rate limited |
 
 ### `POST /api/v1/auth/logout`
@@ -346,16 +373,19 @@ Fills the open `pending` row, or after `declined_retry` starts a new one
 
 ### Admin: `GET /api/v1/admin/id-verifications`
 
-Administrators only (404 for anyone else). Query: `view` (`pending` default, or
-`decided`), `page`, `limit` (max 50).
+Administrators only (404 for anyone else). Query: `view` (`pending` default,
+`appeals` or `decided`), `page`, `limit` (max 50).
 
 - `pending` — submitted IDs waiting for a decision, **oldest first**. There is no
   deadline for a review.
-- `decided` — decided in the last 7 days, newest first.
+- `appeals` — open appeals (`status = 'appealed'`), oldest `appealedAt` first.
+- `decided` — decided in the last 7 days, newest first. An open appeal is under
+  `appeals`, not here.
 
 `200` — `{ data: AdminIdVerificationRow[], meta: { page, limit, total } }`: id,
 account (username, registered full name, municipality, `accountSuspended`), ID
-type, status, `submittedAt`, `decidedAt`. **No object keys or URLs.**
+type, status, `submittedAt`, `decidedAt`, `appealedAt`. **No object keys or
+URLs.**
 
 ### Admin: `GET /api/v1/admin/id-verifications/:id`
 
@@ -365,7 +395,9 @@ with `Cache-Control: no-store`.
 `200` — `{ data: AdminIdVerificationDetail }`: the registered name, birth date and
 age, municipality, barangay, ID type, status, the decision (who, when, reason,
 `windowEndsAt`), any appeal, whether an ID number was recorded or is absent
-(never the hash), and `frontUrl`/`backUrl`/`urlsExpireAt`.
+(never the hash), `frontUrl`/`backUrl`/`urlsExpireAt`, and `changeableUntil`:
+until when the decision can be changed (a decided row that is the account's
+latest, not under appeal, with its photos, within its 7 days), else `null`.
 
 **The URLs are signed for at most 300 seconds, and never past the 7 days after
 the latest decision.** They are issued only while the row is `pending` or
@@ -404,19 +436,67 @@ is not ready.
   carry `declineNotice` (the next request answers `401 ID_DECLINED` with the
   reason). After *verify*, an `id_verified` notification.
 
+**Changing a decision** (plan 0053 Step 4.1). The same route also takes a row
+already decided — `verified`, `declined_retry` or `declined_final` — while
+`changeableUntil` is set, and changes it to any other decision:
+
+- `reason` is required, whatever the new decision: for a decline it is what the
+  person sees, for a verify it goes on the record only.
+- `verify` and `final` need a look at the photos **since the decision being
+  changed**. `retry` does not.
+- A number already recorded on the row stands; `idNumber` or `noIdNumber` is
+  needed only when the row has neither. A number in play is checked for matches
+  as above.
+- One transaction, as above, with an `id_decision_reversed` audit row reading
+  "Changed from <old> to <new>: <reason>". `decided_at` becomes now, so the 7
+  days start again. A change to a decline rewrites the sessions; a change to
+  `final` carries `appealUntil` in the notice. A change to `verify` sends
+  `id_verified`.
+
 `200` — `{ data: AdminIdVerificationDetail }` (no URLs).
 
 | Status | When |
 |---|---|
-| `400` | Validation; a decline without a reason; a number missing, or given with `noIdNumber`; a number too short or not in Latin letters and digits; verifying despite a match without a reason |
+| `400` | Validation; a decline without a reason; a change without a reason, or to the decision it already is; a number missing, or given with `noIdNumber`; a number too short or not in Latin letters and digits; verifying despite a match without a reason |
 | `404` | No such row, or not an administrator |
-| `409` | Your own ID; a suspended account; not waiting for a decision (including a second decision racing the first); `verify` or `final` without having been shown the photos; `ID_NUMBER_MATCH` |
+| `409` | Your own ID; a suspended account; not waiting for a decision (including a second decision racing the first); under appeal; a change after the 7 days, after the photos were deleted, or after the person sent a new ID; `verify` or `final` without having been shown the photos; `ID_NUMBER_MATCH` |
 | `503` | `ID_HASH_UNAVAILABLE` — `ID_HASH_SECRET` is not set |
+
+### Admin: `POST /api/v1/admin/id-verifications/:id/appeal`
+
+The answer to a person's appeal (plan 0053 Step 4.3).
+
+```jsonc
+{
+  "outcome": "grant",            // or "uphold"
+  "reason": "…",                 // 1–500, required either way; shown at sign-in on uphold
+  "acknowledgeMatch": false      // a grant, after seeing ID_NUMBER_MATCH
+}
+```
+
+- Needs a look at the photos **since the appeal**, so it is answered on the
+  photos with the person's message beside them.
+- A grant checks the row's recorded number for matches, as a verify does.
+- One transaction: *grant* sets `verified`; *uphold* keeps `declined_final` with
+  the new reason. Either way `appeal_decided_at` and `decided_at` are now — the
+  7 days start again and no second appeal is possible — with an
+  `id_appeal_granted` or `id_appeal_upheld` audit row. A grant sends
+  `id_verified`.
+
+`200` — `{ data: AdminIdVerificationDetail }` (no URLs).
+
+| Status | When |
+|---|---|
+| `400` | Validation, including no reason or one over 500 characters |
+| `404` | No such row, or not an administrator |
+| `409` | Your own ID; a suspended account; no open appeal (including a second answer racing the first); no look at the photos since the appeal; `ID_NUMBER_MATCH` |
 
 **Images are deleted 7 days after the latest decision** by an hourly pass in the
 API (and `npm run ids:purge`), except while an appeal is open; ID objects older
 than a day that no row references are deleted too. The record — outcome, ID
-type, who decided and when, the hash — stays.
+type, who decided and when, the hash — stays. The pass claims a row before
+deleting its objects, guarded on it still being due, so an appeal or a changed
+decision that lands in between keeps the photos.
 
 ---
 
@@ -1038,14 +1118,15 @@ How many items wait for a decision under each admin section
     "creatives": { "pending": 2, "edited": 1 },
     "offers": { "new": 3, "changes": 1 },
     "organizations": { "pending": 0, "edited": 1, "logos": 1 },
-    "people": { "photos": 4, "ids": 2 },
+    "people": { "photos": 4, "ids": 2, "appeals": 1 },
     "reports": { "open": 0 }
   }
 }
 ```
 
 Published and suspended rows are not waiting, so they are not counted. `people.ids`
-is submitted IDs waiting for a decision ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)).
+is submitted IDs waiting for a decision, and `people.appeals` open appeals
+against a decline ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)).
 
 ### `GET /api/v1/admin/media`
 

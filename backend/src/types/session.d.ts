@@ -8,6 +8,6 @@ declare module 'express-session' {
      * so the next request can say why the session ended. `requireAuth` answers
      * it once and destroys the session.
      */
-    declineNotice?: { kind: 'retry' | 'final'; reason: string };
+    declineNotice?: { kind: 'retry' | 'final'; reason: string; appealUntil?: string };
   }
 }

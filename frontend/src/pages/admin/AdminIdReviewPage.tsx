@@ -3,18 +3,28 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ImageOff, Lock, TriangleAlert } from 'lucide-react';
 import type { AdminIdVerificationDetail, IdNumberMatch } from '@contracts/verification';
 import { Button, ButtonLink, Container, EmptyState, Input, Skeleton, Textarea } from '@/components/ui';
-import { useAdminIdVerification, useDecideIdVerification } from '@/features/admin/api';
+import { useAdminIdVerification, useDecideAppeal, useDecideIdVerification } from '@/features/admin/api';
+import { useCurrentUser } from '@/features/auth/api';
 import { idTypeOption } from '@/features/verification/id-types';
 import { ApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { AdminFact, AdminPageHeader, AdminStatusBadge } from './admin-ui';
 import { formatAdminDate } from './admin-format';
 import {
+  appealBody,
+  appealProblem,
+  changeBody,
+  changeNeedsNumber,
+  changeOptions,
+  changeProblem,
   decisionBody,
   decisionProblem,
   ID_NUMBER_MAX,
   REASON_MAX,
   withNumberChange,
+  type AppealDraft,
+  type AppealOutcome,
+  type DecidedStatus,
   type DecisionDraft,
   type IdDecision,
 } from './id-review-logic';
@@ -39,6 +49,22 @@ const CONFIRM_LABEL = {
   retry: 'Send back to try again',
   final: 'Decline as not from Biliran',
 } as const;
+
+/** A decision as a change offers it. */
+const CHANGE_LABEL: Record<IdDecision, string> = {
+  verify: 'Verified',
+  retry: 'Try again',
+  final: 'Not from Biliran',
+};
+
+/** What a change does to the person, said before it is made. */
+const CHANGE_EFFECT: Record<IdDecision, string> = {
+  verify: 'They can sign in and use their account, and are told their ID is verified.',
+  retry: 'They are signed out, shown the reason, and can sign in to submit their ID again.',
+  final: 'They are signed out and cannot sign in. They can appeal once, within 7 days.',
+};
+
+const EMPTY_DRAFT: DecisionDraft = { reason: '', idNumber: '', noIdNumber: false, acknowledgeMatch: false };
 
 /**
  * One new account's ID (ADR 0057). The photos come as links signed for at most
@@ -179,8 +205,10 @@ function Review({ detail, onExpired }: { detail: AdminIdVerificationDetail; onEx
 
         {waiting ? (
           <DecisionPanel key={detail.id} detail={detail} photosShown={photosShown} />
+        ) : detail.status === 'appealed' ? (
+          <AppealPanel key={detail.id} detail={detail} photosShown={photosShown} />
         ) : (
-          <DecidedPanel detail={detail} />
+          <DecidedPanel key={detail.id} detail={detail} photosShown={photosShown} />
         )}
       </div>
     </>
@@ -247,13 +275,59 @@ function windowOver(detail: AdminIdVerificationDetail): boolean {
   return Boolean(detail.decision && new Date(detail.decision.windowEndsAt).getTime() <= Date.now());
 }
 
-function DecidedPanel({ detail }: { detail: AdminIdVerificationDetail }) {
-  const decision = detail.decision;
+const panelClass =
+  'space-y-5 rounded-md border border-hairline bg-surface p-5 lg:sticky lg:top-[calc(var(--staging-banner-h)+1.5rem)]';
+
+/** Accounts whose ID carries the same number, before a verify or a grant. */
+function MatchWarning({ matches, note }: { matches: IdNumberMatch[]; note: string }) {
   return (
-    <section
-      aria-labelledby="decision-heading"
-      className="space-y-4 rounded-md border border-hairline bg-surface p-5 lg:sticky lg:top-[calc(var(--staging-banner-h)+1.5rem)]"
-    >
+    <div role="alert" className="rounded-sm border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
+      <p className="font-semibold">This ID number is already on another account.</p>
+      <ul className="mt-2 divide-y divide-warning-100 border-y border-warning-100">
+        {matches.map((match) => (
+          <li key={`${match.username}-${match.decidedAt ?? 'open'}`} className="py-2">
+            @{match.username} · {STATUS_LABEL[match.status as keyof typeof STATUS_LABEL] ?? 'Waiting'}
+            {match.decidedAt ? ` · ${formatAdminDate(match.decidedAt)}` : ''}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2">{note}</p>
+    </div>
+  );
+}
+
+function PhotosNotShown() {
+  return (
+    <p className="flex items-start gap-2 rounded-sm border border-hairline bg-surface-sunken px-4 py-3 text-sm text-ink-muted">
+      <ImageOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      {NOT_SHOWN}
+    </p>
+  );
+}
+
+function Problem({ children }: { children: string }) {
+  return (
+    <p role="alert" className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+      {children}
+    </p>
+  );
+}
+
+/** The matches from a `409 ID_NUMBER_MATCH`, or null for any other error. */
+function matchesIn(error: unknown): IdNumberMatch[] | null {
+  if (error instanceof ApiError && error.code === 'ID_NUMBER_MATCH') {
+    return (error.details as { matches?: IdNumberMatch[] } | undefined)?.matches ?? [];
+  }
+  return null;
+}
+
+function DecidedPanel({ detail, photosShown }: { detail: AdminIdVerificationDetail; photosShown: boolean }) {
+  const decision = detail.decision;
+  const [changing, setChanging] = useState(false);
+  // Older APIs do not send it (ADR 0040); nothing can be changed there.
+  const changeableUntil = detail.changeableUntil ?? null;
+  return (
+    <section aria-labelledby="decision-heading" className={panelClass}>
       <h2 id="decision-heading" className="u-display text-xl text-ink">
         Decision
       </h2>
@@ -268,10 +342,337 @@ function DecidedPanel({ detail }: { detail: AdminIdVerificationDetail }) {
           <AdminFact term="ID number">
             {detail.idNumberRecorded ? 'Recorded' : detail.idNumberAbsent ? 'The document has none' : 'Not recorded'}
           </AdminFact>
+          {detail.appeal && (
+            <AdminFact term="Their appeal">
+              {detail.appeal.message}
+              <span className="mt-1 block text-xs text-ink-subtle">
+                Sent {formatAdminDate(detail.appeal.appealedAt)}
+                {detail.appeal.decidedAt ? `, answered ${formatAdminDate(detail.appeal.decidedAt)}` : ''}
+              </span>
+            </AdminFact>
+          )}
           <AdminFact term="Photos deleted after">{formatAdminDate(decision.windowEndsAt)}</AdminFact>
         </dl>
       ) : (
         <p className="text-sm text-ink-muted">Waiting for the person to submit their ID.</p>
+      )}
+
+      {decision && changeableUntil && isDecidedStatus(detail.status) && (
+        <div className="border-t border-hairline pt-4">
+          {changing ? (
+            <ChangeForm
+              detail={detail}
+              current={detail.status}
+              photosShown={photosShown}
+              onCancel={() => setChanging(false)}
+            />
+          ) : (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setChanging(true)}>
+                Change decision
+              </Button>
+              <p className="mt-2 text-xs text-ink-subtle">Until {formatAdminDate(changeableUntil)}.</p>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function isDecidedStatus(status: AdminIdVerificationDetail['status']): status is DecidedStatus {
+  return status === 'verified' || status === 'declined_retry' || status === 'declined_final';
+}
+
+/**
+ * A decision changed within its 7 days (plan 0053 Step 4.1). The same rules as
+ * a first decision, with a reason always: the record says why it changed.
+ */
+function ChangeForm({
+  detail,
+  current,
+  photosShown,
+  onCancel,
+}: {
+  detail: AdminIdVerificationDetail;
+  current: DecidedStatus;
+  photosShown: boolean;
+  onCancel: () => void;
+}) {
+  const navigate = useNavigate();
+  const decide = useDecideIdVerification(detail.id);
+  const [target, setTarget] = useState<IdDecision | null>(null);
+  const [draft, setDraft] = useState<DecisionDraft>(EMPTY_DRAFT);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [matches, setMatches] = useState<IdNumberMatch[] | null>(null);
+
+  const choose = (next: IdDecision) => {
+    setTarget(next);
+    setDraft((current) => ({ ...current, acknowledgeMatch: false }));
+    setMatches(null);
+    setProblem(null);
+  };
+  const update = (patch: Partial<DecisionDraft>) => {
+    setDraft((current) => ({ ...current, ...patch }));
+    setProblem(null);
+  };
+  const changeNumber = (patch: Partial<Pick<DecisionDraft, 'idNumber' | 'noIdNumber'>>) => {
+    setDraft((current) => withNumberChange(current, patch));
+    setMatches(null);
+    setProblem(null);
+  };
+
+  const judgesTheId = target === 'verify' || target === 'final';
+  const needsNumber = target !== null && changeNeedsNumber(target, detail);
+
+  async function submit() {
+    if (!target) return;
+    if (judgesTheId && !photosShown) {
+      setProblem(NOT_SHOWN);
+      return;
+    }
+    const found = changeProblem(target, draft, detail);
+    if (found) {
+      setProblem(found);
+      return;
+    }
+    try {
+      await decide.mutateAsync(changeBody(target, draft));
+      void navigate('/admin/people');
+    } catch (error) {
+      const found = matchesIn(error);
+      if (found) {
+        setMatches(found);
+        update({ acknowledgeMatch: true });
+        return;
+      }
+      setProblem(error instanceof Error ? error.message : 'Could not change the decision.');
+    }
+  }
+
+  const busy = decide.isPending;
+
+  return (
+    <div className="space-y-4">
+      <fieldset>
+        <legend className="text-sm font-semibold text-ink">Change it to</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {changeOptions(current).map((option) => (
+            <Button
+              key={option}
+              variant={target === option ? 'primary' : 'secondary'}
+              size="sm"
+              aria-pressed={target === option}
+              disabled={busy}
+              onClick={() => choose(option)}
+            >
+              {CHANGE_LABEL[option]}
+            </Button>
+          ))}
+        </div>
+      </fieldset>
+
+      {problem && <Problem>{problem}</Problem>}
+      {judgesTheId && !photosShown && <PhotosNotShown />}
+      {matches && (
+        <MatchWarning matches={matches} note="To change it anyway, the reason below goes on the record with the matches." />
+      )}
+
+      {target && (
+        <>
+          <p className="text-sm text-ink-muted">{CHANGE_EFFECT[target]}</p>
+
+          {needsNumber && (
+            <div className="space-y-3">
+              <Input
+                label="ID number"
+                hint="Typed from the photo. Kept only as a one-way code, so a repeated ID is recognised."
+                autoComplete="off"
+                spellCheck={false}
+                maxLength={ID_NUMBER_MAX}
+                disabled={draft.noIdNumber || busy}
+                value={draft.idNumber}
+                onChange={(event) => changeNumber({ idNumber: event.target.value })}
+              />
+              <label className="flex items-start gap-3 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  checked={draft.noIdNumber}
+                  disabled={busy}
+                  onChange={(event) => changeNumber({ noIdNumber: event.target.checked, idNumber: '' })}
+                  className="mt-0.5 size-4 rounded-xs accent-primary"
+                />
+                This document has no ID number
+              </label>
+            </div>
+          )}
+
+          <Textarea
+            label={target === 'verify' ? 'Why it changes' : 'Reason'}
+            hint={
+              target === 'verify'
+                ? 'Kept on the record, not shown to the person.'
+                : 'The person sees this exactly as written. It also goes on the record as why it changed.'
+            }
+            rows={3}
+            maxLength={REASON_MAX}
+            disabled={busy}
+            value={draft.reason}
+            onChange={(event) => update({ reason: event.target.value })}
+          />
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={target === 'verify' ? 'primary' : 'danger'}
+              loading={busy}
+              disabled={busy || (judgesTheId && !photosShown)}
+              onClick={() => void submit()}
+            >
+              {`Change to ${CHANGE_LABEL[target].toLowerCase()}${matches ? ' anyway' : ''}`}
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={onCancel}>
+              Cancel
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * A person's one appeal against a *not from Biliran* decline (plan 0053 Step
+ * 4.3), answered on a fresh look at the photos with their message beside them.
+ */
+function AppealPanel({ detail, photosShown }: { detail: AdminIdVerificationDetail; photosShown: boolean }) {
+  const navigate = useNavigate();
+  const answer = useDecideAppeal(detail.id);
+  const { data: me } = useCurrentUser();
+  const [outcome, setOutcome] = useState<AppealOutcome | null>(null);
+  const [draft, setDraft] = useState<AppealDraft>({ reason: '', acknowledgeMatch: false });
+  const [problem, setProblem] = useState<string | null>(null);
+  const [matches, setMatches] = useState<IdNumberMatch[] | null>(null);
+  const decision = detail.decision;
+  const ownDecision = Boolean(me && decision?.decidedBy && me.username === decision.decidedBy);
+
+  const choose = (next: AppealOutcome) => {
+    setOutcome(next);
+    setProblem(null);
+  };
+
+  async function submit() {
+    if (!outcome) return;
+    if (!photosShown) {
+      setProblem(NOT_SHOWN);
+      return;
+    }
+    const found = appealProblem(draft);
+    if (found) {
+      setProblem(found);
+      return;
+    }
+    try {
+      await answer.mutateAsync(appealBody(outcome, draft));
+      void navigate('/admin/people');
+    } catch (error) {
+      const found = matchesIn(error);
+      if (found) {
+        setMatches(found);
+        setDraft((current) => ({ ...current, acknowledgeMatch: true }));
+        return;
+      }
+      setProblem(error instanceof Error ? error.message : 'Could not answer the appeal.');
+    }
+  }
+
+  const busy = answer.isPending;
+
+  return (
+    <section aria-labelledby="decision-heading" className={panelClass}>
+      <h2 id="decision-heading" className="u-display text-xl text-ink">
+        Appeal
+      </h2>
+
+      <dl className="grid gap-4">
+        {decision && (
+          <AdminFact term="Declined as not from Biliran">
+            {formatAdminDate(decision.decidedAt)}
+            {decision.decidedBy ? ` by @${decision.decidedBy}` : ''}
+          </AdminFact>
+        )}
+        {decision?.reason && <AdminFact term="Reason given">{decision.reason}</AdminFact>}
+        {detail.appeal && (
+          <AdminFact term="Their appeal">
+            {detail.appeal.message}
+            <span className="mt-1 block text-xs text-ink-subtle">Sent {formatAdminDate(detail.appeal.appealedAt)}</span>
+          </AdminFact>
+        )}
+      </dl>
+
+      {ownDecision && (
+        <p className="rounded-sm border border-hairline bg-surface-sunken px-4 py-3 text-sm text-ink-muted">
+          You made this decision. If you can, let another administrator answer the appeal.
+        </p>
+      )}
+
+      {problem && <Problem>{problem}</Problem>}
+      {!photosShown && <PhotosNotShown />}
+      {matches && (
+        <MatchWarning matches={matches} note="To grant it anyway, the reason goes on the record with the matches." />
+      )}
+
+      <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">
+        <Button
+          variant={outcome === 'grant' ? 'primary' : 'secondary'}
+          aria-pressed={outcome === 'grant'}
+          disabled={busy || !photosShown}
+          onClick={() => choose('grant')}
+        >
+          Grant — verify
+        </Button>
+        <Button
+          variant="ghost"
+          className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
+          aria-pressed={outcome === 'uphold'}
+          disabled={busy || !photosShown}
+          onClick={() => choose('uphold')}
+        >
+          Uphold — keep declined
+        </Button>
+      </div>
+
+      {outcome && (
+        <div className="space-y-3">
+          <p className="text-sm text-ink-muted">
+            {outcome === 'grant'
+              ? 'They can sign in and use their account, and are told their ID is verified.'
+              : 'The decline stands for good: there is no second appeal. They see the reason when they try to sign in.'}
+          </p>
+          <Textarea
+            label="Reason"
+            hint={
+              outcome === 'grant'
+                ? 'Kept on the record, not shown to the person.'
+                : 'The person sees this exactly as written when they try to sign in.'
+            }
+            rows={3}
+            maxLength={REASON_MAX}
+            disabled={busy}
+            value={draft.reason}
+            onChange={(event) => {
+              setDraft((current) => ({ ...current, reason: event.target.value }));
+              setProblem(null);
+            }}
+          />
+          <Button
+            variant={outcome === 'grant' ? 'primary' : 'danger'}
+            loading={busy}
+            disabled={busy || !photosShown}
+            onClick={() => void submit()}
+          >
+            {outcome === 'grant' ? (matches ? 'Grant anyway' : 'Grant the appeal') : 'Uphold the decline'}
+          </Button>
+        </div>
       )}
     </section>
   );
@@ -280,12 +681,7 @@ function DecidedPanel({ detail }: { detail: AdminIdVerificationDetail }) {
 function DecisionPanel({ detail, photosShown }: { detail: AdminIdVerificationDetail; photosShown: boolean }) {
   const navigate = useNavigate();
   const decide = useDecideIdVerification(detail.id);
-  const [draft, setDraft] = useState<DecisionDraft>({
-    reason: '',
-    idNumber: '',
-    noIdNumber: false,
-    acknowledgeMatch: false,
-  });
+  const [draft, setDraft] = useState<DecisionDraft>(EMPTY_DRAFT);
   const [declining, setDeclining] = useState<'retry' | 'final' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [matches, setMatches] = useState<IdNumberMatch[] | null>(null);
@@ -317,9 +713,9 @@ function DecisionPanel({ detail, photosShown }: { detail: AdminIdVerificationDet
       await decide.mutateAsync(decisionBody(decision, draft));
       void navigate('/admin/people');
     } catch (error) {
-      if (error instanceof ApiError && error.code === 'ID_NUMBER_MATCH') {
-        const details = error.details as { matches?: IdNumberMatch[] } | undefined;
-        setMatches(details?.matches ?? []);
+      const found = matchesIn(error);
+      if (found) {
+        setMatches(found);
         update({ acknowledgeMatch: true });
         return;
       }
@@ -331,43 +727,20 @@ function DecisionPanel({ detail, photosShown }: { detail: AdminIdVerificationDet
   const verifyLabel = matches ? 'Verify anyway' : 'Verify';
 
   return (
-    <section
-      aria-labelledby="decision-heading"
-      className="space-y-5 rounded-md border border-hairline bg-surface p-5 lg:sticky lg:top-[calc(var(--staging-banner-h)+1.5rem)]"
-    >
+    <section aria-labelledby="decision-heading" className={panelClass}>
       <h2 id="decision-heading" className="u-display text-xl text-ink">
         Decision
       </h2>
 
-      {problem && (
-        <p
-          role="alert"
-          className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
-        >
-          {problem}
-        </p>
-      )}
+      {problem && <Problem>{problem}</Problem>}
 
-      {!photosShown && (
-        <p className="flex items-start gap-2 rounded-sm border border-hairline bg-surface-sunken px-4 py-3 text-sm text-ink-muted">
-          <ImageOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-          {NOT_SHOWN}
-        </p>
-      )}
+      {!photosShown && <PhotosNotShown />}
 
       {matches && (
-        <div role="alert" className="rounded-sm border border-warning-100 bg-warning-50 px-4 py-3 text-sm text-warning-700">
-          <p className="font-semibold">This ID number is already on another account.</p>
-          <ul className="mt-2 divide-y divide-warning-100 border-y border-warning-100">
-            {matches.map((match) => (
-              <li key={`${match.username}-${match.decidedAt ?? 'open'}`} className="py-2">
-                @{match.username} · {STATUS_LABEL[match.status as keyof typeof STATUS_LABEL] ?? 'Waiting'}
-                {match.decidedAt ? ` · ${formatAdminDate(match.decidedAt)}` : ''}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2">To verify anyway, say why in the reason. A not-from-Biliran decline needs nothing extra.</p>
-        </div>
+        <MatchWarning
+          matches={matches}
+          note="To verify anyway, say why in the reason. A not-from-Biliran decline needs nothing extra."
+        />
       )}
 
       <div className="space-y-3">

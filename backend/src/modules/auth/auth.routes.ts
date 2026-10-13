@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { AppError } from '../../lib/http-error.js';
 import { requireAuth } from '../../middleware/require-auth.js';
 import { loginLimiter, registerLimiter } from '../../middleware/rate-limit.js';
-import { loginSchema, registerSchema } from './auth.schema.js';
+import { appealIdDecision } from '../verification/appeal.service.js';
+import { idAppealSchema, loginSchema, registerSchema } from './auth.schema.js';
 import { authenticate, getUserById, registerUser } from './auth.service.js';
 
 export const authRouter: Router = Router();
@@ -31,6 +32,18 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
 
   req.session.userId = user.id;
   res.json({ data: user });
+});
+
+/**
+ * A *not from Biliran* decline appealed by the person (ADR 0057, plan 0053
+ * Step 4.2). Not behind requireAuth: the account cannot sign in, so it brings
+ * its credentials. Behind the same limiter as sign-in, so guesses here and
+ * there count together. Makes no session.
+ */
+authRouter.post('/id-appeal', loginLimiter, async (req, res) => {
+  const input = idAppealSchema.parse(req.body);
+  const data = await appealIdDecision(input);
+  res.json({ data });
 });
 
 authRouter.post('/logout', (req, res, next) => {

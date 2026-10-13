@@ -91,6 +91,11 @@ export interface AdminIdVerificationRow {
   status: IdVerificationStatus;
   submittedAt: string | null;
   decidedAt: string | null;
+  /**
+   * When the person appealed, for the Appeals view (plan 0053 Phase 4).
+   * Optional for deployment skew (ADR 0040), like `AdminSummary.people.ids`.
+   */
+  appealedAt?: string | null;
   /** Flagged in the queue: a suspended account is still reviewed. */
   accountSuspended: boolean;
 }
@@ -135,4 +140,11 @@ export interface AdminIdVerificationDetail {
   /** Whether an ID number was recorded, or recorded as absent. Never the hash. */
   idNumberRecorded: boolean;
   idNumberAbsent: boolean;
+  /**
+   * Until when this decision can be changed (plan 0053 Phase 4): a decided row
+   * that is the account's latest, not under appeal, within its 7 days. Null
+   * when it cannot be. Optional for deployment skew (ADR 0040): an API from
+   * before Phase 4 does not send it, and nothing can be changed there.
+   */
+  changeableUntil?: string | null;
 }

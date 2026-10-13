@@ -5,7 +5,7 @@ import { idVerifications } from '../../db/schema/index.js';
 import { logger } from '../../lib/logger.js';
 import { deleteObject, isStorageConfigured, listObjects } from '../../lib/storage.js';
 import { storageBelongsToDatabase } from '../../lib/storage-safety.js';
-import { DECISION_WINDOW_MS } from './review.service.js';
+import { DECISION_WINDOW_MS } from './window.js';
 
 /**
  * Deleting ID photos (ADR 0057, plan 0053 Step 3.3). A government ID is held
@@ -18,6 +18,12 @@ import { DECISION_WINDOW_MS } from './review.service.js';
  *
  * Both passes catch and log every error by row, never by object key, and carry
  * on: one stuck object must not stop the rest being deleted.
+ *
+ * A row is claimed before its objects are deleted (plan 0053 Phase 4). An
+ * appeal, or a change to the decision, can land between finding a row and
+ * deleting its photos; the claim is guarded on neither having happened, so
+ * whichever writes the row first wins, and an open appeal never loses the
+ * photos it is decided on.
  */
 
 /** Rows per pass. The next hour picks up what one pass leaves. */
@@ -30,10 +36,36 @@ const HOUR_MS = 60 * 60 * 1000;
 const FIRST_RUN_DELAY_MS = 60 * 1000;
 
 /**
- * Deletes the images of rows decided at least 7 days before `now`, then clears
- * their keys and stamps `images_deleted_at`. An open appeal keeps its ID: the
- * appeal is decided on those photos.
+ * Deletes the images of rows decided at least 7 days before `now`: claims the
+ * row — keys cleared, `images_deleted_at` stamped — then deletes the objects it
+ * pointed at. An open appeal keeps its ID: the appeal is decided on those
+ * photos. Returns the rows claimed.
  */
+/** Still due: not deleted, not under appeal, and its decision old enough. */
+function dueForDeletion(now: Date) {
+  return and(
+    isNull(idVerifications.imagesDeletedAt),
+    isNotNull(idVerifications.decidedAt),
+    lte(idVerifications.decidedAt, new Date(now.getTime() - DECISION_WINDOW_MS)),
+    ne(idVerifications.status, 'appealed'),
+  );
+}
+
+/**
+ * Takes a row for deletion — keys cleared, `images_deleted_at` stamped — if it
+ * is still due. Checked in the write itself, so an appeal or a changed
+ * decision that landed after the row was found leaves it, and its photos,
+ * alone. Exported for its test: this guard is the whole of the race.
+ */
+export async function claimForDeletion(id: string, now: Date): Promise<boolean> {
+  const [claimed] = await db
+    .update(idVerifications)
+    .set({ frontKey: null, backKey: null, imagesDeletedAt: now, updatedAt: now })
+    .where(and(eq(idVerifications.id, id), dueForDeletion(now)))
+    .returning({ id: idVerifications.id });
+  return Boolean(claimed);
+}
+
 export async function purgeDecidedIdImages(now: Date = new Date()): Promise<number> {
   if (!isStorageConfigured()) return 0;
 
@@ -42,15 +74,7 @@ export async function purgeDecidedIdImages(now: Date = new Date()): Promise<numb
     rows = await db
       .select({ id: idVerifications.id, frontKey: idVerifications.frontKey, backKey: idVerifications.backKey })
       .from(idVerifications)
-      .where(
-        and(
-          isNull(idVerifications.imagesDeletedAt),
-          isNotNull(idVerifications.decidedAt),
-          lte(idVerifications.decidedAt, new Date(now.getTime() - DECISION_WINDOW_MS)),
-          ne(idVerifications.status, 'appealed'),
-          or(isNotNull(idVerifications.frontKey), isNotNull(idVerifications.backKey)),
-        ),
-      )
+      .where(and(dueForDeletion(now), or(isNotNull(idVerifications.frontKey), isNotNull(idVerifications.backKey))))
       .orderBy(asc(idVerifications.decidedAt))
       .limit(BATCH);
   } catch (error) {
@@ -61,17 +85,26 @@ export async function purgeDecidedIdImages(now: Date = new Date()): Promise<numb
   let purged = 0;
   for (const row of rows) {
     try {
-      for (const key of [row.frontKey, row.backKey]) {
-        // A missing object is already gone: deleteObject treats it as success.
-        if (key) await deleteObject(key, env.SUPABASE_ID_BUCKET);
-      }
-      await db
-        .update(idVerifications)
-        .set({ frontKey: null, backKey: null, imagesDeletedAt: now, updatedAt: now })
-        .where(and(eq(idVerifications.id, row.id), isNull(idVerifications.imagesDeletedAt)));
+      if (!(await claimForDeletion(row.id, now))) continue;
       purged += 1;
     } catch (error) {
-      logger.error({ err: error, idVerificationId: row.id }, 'ID retention: could not delete images');
+      logger.error({ err: error, idVerificationId: row.id }, 'ID retention: could not claim a row');
+      continue;
+    }
+
+    for (const key of [row.frontKey, row.backKey]) {
+      if (!key) continue;
+      try {
+        // A missing object is already gone: deleteObject treats it as success.
+        await deleteObject(key, env.SUPABASE_ID_BUCKET);
+      } catch (error) {
+        // No row points at it any more, so the unreferenced-object pass below
+        // deletes it on a later run.
+        logger.error(
+          { err: error, idVerificationId: row.id },
+          'ID retention: could not delete an image; it is left for the unreferenced-object pass',
+        );
+      }
     }
   }
   return purged;

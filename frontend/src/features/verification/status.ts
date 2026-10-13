@@ -42,10 +42,11 @@ function defaultStore(): StorageLike | null {
 
 function isNotice(value: unknown): value is IdDeclinedDetails {
   if (!value || typeof value !== 'object') return false;
-  const { kind, reason } = value as Partial<IdDeclinedDetails>;
+  const { kind, reason, appealUntil } = value as Partial<IdDeclinedDetails>;
   return (
     (kind === 'retry' || kind === 'final' || kind === 'appealed')
     && (reason === null || typeof reason === 'string')
+    && (appealUntil === undefined || typeof appealUntil === 'string')
   );
 }
 
@@ -84,4 +85,29 @@ export function clearDeclineNotice(store: StorageLike | null = defaultStore()): 
   } catch {
     // It stays until the tab closes; showing it twice is harmless.
   }
+}
+
+/** The appeal message's length, as the API checks it (plan 0053 Step 4.2). */
+export const APPEAL_MIN = 20;
+export const APPEAL_MAX = 1000;
+
+/**
+ * Until when this decline can be appealed, or null: only a *not from Biliran*
+ * decline whose window the server gave, and only until it closes.
+ */
+export function appealOpenUntil(notice: IdDeclinedDetails | null, now: Date = new Date()): Date | null {
+  if (!notice || notice.kind !== 'final' || !notice.appealUntil) return null;
+  const until = new Date(notice.appealUntil);
+  return Number.isNaN(until.getTime()) || until.getTime() <= now.getTime() ? null : until;
+}
+
+/** What is missing before an appeal can be sent, or null when nothing is. */
+export function appealFormProblem(form: {
+  username: string;
+  password: string;
+  message: string;
+}): 'needsCredentials' | 'tooShort' | null {
+  if (!form.username.trim() || !form.password) return 'needsCredentials';
+  if (form.message.trim().length < APPEAL_MIN) return 'tooShort';
+  return null;
 }

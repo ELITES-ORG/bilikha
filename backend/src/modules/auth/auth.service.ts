@@ -9,6 +9,7 @@ import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import type { PublicUser } from '../../contracts/auth.js';
 import type { IdDeclinedDetails } from '../../contracts/verification.js';
 import { latestIdVerification, ownView } from '../verification/verification.service.js';
+import { appealDeadline } from '../verification/window.js';
 import type { RegisterInput } from './auth.schema.js';
 
 export type { PublicUser } from '../../contracts/auth.js';
@@ -92,7 +93,16 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   }
 }
 
-export async function authenticate(username: string, password: string): Promise<PublicUser> {
+/**
+ * The username and password, checked as sign-in checks them: a wrong one is
+ * the same 401 whether or not the username exists, and a suspended account is
+ * refused by name. Shared with the ID appeal (plan 0053 Step 4.2), which a
+ * declined account makes without a session.
+ */
+export async function checkCredentials(
+  username: string,
+  password: string,
+): Promise<typeof users.$inferSelect> {
   const [user] = await db
     .select()
     .from(users)
@@ -112,15 +122,28 @@ export async function authenticate(username: string, password: string): Promise<
     throw AppError.forbidden('This account has been suspended.');
   }
 
+  return user;
+}
+
+export async function authenticate(username: string, password: string): Promise<PublicUser> {
+  const user = await checkCredentials(username, password);
+
   // Checked only after the right password, so the reason is never told to
   // someone guessing (ADR 0057). Before lastLoginAt: a refused sign-in is not
   // a sign-in. *Try again* is let in — resubmitting the ID is all it can do.
   const verification = await latestIdVerification(user.id);
   if (verification?.status === 'declined_final' || verification?.status === 'appealed') {
+    // Until when the decline can still be appealed, so the sign-in screen can
+    // offer it (plan 0053 Step 4.2).
+    const appealUntil = appealDeadline(verification, new Date());
     const details: IdDeclinedDetails =
       verification.status === 'appealed'
         ? { kind: 'appealed', reason: verification.decisionReason }
-        : { kind: 'final', reason: verification.decisionReason };
+        : {
+            kind: 'final',
+            reason: verification.decisionReason,
+            ...(appealUntil ? { appealUntil: appealUntil.toISOString() } : {}),
+          };
     throw new AppError(
       403,
       'ID_DECLINED',

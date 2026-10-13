@@ -110,7 +110,7 @@ as long as it takes, and its images are kept while it waits.
 | 1. Data and private storage | 7 / 7 | Done |
 | 2. Account side | 9 / 9 | Done |
 | 3. Admin review and retention | 7 / 7 | Done |
-| 4. Reversal and appeals | 0 / 5 | Not started |
+| 4. Reversal and appeals | 5 / 5 | Done |
 | 5. Switch on | 0 / 5 | Not started |
 
 ---
@@ -647,9 +647,46 @@ Branch `feat/id-verification-appeals`. Dormant until Phase 5. It comes before
 switch-on so that no *not from Biliran* decline is ever made without a way to
 challenge it.
 
+**Built as (2026-10-13).** Differences from the steps below, found in the code:
+
+- **Changing a decision, or answering an appeal, needs a fresh look at the
+  photos** (found in Phase 3): an `id_viewed` row by that administrator since
+  the decision being changed, or since the appeal. *Try again* needs none.
+- **The 7-day edge is race-free.** The purge used to delete a row's objects
+  before stamping it, so an appeal landing in between would be left with no
+  photos. It now claims the row first (`claimForDeletion`: keys cleared,
+  `images_deleted_at` set, guarded on not being appealed and the decision still
+  being 7 days old) and deletes the objects after. The appeal's own write is
+  guarded on `images_deleted_at` being null. Whichever writes first wins. An
+  object that fails to delete after the claim is no longer referenced, so the
+  unreferenced-object pass removes it.
+- **A change applies only to the account's latest row.** Once the person has
+  sent a new ID, the old decision no longer governs the account.
+- **`appealUntil` is filled in** by one helper, `appealDeadline` in
+  `modules/verification/window.ts` (with the 7-day constant, shared by review,
+  appeal and retention). It is in sign-in's 403 and in the notice a decline
+  writes into sessions, so an open tab lands on a sign-in screen that already
+  offers the appeal.
+- **The appeal is made on the sign-in screen,** with the username and password
+  fields already there, and gives `ID_APPEAL_CLOSED` (409) when there is
+  nothing to appeal. That answer follows the right password, so the shared
+  sign-in limiter does not count it, as it does not count `ID_DECLINED`. The
+  credential check is `checkCredentials` in `auth.service.ts`, shared by
+  sign-in and the appeal.
+- **The reason is required for a change and for both appeal answers.** A
+  change's audit row reads "Changed from <old> to <new>: <reason>".
+- **The Appeals tab is part of People's ID checks** (ADR 0059), and People's
+  badge counts open appeals as `people.appeals`. `appeals`, `appealedAt` and
+  `changeableUntil` are optional in the contracts for deployment skew (ADR
+  0040), like `people.ids`.
+- **Who made the original decision is shown** on an appeal, with a note when it
+  was the administrator now answering; it is not enforced.
+- **A not-from-Biliran decline whose appeal was answered can still be
+  changed** within its 7 days, but never appealed again.
+
 ### Step 4.1 — An administrator reverses a decision
 
-- [ ] **Action.** `POST /admin/id-verifications/:id/decision` also accepts a
+- [x] **Action.** `POST /admin/id-verifications/:id/decision` also accepts a
       **decided** row whose `decided_at` is under 7 days ago (while its ID can
       still be looked at): any decision may be changed to any other, with a
       reason (required, at most 500 characters). Same transaction as Step 3.2:
@@ -659,14 +696,14 @@ challenge it.
       decline. Reversed to *verify*: `notify` `id_verified`. Refused (409) after
       the 7 days, for your own submission, or for an `appealed` row (decided
       through Step 4.3 instead).
-- [ ] **Verify.** Tests: a mistaken *not from Biliran* reversed to *verify*
+- [x] **Verify.** Tests: a mistaken *not from Biliran* reversed to *verify*
       within the window lets the account sign in and write; a *verify* reversed
       to a decline revokes its sessions with the reason; 7 days and one minute
       after the decision → 409; each reversal writes its audit row.
 
 ### Step 4.2 — The person appeals
 
-- [ ] **Action.** `POST /api/v1/auth/id-appeal`
+- [x] **Action.** `POST /api/v1/auth/id-appeal`
       `{ username, password, message }`, **not** behind `requireAuth` — a
       declined account cannot sign in. It authenticates exactly as sign-in does
       (same checks, behind `loginLimiter`, a wrong password is the normal 401),
@@ -676,14 +713,14 @@ challenge it.
       creates no session. A *try again* decline cannot appeal — it resubmits.
       `details.appealUntil` (Step 2.3) is `decided_at` + 7 days while these
       conditions hold.
-- [ ] **Verify.** Tests: wrong password → 401 and the row unchanged; right
+- [x] **Verify.** Tests: wrong password → 401 and the row unchanged; right
       password → 200, row `appealed`, no session cookie; a second appeal → 409;
       after 7 days → 409; a `declined_retry` account → 409; sign-in while
       `appealed` → `403 ID_DECLINED` saying it is under review.
 
 ### Step 4.3 — An administrator decides the appeal
 
-- [ ] **Action.** An **Appeals** view in the queue (`view=appeals`, oldest
+- [x] **Action.** An **Appeals** view in the queue (`view=appeals`, oldest
       `appealed_at` first) and `POST /admin/id-verifications/:id/appeal`
       `{ outcome: 'grant' | 'uphold', reason }`. The review shows the ID, the
       original decision, who made it and why, and the appeal message; it
@@ -693,31 +730,35 @@ challenge it.
       `declined_final` with `appeal_decided_at` set (so no second appeal), the
       reason shown at sign-in, `id_appeal_upheld` audit row. Either way
       `decided_at` = now and the 7 days start again.
-- [ ] **Verify.** Tests: grant lets the account sign in and write; uphold makes
+- [x] **Verify.** Tests: grant lets the account sign in and write; uphold makes
       sign-in show the new reason and refuses another appeal; the images are
       kept while `appealed`, then follow the 7 days from the outcome; both
       write their audit rows; a non-admin gets 404.
 
 ### Step 4.4 — The appeal and reversal screens
 
-- [ ] **Action.** `frontend/src/pages/LoginPage.tsx`: on `ID_DECLINED` with
+- [x] **Action.** `frontend/src/pages/LoginPage.tsx`: on `ID_DECLINED` with
       `appealUntil`, show the reason and **Appeal this decision** (until that
       date), opening a short form for the message; on success, "Your appeal is
       being reviewed. Try signing in after you hear from us." Upheld: the reason,
       and no appeal. Admin: the Appeals tab on `AdminIdQueuePage`, and a
       **Change decision** action on a decided review within its 7 days. All
       copy in `frontend/src/i18n/catalogs/en.ts`, empty keys in `fil`/`war`.
-- [ ] **Verify.** At 320px and 1280px, light and dark: the appeal form, the
+- [x] **Verify.** At 320px and 1280px, light and dark: the appeal form, the
       under-review message, an upheld decline; the admin Appeals tab and
       Change decision.
+      *Done 2026-10-13 against the local stack:* decline → appeal from the open
+      tab → under review → uphold (new reason, no appeal); appeal → grant (signs
+      in, notified); verify → change to try again (tab signed out with the
+      reason); and the 7-day edge both ways round against `ids:purge`.
 
 ### Step 4.5 — Document reversal and appeals
 
-- [ ] **Action.** `docs/reference/api.md`: `POST /auth/id-appeal`,
+- [x] **Action.** `docs/reference/api.md`: `POST /auth/id-appeal`,
       `POST /admin/id-verifications/:id/appeal`, the `appeals` view, reversal
       on the decision route; `docs/reference/data-model.md`: the `appealed`
       status and the appeal columns.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ## Phase 5 — Switch on
 

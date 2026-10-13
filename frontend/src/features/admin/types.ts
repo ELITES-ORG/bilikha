@@ -39,3 +39,10 @@ export interface IdDecisionPayload {
   noIdNumber?: boolean;
   acknowledgeMatch?: boolean;
 }
+
+/** `POST /admin/id-verifications/:id/appeal` (plan 0053 Step 4.3). */
+export interface IdAppealPayload {
+  outcome: 'grant' | 'uphold';
+  reason: string;
+  acknowledgeMatch?: boolean;
+}

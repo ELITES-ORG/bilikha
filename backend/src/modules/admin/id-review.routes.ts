@@ -2,11 +2,13 @@ import { Router } from 'express';
 import type { ListMeta } from '../../contracts/pagination.js';
 import { adminIdViewLimiter } from '../../middleware/rate-limit.js';
 import {
+  idAppealDecisionSchema,
   idDecisionSchema,
   idQueueQuerySchema,
   idVerificationParamsSchema,
 } from '../verification/review.schema.js';
 import {
+  decideAppeal,
   decideIdVerification,
   getIdVerificationForReview,
   listIdVerifications,
@@ -38,5 +40,12 @@ idReviewRouter.post('/id-verifications/:id/decision', async (req, res) => {
   const { id } = idVerificationParamsSchema.parse(req.params);
   const input = idDecisionSchema.parse(req.body);
   const data = await decideIdVerification({ id, adminId: req.session.userId!, ...input });
+  res.json({ data });
+});
+
+idReviewRouter.post('/id-verifications/:id/appeal', async (req, res) => {
+  const { id } = idVerificationParamsSchema.parse(req.params);
+  const input = idAppealDecisionSchema.parse(req.body);
+  const data = await decideAppeal({ id, adminId: req.session.userId!, ...input });
   res.json({ data });
 });

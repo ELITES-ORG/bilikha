@@ -57,7 +57,7 @@ export const ADMIN_SECTIONS = [
     icon: IdCard,
     group: 'decide',
     // An API from before ID review sends no `ids`: count none, not NaN.
-    waiting: (s: AdminSummary) => s.people.photos + (s.people.ids ?? 0),
+    waiting: (s: AdminSummary) => s.people.photos + (s.people.ids ?? 0) + (s.people.appeals ?? 0),
   },
   {
     label: 'Reports',

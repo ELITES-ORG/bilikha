@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const idQueueQuerySchema = z.object({
-  view: z.enum(['pending', 'decided']).default('pending'),
+  view: z.enum(['pending', 'appeals', 'decided']).default('pending'),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
@@ -29,3 +29,14 @@ export const idDecisionSchema = z
     path: ['noIdNumber'],
     message: 'Give the ID number, or say the document has none — not both.',
   });
+
+/** The answer to a person's appeal (plan 0053 Step 4.3). The reason is required either way. */
+export const idAppealDecisionSchema = z.object({
+  outcome: z.enum(['grant', 'uphold']),
+  reason: z
+    .string()
+    .trim()
+    .min(1, 'Write the reason for the answer')
+    .max(500, 'Keep the reason under 500 characters'),
+  acknowledgeMatch: z.boolean().optional(),
+});
