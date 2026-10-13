@@ -4,6 +4,8 @@ import type { AuthUser } from '@/features/auth/types';
 import type { StorageLike } from '@/features/auth/session-cache';
 import { CHANGE_PASSWORD_PATH, guardRedirect } from '@/features/auth/guard-redirect';
 import {
+  appealFormProblem,
+  appealOpenUntil,
   clearDeclineNotice,
   ID_STEP_PATH,
   isBrowseOnly,
@@ -117,9 +119,18 @@ describe('the decline notice for the sign-in screen', () => {
     expect(readDeclineNotice(store)).toBeNull();
   });
 
+  it('keeps until when a not-from-Biliran decline can be appealed', () => {
+    const store = memoryStore();
+    const notice = { kind: 'final', reason: 'Ormoc address.', appealUntil: '2026-10-20T08:00:00.000Z' } as const;
+    storeDeclineNotice(notice, store);
+
+    expect(readDeclineNotice(store)).toEqual(notice);
+  });
+
   it('ignores anything that is not a notice', () => {
     const store = memoryStore();
     storeDeclineNotice({ kind: 'nonsense' }, store);
+    storeDeclineNotice({ kind: 'final', reason: 'x', appealUntil: 7 }, store);
     expect(store.items.size).toBe(0);
 
     store.setItem('bilikha:decline-notice', '{not json');
@@ -129,5 +140,29 @@ describe('the decline notice for the sign-in screen', () => {
   it('works without storage at all', () => {
     expect(() => storeDeclineNotice({ kind: 'final', reason: 'x' }, null)).not.toThrow();
     expect(readDeclineNotice(null)).toBeNull();
+  });
+});
+
+describe('the appeal on the sign-in screen', () => {
+  const now = new Date('2026-10-13T08:00:00.000Z');
+  const final = { kind: 'final' as const, reason: 'Ormoc address.' };
+
+  it('is offered for a not-from-Biliran decline until its window closes', () => {
+    expect(appealOpenUntil({ ...final, appealUntil: '2026-10-20T08:00:00.000Z' }, now)).toEqual(
+      new Date('2026-10-20T08:00:00.000Z'),
+    );
+    expect(appealOpenUntil({ ...final, appealUntil: '2026-10-13T07:59:59.000Z' }, now)).toBeNull();
+    expect(appealOpenUntil(final, now)).toBeNull();
+    expect(appealOpenUntil({ kind: 'retry', reason: 'x', appealUntil: '2026-10-20T08:00:00.000Z' }, now)).toBeNull();
+    expect(appealOpenUntil({ ...final, appealUntil: 'not a date' }, now)).toBeNull();
+    expect(appealOpenUntil(null, now)).toBeNull();
+  });
+
+  it('needs the username, the password and a message of 20 characters', () => {
+    const message = 'I live in Naval, Biliran, since last year.';
+    expect(appealFormProblem({ username: '', password: 'p', message })).toBe('needsCredentials');
+    expect(appealFormProblem({ username: 'juan', password: '', message })).toBe('needsCredentials');
+    expect(appealFormProblem({ username: 'juan', password: 'p', message: `  ${'x'.repeat(19)}  ` })).toBe('tooShort');
+    expect(appealFormProblem({ username: 'juan', password: 'p', message })).toBeNull();
   });
 });

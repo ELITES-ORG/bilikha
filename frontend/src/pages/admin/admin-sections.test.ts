@@ -50,11 +50,11 @@ describe('the sections by subject', () => {
     creatives: { pending: 2, edited: 1 },
     offers: { new: 3, changes: 4 },
     organizations: { pending: 1, edited: 2, logos: 5 },
-    people: { photos: 6, ids: 2 },
+    people: { photos: 6, ids: 2, appeals: 1 },
     reports: { open: 7 },
   };
 
-  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers, an ID with photos', () => {
+  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers, an ID and an appeal with photos', () => {
     const waiting = Object.fromEntries(
       ADMIN_SECTIONS.map((section) => [section.label, section.waiting ? section.waiting(summary) : null]),
     );
@@ -63,7 +63,7 @@ describe('the sections by subject', () => {
       Creatives: 3,
       Offers: 7,
       Organisations: 8,
-      People: 8,
+      People: 9,
       Reports: 7,
       'Find an account': null,
       Taxonomy: null,
@@ -75,6 +75,13 @@ describe('the sections by subject', () => {
     const older: AdminSummary = { ...summary, people: { photos: 6 } };
 
     expect(people.waiting!(older)).toBe(6);
+  });
+
+  it('still counts People when an API from before appeals sends no appeals', () => {
+    const people = ADMIN_SECTIONS.find((section) => section.label === 'People')!;
+    const older: AdminSummary = { ...summary, people: { photos: 6, ids: 2 } };
+
+    expect(people.waiting!(older)).toBe(8);
   });
 
   it('lists every section of work before the tools, and gives only the work a badge', () => {

@@ -11,11 +11,15 @@ import {
 } from '@/components/page-transition/transition-to';
 import { useLogin } from '@/features/auth/api';
 import { RegistrationStatusBanner } from '@/features/auth/RegistrationStatusBanner';
-import { Button, ButtonLink, Eyebrow, Input } from '@/components/ui';
+import { Button, ButtonLink, Eyebrow, Input, Textarea } from '@/components/ui';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 import { ApiError } from '@/lib/api-client';
 import { useI18n } from '@/i18n/i18n-context';
+import { useIdAppeal } from '@/features/verification/api';
 import {
+  APPEAL_MAX,
+  appealFormProblem,
+  appealOpenUntil,
   clearDeclineNotice,
   ID_STEP_PATH,
   needsIdStep,
@@ -39,6 +43,18 @@ export function LoginPage() {
       appealed: message('signIn.declined.appealed'),
     },
     reasonLabel: message('verification.reasonLabel'),
+    appeal: {
+      until: message('signIn.appeal.until'),
+      open: message('signIn.appeal.open'),
+      messageLabel: message('signIn.appeal.messageLabel'),
+      messageHint: message('signIn.appeal.messageHint'),
+      credentials: message('signIn.appeal.credentials'),
+      needsCredentials: message('signIn.appeal.needsCredentials'),
+      tooShort: message('signIn.appeal.tooShort'),
+      submit: message('signIn.appeal.submit'),
+      cancel: message('signIn.appeal.cancel'),
+      sent: message('signIn.appeal.sent'),
+    },
   };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -49,6 +65,13 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   // Why the last session ended, or why signing in is refused (ADR 0057).
   const [declined, setDeclined] = useState<IdDeclinedDetails | null>(readDeclineNotice);
+  // The one appeal against a *not from Biliran* decline (plan 0053 Step 4.2).
+  const appeal = useIdAppeal();
+  const [appealing, setAppealing] = useState(false);
+  const [appealMessage, setAppealMessage] = useState('');
+  const [appealError, setAppealError] = useState<string | null>(null);
+  const [appealSent, setAppealSent] = useState(false);
+  const appealUntil = appealOpenUntil(declined);
 
   useEffect(() => {
     clearDeclineNotice();
@@ -58,6 +81,8 @@ export function LoginPage() {
     event.preventDefault();
     setError(null);
     setDeclined(null);
+    setAppealing(false);
+    setAppealSent(false);
     const origin = submitOrigin(event);
 
     try {
@@ -72,6 +97,29 @@ export function LoginPage() {
         return;
       }
       setError(err instanceof Error ? err.message : 'Sign-in failed');
+    }
+  }
+
+  async function sendAppeal() {
+    const problem = appealFormProblem({ username, password, message: appealMessage });
+    if (problem) {
+      setAppealError(copy.appeal[problem].text);
+      return;
+    }
+    setAppealError(null);
+    try {
+      await appeal.mutateAsync({ username, password, message: appealMessage.trim() });
+      setAppealSent(true);
+      setAppealing(false);
+      setAppealMessage('');
+      setDeclined((current) => (current ? { kind: 'appealed', reason: current.reason } : current));
+    } catch (err) {
+      // Closed since the page loaded: say why, and stop offering it.
+      if (err instanceof ApiError && err.code === 'ID_APPEAL_CLOSED') {
+        setDeclined((current) => (current ? { kind: current.kind, reason: current.reason } : current));
+        setAppealing(false);
+      }
+      setAppealError(err instanceof Error ? err.message : 'Could not send the appeal');
     }
   }
 
@@ -111,6 +159,81 @@ export function LoginPage() {
                 <span lang={copy.reasonLabel.lang}>{copy.reasonLabel.text}</span> {declined.reason}
               </p>
             )}
+            {appealUntil && (
+              <p className="mt-2">
+                <span lang={copy.appeal.until.lang}>{copy.appeal.until.text}</span>{' '}
+                <time dateTime={appealUntil.toISOString()} className="font-semibold">
+                  {appealUntil.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                </time>
+                .
+              </p>
+            )}
+          </div>
+        )}
+
+        {appealSent && (
+          <p
+            lang={copy.appeal.sent.lang}
+            className="rounded-sm border border-success-100 bg-success-50 px-4 py-3 text-sm text-success-700"
+            role="status"
+          >
+            {copy.appeal.sent.text}
+          </p>
+        )}
+
+        {appealError && !appealing && (
+          <p
+            className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700"
+            role="alert"
+          >
+            {appealError}
+          </p>
+        )}
+
+        {appealUntil && !appealing && !appealSent && (
+          <Button type="button" variant="secondary" onClick={() => setAppealing(true)}>
+            <span lang={copy.appeal.open.lang}>{copy.appeal.open.text}</span>
+          </Button>
+        )}
+
+        {appealUntil && appealing && (
+          <div className="space-y-3 rounded-md border border-hairline bg-surface p-4">
+            <div lang={copy.appeal.messageLabel.lang}>
+              <Textarea
+                label={copy.appeal.messageLabel.text}
+                hint={copy.appeal.messageHint.text}
+                error={appealError ?? undefined}
+                rows={5}
+                maxLength={APPEAL_MAX}
+                value={appealMessage}
+                onChange={(event) => {
+                  setAppealMessage(event.target.value);
+                  setAppealError(null);
+                }}
+              />
+            </div>
+            <p className="text-right text-xs text-ink-subtle" aria-live="polite">
+              {appealMessage.trim().length} / {APPEAL_MAX}
+            </p>
+            <p lang={copy.appeal.credentials.lang} className="text-sm text-ink-muted">
+              {copy.appeal.credentials.text}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" loading={appeal.isPending} onClick={() => void sendAppeal()}>
+                <span lang={copy.appeal.submit.lang}>{copy.appeal.submit.text}</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={appeal.isPending}
+                onClick={() => {
+                  setAppealing(false);
+                  setAppealError(null);
+                }}
+              >
+                <span lang={copy.appeal.cancel.lang}>{copy.appeal.cancel.text}</span>
+              </Button>
+            </div>
           </div>
         )}
 
