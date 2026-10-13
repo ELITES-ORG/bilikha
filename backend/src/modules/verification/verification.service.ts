@@ -49,6 +49,7 @@ export function ownView(row: IdVerification | null): OwnIdVerification | null {
     status: row.status,
     submitted: row.submittedAt !== null,
     reason: declined ? row.decisionReason : null,
+    decidedAt: row.decidedAt?.toISOString() ?? null,
   };
 }
 

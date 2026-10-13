@@ -122,6 +122,27 @@ describe('sign-in and the current user with ID verification', () => {
       status: 'declined_retry',
       submitted: true,
       reason: 'The back is unreadable.',
+      decidedAt: expect.any(String),
+    });
+  });
+
+  it('says when a verified ID was decided, and gives no reason', async () => {
+    const user = await account();
+    const decidedAt = new Date(Date.now() - 60 * 60 * 1000);
+    await makeIdVerification(user.id, {
+      status: 'verified',
+      submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      decidedAt,
+    });
+
+    const result = await login(user.username);
+
+    expect(result.status).toBe(200);
+    expect(result.body.data?.idVerification).toEqual({
+      status: 'verified',
+      submitted: true,
+      reason: null,
+      decidedAt: decidedAt.toISOString(),
     });
   });
 
@@ -144,6 +165,7 @@ describe('sign-in and the current user with ID verification', () => {
       status: 'pending',
       submitted: true,
       reason: null,
+      decidedAt: null,
     });
     expect(legacyLogin.body.data?.idVerification).toBeNull();
     for (const text of [pendingLogin.text, meText]) {

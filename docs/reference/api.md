@@ -266,9 +266,11 @@ Requires a valid session. Returns the same public user shape as login, including
 for review, which only its owner sees. `avatarRejectionReason` is set when the
 last new photo was not approved
 ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)).
-`idVerification` is `{ status, submitted, reason }`, or `null` for an account
-that needs no ID — every account that existed before ID verification. `reason`
-is set only when declined. Never an object key or a URL.
+`idVerification` is `{ status, submitted, reason, decidedAt }`, or `null` for
+an account that needs no ID — every account that existed before ID
+verification. `reason` is set only when declined. `decidedAt` is when the latest
+decision was made, or `null` while waiting; the app says "your ID is verified"
+for 7 days after it. Never an object key or a URL.
 
 `401` when unsigned-in or the session points at a deleted user. `401
 ID_DECLINED` when the account's ID was declined — the session ends with it.

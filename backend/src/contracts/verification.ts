@@ -44,6 +44,13 @@ export interface OwnIdVerification {
   submitted: boolean;
   /** The administrator's reason, only when declined. */
   reason: string | null;
+  /**
+   * When the latest decision was made, or null while waiting. Lets the account
+   * say "your ID is verified" for a while after it happens, and not forever.
+   * Optional for deployment skew (ADR 0040): an API from before it does not
+   * send it.
+   */
+  decidedAt?: string | null;
 }
 
 /**

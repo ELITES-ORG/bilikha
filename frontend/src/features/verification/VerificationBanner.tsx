@@ -1,15 +1,26 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CircleAlert, Clock3, IdCard } from 'lucide-react';
+import { BadgeCheck, CircleAlert, Clock3, IdCard, X } from 'lucide-react';
 import { Badge, Container } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { useI18n, type ResolvedMessage } from '@/i18n/i18n-context';
-import { ID_STEP_PATH, needsIdStep } from './status';
+import {
+  ID_STEP_PATH,
+  needsIdStep,
+  readVerifiedSeen,
+  rememberVerifiedSeen,
+  showVerifiedNotice,
+  verifiedNoticeKey,
+} from './status';
 
 /**
- * Where an account stands while its ID is not yet verified (ADR 0057), pinned
- * on every page by `PinnedBanners`. It cannot be dismissed: the account can only
- * browse until this goes away, and every page should say so.
+ * Where an account stands on its ID (ADR 0057), pinned on every page by
+ * `PinnedBanners`. While the ID is not yet verified it cannot be dismissed: the
+ * account can only browse until this goes away, and every page should say so.
+ *
+ * Once verified, it says so for a week, until closed: the "being verified"
+ * strip would otherwise just vanish, and a person who was waiting, or who
+ * appealed, should be told plainly that they are in.
  *
  * No verification at all — every account that existed before this shipped —
  * shows nothing.
@@ -18,9 +29,30 @@ export function VerificationBanner() {
   const { data: user } = useCurrentUser();
   const { message } = useI18n();
   const { pathname } = useLocation();
+  // The notice closed on this device, if any (a convenience; see status.ts).
+  const [seen, setSeen] = useState<string | null>(readVerifiedSeen);
   const verification = user?.idVerification;
 
   if (!verification) return null;
+
+  if (showVerifiedNotice(user, seen)) {
+    const key = verifiedNoticeKey(user)!;
+    return (
+      <Strip
+        tone="success"
+        icon={<BadgeCheck className="size-4" aria-hidden="true" />}
+        label={message('verification.banner.verified.label')}
+        text={message('verification.banner.verified.message')}
+        dismiss={{
+          label: message('verification.banner.verified.dismiss'),
+          onDismiss: () => {
+            rememberVerifiedSeen(key);
+            setSeen(key);
+          },
+        }}
+      />
+    );
+  }
 
   // On the ID step itself, the page is the explanation.
   if (pathname === ID_STEP_PATH && needsIdStep(user)) return null;
@@ -83,16 +115,20 @@ function Strip({
   label,
   text,
   action,
+  dismiss,
 }: {
-  tone: 'warning' | 'danger';
+  tone: 'warning' | 'danger' | 'success';
   icon: ReactNode;
   label: ResolvedMessage;
   text: ResolvedMessage;
   action?: ReactNode;
+  /** Only the verified notice can be closed: the others are the account's state. */
+  dismiss?: { label: ResolvedMessage; onDismiss: () => void };
 }) {
   const surfaces = {
     warning: 'border-warning-100 bg-warning-50 text-warning-700',
     danger: 'border-danger-100 bg-danger-50 text-danger-700',
+    success: 'border-success-100 bg-success-50 text-success-700',
   } as const;
 
   return (
@@ -107,6 +143,17 @@ function Strip({
           </p>
           {action && <p className="mt-1">{action}</p>}
         </div>
+        {dismiss && (
+          <button
+            type="button"
+            onClick={dismiss.onDismiss}
+            aria-label={dismiss.label.text}
+            lang={dismiss.label.lang}
+            className="-my-2 -mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-sm transition-colors hover:bg-success-100"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        )}
       </Container>
     </div>
   );
