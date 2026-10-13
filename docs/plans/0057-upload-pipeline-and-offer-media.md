@@ -61,7 +61,7 @@ upload pipeline that message attachments (#66) will reuse.
 | 3. The offer editor | 2 / 2 | Done |
 | 4. Players, badges and posters | 3 / 3 | Done |
 | 5. Review previews and the terms | 2 / 2 | Done |
-| 6. Rollout (reyxdz) | 0 / 6 | Not started |
+| 6. Rollout (reyxdz) | 0 / 6 | In progress: staging switch on, production waits for Pro |
 
 ---
 
@@ -262,7 +262,7 @@ Probe results:
 - [ ] **Verify.** `--check` exits 0 on both.
 
 ### Step 6.4 — Staging on
-- [ ] **Action.** Set `MEDIA_UPLOAD_KINDS=audio,video,document` on Render
+- [x] **Action.** Set `MEDIA_UPLOAD_KINDS=audio,video,document` on Render
   `bilikha`.
 - [ ] **Verify.** Each kind uploads and plays on staging, and plays on an
   iPhone.
@@ -272,8 +272,7 @@ Probe results:
 - [ ] **Verify.** The release checks in the guide pass.
 
 ### Step 6.6 — Production on
-- [ ] **Action.** Set the switch on Render `bilikha-production`. Accept ADR 0046.
-  Close #34.
+- [ ] **Action.** Set the switch on Render `bilikha-production`. Close #34.
 - [ ] **Verify.** Each kind uploads and plays on production.
 
 ## Acceptance
@@ -289,7 +288,7 @@ Probe results:
   video is refused before upload.
 - [ ] New media waits for review on a published offer, and a rejected change
   discards only its own files.
-- [ ] ADR 0046 is Accepted.
+- [x] ADR 0046 is Accepted (on staging, 2026-10-14).
 
 ## Follow-ups
 

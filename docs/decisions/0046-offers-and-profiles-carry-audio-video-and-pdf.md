@@ -1,6 +1,7 @@
 # 0046. Offers carry audio, video and PDF, through one checked upload pipeline
 
-- **Status:** Proposed
+- **Status:** Accepted (reyxdz, 2026-10-14). Live on staging; production
+  turns the new kinds on once it is on Supabase Pro.
 - **Date:** 2026-10-06, revised 2026-10-12
 - **Supersedes:** the images-only scope and free-tier budget of
   [0021](./0021-image-storage-and-upload-path.md). Its browser-side image
