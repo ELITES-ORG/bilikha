@@ -56,7 +56,7 @@ core key, shared.
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. First-load pages | 0 / 1 | Not started |
+| 1. First-load pages | 1 / 1 | Done |
 | 2. Lazy pages | 0 / 1 | Not started |
 | 3. Check and record | 0 / 2 | Not started |
 
@@ -66,9 +66,9 @@ core key, shared.
 
 ### Step 1.1 — Move their copy into `en.ts`
 
-- [ ] **Action.** Each string becomes a key in `catalogs/en.ts`, empty in
+- [x] **Action.** Each string becomes a key in `catalogs/en.ts`, empty in
   `fil.ts` and `war.ts`, read with `<Message k>`.
-- [ ] **Verify.** `catalogs.test.ts` key parity passes; the pages render the
+- [x] **Verify.** `catalogs.test.ts` key parity passes; the pages render the
   same English.
 
 ## Phase 2 — Lazy pages

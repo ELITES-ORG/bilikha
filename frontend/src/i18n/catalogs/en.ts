@@ -128,6 +128,44 @@ export const en = {
   'conversations.sent.video': 'Sent a video',
   'conversations.sent.document': 'Sent a PDF',
   'conversations.sent.files': 'Sent {count} files',
+
+  // Empty states on the pages every visitor can load first (plan 0059).
+  'common.tryAgain': 'Try again',
+  'directory.error.postings': 'Could not load postings',
+  'directory.error.offers': 'Could not load offers',
+  'directory.error.creatives': 'Could not load creatives',
+  'directory.empty.postingsTitle': 'No postings yet',
+  'directory.empty.postingsDescription': 'No postings match your sub-domains yet.',
+  'directory.empty.offersTitle': 'No offers here yet',
+  'directory.empty.offersDescription':
+    'No offers match these filters yet — try another filter, or browse creatives.',
+  'directory.empty.offersDescriptionGuest': 'Try another filter, or browse creatives instead.',
+  'directory.empty.browseCreatives': 'Browse creatives',
+  'directory.empty.creativesTitle': 'Nobody listed here yet',
+  'directory.empty.creativesDescription':
+    'No creatives match these filters yet — try another filter, or browse offers.',
+  'directory.empty.creativesInSubdomain': 'This sub-domain has no published creatives yet.',
+  'directory.empty.creativesInDomain': 'This domain has no published creatives yet.',
+  'directory.empty.creativesInMunicipality': 'No published creatives in that municipality yet.',
+  'directory.empty.creativesAnywhere':
+    'Published creatives will appear here as the registry grows.',
+  'directory.empty.browseOffers': 'Browse offers',
+  'offer.gone.title': 'This offer is no longer listed',
+  'offer.gone.description':
+    'It may have been removed by the creative. Others like it are in the directory.',
+  'offer.gone.browse': 'Browse the directory',
+  'offer.error.title': 'Could not load this offer',
+  'notifications.error.title': 'Could not load notifications',
+  'notifications.empty.title': 'Nothing yet',
+  'notifications.empty.description':
+    'When an administrator reviews your creative profile, or a creative replies to something you posted, it shows up here.',
+  'creative.services.emptyTitle': 'No services yet',
+  'creative.services.emptyDescription': 'No services added yet.',
+  'creative.portfolio.emptyTitle': 'No portfolio items yet',
+  'creative.portfolio.emptyDescription': 'Images added to offers appear here.',
+  'messages.pick.title': 'Select a conversation',
+  'messages.pick.description': 'Choose a thread on the left to read and reply.',
+  'home.domains.errorTitle': 'Could not load the domains',
 } as const;
 
 /**

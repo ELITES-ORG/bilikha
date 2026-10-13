@@ -46,6 +46,7 @@ import { effectiveViewMode } from '@/lib/view-mode';
 import { cn } from '@/lib/cn';
 import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
 import { useVerificationGate } from '@/features/verification/useVerificationGate';
+import { Message } from '@/i18n/Message';
 
 export function OfferDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -73,9 +74,13 @@ export function OfferDetailPage() {
       <main className={pbBottomNav}>
         <Container width="narrow" className="py-(--section-gap)">
           <EmptyState
-            title="This offer is no longer listed"
-            description="It may have been removed by the creative. Others like it are in the directory."
-            action={<ButtonLink to="/directory">Browse the directory</ButtonLink>}
+            title={<Message k="offer.gone.title" />}
+            description={<Message k="offer.gone.description" />}
+            action={
+              <ButtonLink to="/directory">
+                <Message k="offer.gone.browse" />
+              </ButtonLink>
+            }
           />
         </Container>
       </main>
@@ -187,11 +192,11 @@ export function OfferDetailPage() {
 
           {offer.isError && (
             <EmptyState
-              title="Could not load this offer"
+              title={<Message k="offer.error.title" />}
               description={offer.error.message}
               action={
                 <Button variant="secondary" size="sm" onClick={() => void offer.refetch()}>
-                  Try again
+                  <Message k="common.tryAgain" />
                 </Button>
               }
             />

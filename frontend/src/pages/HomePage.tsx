@@ -28,6 +28,7 @@ import { cn } from '@/lib/cn';
 import { LEGAL_CONTACT } from '@/lib/legal';
 import { normalizeSearch, SEARCH_MAX_LENGTH } from '@/lib/search-query';
 import { useRevealOnScroll } from '@/lib/use-reveal-on-scroll';
+import { Message } from '@/i18n/Message';
 
 const AnimatedStatIcon = lazy(() => import('@/components/animated-icons/AnimatedStatIcon'));
 const BiliranMap = lazy(() => import('@/components/biliran-map/BiliranMap'));
@@ -70,11 +71,11 @@ export function HomePage() {
             {domains.isError && (
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load the domains"
+                title={<Message k="home.domains.errorTitle" />}
                 description={domains.error.message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void domains.refetch()}>
-                    Try again
+                    <Message k="common.tryAgain" />
                   </Button>
                 }
               />
