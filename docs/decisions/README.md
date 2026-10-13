@@ -96,3 +96,4 @@ Number sequentially. Never renumber.
 | [0057](./0057-new-accounts-are-verified-with-a-biliran-id.md) | New accounts are verified with a photo of a Biliran ID | Accepted |
 | [0058](./0058-content-waits-for-approval-beside-what-is-public.md) | Offers and images wait for approval, beside what is already public | Accepted |
 | [0059](./0059-the-admin-area-is-organised-by-subject.md) | The admin area is organised by what is being decided | Accepted |
+| [0060](./0060-message-files-are-private-and-photos-audio-video-expire.md) | Message files are private, and photos, audio and video expire after 30 days | Accepted |
