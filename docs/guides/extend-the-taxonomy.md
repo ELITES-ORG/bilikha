@@ -117,7 +117,7 @@ Expressions → Artisans of Indigenous Crafts*. She searches `nagkukulit`,
 
 So a sub-domain carries **aliases**: everyday words, in Waray, Cebuano, Tagalog
 or English, that directory search also finds it by
-([issue #24](https://github.com/ELITES-ORG/bilikha/issues/24), plan 0057).
+([issue #24](https://github.com/ELITES-ORG/bilikha/issues/24), [plan 0058](../plans/0058-search-by-everyday-words.md)).
 
 **To add one:** Admin → Taxonomy, open the domain, press **Words** on the craft,
 type the word and **Add**. It takes effect on the next search, with no deploy.

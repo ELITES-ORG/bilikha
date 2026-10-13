@@ -11,7 +11,7 @@ import { toApiError } from '@/lib/api-client';
 import { AdminSection, adminListClass } from './admin-ui';
 
 /**
- * Everyday words for one craft (issue #24, plan 0057). Search matches them as
+ * Everyday words for one craft (issue #24, plan 0058). Search matches them as
  * it matches the craft's own name, by prefix and with a typo, so one spelling
  * of a word is enough. They are never shown to the public.
  */

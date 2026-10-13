@@ -109,7 +109,7 @@ Postings, the creative-mode directory, are not searchable yet.
 
 ## Amendment — 2026-10-12: everyday words (issue #24)
 
-Plan 0057 adds the alias table this ADR's consequences promised.
+[Plan 0058](../plans/0058-search-by-everyday-words.md) adds the alias table this ADR's consequences promised.
 
 - **Aliases attach to sub-domains**, many terms to one, and one term may sit on
   two. They are matched as one more way a word can match — through the same
