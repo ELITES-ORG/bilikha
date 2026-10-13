@@ -112,19 +112,26 @@ const TermsPage = lazy(() =>
 );
 
 const AccountPage = lazy(() =>
-  import('@/pages/account/AccountPage').then((m) => ({ default: m.AccountPage })),
+  import('@/pages/account/AccountPage')
+    .then(withSection('account'))
+    .then((m) => ({ default: m.AccountPage })),
 );
 const WorkPage = lazy(() =>
-  import('@/pages/account/WorkPage').then((m) => ({ default: m.WorkPage })),
+  import('@/pages/account/WorkPage')
+    .then(withSection('account'))
+    .then((m) => ({ default: m.WorkPage })),
 );
 // The offer editor's copy is a catalogue section of its own (ADR 0055).
 const OffersSettingsPage = lazy(() =>
   import('@/pages/account/OffersSettingsPage')
+    .then(withSection('account'))
     .then(withSection('offers'))
     .then((m) => ({ default: m.OffersSettingsPage })),
 );
 const ProfileSettingsPage = lazy(() =>
-  import('@/pages/account/ProfileSettingsPage').then((m) => ({ default: m.ProfileSettingsPage })),
+  import('@/pages/account/ProfileSettingsPage')
+    .then(withSection('account'))
+    .then((m) => ({ default: m.ProfileSettingsPage })),
 );
 const SecuritySettingsPage = lazy(() =>
   import('@/pages/account/SecuritySettingsPage').then((m) => ({ default: m.SecuritySettingsPage })),
@@ -141,13 +148,16 @@ const AgreementPage = lazy(() =>
 const ConversationPage = lazy(() =>
   import('@/pages/ConversationPage')
     .then(withSection('messages'))
+    .then(withSection('conversation'))
     .then((m) => ({ default: m.ConversationPage })),
 );
 const HistoryPage = lazy(() =>
   import('@/pages/HistoryPage').then((m) => ({ default: m.HistoryPage })),
 );
 const MyPostingsPage = lazy(() =>
-  import('@/pages/MyPostingsPage').then((m) => ({ default: m.MyPostingsPage })),
+  import('@/pages/MyPostingsPage')
+    .then(withSection('my-postings'))
+    .then((m) => ({ default: m.MyPostingsPage })),
 );
 const PostingComposePage = lazy(() =>
   import('@/pages/PostingComposePage').then((m) => ({ default: m.PostingComposePage })),

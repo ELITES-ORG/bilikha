@@ -57,7 +57,7 @@ core key, shared.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. First-load pages | 1 / 1 | Done |
-| 2. Lazy pages | 0 / 1 | Not started |
+| 2. Lazy pages | 1 / 1 | Done |
 | 3. Check and record | 0 / 2 | Not started |
 
 ---
@@ -75,11 +75,11 @@ core key, shared.
 
 ### Step 2.1 — Their copy in sections
 
-- [ ] **Action.** `catalogs/account/`, `catalogs/my-postings/` and
+- [x] **Action.** `catalogs/account/`, `catalogs/my-postings/` and
   `catalogs/conversation/`, each registered by its pages and loaded with
   `withSection` in `App.tsx`; the editor's strings join `catalogs/offers/`.
   Each section listed in `catalogs.test.ts` and `section-ownership.test.ts`.
-- [ ] **Verify.** `section-ownership.test.ts` passes: every key is read only
+- [x] **Verify.** `section-ownership.test.ts` passes: every key is read only
   where its section loads.
 
 ## Phase 3 — Check and record

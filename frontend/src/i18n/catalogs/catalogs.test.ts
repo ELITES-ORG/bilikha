@@ -26,6 +26,18 @@ import { enRegister } from './register/en';
 import { filRegister } from './register/fil';
 import { warRegister } from './register/war';
 import './register';
+import { enAccount } from './account/en';
+import { filAccount } from './account/fil';
+import { warAccount } from './account/war';
+import './account';
+import { enMyPostings } from './my-postings/en';
+import { filMyPostings } from './my-postings/fil';
+import { warMyPostings } from './my-postings/war';
+import './my-postings';
+import { enConversation } from './conversation/en';
+import { filConversation } from './conversation/fil';
+import { warConversation } from './conversation/war';
+import './conversation';
 import { resolveMessage, translate } from '../i18n-context';
 
 /**
@@ -45,6 +57,9 @@ const SETS = [
   ['organizations', enOrganizations, { fil: filOrganizations, war: warOrganizations }],
   ['verification', enVerification, { fil: filVerification, war: warVerification }],
   ['register', enRegister, { fil: filRegister, war: warRegister }],
+  ['account', enAccount, { fil: filAccount, war: warAccount }],
+  ['my-postings', enMyPostings, { fil: filMyPostings, war: warMyPostings }],
+  ['conversation', enConversation, { fil: filConversation, war: warConversation }],
 ] as const;
 
 const CATALOGS = SETS.flatMap(([set, english, translations]) =>

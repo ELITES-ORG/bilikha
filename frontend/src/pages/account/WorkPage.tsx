@@ -14,6 +14,8 @@ import { formatPesos } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { AccountPageHeading } from './AccountPageHeading';
+import '@/i18n/catalogs/account';
+import { Message } from '@/i18n/Message';
 
 function WorkGroup({
   title,
@@ -219,7 +221,7 @@ export function WorkPage() {
             <div className="mt-10">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load how your work is doing"
+                title={<Message k="account.error.work" />}
                 description={work.error.message}
               />
             </div>

@@ -68,6 +68,9 @@ export const enOffers = {
   'offers.media.kind.document': 'PDF',
   'offers.media.state.pendingAdd': 'Waiting for review',
   'offers.media.state.pendingRemove': 'Removal waiting for review',
+  'offers.editor.add': 'Add offer',
+  'offers.editor.emptyTitle': 'No offers yet',
+  'offers.editor.emptyDescription': 'Clients cannot hire what they cannot see priced.',
 } as const;
 
 export type OffersKey = keyof typeof enOffers;

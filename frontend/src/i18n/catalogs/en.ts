@@ -17,8 +17,11 @@
  * Adding a key here means adding it to `fil.ts` and `war.ts` with an empty
  * value. `catalogs.test.ts` fails if you forget.
  */
+import type { AccountKey } from './account/en';
+import type { ConversationKey } from './conversation/en';
 import type { LegalKey } from './legal/en';
 import type { MessagesKey } from './messages/en';
+import type { MyPostingsKey } from './my-postings/en';
 import type { OffersKey } from './offers/en';
 import type { OrganizationsKey } from './organizations/en';
 import type { VerificationKey } from './verification/en';
@@ -180,6 +183,9 @@ export type MessageKey =
   | OffersKey
   | OrganizationsKey
   | VerificationKey
-  | RegisterKey;
+  | RegisterKey
+  | AccountKey
+  | MyPostingsKey
+  | ConversationKey;
 
 export type Catalog = Readonly<Partial<Record<MessageKey, string>>>;

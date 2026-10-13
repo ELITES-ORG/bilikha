@@ -8,6 +8,8 @@ import { OfferEditor } from '@/features/offers/OfferEditor';
 import { cn } from '@/lib/cn';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { AccountPageHeading } from './AccountPageHeading';
+import '@/i18n/catalogs/account';
+import { Message } from '@/i18n/Message';
 
 export function OffersSettingsPage() {
   const profile = useOwnProfile();
@@ -40,7 +42,7 @@ export function OffersSettingsPage() {
             <div className="mt-10">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load your profile"
+                title={<Message k="account.error.profile" />}
                 description={profile.error.message}
               />
             </div>
