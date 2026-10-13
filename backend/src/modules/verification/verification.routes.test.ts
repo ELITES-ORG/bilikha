@@ -139,7 +139,7 @@ describe('/api/v1/verification', () => {
       const result = await post(user.cookie, '/submission', body);
 
       expect(result.status).toBe(200);
-      expect(result.data).toEqual({ status: 'pending', submitted: true, reason: null });
+      expect(result.data).toEqual({ status: 'pending', submitted: true, reason: null, decidedAt: null });
       expect(JSON.stringify(result)).not.toContain('ids/');
 
       const [after] = await db.select().from(idVerifications).where(eq(idVerifications.id, row.id));

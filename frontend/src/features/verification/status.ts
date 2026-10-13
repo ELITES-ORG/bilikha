@@ -87,6 +87,71 @@ export function clearDeclineNotice(store: StorageLike | null = defaultStore()): 
   }
 }
 
+/* --- "Your ID is verified" (ADR 0057) ------------------------------------- */
+
+/** How long after the decision the account is told its ID is verified. */
+export const VERIFIED_NOTICE_MS = 7 * 24 * 60 * 60 * 1000;
+
+const VERIFIED_SEEN_KEY = 'bilikha:id-verified-seen';
+
+/**
+ * Which decision a closed notice was for: the account and the moment it was
+ * verified. A later verification — after a changed decision — is a new one.
+ */
+export function verifiedNoticeKey(user: AuthUser | null | undefined): string | null {
+  const verification = user?.idVerification;
+  if (!user || verification?.status !== 'verified' || !verification.decidedAt) return null;
+  return `${user.id}:${verification.decidedAt}`;
+}
+
+/**
+ * Whether to say "your ID is verified": a verified ID, decided within the last
+ * 7 days, not yet closed on this device. Never for an account that needed no
+ * verification, and never from an API too old to say when it was decided.
+ */
+export function showVerifiedNotice(
+  user: AuthUser | null | undefined,
+  seen: string | null,
+  now: Date = new Date(),
+): boolean {
+  const key = verifiedNoticeKey(user);
+  if (!key || key === seen) return false;
+  const decidedAt = new Date(user!.idVerification!.decidedAt!).getTime();
+  if (Number.isNaN(decidedAt)) return false;
+  return now.getTime() - decidedAt < VERIFIED_NOTICE_MS;
+}
+
+function localStore(): StorageLike | null {
+  try {
+    return typeof window === 'undefined' ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** The notice last closed on this device, if any. */
+export function readVerifiedSeen(store: StorageLike | null = localStore()): string | null {
+  if (!store) return null;
+  try {
+    return store.getItem(VERIFIED_SEEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Remembers a closed notice on this device. A convenience only: where storage
+ * is unavailable, the notice closes for this visit and the 7 days still end it.
+ */
+export function rememberVerifiedSeen(key: string, store: StorageLike | null = localStore()): void {
+  if (!store) return;
+  try {
+    store.setItem(VERIFIED_SEEN_KEY, key);
+  } catch {
+    // Closed for this visit; the 7 days end it anyway.
+  }
+}
+
 /** The appeal message's length, as the API checks it (plan 0053 Step 4.2). */
 export const APPEAL_MIN = 20;
 export const APPEAL_MAX = 1000;

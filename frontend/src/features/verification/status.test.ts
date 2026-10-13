@@ -7,6 +7,10 @@ import {
   appealFormProblem,
   appealOpenUntil,
   clearDeclineNotice,
+  readVerifiedSeen,
+  rememberVerifiedSeen,
+  showVerifiedNotice,
+  verifiedNoticeKey,
   ID_STEP_PATH,
   isBrowseOnly,
   needsIdStep,
@@ -140,6 +144,44 @@ describe('the decline notice for the sign-in screen', () => {
   it('works without storage at all', () => {
     expect(() => storeDeclineNotice({ kind: 'final', reason: 'x' }, null)).not.toThrow();
     expect(readDeclineNotice(null)).toBeNull();
+  });
+});
+
+describe('"your ID is verified"', () => {
+  const now = new Date('2026-10-13T08:00:00.000Z');
+  const decidedAt = '2026-10-12T08:00:00.000Z';
+  const justVerified = user({ status: 'verified', submitted: true, reason: null, decidedAt });
+
+  it('shows for a week after the ID is verified', () => {
+    expect(showVerifiedNotice(justVerified, null, now)).toBe(true);
+    const longAgo = user({ status: 'verified', submitted: true, reason: null, decidedAt: '2026-10-05T08:00:00.000Z' });
+    expect(showVerifiedNotice(longAgo, null, now)).toBe(false);
+  });
+
+  it('never shows while waiting, after a decline, for an account that needed none, or without a date', () => {
+    for (const verification of [waiting, retry, null, verified]) {
+      expect(showVerifiedNotice(user(verification), null, now)).toBe(false);
+    }
+    expect(showVerifiedNotice(user({ ...verified, decidedAt: 'not a date' }), null, now)).toBe(false);
+    expect(showVerifiedNotice(null, null, now)).toBe(false);
+  });
+
+  it('stays closed once closed, until a later decision verifies it again', () => {
+    const key = verifiedNoticeKey(justVerified)!;
+    expect(showVerifiedNotice(justVerified, key, now)).toBe(false);
+
+    const again = user({ status: 'verified', submitted: true, reason: null, decidedAt: '2026-10-13T07:00:00.000Z' });
+    expect(showVerifiedNotice(again, key, now)).toBe(true);
+  });
+
+  it('remembers the closed notice on the device, and works without storage', () => {
+    const store = memoryStore();
+    expect(readVerifiedSeen(store)).toBeNull();
+    rememberVerifiedSeen('u1:2026-10-12T08:00:00.000Z', store);
+    expect(readVerifiedSeen(store)).toBe('u1:2026-10-12T08:00:00.000Z');
+
+    expect(() => rememberVerifiedSeen('x', null)).not.toThrow();
+    expect(readVerifiedSeen(null)).toBeNull();
   });
 });
 
