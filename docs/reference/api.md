@@ -1680,21 +1680,31 @@ and never keeps its own copy. MB is 1,000,000 bytes.
         "audio":    { "enabled": false, "maxBytes": 15000000,  "maxPickedBytes": null, "maxDurationSeconds": 600, "mimeTypes": ["audio/mpeg", "audio/mp4", "audio/aac", "audio/ogg"], "perTarget": 5, "transport": "tus" },
         "video":    { "enabled": false, "maxBytes": 300000000, "maxPickedBytes": null, "maxDurationSeconds": 300, "mimeTypes": ["video/mp4", "video/webm"], "perTarget": 2, "transport": "tus" },
         "document": { "enabled": false, "maxBytes": 10000000,  "maxPickedBytes": null, "maxDurationSeconds": null, "mimeTypes": ["application/pdf"], "perTarget": 3, "transport": "tus" }
+      },
+      "message": {
+        "image":    { "enabled": false, "maxBytes": 2000000,   "maxPickedBytes": 20000000, "maxDurationSeconds": null, "mimeTypes": ["image/webp", "image/jpeg"], "perTarget": 5, "transport": "put" },
+        "audio":    { "enabled": false, "maxBytes": 15000000,  "maxPickedBytes": null, "maxDurationSeconds": 600, "mimeTypes": ["audio/mpeg", "audio/mp4", "audio/aac", "audio/ogg"], "perTarget": 5, "transport": "tus" },
+        "video":    { "enabled": false, "maxBytes": 100000000, "maxPickedBytes": null, "maxDurationSeconds": 180, "mimeTypes": ["video/mp4", "video/webm"], "perTarget": 5, "transport": "tus" },
+        "document": { "enabled": false, "maxBytes": 10000000,  "maxPickedBytes": null, "maxDurationSeconds": null, "mimeTypes": ["application/pdf"], "perTarget": 5, "transport": "tus" }
       }
-    }
+    },
+    "filesPerMessage": 5
   }
 }
 ```
 
-Images are always enabled; the other kinds as `MEDIA_UPLOAD_KINDS` says
-([environment](./environment.md)).
+For offers, images are always enabled and the other kinds as
+`MEDIA_UPLOAD_KINDS` says; for messages, every kind or none, as
+`MESSAGE_ATTACHMENTS` says ([environment](./environment.md),
+[ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md)).
+`filesPerMessage` caps a message's files, of any kinds.
 
 ### `GET /api/v1/media/usage`
 
 `{ data: { usedBytes, reservedBytes, quotaBytes } }`. `usedBytes` sums the sizes
 recorded on the creative's offers (images from before the pipeline count as 0);
-`reservedBytes` sums the caller's unexpired reservations. Zeros for an account
-with no creative profile.
+`reservedBytes` sums the caller's unexpired offer reservations; a message's do
+not count. Zeros for an account with no creative profile.
 
 ### `POST /api/v1/media/uploads`
 
@@ -1713,6 +1723,11 @@ per user per hour, shared with avatars, organisation logos and ID photos).
 }
 ```
 
+For a file in a message, `"destination": "message"` and `"conversationId":
+"<uuid>"` replace `offerId`. The caller must be in the conversation and not
+blocked by the other person; keys go under `messages/{conversationId}/` in the
+private message buckets.
+
 `201`. An image answers with two signed `PUT` URLs:
 
 ```jsonc
@@ -1730,20 +1745,23 @@ its size was declared:
             "poster": { "uploadUrl", "objectKey" } } }
 ```
 
-The reservation counts toward the quota and the offer's per-kind limit until it
-is attached, abandoned, or expires after 24 hours. Checks run in this order; the
+The reservation counts toward the quota and the offer's per-kind limit (or a
+message's five files) until it is attached, abandoned, or expires after 24
+hours. Checks run in this order; the
 first failure answers:
 
 | Code | Status | Message | `details` |
 |---|---|---|---|
 | `FORBIDDEN` | 403 | A creative profile is required to manage offers | — |
-| `NOT_FOUND` | 404 | No such offer. | — |
+| `NOT_FOUND` | 404 | No such offer. / No such conversation. | — |
+| `FORBIDDEN` | 403 | This message cannot be delivered. (the other person blocked the caller) | — |
 | `MEDIA_KIND_DISABLED` | 403 | This kind of file can't be uploaded yet. | `{ enabledKinds }` |
 | `MEDIA_TYPE_NOT_ALLOWED` | 422 | This file type isn't allowed. | `{ mimeTypes }` |
 | `MEDIA_TOO_LARGE` | 422 | This file is too large. | `{ maxBytes }` |
 | `MEDIA_TOO_LONG` | 422 | This recording is too long. | `{ maxDurationSeconds }` |
 | `MEDIA_LIMIT_REACHED` | 409 | This offer already has as many of these as it can hold. | `{ perTarget }` |
 | `MEDIA_QUOTA_EXCEEDED` | 409 | Your storage is full. Remove something first. | `{ quotaBytes }` |
+| `MEDIA_MESSAGE_FULL` | 409 | A message can carry at most 5 files. | `{ filesPerMessage }` |
 | `RATE_LIMITED` | 429 | — | — |
 
 Attaching an upload checks what storage holds against the ticket, and answers
