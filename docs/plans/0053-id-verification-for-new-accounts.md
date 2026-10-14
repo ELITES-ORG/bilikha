@@ -111,7 +111,7 @@ as long as it takes, and its images are kept while it waits.
 | 2. Account side | 9 / 9 | Done |
 | 3. Admin review and retention | 7 / 7 | Done |
 | 4. Reversal and appeals | 5 / 5 | Done |
-| 5. Switch on | 0 / 5 | Not started |
+| 5. Switch on | 3 / 5 | In progress — Steps 5.4 (the pull request's rollout notes) and 5.5 (staging, a real phone) outstanding |
 
 ---
 
@@ -775,28 +775,70 @@ Branch `feat/id-verification-signup`. **Merge only after the private bucket
 exists, with its limits, on staging and production, and production is on an
 always-on Render instance** (Prerequisites).
 
+**Built as (2026-10-15).** Differences from the steps below, found in the code:
+
+- **The privacy keys live in `frontend/src/i18n/catalogs/legal/en.ts`**, not
+  `catalogs/en.ts` as Step 5.3 says (they moved after this plan was written).
+- **Registration always writes the row,** even where ID storage is not ready:
+  skipping it would silently switch verification off on a misconfigured
+  server. Without the bucket the ID step says it is unavailable and the person
+  can still browse.
+- **Registration goes to `/welcome/id?next=/welcome?next=<where they were>`**
+  (`afterRegistrationPath`). The ID step needed no notion of registration: it
+  leaves for its `next`, which is the intent question here, and the original
+  destination after a *try again*. "Step 1 of 3" shows only on that way to the
+  intent question (`inRegistrationFlow`), never on a resubmission.
+- **Every new account is still waiting when it reaches the intent question,**
+  so the creative choice cannot lead to a form that cannot be sent. It says the
+  profile can be set up once the ID is verified, and continues like the hire
+  choice. The "ID verified" banner gains **Set up your creative profile** for
+  an account without one. Profile setup shows its browse-only note above the
+  form, not under it.
+- **The intent and profile counters stay hard-coded English,** like the rest
+  of those two pages, which have never been in the catalogue; only the ID
+  step's counter is a key (`idStep.step`). `register.intro` is blank in `fil`
+  and `war`: both promised the creative step next (ADR 0055, no machine
+  translation).
+- **The privacy notice also changed where it had become wrong:** what is
+  collected, what is never published, what administrators see, and how long
+  things are kept. Its new section says an administrator *is told* when the
+  same ID number is on another account, which is what the code does; the ID
+  step's consent sentence says such an ID "cannot be used to register again",
+  which overstates it — left for a reviewed wording change. The terms gained
+  `terms.who.id`: Bilikha is for people from Biliran.
+- **The first administrator on a fresh local database cannot verify their own
+  ID** (nobody decides their own); the admin area is not behind the ID gate,
+  so they can review everyone else's. `local-setup.md` says how to verify them
+  locally.
+- **The sign-in screen keeps `next`** when it sends an account to the ID step.
+- **The privacy notice's ID section is a labelled list** in plain words — no
+  company or technical names (a test keeps them out); who stores data is named
+  once, under "Who else can see your data". Both legal pages gained an "On this
+  page" list in the margin on wide screens (`LegalLayout`), read off the page's
+  own sections; the text keeps its reading width at every size.
+
 ### Step 5.1 — Registration writes the first row
 
-- [ ] **Action.** `registerUser` in `backend/src/modules/auth/auth.service.ts`
+- [x] **Action.** `registerUser` in `backend/src/modules/auth/auth.service.ts`
       inserts the user and its `pending` row in one `db.transaction`, and builds
       the returned `PublicUser` **after** the commit (inside it, `toPublicUser`
       reads through `db` and would not see the row).
-- [ ] **Verify.** Route tests: registering creates exactly one pending,
+- [x] **Verify.** Route tests: registering creates exactly one pending,
       unsubmitted row and the response shows it; a duplicate username creates
       no row.
 
 ### Step 5.2 — Onboarding goes through the ID step
 
-- [ ] **Action.** `frontend/src/pages/RegisterPage.tsx` navigates to
+- [x] **Action.** `frontend/src/pages/RegisterPage.tsx` navigates to
       `/welcome/id`, carrying `?next`; its intro copy no longer promises the
       creative step next. Step counters: ID 1 of 3 (`IdStepPage`), intent 2 of 3
       (`IntentPage.tsx`), profile 3 of 3 (`ProfileSetupPage.tsx`). The intent
       page's creative path explains it unlocks after verification.
-- [ ] **Verify.** A new registration at 375px lands on the ID step, then intent.
+- [x] **Verify.** A new registration at 375px lands on the ID step, then intent.
 
 ### Step 5.3 — The privacy notice
 
-- [ ] **Action.** Add an ID section to the privacy notice. Its words are
+- [x] **Action.** Add an ID section to the privacy notice. Its words are
       catalogue keys in the `privacy.*` block of
       `frontend/src/i18n/catalogs/en.ts`, with empty `fil`/`war` entries, read
       through `LegalSection` and `LegalText` in
@@ -813,7 +855,7 @@ always-on Render instance** (Prerequisites).
       `frontend/src/lib/legal.ts`, and bump `CONSENT_VERSION` in both
       `frontend/src/lib/legal.ts` and `backend/src/modules/auth/auth.service.ts`
       to the release date (Decided 4).
-- [ ] **Verify.** The retention sentence reads the same on the ID step and in
+- [x] **Verify.** The retention sentence reads the same on the ID step and in
       the notice; a new registration stores the new `CONSENT_VERSION`.
 
 ### Step 5.4 — Rollout notes

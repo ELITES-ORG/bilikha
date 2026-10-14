@@ -118,10 +118,12 @@ and UI primitive on one page. It is not linked from the product.
 
 ---
 
-## 6. Image and ID storage (optional)
+## 6. Image and ID storage
 
-Everything above works without storage; images are simply disabled. To work on
-uploads, point `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env`
+Without storage, images are disabled and **a newly registered account cannot
+get past the ID step**: registration starts ID verification, and the ID photo
+has nowhere to go. Accounts that existed before, and public pages, work as
+usual. To register new accounts locally, or to work on uploads, point `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env`
 at a Supabase project — a hosted one, or a local one from the Supabase CLI
 (`supabase start`, API on `http://127.0.0.1:54321`).
 
@@ -158,6 +160,23 @@ Supabase Studio's Storage page does the same: public **off**, file size limit
 **10 MB**, allowed types `image/webp, image/jpeg`, no policies. Booting the API
 without it logs a warning naming the bucket. `media`, if the project lacks it,
 is the same request with `id: 'media', name: 'media', public: true`.
+
+**Every account registered locally needs it.** Registration starts ID
+verification, so a new account goes to the ID step and can only browse until
+an administrator verifies its ID. Accounts that existed before are never asked.
+
+**The first administrator on a fresh database cannot verify their own ID**: an
+administrator never decides their own. Once their own ID is sent they can still
+review everyone else's, because the admin area is not behind the ID gate.
+Verify them with a second administrator, or locally only, from `backend/`
+(the URL comes from `.env`, which `psql` does not read):
+
+```bash
+psql "$(grep '^DATABASE_URL=' .env | cut -d= -f2-)" -c "update id_verifications set status = 'verified', decided_at = now() where user_id = (select id from users where username = 'YOUR_USERNAME') and status = 'pending';"
+```
+
+Never do this on staging or production: there, every verification goes through
+the review, which records who decided and why.
 
 ---
 

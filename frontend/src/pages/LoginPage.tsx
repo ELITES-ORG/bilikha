@@ -21,7 +21,7 @@ import {
   appealFormProblem,
   appealOpenUntil,
   clearDeclineNotice,
-  ID_STEP_PATH,
+  idStepPathFor,
   needsIdStep,
   readDeclineNotice,
 } from '@/features/verification/status';
@@ -88,7 +88,7 @@ export function LoginPage() {
     try {
       const user = await login.mutateAsync({ username, password });
       // An ID still owed comes before anywhere else (ADR 0057).
-      const destination = needsIdStep(user) ? ID_STEP_PATH : next;
+      const destination = needsIdStep(user) ? idStepPathFor(next) : next;
       const shown = playTransition('bloom', destination, { label: SESSION_LABEL, origin, replace: true });
       if (!shown) void navigate(destination, { replace: true });
     } catch (err) {

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '../../db/index.js';
-import { barangays, creativeProfiles, municipalities, users } from '../../db/schema/index.js';
+import { barangays, creativeProfiles, idVerifications, municipalities, users } from '../../db/schema/index.js';
 import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isReservedUsername, normalizeUsername } from '../../lib/username.js';
@@ -21,8 +21,11 @@ export type { PublicUser } from '../../contracts/auth.js';
  *  `frontend/src/lib/legal.ts`. It moved to 2026-10-13 when the terms began
  *  listing audio, video and PDF on offers, and saying uploads must be the
  *  uploader's own work or theirs to share, and the privacy notice began saying
- *  that searches which find nothing are counted (issue #24). */
-export const CONSENT_VERSION = '2026-10-13';
+ *  that searches which find nothing are counted (issue #24). It moved to
+ *  2026-10-15 when new accounts began adding a photo of their ID: the privacy
+ *  notice gained its ID section, and the terms say Bilikha is for people from
+ *  Biliran (ADR 0057, plan 0053 Phase 5). */
+export const CONSENT_VERSION = '2026-10-15';
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);
@@ -62,35 +65,45 @@ export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const passwordHash = await hashPassword(input.password);
   const now = new Date();
 
+  // The account and its first ID verification row, together: a new account is
+  // browse-only from its first request until its ID is verified (ADR 0057).
+  // Accounts from before this have no row, which means none is required.
+  let user: typeof users.$inferSelect;
   try {
-    const [user] = await db
-      .insert(users)
-      .values({
-        username: input.username.trim(),
-        usernameNormalized,
-        email: input.email.trim(),
-        emailNormalized,
-        phone,
-        passwordHash,
-        firstName: input.firstName,
-        middleName: input.middleName ?? null,
-        lastName: input.lastName,
-        suffix: input.suffix ?? null,
-        birthDate: input.birthDate.toISOString().slice(0, 10),
-        municipalityId: municipality.id,
-        barangayId: barangay.id,
-        privacyConsentAt: now,
-        termsAcceptedAt: now,
-        consentVersion: CONSENT_VERSION,
-      })
-      .returning();
+    user = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(users)
+        .values({
+          username: input.username.trim(),
+          usernameNormalized,
+          email: input.email.trim(),
+          emailNormalized,
+          phone,
+          passwordHash,
+          firstName: input.firstName,
+          middleName: input.middleName ?? null,
+          lastName: input.lastName,
+          suffix: input.suffix ?? null,
+          birthDate: input.birthDate.toISOString().slice(0, 10),
+          municipalityId: municipality.id,
+          barangayId: barangay.id,
+          privacyConsentAt: now,
+          termsAcceptedAt: now,
+          consentVersion: CONSENT_VERSION,
+        })
+        .returning();
+      if (!created) throw new Error('User insert returned no row');
 
-    if (!user) throw new Error('User insert returned no row');
-
-    return await toPublicUser(user, null);
+      await tx.insert(idVerifications).values({ userId: created.id, status: 'pending' });
+      return created;
+    });
   } catch (error) {
     throw translateUniqueViolation(error);
   }
+
+  // After the commit: toPublicUser reads through `db`, which inside the
+  // transaction would not see the new row.
+  return toPublicUser(user, null);
 }
 
 /**

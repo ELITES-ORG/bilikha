@@ -14,6 +14,7 @@ import {
 import { Button, ButtonLink, Eyebrow, Input, Select } from '@/components/ui';
 import { toApiError } from '@/lib/api-client';
 import { withNextParam } from '@/lib/return-path';
+import { afterRegistrationPath } from '@/features/verification/status';
 import '@/i18n/catalogs/register';
 import { useI18n } from '@/i18n/i18n-context';
 
@@ -165,7 +166,8 @@ export function RegisterPage() {
         termsAccepted: true,
       });
       clearDraft();
-      const welcome = withNextParam('/welcome', nextRaw);
+      // The ID step first, then the intent question (ADR 0057, plan 0053 Step 5.2).
+      const welcome = afterRegistrationPath(nextRaw);
       if (!playTransition('bloom', welcome, { label: SESSION_LABEL, origin })) void navigate(welcome);
     } catch (error) {
       const mapped = toFieldErrors(error);

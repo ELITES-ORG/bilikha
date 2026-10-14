@@ -67,6 +67,7 @@ export const war: Catalog = {
   'verification.banner.verified.label': '',
   'verification.banner.verified.message': '',
   'verification.banner.verified.dismiss': '',
+  'verification.banner.verified.action': '',
   'verification.reasonLabel': '',
   'signIn.declined.retry': '',
   'signIn.declined.final': '',

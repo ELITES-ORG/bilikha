@@ -15,6 +15,8 @@
  */
 export const enVerification = {
   'idStep.eyebrow': 'Verify your ID',
+  // In place of the eyebrow during registration: ID, then intent, then profile.
+  'idStep.step': 'Step 1 of 3',
   'idStep.heading': 'Show that you are from Biliran',
   'idStep.intro':
     'Bilikha is for people from Biliran. Add a photo of an ID that shows a Biliran address or was issued in Biliran. An administrator checks it; until then you can browse offers and creatives.',

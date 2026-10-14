@@ -1,16 +1,25 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { Container, Eyebrow } from '@/components/ui';
+import { useCurrentUser } from '@/features/auth/api';
+import { isBrowseOnly } from '@/features/verification/status';
 import { safeReturnPath, withNextParam } from '@/lib/return-path';
 
 /**
- * Immediate post-registration intent step. One question, two exits —
- * no dashboard, no stats, no wandering navigation.
+ * Immediate post-registration intent step, after the ID step. One question,
+ * two exits — no dashboard, no stats, no wandering navigation.
+ *
+ * Right after registering the ID is still being checked, so a creative profile
+ * cannot be saved yet (ADR 0057). Rather than open a form that cannot be sent,
+ * the creative choice says so and continues; the "ID verified" banner links to
+ * profile setup once it can be.
  */
 export function IntentPage() {
   const [searchParams] = useSearchParams();
+  const { data: user } = useCurrentUser();
   const next = safeReturnPath(searchParams.get('next'), '');
   const hireTo = next || '/directory';
-  const offerTo = withNextParam('/welcome/profile', next || null);
+  const waitingForId = isBrowseOnly(user);
+  const offerTo = waitingForId ? hireTo : withNextParam('/welcome/profile', next || null);
 
   return (
     <div className="min-h-page bg-paper">
@@ -24,7 +33,7 @@ export function IntentPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <Eyebrow>Step 1 of 2</Eyebrow>
+          <Eyebrow>Step 2 of 3</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             What brings you to Bilikha?
           </h1>
@@ -52,7 +61,9 @@ export function IntentPage() {
                 I want to offer my creative work
               </span>
               <span className="mt-1 block text-sm text-ink-muted">
-                Continue into profile setup — your listing is reviewed before it appears.
+                {waitingForId
+                  ? 'You can set up your creative profile once your ID is verified. We’ll show you where when it is.'
+                  : 'Continue into profile setup — your listing is reviewed before it appears.'}
               </span>
             </Link>
           </div>
