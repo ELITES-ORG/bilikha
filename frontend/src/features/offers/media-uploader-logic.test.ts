@@ -30,12 +30,20 @@ const kind = (overrides: Partial<KindLimitView>): KindLimitView => ({
 function limits(enabled: MediaKind[]): MediaLimits {
   return {
     quotaBytes: 1_000 * MB,
+    filesPerMessage: 5,
     destinations: {
       offer: {
         image: kind({ maxBytes: 2 * MB, maxPickedBytes: 20 * MB, mimeTypes: ['image/webp', 'image/jpeg'], perTarget: 10, transport: 'put' }),
         audio: kind({ enabled: enabled.includes('audio'), maxBytes: 15 * MB, maxDurationSeconds: 600, mimeTypes: ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/ogg'], perTarget: 5 }),
         video: kind({ enabled: enabled.includes('video'), maxBytes: 300 * MB, maxDurationSeconds: 300, mimeTypes: ['video/mp4', 'video/webm'], perTarget: 2 }),
         document: kind({ enabled: enabled.includes('document'), mimeTypes: ['application/pdf'], perTarget: 3 }),
+      },
+      // Messages are not an offer's concern; switched off here.
+      message: {
+        image: kind({ enabled: false, transport: 'put' }),
+        audio: kind({ enabled: false }),
+        video: kind({ enabled: false }),
+        document: kind({ enabled: false }),
       },
     },
   };

@@ -1,8 +1,9 @@
 /**
  * Lists every object in the four offer buckets (images, audio, video,
- * documents), compares against keys referenced by users.avatar_key and
- * avatar_pending_key, organizations.logo_key and logo_pending_key, offer_images,
- * and unexpired upload reservations, and reports (or deletes with --delete)
+ * documents) and the four private message buckets, compares against keys
+ * referenced by users.avatar_key and avatar_pending_key, organizations.logo_key
+ * and logo_pending_key, offer_images, message_attachments, and unexpired upload
+ * reservations, and reports (or deletes with --delete)
  * objects older than 24 hours that no row references. With --delete it first
  * removes expired reservations, so their objects count as orphans.
  *
@@ -15,12 +16,13 @@
  */
 import { gt, lte } from 'drizzle-orm';
 import { env } from '../config/env.js';
+import type { UploadDestination } from '../contracts/media.js';
 import { db, closeDatabase } from '../db/index.js';
-import { mediaUploads, offerImages, organizations, users } from '../db/schema/index.js';
+import { mediaUploads, messageAttachments, offerImages, organizations, users } from '../db/schema/index.js';
 import { AppError } from '../lib/http-error.js';
 import { deleteObject, listObjects, type StoredObject } from '../lib/storage.js';
 import { storageBelongsToDatabase } from '../lib/storage-safety.js';
-import { MEDIA_KINDS, bucketFor } from '../modules/media/media.limits.js';
+import { MEDIA_KINDS, UPLOAD_LIMITS, bucketFor } from '../modules/media/media.limits.js';
 
 const AGE_MS = 24 * 60 * 60 * 1000;
 
@@ -59,7 +61,7 @@ async function main() {
     console.log(`Deleted ${expired.length} expired upload reservation(s).`);
   }
 
-  const [avatarRows, logoRows, itemRows, reservationRows] = await Promise.all([
+  const [avatarRows, logoRows, itemRows, attachmentRows, reservationRows] = await Promise.all([
     // Pending photos and logos are referenced too: they wait for review (ADR 0058).
     db.select({ key: users.avatarKey, pending: users.avatarPendingKey }).from(users),
     db.select({ key: organizations.logoKey, pending: organizations.logoPendingKey }).from(organizations),
@@ -67,7 +69,19 @@ async function main() {
       .select({ kind: offerImages.kind, objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
       .from(offerImages),
     db
-      .select({ bucket: mediaUploads.bucket, objectKey: mediaUploads.objectKey, thumbKey: mediaUploads.thumbKey })
+      .select({
+        kind: messageAttachments.kind,
+        objectKey: messageAttachments.objectKey,
+        thumbKey: messageAttachments.thumbKey,
+      })
+      .from(messageAttachments),
+    db
+      .select({
+        destination: mediaUploads.destination,
+        bucket: mediaUploads.bucket,
+        objectKey: mediaUploads.objectKey,
+        thumbKey: mediaUploads.thumbKey,
+      })
       .from(mediaUploads)
       .where(gt(mediaUploads.expiresAt, new Date(now))),
   ]);
@@ -82,14 +96,20 @@ async function main() {
     addReference(referenced, bucketFor(row.kind), row.objectKey);
     addReference(referenced, mediaBucket, row.thumbKey);
   }
+  // A message's thumbnail or poster lives in the private message image bucket.
+  for (const row of attachmentRows) {
+    addReference(referenced, bucketFor(row.kind, 'message'), row.objectKey);
+    addReference(referenced, bucketFor('image', 'message'), row.thumbKey);
+  }
   for (const row of reservationRows) {
     addReference(referenced, row.bucket, row.objectKey);
-    addReference(referenced, mediaBucket, row.thumbKey);
+    addReference(referenced, bucketFor('image', row.destination), row.thumbKey);
   }
 
-  const buckets = [...new Set(MEDIA_KINDS.map((kind) => bucketFor(kind)))].filter(
-    (bucket) => bucket !== env.SUPABASE_ID_BUCKET,
-  );
+  const destinations = Object.keys(UPLOAD_LIMITS) as UploadDestination[];
+  const buckets = [
+    ...new Set(destinations.flatMap((destination) => MEDIA_KINDS.map((kind) => bucketFor(kind, destination)))),
+  ].filter((bucket) => bucket !== env.SUPABASE_ID_BUCKET);
 
   const orphans: Array<{ bucket: string; object: StoredObject }> = [];
   for (const bucket of buckets) {

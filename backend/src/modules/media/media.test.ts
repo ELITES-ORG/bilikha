@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { createApp } from '../../app.js';
 import { env } from '../../config/env.js';
 import { db } from '../../db/index.js';
-import { mediaUploads, offerImages } from '../../db/schema/index.js';
+import { mediaUploads, offerImages, userBlocks } from '../../db/schema/index.js';
 import type { MediaLimits, UploadTicket } from '../../contracts/media.js';
 import { hashPassword } from '../../lib/password.js';
 import {
@@ -16,7 +16,7 @@ import {
   storedObject,
   type StoredObject,
 } from '../../lib/storage.js';
-import { makeCreative, makeOffer, makeUser, PASSWORD } from '../../test/factories.js';
+import { makeConversation, makeCreative, makeOffer, makeUser, PASSWORD } from '../../test/factories.js';
 import { verifyReservation } from './media.service.js';
 
 /**
@@ -50,6 +50,7 @@ const original = {
   url: env.SUPABASE_URL,
   key: env.SUPABASE_SERVICE_ROLE_KEY,
   kinds: env.MEDIA_UPLOAD_KINDS,
+  messageAttachments: env.MESSAGE_ATTACHMENTS,
 };
 
 type ApiReply = {
@@ -75,6 +76,7 @@ describe('/api/v1/media upload pipeline', () => {
     env.SUPABASE_URL = 'http://storage.test';
     env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key-for-tests-only';
     env.MEDIA_UPLOAD_KINDS = ['audio', 'video', 'document'];
+    env.MESSAGE_ATTACHMENTS = true;
     signUpload.mockReset().mockImplementation(async (objectKey: string, bucket?: string) => ({
       uploadUrl: `http://storage.test/upload/${bucket}/${objectKey}?token=t`,
       objectKey,
@@ -89,6 +91,7 @@ describe('/api/v1/media upload pipeline', () => {
     env.SUPABASE_URL = original.url;
     env.SUPABASE_SERVICE_ROLE_KEY = original.key;
     env.MEDIA_UPLOAD_KINDS = original.kinds;
+    env.MESSAGE_ATTACHMENTS = original.messageAttachments;
   });
 
   async function signIn(username: string): Promise<string> {
@@ -430,6 +433,13 @@ describe('/api/v1/media upload pipeline', () => {
     expect(offer.audio).toMatchObject({ enabled: true, maxBytes: 15 * MB, maxDurationSeconds: 600, transport: 'tus' });
     expect(offer.video).toMatchObject({ enabled: false, maxBytes: 300 * MB, maxDurationSeconds: 300, perTarget: 2 });
     expect(offer.document).toMatchObject({ enabled: false, mimeTypes: ['application/pdf'], perTarget: 3 });
+    expect(limits.filesPerMessage).toBe(5);
+    const message = limits.destinations.message;
+    expect(message.video).toMatchObject({ enabled: true, maxBytes: 100 * MB, maxDurationSeconds: 180, perTarget: 5 });
+
+    env.MESSAGE_ATTACHMENTS = false;
+    const off = (await call(null, 'GET', '/limits')).data as MediaLimits;
+    expect(Object.values(off.destinations.message).every((kind) => !kind.enabled)).toBe(true);
   });
 
   it('reports usage: recorded sizes plus unexpired reservations', async () => {
@@ -461,6 +471,148 @@ describe('/api/v1/media upload pipeline', () => {
     expect(last.error?.code).toBe('RATE_LIMITED');
   });
 
+  describe('tickets for a conversation (ADR 0060)', () => {
+    /** A creative and a client in one conversation, the client signed in. */
+    async function inConversation() {
+      const creative = await signedIn();
+      const client = await makeUser({ passwordHash: await hashPassword(PASSWORD) });
+      const conversation = await makeConversation(client.id, creative.profile);
+      return { creative, client, conversation, cookie: await signIn(client.username) };
+    }
+
+    /** An offer ticket body pointed at a conversation instead. */
+    const toMessage = (body: Record<string, unknown>, conversationId: string) => ({
+      ...body,
+      destination: 'message',
+      offerId: undefined,
+      conversationId,
+    });
+
+    const pdf = (overrides: Record<string, unknown> = {}) => ({
+      kind: 'document',
+      mimeType: 'application/pdf',
+      sizeBytes: 2 * MB,
+      ...overrides,
+    });
+
+    it('issues a ticket into the private message buckets, keyed by conversation', async () => {
+      const { client, conversation, cookie } = await inConversation();
+
+      const photo = await ticket(cookie, toMessage(image(''), conversation.id));
+      const clip = await ticket(cookie, toMessage(audio(''), conversation.id));
+
+      expect(photo.status).toBe(201);
+      const put = photo.data as Extract<UploadTicket, { kind: 'image' }>;
+      expect(put.file.objectKey).toMatch(new RegExp(`^messages/${conversation.id}/[0-9a-f-]{36}\\.webp$`));
+      expect(signUpload).toHaveBeenCalledWith(put.file.objectKey, 'media-messages');
+      expect(signUpload).toHaveBeenCalledWith(put.thumb.objectKey, 'media-messages');
+      expect(clip.status).toBe(201);
+      const tus = clip.data as Extract<UploadTicket, { transport: 'tus' }>;
+      expect(tus.tus.bucket).toBe('media-messages-audio');
+      expect(tus.tus.objectKey).toMatch(new RegExp(`^messages/${conversation.id}/[0-9a-f-]{36}\\.mp3$`));
+
+      const rows = await reservationsOf(client.id);
+      expect(rows).toHaveLength(2);
+      for (const row of rows) {
+        expect(row).toMatchObject({ destination: 'message', conversationId: conversation.id, offerId: null });
+      }
+    });
+
+    it('answers 404 to someone outside the conversation, and 403 when the other person blocked the caller', async () => {
+      const { creative, client, conversation, cookie } = await inConversation();
+      const outsider = await signedIn();
+      await db.insert(userBlocks).values({ blockerUserId: creative.user.id, blockedUserId: client.id });
+
+      const foreign = await ticket(outsider.cookie, toMessage(image(''), conversation.id));
+      const blocked = await ticket(cookie, toMessage(image(''), conversation.id));
+
+      expect(foreign.status).toBe(404);
+      expect(foreign.error?.message).toBe('No such conversation.');
+      expect(blocked.status).toBe(403);
+      expect(await reservationsOf(client.id)).toHaveLength(0);
+      expect(await reservationsOf(outsider.user.id)).toHaveLength(0);
+    });
+
+    it('refuses a sixth pending file with 409 MEDIA_MESSAGE_FULL, counting this caller and conversation only', async () => {
+      const { creative, client, conversation, cookie } = await inConversation();
+      const elsewhere = await makeConversation(client.id, (await makeCreative()).profile);
+
+      for (const body of [image(''), audio(''), video(''), pdf(), image('')]) {
+        expect((await ticket(cookie, toMessage(body, conversation.id))).status).toBe(201);
+      }
+      const sixth = await ticket(cookie, toMessage(pdf(), conversation.id));
+      const another = await ticket(cookie, toMessage(pdf(), elsewhere.id));
+      const otherSide = await ticket(creative.cookie, toMessage(pdf(), conversation.id));
+
+      expect(sixth.status).toBe(409);
+      expect(sixth.error).toMatchObject({ code: 'MEDIA_MESSAGE_FULL', details: { filesPerMessage: 5 } });
+      expect(another.status).toBe(201);
+      expect(otherSide.status).toBe(201);
+    });
+
+    it("refuses files over a message's caps: a long or large video, a large PDF", async () => {
+      const { conversation, cookie } = await inConversation();
+
+      const long = await ticket(cookie, toMessage(video('', { durationSeconds: 181 }), conversation.id));
+      const large = await ticket(cookie, toMessage(video('', { sizeBytes: 100 * MB + 1 }), conversation.id));
+      const bigPdf = await ticket(cookie, toMessage(pdf({ sizeBytes: 10 * MB + 1 }), conversation.id));
+
+      expect(long.status).toBe(422);
+      expect(long.error).toMatchObject({ code: 'MEDIA_TOO_LONG', details: { maxDurationSeconds: 180 } });
+      expect(large.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 100 * MB } });
+      expect(bigPdf.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 10 * MB } });
+    });
+
+    it('refuses every kind with 403 MEDIA_KIND_DISABLED when MESSAGE_ATTACHMENTS is off', async () => {
+      const { client, conversation, cookie } = await inConversation();
+      env.MESSAGE_ATTACHMENTS = false;
+
+      const result = await ticket(cookie, toMessage(image(''), conversation.id));
+
+      expect(result.status).toBe(403);
+      expect(result.error).toMatchObject({ code: 'MEDIA_KIND_DISABLED', details: { enabledKinds: [] } });
+      expect(await reservationsOf(client.id)).toHaveLength(0);
+    });
+
+    it("does not count a message's files against the offer quota", async () => {
+      const { creative, conversation } = await inConversation();
+      await insertItem(creative.offer.id, { kind: 'video', sizeBytes: 980 * MB });
+
+      const sent = await ticket(creative.cookie, toMessage(video('', { sizeBytes: 90 * MB }), conversation.id));
+      const usage = await call(creative.cookie, 'GET', '/usage');
+      const offerAudio = await ticket(creative.cookie, audio(creative.offer.id, { sizeBytes: MB }));
+
+      expect(sent.status).toBe(201);
+      expect(usage.data).toMatchObject({ usedBytes: 980 * MB, reservedBytes: 0 });
+      expect(offerAudio.status).toBe(201);
+    });
+
+    it('verifies a message upload, reading its poster from the private image bucket', async () => {
+      const { client, conversation, cookie } = await inConversation();
+      const body = toMessage(video('', { sizeBytes: 1_000_000, thumbSizeBytes: 50_000 }), conversation.id);
+      const issued = (await ticket(cookie, body)).data as Extract<UploadTicket, { transport: 'tus' }>;
+      stored.mockImplementation(async (bucket, key) =>
+        bucket === 'media-messages-video'
+          ? object(key, 1_000_000, 'video/mp4')
+          : bucket === 'media-messages'
+            ? object(key, 50_000, 'image/webp')
+            : null,
+      );
+      firstBytes.mockImplementation(async (bucket) => (bucket === 'media-messages-video' ? MP4 : WEBP));
+
+      const verified = await verifyReservation(client.id, issued.reservationId);
+
+      expect(verified).toMatchObject({
+        destination: 'message',
+        offerId: null,
+        conversationId: conversation.id,
+        bucket: 'media-messages-video',
+        thumbKey: issued.poster!.objectKey,
+        sizeBytes: 1_050_000,
+      });
+    });
+  });
+
   describe('verifyReservation', () => {
     it('verifies a stored upload and returns its facts without deleting the reservation', async () => {
       const { user, offer } = await signedIn();
@@ -489,6 +641,7 @@ describe('/api/v1/media upload pipeline', () => {
         reservationId: row.id,
         destination: 'offer',
         offerId: offer.id,
+        conversationId: null,
         kind: 'video',
         bucket: 'media-video',
         objectKey: row.objectKey,

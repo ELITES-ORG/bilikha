@@ -1,5 +1,6 @@
-import { pgTable, uuid, text, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { pgTable, uuid, text, timestamp, index, uniqueIndex, bigint, integer } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import { mediaKindEnum } from './media-enums.js';
 import { users } from './users.js';
 import { creativeProfiles, offers } from './profiles.js';
 import { postings } from './postings.js';
@@ -79,6 +80,47 @@ export const messages = pgTable(
  * Client bookmarks on offers. Cascades both ways: leaving the account or
  * deleting the offer removes the row.
  */
+/**
+ * Files sent in a message (ADR 0060): up to five per message, in the private
+ * message buckets. Rows of their own rather than a fourth column on `messages`,
+ * the line ADR 0029 drew — these are files the message owns, not links to rows
+ * elsewhere.
+ *
+ * Photos, audio and video expire 30 days after they are sent; a PDF never
+ * does. Expiry is decided when a file is read, from `expires_at`. The hourly
+ * sweep deletes the stored objects and stamps `file_deleted_at`, and the row
+ * stays so the thread can say what was there.
+ */
+export const messageAttachments = pgTable(
+  'message_attachments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id, { onDelete: 'cascade' }),
+    kind: mediaKindEnum('kind').notNull(),
+    objectKey: text('object_key').notNull(),
+    // An image's thumbnail or a video's poster, in the message image bucket.
+    thumbKey: text('thumb_key'),
+    mimeType: text('mime_type').notNull(),
+    // The stored file plus its thumbnail or poster, as verified.
+    sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
+    durationSeconds: integer('duration_seconds'),
+    // Null for a PDF, which is kept.
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    fileDeletedAt: timestamp('file_deleted_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('message_attachments_object_key_idx').on(table.objectKey),
+    index('message_attachments_message_idx').on(table.messageId),
+    // What the sweep looks for.
+    index('message_attachments_expiry_idx')
+      .on(table.expiresAt)
+      .where(sql`file_deleted_at is null and expires_at is not null`),
+  ],
+);
+
 export const savedOffers = pgTable(
   'saved_offers',
   {

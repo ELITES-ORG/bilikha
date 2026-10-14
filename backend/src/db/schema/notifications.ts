@@ -43,6 +43,9 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'offer_rejected',
   'avatar_rejected',
   'logo_rejected',
+  // A photo, audio or video in a conversation expires in three days
+  // (ADR 0060). Sent to both people, at most one per conversation per day.
+  'attachment_expiring',
 ]);
 
 /**

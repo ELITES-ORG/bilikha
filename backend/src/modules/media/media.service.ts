@@ -14,11 +14,15 @@ import {
   offerKey,
   offerMediaKey,
   offerPosterKey,
+  messageKey,
+  messageMediaKey,
+  messagePosterKey,
   readFirstBytes,
   storedObject,
   tusEndpoint,
 } from '../../lib/storage.js';
 import {
+  FILES_PER_MESSAGE,
   QUOTA_BYTES,
   RESERVATION_MS,
   UPLOAD_LIMITS,
@@ -28,6 +32,7 @@ import {
   normaliseMimeType,
 } from './media.limits.js';
 import { matchesSignature } from './media.sniff.js';
+import { assertCanMessage, requireParticipant } from '../conversations/conversations.service.js';
 
 export const uploadUrlBodySchema = z.object({
   kind: z.enum(['avatar', 'offer']),
@@ -175,15 +180,18 @@ export async function abandonObject(userId: string, objectKey: string) {
 // before anything records it.
 // ---------------------------------------------------------------------------
 
-export const uploadTicketBodySchema = z.object({
-  destination: z.literal('offer'),
-  offerId: z.string().uuid(),
+const ticketFileFields = {
   kind: z.enum(['image', 'audio', 'video', 'document']),
   mimeType: z.string().trim().min(1).max(100),
   sizeBytes: z.number().int().positive(),
   thumbSizeBytes: z.number().int().positive().optional(),
   durationSeconds: z.number().positive().optional(),
-});
+};
+
+export const uploadTicketBodySchema = z.discriminatedUnion('destination', [
+  z.object({ destination: z.literal('offer'), offerId: z.string().uuid(), ...ticketFileFields }),
+  z.object({ destination: z.literal('message'), conversationId: z.string().uuid(), ...ticketFileFields }),
+]);
 
 export type UploadTicketInput = z.infer<typeof uploadTicketBodySchema>;
 
@@ -194,6 +202,7 @@ const MEDIA_MESSAGES = {
   MEDIA_TOO_LARGE: 'This file is too large.',
   MEDIA_TOO_LONG: 'This recording is too long.',
   MEDIA_LIMIT_REACHED: 'This offer already has as many of these as it can hold.',
+  MEDIA_MESSAGE_FULL: `A message can carry at most ${FILES_PER_MESSAGE} files.`,
   MEDIA_QUOTA_EXCEEDED: 'Your storage is full. Remove something first.',
   MEDIA_UPLOAD_EXPIRED: 'This upload expired. Start it again.',
   MEDIA_VERIFICATION_FAILED: "This file didn't upload correctly. Try again.",
@@ -241,35 +250,32 @@ async function recordedBytes(executor: Tx | typeof db, profileId: string): Promi
   return Number(row?.total ?? 0);
 }
 
-/** Bytes held by a user's reservations that have not expired. */
+/**
+ * Bytes held by a user's offer reservations that have not expired. A message's
+ * files count toward no quota (ADR 0060).
+ */
 async function reservedBytesOf(executor: Tx | typeof db, userId: string, now: Date): Promise<number> {
   const [row] = await executor
     .select({ total: sql<string>`coalesce(sum(${mediaUploads.reservedBytes}), 0)` })
     .from(mediaUploads)
-    .where(and(eq(mediaUploads.userId, userId), gt(mediaUploads.expiresAt, now)));
+    .where(
+      and(
+        eq(mediaUploads.userId, userId),
+        eq(mediaUploads.destination, 'offer'),
+        gt(mediaUploads.expiresAt, now),
+      ),
+    );
   return Number(row?.total ?? 0);
 }
 
 /**
- * Issues a ticket for one upload to an offer. The limits are checked in a
- * fixed order, the first failure answering; the reservation is then written
- * under the creative's lock, so two tickets at once cannot both take the last
- * place or the last of the quota.
+ * The declared file against its destination's limits, the first failure
+ * answering: switched on, an allowed type, small enough, short enough.
  */
-export async function issueUploadTicket(userId: string, input: UploadTicketInput): Promise<UploadTicket> {
-  const profile = await creativeProfileOf(userId);
-  if (!profile) throw AppError.forbidden('A creative profile is required to manage offers');
-
-  const [offer] = await db
-    .select({ id: offers.id })
-    .from(offers)
-    .where(and(eq(offers.id, input.offerId), eq(offers.profileId, profile.id)))
-    .limit(1);
-  if (!offer) throw AppError.notFound('No such offer.');
-
+function checkDeclaredFile(input: UploadTicketInput) {
   const { kind, destination } = input;
-  if (!isKindEnabled(kind)) {
-    throw mediaError(403, 'MEDIA_KIND_DISABLED', { enabledKinds: enabledKinds() });
+  if (!isKindEnabled(kind, destination)) {
+    throw mediaError(403, 'MEDIA_KIND_DISABLED', { enabledKinds: enabledKinds(destination) });
   }
 
   const limit = UPLOAD_LIMITS[destination][kind];
@@ -294,21 +300,82 @@ export async function issueUploadTicket(userId: string, input: UploadTicketInput
     throw mediaError(422, 'MEDIA_TOO_LONG', { maxDurationSeconds: limit.maxDurationSeconds });
   }
 
+  return { limit, mimeType, timed };
+}
+
+/**
+ * Who the upload is for, checked before any limit: the caller's own offer, or
+ * a conversation they are in, where the other person has not blocked them
+ * (ADR 0060). Returns how to name the keys, what to lock on, and how the target
+ * is recorded on the reservation.
+ */
+async function resolveTarget(userId: string, input: UploadTicketInput) {
+  if (input.destination === 'offer') {
+    const profile = await creativeProfileOf(userId);
+    if (!profile) throw AppError.forbidden('A creative profile is required to manage offers');
+
+    const [offer] = await db
+      .select({ id: offers.id })
+      .from(offers)
+      .where(and(eq(offers.id, input.offerId), eq(offers.profileId, profile.id)))
+      .limit(1);
+    if (!offer) throw AppError.notFound('No such offer.');
+
+    return {
+      lockKey: profile.id,
+      profileId: profile.id,
+      record: { offerId: offer.id, conversationId: null },
+      keys: {
+        image: () => offerKey(profile.id),
+        media: (ext: string) => offerMediaKey(profile.id, ext),
+        poster: () => offerPosterKey(profile.id),
+      },
+    };
+  }
+
+  const conversation = await requireParticipant(input.conversationId, userId);
+  const otherUserId =
+    conversation.clientUserId === userId ? conversation.creativeUserId : conversation.clientUserId;
+  await assertCanMessage(userId, otherUserId);
+
+  return {
+    lockKey: `${conversation.id}:${userId}`,
+    profileId: null,
+    record: { offerId: null, conversationId: conversation.id },
+    keys: {
+      image: () => messageKey(conversation.id),
+      media: (ext: string) => messageMediaKey(conversation.id, ext),
+      poster: () => messagePosterKey(conversation.id),
+    },
+  };
+}
+
+/**
+ * Issues a ticket for one upload to an offer or a message. The limits are
+ * checked in a fixed order, the first failure answering; the reservation is
+ * then written under a lock on the target, so two tickets at once cannot both
+ * take the last place or the last of the quota.
+ */
+export async function issueUploadTicket(userId: string, input: UploadTicketInput): Promise<UploadTicket> {
+  const target = await resolveTarget(userId, input);
+  const { limit, mimeType, timed } = checkDeclaredFile(input);
+  const { kind, destination } = input;
+
   const bucket = bucketFor(kind, destination);
   let objectKey: string;
   let thumbKey: string | null = null;
   if (kind === 'image') {
-    const base = offerKey(profile.id);
+    const base = target.keys.image();
     objectKey = `${base}.webp`;
     thumbKey = `${base}-thumb.webp`;
   } else {
-    objectKey = offerMediaKey(profile.id, limit.extensions[mimeType]!);
-    if (kind === 'video' && input.thumbSizeBytes !== undefined) thumbKey = offerPosterKey(profile.id);
+    objectKey = target.keys.media(limit.extensions[mimeType]!);
+    if (kind === 'video' && input.thumbSizeBytes !== undefined) thumbKey = target.keys.poster();
   }
 
   const now = new Date();
   const { reservation, cleared } = await db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${target.lockKey}))`);
 
     const cleared = await tx
       .delete(mediaUploads)
@@ -320,29 +387,47 @@ export async function issueUploadTicket(userId: string, input: UploadTicketInput
         thumbKey: mediaUploads.thumbKey,
       });
 
-    const [recorded] = await tx
-      .select({ total: count() })
-      .from(offerImages)
-      .where(
-        and(
-          eq(offerImages.offerId, offer.id),
-          eq(offerImages.kind, kind),
-          ne(offerImages.state, 'pending_remove'),
-        ),
-      );
-    const [held] = await tx
-      .select({ total: count() })
-      .from(mediaUploads)
-      .where(
-        and(eq(mediaUploads.offerId, offer.id), eq(mediaUploads.kind, kind), gt(mediaUploads.expiresAt, now)),
-      );
-    if ((recorded?.total ?? 0) + (held?.total ?? 0) >= limit.perTarget) {
-      throw mediaError(409, 'MEDIA_LIMIT_REACHED', { perTarget: limit.perTarget });
-    }
+    if (target.record.offerId) {
+      const offerId = target.record.offerId;
+      const [recorded] = await tx
+        .select({ total: count() })
+        .from(offerImages)
+        .where(
+          and(
+            eq(offerImages.offerId, offerId),
+            eq(offerImages.kind, kind),
+            ne(offerImages.state, 'pending_remove'),
+          ),
+        );
+      const [held] = await tx
+        .select({ total: count() })
+        .from(mediaUploads)
+        .where(
+          and(eq(mediaUploads.offerId, offerId), eq(mediaUploads.kind, kind), gt(mediaUploads.expiresAt, now)),
+        );
+      if ((recorded?.total ?? 0) + (held?.total ?? 0) >= limit.perTarget) {
+        throw mediaError(409, 'MEDIA_LIMIT_REACHED', { perTarget: limit.perTarget });
+      }
 
-    const used = (await recordedBytes(tx, profile.id)) + (await reservedBytesOf(tx, userId, now));
-    if (used + limit.reservedBytes > QUOTA_BYTES) {
-      throw mediaError(409, 'MEDIA_QUOTA_EXCEEDED', { quotaBytes: QUOTA_BYTES });
+      const used = (await recordedBytes(tx, target.profileId!)) + (await reservedBytesOf(tx, userId, now));
+      if (used + limit.reservedBytes > QUOTA_BYTES) {
+        throw mediaError(409, 'MEDIA_QUOTA_EXCEEDED', { quotaBytes: QUOTA_BYTES });
+      }
+    } else {
+      // A message's files are held until it is sent: at most five, any mix.
+      const [held] = await tx
+        .select({ total: count() })
+        .from(mediaUploads)
+        .where(
+          and(
+            eq(mediaUploads.conversationId, target.record.conversationId!),
+            eq(mediaUploads.userId, userId),
+            gt(mediaUploads.expiresAt, now),
+          ),
+        );
+      if ((held?.total ?? 0) >= FILES_PER_MESSAGE) {
+        throw mediaError(409, 'MEDIA_MESSAGE_FULL', { filesPerMessage: FILES_PER_MESSAGE });
+      }
     }
 
     const [reservation] = await tx
@@ -350,7 +435,7 @@ export async function issueUploadTicket(userId: string, input: UploadTicketInput
       .values({
         userId,
         destination,
-        offerId: offer.id,
+        ...target.record,
         kind,
         bucket,
         objectKey,
@@ -417,8 +502,9 @@ export async function abandonUploadTicket(userId: string, reservationId: string)
 
 export interface VerifiedUpload {
   reservationId: string;
-  destination: 'offer';
+  destination: UploadDestination;
   offerId: string | null;
+  conversationId: string | null;
   kind: MediaKind;
   bucket: string;
   objectKey: string;
@@ -493,6 +579,7 @@ export async function verifyReservation(userId: string, reservationId: string): 
     reservationId: row.id,
     destination: row.destination,
     offerId: row.offerId,
+    conversationId: row.conversationId,
     kind: row.kind,
     bucket: row.bucket,
     objectKey: row.objectKey,

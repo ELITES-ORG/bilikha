@@ -1,13 +1,14 @@
 /**
  * The upload pipeline's shapes (ADR 0046): the limits the browser reads before
  * a file is picked, the ticket that authorises one upload, and the media an
- * offer carries beside its images.
+ * offer carries beside its images. Messages are a second destination
+ * (ADR 0060).
  */
 
 export type MediaKind = 'image' | 'audio' | 'video' | 'document';
 
-/** Where an upload is going. #66 adds `message`. */
-export type UploadDestination = 'offer';
+/** Where an upload is going. */
+export type UploadDestination = 'offer' | 'message';
 
 export interface KindLimitView {
   enabled: boolean;
@@ -21,8 +22,11 @@ export interface KindLimitView {
 
 /** `GET /media/limits`. MB is 1,000,000 bytes. */
 export interface MediaLimits {
+  /** Per creative, across their offers. Messages have no quota (ADR 0060). */
   quotaBytes: number;
-  destinations: { offer: Record<MediaKind, KindLimitView> };
+  /** At most this many files in one message, of any kinds. */
+  filesPerMessage: number;
+  destinations: Record<UploadDestination, Record<MediaKind, KindLimitView>>;
 }
 
 /** `GET /media/usage`. */
@@ -32,10 +36,7 @@ export interface MediaUsage {
   quotaBytes: number;
 }
 
-/** `POST /media/uploads`. */
-export interface UploadTicketBody {
-  destination: 'offer';
-  offerId: string;
+interface UploadTicketFile {
   kind: MediaKind;
   mimeType: string;
   /** The main file; for an image, the display image. */
@@ -45,6 +46,11 @@ export interface UploadTicketBody {
   /** Required for audio and video. */
   durationSeconds?: number;
 }
+
+/** `POST /media/uploads`: a file for an offer, or for a message not yet sent. */
+export type UploadTicketBody =
+  | (UploadTicketFile & { destination: 'offer'; offerId: string })
+  | (UploadTicketFile & { destination: 'message'; conversationId: string });
 
 export interface SignedPut {
   uploadUrl: string;

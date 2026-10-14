@@ -2,6 +2,7 @@ import { pgTable, uuid, text, bigint, integer, timestamp, uniqueIndex, index, ch
 import { sql } from 'drizzle-orm';
 import { users } from './users.js';
 import { offers } from './profiles.js';
+import { conversations } from './conversations.js';
 import { mediaKindEnum, uploadDestinationEnum } from './media-enums.js';
 
 /**
@@ -19,6 +20,9 @@ export const mediaUploads = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     destination: uploadDestinationEnum('destination').notNull(),
     offerId: uuid('offer_id').references(() => offers.id, { onDelete: 'cascade' }),
+    // A message's files are reserved against the conversation they will be sent
+    // in; the message does not exist until it is sent (ADR 0060).
+    conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'cascade' }),
     kind: mediaKindEnum('kind').notNull(),
     bucket: text('bucket').notNull(),
     objectKey: text('object_key').notNull(),
@@ -40,7 +44,14 @@ export const mediaUploads = pgTable(
     uniqueIndex('media_uploads_object_key_idx').on(table.objectKey),
     index('media_uploads_user_expiry_idx').on(table.userId, table.expiresAt),
     index('media_uploads_offer_kind_idx').on(table.offerId, table.kind),
+    index('media_uploads_conversation_user_idx').on(table.conversationId, table.userId),
     check('media_uploads_offer_has_offer_id', sql`${table.destination} <> 'offer' OR ${table.offerId} IS NOT NULL`),
+    // Compared as text: every pending migration runs in one transaction, and
+    // Postgres refuses a new enum value in the transaction that added it.
+    check(
+      'media_uploads_message_has_conversation_id',
+      sql`${table.destination}::text <> 'message' OR ${table.conversationId} IS NOT NULL`,
+    ),
   ],
 );
 

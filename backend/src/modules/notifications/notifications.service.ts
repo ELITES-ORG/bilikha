@@ -112,6 +112,7 @@ const TITLES: Record<NotificationType, string> = {
   offer_rejected: 'Your offer was not approved',
   avatar_rejected: 'Your new photo was not approved',
   logo_rejected: 'Your new organisation logo was not approved',
+  attachment_expiring: 'A file in a conversation expires in 3 days',
 };
 
 /**
@@ -134,7 +135,7 @@ async function resolveTargets(rows: Notification[]) {
     // where the appeal control sits (ADR 0033).
     'rating_received',
   ]);
-  const conversationIds = byType(['posting_replied']);
+  const conversationIds = byType(['posting_replied', 'attachment_expiring']);
   const agreementIds = byType([
     'agreement_issued',
     'agreement_revision_requested',
@@ -294,6 +295,14 @@ export async function listNotifications(
       case 'posting_replied': {
         const thread = targets.threads.get(row.targetId);
         if (thread) link = `/messages/${thread.id}`;
+        break;
+      }
+      case 'attachment_expiring': {
+        const thread = targets.threads.get(row.targetId);
+        if (thread) {
+          link = `/messages/${thread.id}`;
+          detail = 'Download it to keep a copy.';
+        }
         break;
       }
       case 'agreement_issued':

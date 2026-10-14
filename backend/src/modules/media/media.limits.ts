@@ -18,13 +18,21 @@ export interface KindLimit {
   maxDurationSeconds: number | null;
   /** Normalised types storage holds for this kind. */
   mimeTypes: readonly string[];
-  /** How many of this kind one target (an offer) may hold. */
+  /** How many of this kind one target (an offer, or a message) may hold. */
   perTarget: number;
   /** Counted against the quota while the upload is pending. */
   reservedBytes: number;
   transport: 'put' | 'tus';
   /** Appended to SUPABASE_STORAGE_BUCKET to name the kind's bucket. */
-  bucketSuffix: '' | '-audio' | '-video' | '-documents';
+  bucketSuffix:
+    | ''
+    | '-audio'
+    | '-video'
+    | '-documents'
+    | '-messages'
+    | '-messages-audio'
+    | '-messages-video'
+    | '-messages-documents';
   /** The extension a stored type's key ends in. Images keep `.webp` keys (ADR 0021). */
   extensions: Readonly<Record<string, string>>;
 }
@@ -76,7 +84,64 @@ export const UPLOAD_LIMITS: Readonly<Record<UploadDestination, Readonly<Record<M
       extensions: { 'application/pdf': 'pdf' },
     },
   },
+  // Messages (ADR 0060, #66): an offer's caps, but a shorter chat video, and
+  // private buckets. `perTarget` is per message; `FILES_PER_MESSAGE` caps the
+  // mix. Reservations are not counted against any quota.
+  message: {
+    image: {
+      maxBytes: 2 * MB,
+      maxPickedBytes: 20 * MB,
+      maxDurationSeconds: null,
+      mimeTypes: ['image/webp', 'image/jpeg'],
+      perTarget: 5,
+      reservedBytes: 4 * MB,
+      transport: 'put',
+      bucketSuffix: '-messages',
+      extensions: { 'image/webp': 'webp', 'image/jpeg': 'webp' },
+    },
+    audio: {
+      maxBytes: 15 * MB,
+      maxPickedBytes: null,
+      maxDurationSeconds: 600,
+      mimeTypes: ['audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/ogg'],
+      perTarget: 5,
+      reservedBytes: 15 * MB,
+      transport: 'tus',
+      bucketSuffix: '-messages-audio',
+      extensions: { 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/ogg': 'ogg' },
+    },
+    video: {
+      maxBytes: 100 * MB,
+      maxPickedBytes: null,
+      maxDurationSeconds: 180,
+      mimeTypes: ['video/mp4', 'video/webm'],
+      perTarget: 5,
+      reservedBytes: 102 * MB,
+      transport: 'tus',
+      bucketSuffix: '-messages-video',
+      extensions: { 'video/mp4': 'mp4', 'video/webm': 'webm' },
+    },
+    document: {
+      maxBytes: 10 * MB,
+      maxPickedBytes: null,
+      maxDurationSeconds: null,
+      mimeTypes: ['application/pdf'],
+      perTarget: 5,
+      reservedBytes: 10 * MB,
+      transport: 'tus',
+      bucketSuffix: '-messages-documents',
+      extensions: { 'application/pdf': 'pdf' },
+    },
+  },
 };
+
+/** At most this many files in one message, of any kinds (#66). */
+export const FILES_PER_MESSAGE = 5;
+
+/** Message files are private: read only through short signed URLs (ADR 0060). */
+export function isPrivateDestination(destination: UploadDestination): boolean {
+  return destination === 'message';
+}
 
 /** Per creative, across every offer (ADR 0046). */
 export const QUOTA_BYTES = 1_000 * MB;
@@ -101,13 +166,17 @@ export function bucketFor(kind: MediaKind, destination: UploadDestination = 'off
   return `${env.SUPABASE_STORAGE_BUCKET}${UPLOAD_LIMITS[destination][kind].bucketSuffix}`;
 }
 
-/** Images always; the rest as `MEDIA_UPLOAD_KINDS` says. */
-export function enabledKinds(): MediaKind[] {
+/**
+ * For offers: images always, the rest as `MEDIA_UPLOAD_KINDS` says. For
+ * messages: every kind, or none, as `MESSAGE_ATTACHMENTS` says.
+ */
+export function enabledKinds(destination: UploadDestination = 'offer'): MediaKind[] {
+  if (destination === 'message') return env.MESSAGE_ATTACHMENTS ? [...MEDIA_KINDS] : [];
   return ['image', ...env.MEDIA_UPLOAD_KINDS];
 }
 
-export function isKindEnabled(kind: MediaKind): boolean {
-  return enabledKinds().includes(kind);
+export function isKindEnabled(kind: MediaKind, destination: UploadDestination = 'offer'): boolean {
+  return enabledKinds(destination).includes(kind);
 }
 
 /** What `GET /media/limits` serves. */
@@ -117,7 +186,7 @@ export function mediaLimitsView(): MediaLimits {
       MEDIA_KINDS.map((kind) => {
         const limit = UPLOAD_LIMITS[destination][kind];
         const item: KindLimitView = {
-          enabled: isKindEnabled(kind),
+          enabled: isKindEnabled(kind, destination),
           maxBytes: limit.maxBytes,
           maxPickedBytes: limit.maxPickedBytes,
           maxDurationSeconds: limit.maxDurationSeconds,
@@ -128,5 +197,9 @@ export function mediaLimitsView(): MediaLimits {
         return [kind, item];
       }),
     ) as Record<MediaKind, KindLimitView>;
-  return { quotaBytes: QUOTA_BYTES, destinations: { offer: view('offer') } };
+  return {
+    quotaBytes: QUOTA_BYTES,
+    filesPerMessage: FILES_PER_MESSAGE,
+    destinations: { offer: view('offer'), message: view('message') },
+  };
 }
