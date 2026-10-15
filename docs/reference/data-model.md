@@ -327,19 +327,21 @@ An upload ticket that has been issued and not yet attached
 ([ADR 0046](../decisions/0046-offers-and-profiles-carry-audio-video-and-pdf.md)).
 It reserves its kind's largest size against the uploader's quota, and counts
 toward the target's per-kind limit, until it is attached, abandoned, or expires
-after 24 hours. Attaching deletes it. `media:prune -- --delete` removes expired
+after 24 hours. A message's reservations count toward its five files and no
+quota ([ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md)). Attaching deletes it. `media:prune -- --delete` removes expired
 rows.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | |
 | `user_id` | `uuid` FK → `users.id` | `ON DELETE CASCADE` |
-| `destination` | `upload_destination` | `offer` (the only destination so far) |
+| `destination` | `upload_destination` | `offer` or `message` |
 | `offer_id` | `uuid` FK null → `offers.id` | `ON DELETE CASCADE`. Required when `destination` is `offer` |
+| `conversation_id` | `uuid` FK null → `conversations.id` | `ON DELETE CASCADE`. Required when `destination` is `message` |
 | `kind` | `media_kind` | |
 | `bucket` | `text` | The main file's bucket |
 | `object_key` | `text` | The main file; for an image, the display image |
-| `thumb_key` | `text` null | An image's thumbnail or a video's poster. Always in the image bucket |
+| `thumb_key` | `text` null | An image's thumbnail or a video's poster. Always in its destination's image bucket |
 | `mime_type` | `text` | Normalised declared type. Verification requires the stored object to match it |
 | `size_bytes` | `bigint` | Declared size of the main file. Verification requires the stored object to match it |
 | `thumb_size_bytes` | `integer` null | Declared size of the thumbnail or poster |
@@ -348,8 +350,10 @@ rows.
 | `expires_at` | `timestamptz` | Issue time plus 24 hours |
 | `created_at` | `timestamptz` | |
 
-Checks: `media_uploads_offer_has_offer_id` (`destination <> 'offer' OR offer_id IS NOT NULL`).
-Indexes: unique `object_key`; `(user_id, expires_at)`; `(offer_id, kind)`.
+Checks: `media_uploads_offer_has_offer_id` (`destination <> 'offer' OR offer_id IS NOT NULL`);
+`media_uploads_message_has_conversation_id` (`destination::text <> 'message' OR conversation_id IS NOT NULL`,
+compared as text because Postgres refuses a new enum value in the transaction that added it).
+Indexes: unique `object_key`; `(user_id, expires_at)`; `(offer_id, kind)`; `(conversation_id, user_id)`.
 
 ---
 
@@ -545,6 +549,28 @@ listing is deleted.
 
 Indexes: `(conversation_id, created_at)`; `messages_offer_idx` on `(offer_id)`;
 `messages_posting_idx` on `(posting_id)`; `messages_agreement_idx` on `(agreement_id)`.
+
+## `message_attachments`
+
+Files a message owns, at most five ([ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md)). They live in the private
+message buckets and are read only through short signed URLs. Photos, audio and
+video stop opening at `expires_at`; a PDF has none.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `message_id` | `uuid` FK → `messages.id` | `ON DELETE CASCADE` |
+| `kind` | `media_kind` | |
+| `object_key` | `text` | Unique. In the kind's private message bucket |
+| `thumb_key` | `text` null | An image's thumbnail or a video's poster, in the private message image bucket |
+| `mime_type` | `text` | |
+| `size_bytes` | `bigint` | The file plus its thumbnail or poster, as stored |
+| `duration_seconds` | `integer` null | Audio and video |
+| `expires_at` | `timestamptz` null | `created_at` plus 30 days for photos, audio and video; null for a PDF |
+| `file_deleted_at` | `timestamptz` null | When the sweep deleted the object |
+| `created_at` | `timestamptz` | |
+
+Indexes: unique `object_key`; `message_id`; `expires_at` where `file_deleted_at is null and expires_at is not null`.
 
 ## `agreements`
 

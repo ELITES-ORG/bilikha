@@ -24,7 +24,9 @@ export type NotificationType =
   | 'offer_approved'
   | 'offer_rejected'
   | 'avatar_rejected'
-  | 'logo_rejected';
+  | 'logo_rejected'
+  // A photo, audio or video in a conversation expires in three days (ADR 0060).
+  | 'attachment_expiring';
 
 export interface NotificationActor {
   name: string;

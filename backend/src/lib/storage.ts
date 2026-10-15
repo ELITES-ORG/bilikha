@@ -551,6 +551,17 @@ export const offerMediaKey = (profileId: string, ext: string) => `offers/${profi
 export const offerPosterKey = (profileId: string) => `offers/${profileId}/${randomUUID()}-poster.webp`;
 
 /**
+ * A message's file, under its conversation, in the private message buckets
+ * (ADR 0060). Same shapes as an offer's: the caller appends `.webp` and
+ * `-thumb.webp` to `messageKey`.
+ */
+export const messageKey = (conversationId: string) => `messages/${conversationId}/${randomUUID()}`;
+export const messageMediaKey = (conversationId: string, ext: string) =>
+  `messages/${conversationId}/${randomUUID()}.${ext}`;
+export const messagePosterKey = (conversationId: string) =>
+  `messages/${conversationId}/${randomUUID()}-poster.webp`;
+
+/**
  * Where an ID photo goes in the ID bucket. The `ids/<userId>/` prefix is what
  * an upload is scoped to, and the side is in the name so a front can never be
  * submitted as a back.

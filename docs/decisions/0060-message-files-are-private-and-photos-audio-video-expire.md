@@ -52,11 +52,11 @@ answers the line ADR 0029 drew. A message with a file may have an empty body.
 video 100 MB and 3 minutes, PDF 10 MB — and **five files a message, any mix**.
 A ticket is issued against a conversation the caller is in, after the same
 checks as an offer's (type, size, duration, rate limit) plus the conversation's:
-a participant, not blocked by the other person, not over five files pending in
-that conversation. The send step verifies and consumes the tickets inside the
-transaction that writes the message, as an offer's attach step does. There is
-no storage quota for messages: expiry bounds what photos, audio and video cost,
-and a PDF is 10 MB at most.
+a participant, not blocked by the other person, not over five files pending
+from the caller in that conversation. The send step verifies and consumes the
+tickets inside the transaction that writes the message, as an offer's attach
+step does. There is no storage quota for messages: expiry bounds what photos,
+audio and video cost, and a PDF is 10 MB at most.
 
 **Private buckets, one per kind.** `{bucket}-messages`, `-messages-audio`,
 `-messages-video` and `-messages-documents`, each private with its own

@@ -1,8 +1,9 @@
 /**
- * Creates or updates the four offer buckets (images, audio, video, documents)
- * so each one's size limit and allowed types match UPLOAD_LIMITS (ADR 0046).
- * Storage enforces them too, so a browser that skips our checks still cannot
- * store a 2 GB file. The ID bucket is never touched.
+ * Creates or updates the four public offer buckets (images, audio, video,
+ * documents) and the four private message buckets, so each one's privacy, size
+ * limit and allowed types match UPLOAD_LIMITS (ADR 0046, ADR 0060). Storage
+ * enforces them too, so a browser that skips our checks still cannot store a
+ * 2 GB file. The ID bucket is never touched.
  *
  * --max-file-size caps every bucket's limit, for a Supabase plan whose global
  * limit is smaller than the largest kind (the free plan's is 50 MB).
@@ -13,9 +14,9 @@
  *   npm run media:buckets -- --check     # report differences, change nothing
  */
 import { env } from '../config/env.js';
-import type { MediaKind } from '../contracts/media.js';
+import type { MediaKind, UploadDestination } from '../contracts/media.js';
 import { bucketSettings, isStorageConfigured, saveBucket, type BucketSettings } from '../lib/storage.js';
-import { UPLOAD_LIMITS, bucketFor } from '../modules/media/media.limits.js';
+import { UPLOAD_LIMITS, bucketFor, isPrivateDestination } from '../modules/media/media.limits.js';
 
 function maxFileSizeArg(): number | null {
   const index = process.argv.indexOf('--max-file-size');
@@ -47,16 +48,20 @@ async function main() {
   const cap = maxFileSizeArg();
   let failed = false;
 
-  for (const kind of Object.keys(UPLOAD_LIMITS.offer) as MediaKind[]) {
-    const limit = UPLOAD_LIMITS.offer[kind];
-    const bucket = bucketFor(kind);
+  const targets = (Object.keys(UPLOAD_LIMITS) as UploadDestination[]).flatMap((destination) =>
+    (Object.keys(UPLOAD_LIMITS[destination]) as MediaKind[]).map((kind) => ({ destination, kind })),
+  );
+
+  for (const { destination, kind } of targets) {
+    const limit = UPLOAD_LIMITS[destination][kind];
+    const bucket = bucketFor(kind, destination);
     if (bucket === env.SUPABASE_ID_BUCKET) {
       console.error(`skipped ${bucket}: it is the ID bucket`);
       failed = true;
       continue;
     }
     const wanted = {
-      public: true,
+      public: !isPrivateDestination(destination),
       fileSizeLimit: cap === null ? limit.maxBytes : Math.min(limit.maxBytes, cap),
       allowedMimeTypes: [...limit.mimeTypes],
     };

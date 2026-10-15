@@ -66,6 +66,11 @@ export const envSchema = z
         .pipe(z.array(z.enum(['audio', 'video', 'document']))),
     ),
 
+    // Files in messages (ADR 0060). Off unless "true": set on staging once the
+    // four private message buckets exist, and on production once Supabase Pro
+    // is active there. Turning it off stops new files; sent ones stay readable.
+    MESSAGE_ATTACHMENTS: z.preprocess((value) => value === 'true', z.boolean()),
+
     // Keys the hash that recognises a repeated ID number (plan 0053 Step 1.7).
     // Optional at boot like storage, so a deploy without it keeps everything
     // else working; deciding an ID then answers 503. **Never rotate it**: a new

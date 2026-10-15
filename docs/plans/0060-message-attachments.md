@@ -51,7 +51,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Decide and record | 1 / 1 | Done |
-| 2. Data and the `message` destination | 0 / 4 | Not started |
+| 2. Data and the `message` destination | 4 / 4 | Done |
 | 3. Sending and reading | 0 / 4 | Not started |
 | 4. Composer and thread | 0 / 3 | Not started |
 | 5. Expiry | 0 / 3 | Not started |
@@ -70,7 +70,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 ## Phase 2 — Data and the `message` destination (pull request 2)
 
 ### Step 2.1 — Schema
-- [ ] **Action.** `message_attachments` (ADR 0060's columns, unique
+- [x] **Action.** `message_attachments` (ADR 0060's columns, unique
   `object_key`, index on `message_id` and on `expires_at` where
   `file_deleted_at is null`); `upload_destination` gains `message`;
   `media_uploads` gains `conversation_id` (`ON DELETE CASCADE`) with a check that
@@ -80,28 +80,34 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
   runs every pending migration in one transaction, and Postgres refuses a new
   enum value in the transaction that added it ("unsafe use of new value"), so
   comparing the enum itself would stop the deploy.
-- [ ] **Verify.** It migrates; a second `db:generate` has nothing to do; the
+- [x] **Verify.** It migrates; a second `db:generate` has nothing to do; the
   generated SQL's check casts `destination` to text.
 
 ### Step 2.2 — The limits row and the switch
-- [ ] **Action.** `UPLOAD_LIMITS.message` with #66's caps and private bucket
-  suffixes; `perMessage: 5`; `MESSAGE_ATTACHMENTS` in `env.ts` and
-  `.env.example`; `GET /media/limits` serves `destinations.message`.
-- [ ] **Verify.** `media.limits.test.ts` pins every cap.
+- [x] **Action.** `UPLOAD_LIMITS.message` with #66's caps and private bucket
+  suffixes; `FILES_PER_MESSAGE = 5`; `MESSAGE_ATTACHMENTS` in `env.ts` and
+  `.env.example`; `GET /media/limits` serves `destinations.message` and
+  `filesPerMessage`.
+- [x] **Verify.** `media.limits.test.ts` pins every cap.
 
 ### Step 2.3 — Tickets for a conversation
-- [ ] **Action.** `issueUploadTicket` accepts `{ destination: 'message',
+- [x] **Action.** `issueUploadTicket` accepts `{ destination: 'message',
   conversationId }`: participant, not blocked, switch on, at most five unsent
-  reservations in that conversation, keys under `messages/{conversationId}/`.
+  reservations by the caller in that conversation, keys under
+  `messages/{conversationId}/`.
   `verifyReservation` reads private buckets as it reads public ones.
-- [ ] **Verify.** `media.test.ts`: a non-participant, a blocked pair, a sixth
+- [x] **Verify.** `media.test.ts`: a non-participant, a blocked pair, a sixth
   file, each over-limit case and the switch off are refused.
 
 ### Step 2.4 — Buckets and prune
-- [ ] **Action.** `media:buckets` configures the four private buckets;
+- [x] **Action.** `media:buckets` configures the four private buckets;
   `media:prune` covers them.
-- [ ] **Verify.** `media:buckets -- --check` exits 0 locally against a
+- [x] **Verify.** `media:buckets -- --check` exits 0 locally against a
   configured project, or the step records why it could not run.
+  *Not run: the local `.env` has no Supabase project (`STORAGE_UNCONFIGURED`).
+  `media:prune` read every reference, `message_attachments` included, before
+  stopping at the first listing for the same reason. Phase 6 runs `--check` on
+  staging and production.*
 
 ## Phase 3 — Sending and reading (pull request 3)
 

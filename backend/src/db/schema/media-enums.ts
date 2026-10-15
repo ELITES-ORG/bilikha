@@ -6,5 +6,5 @@ import { pgEnum } from 'drizzle-orm/pg-core';
  */
 export const mediaKindEnum = pgEnum('media_kind', ['image', 'audio', 'video', 'document']);
 
-/** Where an upload is going. #66 adds `message`. */
-export const uploadDestinationEnum = pgEnum('upload_destination', ['offer']);
+/** Where an upload is going: an offer (ADR 0046) or a message (ADR 0060). */
+export const uploadDestinationEnum = pgEnum('upload_destination', ['offer', 'message']);
