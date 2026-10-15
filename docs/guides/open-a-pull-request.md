@@ -16,6 +16,7 @@ Nothing here is on trust ([ADR 0043](../decisions/0043-only-reyxdz-merges-and-re
 
 | Gate | When | Blocks |
 |---|---|---|
+| `pre-commit` hook | Every `git commit` | The commit, if it stages a `.env` file other than `.env.example` |
 | `pre-push` hook | Every `git push` | The push, if typecheck, lint or the docs checks fail. Skippable — it is early warning, not the gate |
 | `check` (CI) | Every push | The merge, if typecheck, lint, tests, build, docs or commit messages fail |
 | `pr-audit` | Opening, editing or pushing to a pull request | The merge, if the description is incomplete or the diff breaks a rule below |
