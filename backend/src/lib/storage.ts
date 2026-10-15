@@ -184,7 +184,7 @@ function assertBucketFitsKey(bucket: string, objectKey: string): void {
   }
 }
 
-/** The longest an administrator's link to an ID photo may live (plan 0053). */
+/** The longest a signed read of a private object may live (plan 0053, ADR 0060). */
 export const SIGNED_DOWNLOAD_MAX_SECONDS = 300;
 
 function encodeObjectKey(objectKey: string): string {
@@ -237,8 +237,9 @@ export async function createSignedUpload(
 }
 
 /**
- * A URL that reads one object from a private bucket for `expiresIn` seconds.
- * Issued only to administrators (ADR 0057); never logged, never stored. The
+ * A URL that reads one object from a private bucket for `expiresIn` seconds:
+ * an ID photo, to administrators (ADR 0057), or a message file, to the two
+ * people in its conversation (ADR 0060). Never logged, never stored. The
  * five-minute ceiling is enforced here rather than trusted to every caller.
  */
 export async function createSignedDownload(

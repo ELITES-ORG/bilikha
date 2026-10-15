@@ -1,4 +1,5 @@
 import type { AgreementCard } from './agreements.js';
+import type { MediaKind } from './media.js';
 import type { Paginated } from './pagination.js';
 
 /**
@@ -42,6 +43,31 @@ export interface ConversationPostingCard {
  */
 export type ConversationAgreementCard = AgreementCard;
 
+/**
+ * A file sent in a message (ADR 0060): what it is, never where it is. The
+ * browser asks for a short signed URL when it is about to show or play it.
+ */
+export interface ConversationAttachment {
+  id: string;
+  kind: MediaKind;
+  mimeType: string;
+  sizeBytes: number;
+  durationSeconds: number | null;
+  /** An image's thumbnail or a video's poster can be asked for. */
+  hasThumb: boolean;
+  /** Null for a PDF, which is kept. */
+  expiresAt: string | null;
+  /** True from `expiresAt` on: no URL is issued, whatever the sweep has done. */
+  expired: boolean;
+}
+
+/** `GET /conversations/:id/attachments/:attachmentId/url`. */
+export interface ConversationAttachmentUrl {
+  url: string;
+  /** At most five minutes away, and never past the file's own expiry. */
+  expiresAt: string;
+}
+
 export interface ConversationMessage {
   id: string;
   body: string;
@@ -55,6 +81,8 @@ export interface ConversationMessage {
   postingRemoved: boolean;
   agreement: ConversationAgreementCard | null;
   agreementRemoved: boolean;
+  /** Up to five files, in a stable order. */
+  attachments: ConversationAttachment[];
 }
 
 export interface ConversationThread {
@@ -76,6 +104,8 @@ export interface ConversationListItem {
     body: string;
     fromSelf: boolean;
     createdAt: string;
+    /** The kinds of file it carries, in order, so a message with no text can be described. */
+    attachmentKinds: MediaKind[];
   } | null;
   unreadCount: number;
   lastMessageAt: string;
