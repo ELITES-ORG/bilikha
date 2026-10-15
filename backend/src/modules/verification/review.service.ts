@@ -423,6 +423,7 @@ export async function decideIdVerification(input: {
   idNumber?: string;
   noIdNumber?: boolean;
   acknowledgeMatch?: boolean;
+  expectedDecidedAt: string | null;
   now?: Date;
 }): Promise<AdminIdVerificationDetail> {
   const now = input.now ?? new Date();
@@ -430,6 +431,16 @@ export async function decideIdVerification(input: {
   const { row } = found;
 
   refuseOwnOrSuspended(found, input.adminId);
+
+  if (input.expectedDecidedAt === null && row.status !== 'pending') {
+    throw AppError.conflict('This ID was decided a moment ago. Reload to see the decision.');
+  }
+  if (
+    input.expectedDecidedAt !== null
+    && row.decidedAt?.getTime() !== new Date(input.expectedDecidedAt).getTime()
+  ) {
+    throw AppError.conflict('This decision was changed a moment ago. Reload to see it.');
+  }
 
   const first = row.status === 'pending';
   const previous = row.status;

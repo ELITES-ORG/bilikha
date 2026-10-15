@@ -106,9 +106,9 @@ describe('ID review', () => {
     return { status: response.status, text, ...json };
   }
 
-  /** The decision alone, without opening the review first. */
+  /** A first decision alone, without opening the review first. */
   const decideUnseen = (cookie: string, id: string, body: Record<string, unknown>) =>
-    call(cookie, 'POST', `/admin/id-verifications/${id}/decision`, body);
+    call(cookie, 'POST', `/admin/id-verifications/${id}/decision`, { expectedDecidedAt: null, ...body });
 
   /** As an administrator decides: the review is opened, then the decision sent. */
   async function decide(cookie: string, id: string, body: Record<string, unknown>) {
@@ -394,6 +394,10 @@ describe('ID review', () => {
       expect(
         (await decide(cookie, row.id, { decision: 'verify', idNumber: ID_NUMBER, noIdNumber: true })).status,
       ).toBe(400);
+      const post = (body: Record<string, unknown>) =>
+        call(cookie, 'POST', `/admin/id-verifications/${row.id}/decision`, body);
+      expect((await post({ decision: 'retry', reason: 'x' })).status).toBe(400);
+      expect((await post({ decision: 'retry', reason: 'x', expectedDecidedAt: 'yesterday' })).status).toBe(400);
       expect((await decide(cookie, randomUUID(), { decision: 'retry', reason: 'x' })).status).toBe(404);
     });
 
@@ -452,6 +456,23 @@ describe('ID review', () => {
 
       expect(outcomes.map((outcome) => outcome.status).sort()).toEqual([200, 409]);
       expect(await decisionRows(row.id)).toHaveLength(1);
+    });
+
+    it('does not let a first decision from a page opened earlier change the one made since', async () => {
+      const { cookie: first } = await admin();
+      const { cookie: second } = await admin();
+      const user = await person();
+      const row = await submitted(user.id);
+      await call(second, 'GET', `/admin/id-verifications/${row.id}`);
+      expect((await decide(first, row.id, { decision: 'verify', idNumber: ID_NUMBER })).status).toBe(200);
+
+      const late = await decideUnseen(second, row.id, { decision: 'retry', reason: 'Blurred.' });
+
+      expect(late.status).toBe(409);
+      expect(late.error.message).toMatch(/decided a moment ago/);
+      const [still] = await db.select().from(idVerifications).where(eq(idVerifications.id, row.id));
+      expect(still!.status).toBe('verified');
+      expect(await decisionRows(row.id)).toEqual([expect.objectContaining({ action: 'id_verified' })]);
     });
   });
 

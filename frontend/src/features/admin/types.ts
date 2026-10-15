@@ -38,6 +38,8 @@ export interface IdDecisionPayload {
   idNumber?: string;
   noIdNumber?: boolean;
   acknowledgeMatch?: boolean;
+  /** The decision the page showed: null for a first decision, its `decidedAt` for a change. */
+  expectedDecidedAt: string | null;
 }
 
 /** `POST /admin/id-verifications/:id/appeal` (plan 0053 Step 4.3). */

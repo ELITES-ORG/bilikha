@@ -124,10 +124,13 @@ describe('ID decisions after the first', () => {
 
   const look = (cookie: string, id: string) => call(cookie, 'GET', `/admin/id-verifications/${id}`);
 
-  /** As an administrator acts: the review is opened, then the request sent. */
+  /** As an administrator acts: the review is opened, then the change sent on the decision it shows. */
   async function change(cookie: string, id: string, body: Record<string, unknown>) {
-    await look(cookie, id);
-    return call(cookie, 'POST', `/admin/id-verifications/${id}/decision`, body);
+    const seen = await look(cookie, id);
+    return call(cookie, 'POST', `/admin/id-verifications/${id}/decision`, {
+      expectedDecidedAt: seen.data.decision.decidedAt,
+      ...body,
+    });
   }
 
   async function answer(cookie: string, id: string, body: Record<string, unknown>) {
@@ -248,6 +251,25 @@ describe('ID decisions after the first', () => {
       }
     });
 
+    it('refuses a change sent from a page that shows a decision changed since', async () => {
+      const { cookie: first } = await admin();
+      const { cookie: second } = await admin();
+      const row = await decided((await person()).id, 'verified');
+      const seen = await look(second, row.id);
+      expect((await change(first, row.id, { decision: 'final', reason: 'Issued in Ormoc.' })).status).toBe(200);
+
+      const late = await call(second, 'POST', `/admin/id-verifications/${row.id}/decision`, {
+        decision: 'retry',
+        reason: 'Blurred.',
+        expectedDecidedAt: seen.data.decision.decidedAt,
+      });
+
+      expect(late.status).toBe(409);
+      expect(late.error.message).toMatch(/changed a moment ago/);
+      expect((await reload(row.id)).status).toBe('declined_final');
+      expect(await decisionRows(row.id)).toHaveLength(1);
+    });
+
     it('needs a reason, and refuses your own ID and a suspended account', async () => {
       const { user: reviewer, cookie } = await admin();
       const row = await decided((await person()).id, 'declined_retry');
@@ -275,7 +297,10 @@ describe('ID decisions after the first', () => {
         createdAt: new Date(row.decidedAt!.getTime() - 60 * 1000),
       });
       const post = (body: Record<string, unknown>) =>
-        call(cookie, 'POST', `/admin/id-verifications/${row.id}/decision`, body);
+        call(cookie, 'POST', `/admin/id-verifications/${row.id}/decision`, {
+          expectedDecidedAt: row.decidedAt!.toISOString(),
+          ...body,
+        });
 
       const unseen = await post({ decision: 'verify', reason: 'Looks fine.' });
       expect(unseen.status).toBe(409);

@@ -424,10 +424,16 @@ is not ready.
   "reason": "…",                 // ≤ 500; required to decline; the person sees it as written
   "idNumber": "N01-23-456789",   // typed from the photo; stored only as a keyed hash
   "noIdNumber": false,           // the document has no number
-  "acknowledgeMatch": false      // after seeing ID_NUMBER_MATCH
+  "acknowledgeMatch": false,     // after seeing ID_NUMBER_MATCH
+  "expectedDecidedAt": null      // required: the decision the page showed
 }
 ```
 
+- `expectedDecidedAt` is `null` for a first decision and the shown
+  `decision.decidedAt` for a change. If the row has moved on — decided, or
+  changed, since the page loaded — `409` asking to reload, and nothing is
+  written. Without it, a *try again* sent from a page opened before
+  another administrator's decision would land as a change to that decision.
 - `verify` and `final` are refused (`409`) unless this administrator was shown
   the photos: an `id_viewed` row by them on this row, written only when a photo
   was signed. `retry` is not, so an ID whose photos will not load can still be
