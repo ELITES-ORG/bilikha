@@ -58,11 +58,6 @@ export const envSchema = z
     // Kinds besides images that accept uploads (ADR 0046). Empty or unset: images
     // only. Set on staging first, and on production only once Supabase Pro is
     // active there. Turning a kind off stops new uploads; published items stay.
-    // Files in messages (ADR 0060). Off unless "true": set on staging once the
-    // four private message buckets exist, and on production once Supabase Pro
-    // is active there. Turning it off stops new files; sent ones stay readable.
-    MESSAGE_ATTACHMENTS: z.preprocess((value) => value === 'true', z.boolean()),
-
     MEDIA_UPLOAD_KINDS: z.preprocess(
       (value) => (typeof value === 'string' ? value : ''),
       z
@@ -70,6 +65,11 @@ export const envSchema = z
         .transform((value) => value.split(',').map((part) => part.trim()).filter(Boolean))
         .pipe(z.array(z.enum(['audio', 'video', 'document']))),
     ),
+
+    // Files in messages (ADR 0060). Off unless "true": set on staging once the
+    // four private message buckets exist, and on production once Supabase Pro
+    // is active there. Turning it off stops new files; sent ones stay readable.
+    MESSAGE_ATTACHMENTS: z.preprocess((value) => value === 'true', z.boolean()),
 
     // Keys the hash that recognises a repeated ID number (plan 0053 Step 1.7).
     // Optional at boot like storage, so a deploy without it keeps everything

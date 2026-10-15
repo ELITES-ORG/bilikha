@@ -85,8 +85,9 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 
 ### Step 2.2 — The limits row and the switch
 - [x] **Action.** `UPLOAD_LIMITS.message` with #66's caps and private bucket
-  suffixes; `perMessage: 5`; `MESSAGE_ATTACHMENTS` in `env.ts` and
-  `.env.example`; `GET /media/limits` serves `destinations.message`.
+  suffixes; `FILES_PER_MESSAGE = 5`; `MESSAGE_ATTACHMENTS` in `env.ts` and
+  `.env.example`; `GET /media/limits` serves `destinations.message` and
+  `filesPerMessage`.
 - [x] **Verify.** `media.limits.test.ts` pins every cap.
 
 ### Step 2.3 — Tickets for a conversation

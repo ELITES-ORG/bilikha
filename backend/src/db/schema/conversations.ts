@@ -77,10 +77,6 @@ export const messages = pgTable(
 );
 
 /**
- * Client bookmarks on offers. Cascades both ways: leaving the account or
- * deleting the offer removes the row.
- */
-/**
  * Files sent in a message (ADR 0060): up to five per message, in the private
  * message buckets. Rows of their own rather than a fourth column on `messages`,
  * the line ADR 0029 drew — these are files the message owns, not links to rows
@@ -121,6 +117,10 @@ export const messageAttachments = pgTable(
   ],
 );
 
+/**
+ * Client bookmarks on offers. Cascades both ways: leaving the account or
+ * deleting the offer removes the row.
+ */
 export const savedOffers = pgTable(
   'saved_offers',
   {
