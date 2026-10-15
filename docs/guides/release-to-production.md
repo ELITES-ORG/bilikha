@@ -65,6 +65,11 @@ Read the **Rollout** section of each pull request being released:
   data, the moment the release deploys. It was audited as safe on live data and
   has already run on staging — confirm staging is healthy after it.
 - **A one-off script** — note when it has to run relative to the release.
+- **A change to the host itself** must be made *before* releasing. Plan 0053
+  Phase 5 (ID verification for new accounts) needs `bilikha-production` on an
+  always-on instance (Render Starter): the hourly pass that deletes ID photos
+  runs inside the API, and a sleeping free instance runs it late. Until
+  production is on one, a `main` that contains Phase 5 is not released.
 
 ---
 

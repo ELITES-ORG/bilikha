@@ -15,6 +15,8 @@
  */
 export const enVerification = {
   'idStep.eyebrow': 'Verify your ID',
+  // In place of the eyebrow during registration: ID, then intent, then profile.
+  'idStep.step': 'Step 1 of 3',
   'idStep.heading': 'Show that you are from Biliran',
   'idStep.intro':
     'Bilikha is for people from Biliran. Add a photo of an ID that shows a Biliran address or was issued in Biliran. An administrator checks it; until then you can browse offers and creatives.',
@@ -28,7 +30,7 @@ export const enVerification = {
     'Passports and PRC, SSS, GSIS, TIN, PhilHealth and company IDs show no address, so they are not accepted on their own. Every barangay issues a Certificate of Residency.',
   'idStep.consent.heading': 'How your ID is used',
   'idStep.consent.text':
-    'Your ID is seen only by Bilikha\'s administrators, to confirm you are from Biliran. It is kept until they review it and for 7 days after you get their decision (longer only while an appeal you make is being reviewed), then deleted. We keep only a one-way code made from your ID number, so the same ID cannot be used to register again after it is declined.',
+    'Your ID is seen only by Bilikha\'s administrators, to confirm you are from Biliran. It is kept until they review it and for 7 days after you get their decision (longer only while an appeal you make is being reviewed), then deleted. We keep only a one-way code made from your ID number, so that if the same ID is used for another account, an administrator is told.',
   'idStep.consent.agree': 'I understand and agree',
   'idStep.consent.first': 'Agree to how your ID is used before adding photos.',
   'idStep.guidance.heading': 'Taking the photos',

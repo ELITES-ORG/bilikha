@@ -1,6 +1,7 @@
 import type { IdDeclinedDetails } from '@contracts/verification';
 import type { AuthUser } from '@/features/auth/types';
 import type { StorageLike } from '@/features/auth/session-cache';
+import { withNextParam } from '@/lib/return-path';
 
 /**
  * Where an account stands on ID verification (ADR 0057), as plain logic: the
@@ -9,6 +10,35 @@ import type { StorageLike } from '@/features/auth/session-cache';
 
 /** Where an account sends, and resends, its ID. */
 export const ID_STEP_PATH = '/welcome/id';
+
+/** The question after the ID step: hire, or offer creative work. */
+export const INTENT_PATH = '/welcome';
+
+/**
+ * Where registration goes (plan 0053 Step 5.2): the ID step, then the intent
+ * question, then wherever the person was going. Carried as a `next` inside a
+ * `next`, so the ID step itself needs no notion of registration: after a
+ * submission it leaves for its `next`, which is the intent question here and,
+ * after a *try again*, wherever the person was.
+ */
+export function afterRegistrationPath(next: string | null | undefined): string {
+  return withNextParam(ID_STEP_PATH, withNextParam(INTENT_PATH, next));
+}
+
+/**
+ * Where signing in goes for an account that still owes its ID: the ID step,
+ * keeping where the person was going. The sign-in screen's own default, `/`,
+ * is not a destination, so the ID step keeps its default instead.
+ */
+export function idStepPathFor(next: string): string {
+  return withNextParam(ID_STEP_PATH, next === '/' ? null : next);
+}
+
+/** Whether the ID step is part of registration: it leads on to the intent question. */
+export function inRegistrationFlow(next: string): boolean {
+  const path = next.split(/[?#]/, 1)[0];
+  return path === INTENT_PATH;
+}
 
 /** The account still owes its ID: not yet sent, or sent back to try again. */
 export function needsIdStep(user: AuthUser | null | undefined): boolean {

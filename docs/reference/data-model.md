@@ -383,7 +383,8 @@ switches on ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-bilir
 state is its **latest** row. **No row means not required**, which is every
 account that existed before — nothing may treat "no row" as pending. A
 resubmission after *try again* is a new row with its own decision and its own
-7 days. Nothing writes a row until plan 0053 Phase 5.
+7 days. Registration writes the first row, `pending` and unsubmitted, in the
+same transaction as the account (plan 0053 Phase 5).
 
 | Column | Type | Notes |
 |---|---|---|

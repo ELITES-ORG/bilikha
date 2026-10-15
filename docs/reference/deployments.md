@@ -188,8 +188,8 @@ environments**:
 | `SUPABASE_URL` | Project URL (`https://<ref>.supabase.co`). Optional: if absent the API still boots and images are simply disabled |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
-| `SUPABASE_ID_BUCKET` | Defaults to `ids` if omitted. The bucket is **private**, 10 MB, `image/webp, image/jpeg`, no policies — created by reyxdz on both projects (2026-10-10). ID uploads are refused until it is |
-| `ID_HASH_SECRET` | `openssl rand -hex 32`, **a different value on each service**. **Never rotate it** — a new secret makes every stored ID-number hash unmatchable. Needed before plan 0053 Phase 5 merges; until then the API boots and warns |
+| `SUPABASE_ID_BUCKET` | Defaults to `ids` if omitted. The bucket is **private**, 10 MB, `image/webp, image/jpeg`, no policies — created by reyxdz on both projects (2026-10-10). **Required** since plan 0053 Phase 5: every new account must add its ID, and ID uploads are refused until the bucket is ready |
+| `ID_HASH_SECRET` | `openssl rand -hex 32`, **a different value on each service**. **Never rotate it** — a new secret makes every stored ID-number hash unmatchable. **Required** since plan 0053 Phase 5, and set on both services before that phase merges: without it the API boots and warns, and no new account can be verified with an ID number |
 | `SENTRY_DSN` | The `bilikha-api` DSN, the same on both services — see [Sentry](#sentry--error-reports). Optional: if absent the API reports nothing and otherwise runs unchanged |
 
 **Never set `PORT`.** Render provides it; overriding it breaks routing.
@@ -319,7 +319,14 @@ from 23 September to 4 October 2026 it ran 4 or 5 times a day in total, hours
 apart, against about 103 scheduled runs a day. Production sleeps between them,
 and visitors see the cold-start screen. What replaces it — Render Starter or an
 external pinger — is undecided; see
-[#21](https://github.com/ELITES-ORG/bilikha/issues/21). The workflow still fails
+[#21](https://github.com/ELITES-ORG/bilikha/issues/21). **ID verification
+depends on it:** the hourly pass that deletes ID photos 7 days after their
+decision runs inside the API, so on a sleeping instance it runs late. Production
+goes on Render Starter before the release that ships plan 0053 Phase 5 (reyxdz,
+2026-10-15). Merging Phase 5 changes nothing on production, so it does not wait
+for that, but a `main` that contains it is not released until production is
+always-on ([release guide](../guides/release-to-production.md), step 4). The
+workflow still fails
 loudly when the API is down, so it stays as a monitor.
 
 **Staging is scheduled once a day only.** Its Render service is in a separate

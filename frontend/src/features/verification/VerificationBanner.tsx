@@ -13,6 +13,9 @@ import {
   verifiedNoticeKey,
 } from './status';
 
+/** Profile setup outside registration: the account page's own entry to it. */
+const PROFILE_SETUP_PATH = '/welcome/profile?from=account';
+
 /**
  * Where an account stands on its ID (ADR 0057), pinned on every page by
  * `PinnedBanners`. While the ID is not yet verified it cannot be dismissed: the
@@ -43,6 +46,15 @@ export function VerificationBanner() {
         icon={<BadgeCheck className="size-4" aria-hidden="true" />}
         label={message('verification.banner.verified.label')}
         text={message('verification.banner.verified.message')}
+        // A creative who registered had to wait for this to add a profile: the
+        // intent step said they would be shown where (plan 0053 Step 5.2).
+        action={
+          user!.profileStatus === null ? (
+            <Link to={PROFILE_SETUP_PATH} className="link-underline font-medium">
+              <Copy message={message('verification.banner.verified.action')} />
+            </Link>
+          ) : undefined
+        }
         dismiss={{
           label: message('verification.banner.verified.dismiss'),
           onDismiss: () => {

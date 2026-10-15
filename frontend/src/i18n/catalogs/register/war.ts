@@ -14,7 +14,10 @@ export const warRegister: Catalog = {
   'register.signIn': 'Sumulod',
   'register.eyebrow': 'Apil ha rehistro',
   'register.heading': 'Himoa an imo account',
-  'register.intro': 'Pwede mo ilista an imo mga creative work ha sunod nga hihimuon, o pagbutang hin profile niyan ha imo account.',
+  // Blank until retranslated: the old sentence promised the creative step next,
+  // and the ID step now comes first (plan 0053 Phase 5; ADR 0055, no machine
+  // translation). English shows until then.
+  'register.intro': '',
   'register.name.heading': 'An imo ngaran',
   'register.name.first': 'Syahan nga ngaran',
   'register.name.middle': 'Butnga nga ngaran',

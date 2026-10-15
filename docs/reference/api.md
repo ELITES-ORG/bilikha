@@ -181,8 +181,12 @@ httpOnly cookie named `bilikha.sid`. Email and phone are collected but
 
 ### `POST /api/v1/auth/register`
 
-Creates a base account only — a `users` row with no creative profile. Signs the
-new user in. Rate limited to 5 attempts per IP per hour. Municipality and
+Creates a base account — a `users` row with no creative profile — and its first
+`id_verifications` row, `pending` and unsubmitted, in one transaction
+([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)):
+the new account is browse-only until its ID is verified, and its next step is
+`POST /verification/upload-url`. Signs the new user in. Rate limited to 5
+successful registrations per IP per hour; refused ones do not count. Municipality and
 barangay are required (Biliran only —
 [ADR 0020](../decisions/0020-location-required-biliran-only.md)). Creative
 profile fields are collected later via `POST /me/profile`.
@@ -225,7 +229,8 @@ exists only under another municipality (e.g. Naval + Culaba's `looc`) is a
     "role": "member",
     "profileSlug": null,
     "profileStatus": null,
-    "rejectionReason": null
+    "rejectionReason": null,
+    "idVerification": { "status": "pending", "submitted": false, "reason": null, "decidedAt": null }
   }
 }
 ```
@@ -310,7 +315,8 @@ New accounts verify with a photo of a Biliran ID
 ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md),
 [plan 0053](../plans/0053-id-verification-for-new-accounts.md)). An account's
 state is its **latest** `id_verifications` row; **no row means not required**.
-Nothing writes a row yet: registration starts doing so in plan 0053 Phase 5.
+Registration writes the first row (plan 0053 Phase 5); every account from before
+that has none, and is never asked for an ID.
 
 ### Browse only — every authenticated route
 
@@ -318,7 +324,7 @@ While the latest row is `pending` or `declined_retry`, every authenticated route
 that is not `GET`, `HEAD` or `OPTIONS` answers:
 
 ```json
-{ "error": { "code": "VERIFICATION_PENDING", "message": "You can browse, but not do this until your ID is verified." } }
+{ "error": { "code": "VERIFICATION_PENDING", "message": "This unlocks once your ID is verified. Until then, you can look around offers and creatives." } }
 ```
 
 These are exempt, matched exactly (query strings and trailing slashes do not

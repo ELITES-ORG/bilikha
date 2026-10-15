@@ -134,7 +134,7 @@ export function ProfileSetupPage() {
 
       <main>
         <Container width="narrow" className="py-(--section-gap)">
-          <Eyebrow>{fromAccount ? 'Add a creative profile' : 'Step 2 of 2'}</Eyebrow>
+          <Eyebrow>{fromAccount ? 'Add a creative profile' : 'Step 3 of 3'}</Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             {fromAccount ? 'Offer your creative work' : 'Set up your creative profile'}
           </h1>
@@ -143,6 +143,8 @@ export function ProfileSetupPage() {
               ? 'Your profile is reviewed before it appears in the directory.'
               : 'Tell people what you make. Your profile is reviewed before it appears in the directory.'}
           </p>
+          {/* Before the form, not under it: nobody should fill in what cannot be sent. */}
+          {browseOnly && <BrowseOnlyNote className="mt-6" />}
 
           <form onSubmit={(event) => void onSubmit(event)} className="mt-10 space-y-8" noValidate>
             {formError && (
@@ -170,7 +172,6 @@ export function ProfileSetupPage() {
               }}
             />
 
-            {browseOnly && <BrowseOnlyNote />}
             <Button
               type="submit"
               size="lg"

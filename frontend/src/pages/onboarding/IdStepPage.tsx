@@ -8,7 +8,7 @@ import { useCurrentUser } from '@/features/auth/api';
 import { uploadImage } from '@/features/media/api';
 import { requestIdUploadUrl, useSubmitId } from '@/features/verification/api';
 import { ID_TYPE_OPTIONS, idTypeOption, type IdTypeGroup } from '@/features/verification/id-types';
-import { needsIdStep } from '@/features/verification/status';
+import { inRegistrationFlow, needsIdStep } from '@/features/verification/status';
 import { useI18n, type ResolvedMessage } from '@/i18n/i18n-context';
 import { ApiError } from '@/lib/api-client';
 import { ID_EDGE, resizeImage } from '@/lib/image';
@@ -143,7 +143,9 @@ export function IdStepPage() {
       <main>
         <Container width="narrow" className="py-(--section-gap)">
           <Eyebrow>
-            <Text message={message('idStep.eyebrow')} />
+            {/* Registration's first step; on its own (a resubmission, or a return
+                later) it is not a step of anything. */}
+            <Text message={message(!declined && inRegistrationFlow(next) ? 'idStep.step' : 'idStep.eyebrow')} />
           </Eyebrow>
           <h1 className="u-display mt-3 text-3xl text-ink md:text-4xl">
             <Text message={message(declined ? 'idStep.resubmit.heading' : 'idStep.heading')} />

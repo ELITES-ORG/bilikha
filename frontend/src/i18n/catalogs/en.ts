@@ -80,7 +80,7 @@ export const en = {
 
   // ID verification (ADR 0057). The ID step's own copy is a section of its
   // own (`./verification/`); these show on screens every account can reach.
-  'verification.pending.explain': 'You can browse, but not do this until your ID is verified.',
+  'verification.pending.explain': 'This unlocks once your ID is verified. Until then, you can look around offers and creatives.',
   'verification.banner.missing.label': 'ID needed',
   'verification.banner.missing.message':
     'Add a photo of your Biliran ID to finish registering. Until it is verified you can browse offers and creatives.',
@@ -94,6 +94,7 @@ export const en = {
   'verification.banner.verified.label': 'ID verified',
   'verification.banner.verified.message': 'Your ID is verified. You can now message creatives, save offers and post work.',
   'verification.banner.verified.dismiss': 'Close',
+  'verification.banner.verified.action': 'Set up your creative profile',
   'verification.reasonLabel': 'Reason given:',
   'signIn.declined.retry': 'Your ID could not be verified. Sign in to submit it again.',
   'signIn.declined.final': 'Your ID was declined, so this account cannot be used.',
