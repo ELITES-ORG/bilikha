@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# Blocks a commit that stages a real environment file. `.env.example` is
+# allowed. The pattern is the one scripts/check-pr.mjs rejects in a pull
+# request.
+#
+# .gitignore already excludes these, but `git add -f` does not care, and the
+# repository is public: by the time pr-audit sees the file, the branch carrying
+# it has been pushed and the secret is out. This stops it before it is a commit.
+
+bad=$(git diff --cached --name-only --diff-filter=ACR \
+  | grep -E '(^|/)\.env(\.[^/]+)?$' \
+  | grep -Ev '(^|/)\.env\.example$')
+
+if [ -n "$bad" ]; then
+  echo "pre-commit: these files hold secrets and must not be committed:" >&2
+  echo "$bad" | sed 's/^/  /' >&2
+  echo "Unstage them with: git restore --staged <file>" >&2
+  exit 1
+fi

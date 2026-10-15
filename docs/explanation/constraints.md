@@ -72,8 +72,12 @@ inside Facebook's in-app browser.
 **Consequences:**
 
 - **Every profile must be a shareable URL with a working preview card.**
-  Facebook's scraper does not run JavaScript — the unresolved SSR problem in
-  [architecture](./architecture.md) is a distribution problem, not a nicety.
+  Facebook's scraper does not run JavaScript, so crawlers are sent a small HTML
+  page carrying the item's own tags
+  ([ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+  A new shareable public route needs the same treatment, or it shares as the
+  generic card. Search-engine indexing is still unsolved — see
+  [architecture](./architecture.md).
 - **Test in Facebook's in-app webview.** It breaks things desktop Chrome never
   reveals.
 - Many creatives' actual portfolio *is* their Facebook page. Accepting a link is
@@ -156,7 +160,7 @@ and a database full of real people's personal data.
 | Build mobile-only | Constraint 2 — institutional buyers are on desktop |
 | Store uploads on the app server | Constraint 3 |
 | Animate width, height, or position | Constraint 3 |
-| Ship public profiles without SSR | Constraint 4 — this is the launch blocker |
+| Add a shareable public route | Constraint 4 — crawlers need their own card (ADR 0056) |
 | Add a sub-domain | Constraint 5 — it is probably an alias, and constraint 7 |
 | Add public star ratings both ways | Constraint 6 |
 | Collect a new personal field | Constraint 7 — consent and visibility |
