@@ -404,7 +404,9 @@ it.
       is kept until they review it and for 7 days after you get their decision
       (longer only while an appeal you make is being reviewed), then deleted.
       We keep only a one-way code made from your ID number, so the same ID
-      cannot be used to register again after it is declined."* — the issue's
+      cannot be used to register again after it is declined."* (corrected in
+      Phase 5: a repeated ID warns the administrator rather than blocking, so
+      the sentence now ends "…an administrator is told") — the issue's
       sentence plus two clauses, because an open appeal keeps the ID past the
       7 days and the code outlives the photos; guidance (all four corners, no glare,
       readable); the ID
@@ -802,10 +804,13 @@ always-on Render instance** (Prerequisites).
 - **The privacy notice also changed where it had become wrong:** what is
   collected, what is never published, what administrators see, and how long
   things are kept. Its new section says an administrator *is told* when the
-  same ID number is on another account, which is what the code does; the ID
-  step's consent sentence says such an ID "cannot be used to register again",
-  which overstates it — left for a reviewed wording change. The terms gained
-  `terms.who.id`: Bilikha is for people from Biliran.
+  same ID number is on another account, which is what the code does. The ID
+  step's consent sentence (Step 2.5) said such an ID "cannot be used to
+  register again", which overstated it; reyxdz approved the correction
+  (2026-10-15), and it now ends "…so that if the same ID is used for another
+  account, an administrator is told." It changes inside the same
+  `CONSENT_VERSION`, 2026-10-15, before any account agreed to it. The terms
+  gained `terms.who.id`: Bilikha is for people from Biliran.
 - **The first administrator on a fresh local database cannot verify their own
   ID** (nobody decides their own); the admin area is not behind the ID gate,
   so they can review everyone else's. `local-setup.md` says how to verify them
@@ -850,7 +855,8 @@ always-on Render instance** (Prerequisites).
       open; that a *not from Biliran* decline can be appealed within 7 days;
       that a one-way code made from the ID number (a keyed hash, which cannot be
       read back as the number) is kept for as long as the verification record
-      exists, so a declined ID cannot be used to register again; the
+      exists, so an administrator is told if the same ID is used for another
+      account; the
       controller is `LEGAL_OPERATOR`. Bump `LEGAL_LAST_UPDATED` in
       `frontend/src/lib/legal.ts`, and bump `CONSENT_VERSION` in both
       `frontend/src/lib/legal.ts` and `backend/src/modules/auth/auth.service.ts`

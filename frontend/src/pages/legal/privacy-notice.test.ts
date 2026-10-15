@@ -49,6 +49,16 @@ describe('privacy notice: the photo of your ID', () => {
     expect(enVerification['idStep.consent.text']).toContain(enLegal['privacy.id.retention']);
   });
 
+  it('promises on the ID step only what a repeated ID does: an administrator is told', () => {
+    // review.service.ts warns about a matching ID number; it does not refuse
+    // the registration. Consent to a promise the code does not keep is not
+    // informed consent.
+    const consent = enVerification['idStep.consent.text'];
+    expect(consent).not.toMatch(/cannot be used to register/i);
+    expect(consent).toContain('an administrator is told');
+    expect(enLegal['privacy.id.code']).toContain('the administrator is told');
+  });
+
   it('names it as sensitive personal information, and says what stays', () => {
     expect(section).toContain('Data Privacy Act');
     expect(section).toContain('sensitive personal information');
