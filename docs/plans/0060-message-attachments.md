@@ -93,7 +93,8 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 ### Step 2.3 — Tickets for a conversation
 - [x] **Action.** `issueUploadTicket` accepts `{ destination: 'message',
   conversationId }`: participant, not blocked, switch on, at most five unsent
-  reservations in that conversation, keys under `messages/{conversationId}/`.
+  reservations by the caller in that conversation, keys under
+  `messages/{conversationId}/`.
   `verifyReservation` reads private buckets as it reads public ones.
 - [x] **Verify.** `media.test.ts`: a non-participant, a blocked pair, a sixth
   file, each over-limit case and the switch off are refused.
