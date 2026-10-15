@@ -97,11 +97,16 @@ as long as it takes, and its images are kept while it waits.
 - [ ] **Before Phase 5 merges:** `bilikha-production` on an always-on Render
       instance (Starter), so the hourly sweep deletes images on time. On the
       free tier it runs only when traffic wakes the server.
-- [ ] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
+- [x] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
       `openssl rand -hex 32` and set on both Render services, `bilikha` and
       `bilikha-production`, a different value on each. **Never rotate it:** a
       new secret makes every stored hash unmatchable. Locally, any value of 32
       or more characters in `backend/.env`.
+      Done by reyxdz, checked 2026-10-15. Staging's 2026-10-13 deploy booted
+      without the "ID_HASH_SECRET is not set" warning. Production has not
+      deployed since 2026-10-08, so its value was checked in the dashboard
+      instead: long enough, not the placeholder, and not staging's. Its first
+      boot with the secret is the next release.
 
 ## Progress
 
