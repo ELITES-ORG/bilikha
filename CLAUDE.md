@@ -18,10 +18,10 @@ better context.
    decisions here look wrong by general web instinct and are correct. This is
    what stops you "fixing" them.
 3. **Your plan or handoff** — [`docs/plans/`](./docs/plans/) or
-   [`docs/handoffs/`](./docs/handoffs/). The plan is the task. Read its
-   Prerequisites and Blockers, and its "Rules for whoever executes this" where
-   it has one, before step 1. Check a handoff's ground-truth section against
-   `main` before following it.
+   [`docs/handoffs/`](./docs/handoffs/). The plan is the task. Before step 1,
+   read whichever of its Prerequisites, Blockers and "Rules for whoever
+   executes this" it has. If a handoff has a ground-truth section, check it
+   against `main` before following it.
 
 ### Then, by what you are touching
 
