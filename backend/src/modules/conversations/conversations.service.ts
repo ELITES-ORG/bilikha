@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, gt, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
 import type {
   ConversationAgreementCard,
+  ConversationAttachmentUrl,
   ConversationListResult,
   ConversationOfferCard,
   ConversationPostingCard,
@@ -25,7 +26,14 @@ import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { notifyOnce } from '../notifications/notifications.service.js';
 import { loadAgreementCards } from '../agreements/agreements.service.js';
 import { coverPoster } from '../offers/offers.service.js';
+import {
+  loadAttachments,
+  recordAttachments,
+  signAttachment,
+  verifyMessageUploads,
+} from './message-attachments.service.js';
 import type {
+  AttachmentUrlInput,
   EnsureConversationInput,
   ListHistoryInput,
   ListMessagesInput,
@@ -879,6 +887,7 @@ export async function listThreads(
 
     const [last] = await db
       .select({
+        id: messages.id,
         body: messages.body,
         senderUserId: messages.senderUserId,
         createdAt: messages.createdAt,
@@ -887,6 +896,7 @@ export async function listThreads(
       .where(eq(messages.conversationId, row.id))
       .orderBy(desc(messages.createdAt))
       .limit(1);
+    const lastFiles = last ? ((await loadAttachments([last.id])).get(last.id) ?? []) : [];
 
     data.push({
       id: row.id,
@@ -900,6 +910,7 @@ export async function listThreads(
             body: last.body,
             fromSelf: last.senderUserId === userId,
             createdAt: last.createdAt.toISOString(),
+            attachmentKinds: lastFiles.map((file) => file.kind),
           }
         : null,
       unreadCount: unread,
@@ -956,6 +967,7 @@ export async function getThread(
   const agreementCards = await loadAgreementCards(
     rows.map((r) => r.agreementId).filter((id): id is string => Boolean(id)),
   );
+  const attachments = await loadAttachments(rows.map((r) => r.id));
 
   const isClient = conversation.clientUserId === userId;
   const otherUserId = isClient ? conversation.creativeUserId : conversation.clientUserId;
@@ -991,6 +1003,7 @@ export async function getThread(
         postingCards,
         agreementCards,
       ),
+      attachments: attachments.get(row.id) ?? [],
     })),
   };
 }
@@ -1018,25 +1031,31 @@ export async function sendMessage(
     resolvedPostingId = await resolvePostingForReply(input.postingId, userId, conversation);
   }
 
-  const now = new Date();
-  const [message] = await db
-    .insert(messages)
-    .values({
-      conversationId: conversation.id,
-      senderUserId: userId,
-      body: input.body,
-      offerId: resolvedOfferId,
-      postingId: resolvedPostingId,
-      createdAt: now,
-    })
-    .returning();
+  const uploads = await verifyMessageUploads(userId, conversation.id, input.attachments);
 
+  const now = new Date();
   const readPatch =
     conversation.clientUserId === userId
       ? { clientLastReadAt: now, lastMessageAt: now }
       : { creativeLastReadAt: now, lastMessageAt: now };
 
-  await db.update(conversations).set(readPatch).where(eq(conversations.id, conversation.id));
+  // The message, its files and the spent tickets land together or not at all.
+  const message = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(messages)
+      .values({
+        conversationId: conversation.id,
+        senderUserId: userId,
+        body: input.body,
+        offerId: resolvedOfferId,
+        postingId: resolvedPostingId,
+        createdAt: now,
+      })
+      .returning();
+    await recordAttachments(tx, row!.id, uploads, now);
+    await tx.update(conversations).set(readPatch).where(eq(conversations.id, conversation.id));
+    return row!;
+  });
 
   // A reply carrying a posting is a creative answering a client's brief, and
   // that has nowhere else to surface — the Messages badge counts unread threads
@@ -1056,11 +1075,13 @@ export async function sendMessage(
   const offerCards = await loadOfferCards(resolvedOfferId ? [resolvedOfferId] : []);
   const postingCards = await loadPostingCards(resolvedPostingId ? [resolvedPostingId] : []);
 
+  const attachments = await loadAttachments(uploads.length > 0 ? [message.id] : []);
+
   return {
-    id: message!.id,
-    body: message!.body,
+    id: message.id,
+    body: message.body,
     fromSelf: true,
-    createdAt: message!.createdAt.toISOString(),
+    createdAt: message.createdAt.toISOString(),
     ...messageAttachmentFields(
       resolvedOfferId,
       resolvedPostingId,
@@ -1069,7 +1090,19 @@ export async function sendMessage(
       postingCards,
       new Map<string, ConversationAgreementCard>(),
     ),
+    attachments: attachments.get(message.id) ?? [],
   };
+}
+
+/** A short URL for one file in the conversation, to participants only (ADR 0060). */
+export async function attachmentUrl(
+  conversationId: string,
+  attachmentId: string,
+  userId: string,
+  input: AttachmentUrlInput,
+): Promise<ConversationAttachmentUrl> {
+  const conversation = await requireParticipant(conversationId, userId);
+  return signAttachment(conversation.id, attachmentId, input.variant);
 }
 
 export async function markRead(conversationId: string, userId: string) {
