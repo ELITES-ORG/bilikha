@@ -206,7 +206,7 @@ export const requireAuth: RequestHandler = (req, _res, next) => {
           new AppError(
             403,
             'VERIFICATION_PENDING',
-            'You can browse, but not do this until your ID is verified.',
+            'This unlocks once your ID is verified. Until then, you can look around offers and creatives.',
           ),
         );
         return;

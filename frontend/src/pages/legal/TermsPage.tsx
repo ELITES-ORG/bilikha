@@ -35,6 +35,9 @@ export function TermsPage() {
 
       <LegalSection titleKey="terms.who.heading">
         <p>
+          <LegalText k="terms.who.id" />
+        </p>
+        <p>
           <LegalText k="terms.who.age" />
         </p>
         <p>

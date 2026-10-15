@@ -150,6 +150,11 @@ tool. If it fires, delete the offending line and commit again — do not reach f
 `--no-verify`, because CI runs the same check and a trailer that reaches GitHub
 once is credited there permanently.
 
+The `pre-commit` hook rejects a staged `.env` file — anything but
+`.env.example`. Unstage it with `git restore --staged <file>`. The repository
+is public, so a `.env` that reaches a pushed branch is exposed even though
+`pr-audit` would later refuse it.
+
 **Local database is a mess**
 
 ```bash

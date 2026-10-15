@@ -363,6 +363,7 @@ function DecidedPanel({ detail, photosShown }: { detail: AdminIdVerificationDeta
             <ChangeForm
               detail={detail}
               current={detail.status}
+              decidedAt={decision.decidedAt}
               photosShown={photosShown}
               onCancel={() => setChanging(false)}
             />
@@ -391,11 +392,13 @@ function isDecidedStatus(status: AdminIdVerificationDetail['status']): status is
 function ChangeForm({
   detail,
   current,
+  decidedAt,
   photosShown,
   onCancel,
 }: {
   detail: AdminIdVerificationDetail;
   current: DecidedStatus;
+  decidedAt: string;
   photosShown: boolean;
   onCancel: () => void;
 }) {
@@ -437,7 +440,7 @@ function ChangeForm({
       return;
     }
     try {
-      await decide.mutateAsync(changeBody(target, draft));
+      await decide.mutateAsync(changeBody(target, draft, decidedAt));
       void navigate('/admin/people');
     } catch (error) {
       const found = matchesIn(error);

@@ -31,7 +31,7 @@ export const LEGAL_CONTACT: string | null = null;
  * When these documents were last changed. Shown on both pages: a notice with no
  * date cannot be checked against what a person agreed to.
  */
-export const LEGAL_LAST_UPDATED = '13 October 2026';
+export const LEGAL_LAST_UPDATED = '15 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
@@ -48,5 +48,9 @@ export const LEGAL_LAST_UPDATED = '13 October 2026';
  * notice began saying that searches which find nothing are counted by word and
  * day (issue #24) — again processing that started after the earlier version.
  * Both changed on staging the same day and reach production together.
+ *
+ * 2026-10-15: new accounts began adding a photo of their ID (ADR 0057, plan
+ * 0053 Phase 5) — the notice gained "The photo of your ID", and the terms say
+ * Bilikha is for people from Biliran.
  */
-export const CONSENT_VERSION = '2026-10-13';
+export const CONSENT_VERSION = '2026-10-15';

@@ -94,14 +94,23 @@ as long as it takes, and its images are kept while it waits.
       production, created by reyxdz in each Supabase dashboard (Decided 1).
       Done 2026-10-10 on `bilikha-staging` and `bilikha-production`: private,
       no policies, 10 MB, `image/webp, image/jpeg`.
-- [ ] **Before Phase 5 merges:** `bilikha-production` on an always-on Render
-      instance (Starter), so the hourly sweep deletes images on time. On the
-      free tier it runs only when traffic wakes the server.
-- [ ] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
+- [ ] **Before the release that ships Phase 5:** `bilikha-production` on an
+      always-on Render instance (Starter), so the hourly sweep deletes images
+      on time. On the free tier it runs only when traffic wakes the server.
+      Moved from "before Phase 5 merges" by reyxdz (2026-10-15): merging
+      changes nothing on production, which runs only what is released. Until
+      it is done, a `main` containing Phase 5 is not released (release guide,
+      step 4).
+- [x] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
       `openssl rand -hex 32` and set on both Render services, `bilikha` and
       `bilikha-production`, a different value on each. **Never rotate it:** a
       new secret makes every stored hash unmatchable. Locally, any value of 32
       or more characters in `backend/.env`.
+      Done by reyxdz, checked 2026-10-15. Staging's 2026-10-13 deploy booted
+      without the "ID_HASH_SECRET is not set" warning. Production has not
+      deployed since 2026-10-08, so its value was checked in the dashboard
+      instead: long enough, not the placeholder, and not staging's. Its first
+      boot with the secret is the next release.
 
 ## Progress
 
@@ -111,7 +120,7 @@ as long as it takes, and its images are kept while it waits.
 | 2. Account side | 9 / 9 | Done |
 | 3. Admin review and retention | 7 / 7 | Done |
 | 4. Reversal and appeals | 5 / 5 | Done |
-| 5. Switch on | 0 / 5 | Not started |
+| 5. Switch on | 3 / 5 | In progress — Steps 5.4 (the pull request's rollout notes) and 5.5 (staging, a real phone) outstanding |
 
 ---
 
@@ -404,7 +413,9 @@ it.
       is kept until they review it and for 7 days after you get their decision
       (longer only while an appeal you make is being reviewed), then deleted.
       We keep only a one-way code made from your ID number, so the same ID
-      cannot be used to register again after it is declined."* — the issue's
+      cannot be used to register again after it is declined."* (corrected in
+      Phase 5: a repeated ID warns the administrator rather than blocking, so
+      the sentence now ends "…an administrator is told") — the issue's
       sentence plus two clauses, because an open appeal keeps the ID past the
       7 days and the code outlives the photos; guidance (all four corners, no glare,
       readable); the ID
@@ -772,31 +783,77 @@ challenge it.
 ## Phase 5 — Switch on
 
 Branch `feat/id-verification-signup`. **Merge only after the private bucket
-exists, with its limits, on staging and production, and production is on an
-always-on Render instance** (Prerequisites).
+exists, with its limits, on staging and production, and `ID_HASH_SECRET` is set
+on both services. Release only after production is on an always-on Render
+instance** (Prerequisites).
+
+**Built as (2026-10-15).** Differences from the steps below, found in the code:
+
+- **The privacy keys live in `frontend/src/i18n/catalogs/legal/en.ts`**, not
+  `catalogs/en.ts` as Step 5.3 says (they moved after this plan was written).
+- **Registration always writes the row,** even where ID storage is not ready:
+  skipping it would silently switch verification off on a misconfigured
+  server. Without the bucket the ID step says it is unavailable and the person
+  can still browse.
+- **Registration goes to `/welcome/id?next=/welcome?next=<where they were>`**
+  (`afterRegistrationPath`). The ID step needed no notion of registration: it
+  leaves for its `next`, which is the intent question here, and the original
+  destination after a *try again*. "Step 1 of 3" shows only on that way to the
+  intent question (`inRegistrationFlow`), never on a resubmission.
+- **Every new account is still waiting when it reaches the intent question,**
+  so the creative choice cannot lead to a form that cannot be sent. It says the
+  profile can be set up once the ID is verified, and continues like the hire
+  choice. The "ID verified" banner gains **Set up your creative profile** for
+  an account without one. Profile setup shows its browse-only note above the
+  form, not under it.
+- **The intent and profile counters stay hard-coded English,** like the rest
+  of those two pages, which have never been in the catalogue; only the ID
+  step's counter is a key (`idStep.step`). `register.intro` is blank in `fil`
+  and `war`: both promised the creative step next (ADR 0055, no machine
+  translation).
+- **The privacy notice also changed where it had become wrong:** what is
+  collected, what is never published, what administrators see, and how long
+  things are kept. Its new section says an administrator *is told* when the
+  same ID number is on another account, which is what the code does. The ID
+  step's consent sentence (Step 2.5) said such an ID "cannot be used to
+  register again", which overstated it; reyxdz approved the correction
+  (2026-10-15), and it now ends "…so that if the same ID is used for another
+  account, an administrator is told." It changes inside the same
+  `CONSENT_VERSION`, 2026-10-15, before any account agreed to it. The terms
+  gained `terms.who.id`: Bilikha is for people from Biliran.
+- **The first administrator on a fresh local database cannot verify their own
+  ID** (nobody decides their own); the admin area is not behind the ID gate,
+  so they can review everyone else's. `local-setup.md` says how to verify them
+  locally.
+- **The sign-in screen keeps `next`** when it sends an account to the ID step.
+- **The privacy notice's ID section is a labelled list** in plain words — no
+  company or technical names (a test keeps them out); who stores data is named
+  once, under "Who else can see your data". Both legal pages gained an "On this
+  page" list in the margin on wide screens (`LegalLayout`), read off the page's
+  own sections; the text keeps its reading width at every size.
 
 ### Step 5.1 — Registration writes the first row
 
-- [ ] **Action.** `registerUser` in `backend/src/modules/auth/auth.service.ts`
+- [x] **Action.** `registerUser` in `backend/src/modules/auth/auth.service.ts`
       inserts the user and its `pending` row in one `db.transaction`, and builds
       the returned `PublicUser` **after** the commit (inside it, `toPublicUser`
       reads through `db` and would not see the row).
-- [ ] **Verify.** Route tests: registering creates exactly one pending,
+- [x] **Verify.** Route tests: registering creates exactly one pending,
       unsubmitted row and the response shows it; a duplicate username creates
       no row.
 
 ### Step 5.2 — Onboarding goes through the ID step
 
-- [ ] **Action.** `frontend/src/pages/RegisterPage.tsx` navigates to
+- [x] **Action.** `frontend/src/pages/RegisterPage.tsx` navigates to
       `/welcome/id`, carrying `?next`; its intro copy no longer promises the
       creative step next. Step counters: ID 1 of 3 (`IdStepPage`), intent 2 of 3
       (`IntentPage.tsx`), profile 3 of 3 (`ProfileSetupPage.tsx`). The intent
       page's creative path explains it unlocks after verification.
-- [ ] **Verify.** A new registration at 375px lands on the ID step, then intent.
+- [x] **Verify.** A new registration at 375px lands on the ID step, then intent.
 
 ### Step 5.3 — The privacy notice
 
-- [ ] **Action.** Add an ID section to the privacy notice. Its words are
+- [x] **Action.** Add an ID section to the privacy notice. Its words are
       catalogue keys in the `privacy.*` block of
       `frontend/src/i18n/catalogs/en.ts`, with empty `fil`/`war` entries, read
       through `LegalSection` and `LegalText` in
@@ -808,22 +865,24 @@ always-on Render instance** (Prerequisites).
       open; that a *not from Biliran* decline can be appealed within 7 days;
       that a one-way code made from the ID number (a keyed hash, which cannot be
       read back as the number) is kept for as long as the verification record
-      exists, so a declined ID cannot be used to register again; the
+      exists, so an administrator is told if the same ID is used for another
+      account; the
       controller is `LEGAL_OPERATOR`. Bump `LEGAL_LAST_UPDATED` in
       `frontend/src/lib/legal.ts`, and bump `CONSENT_VERSION` in both
       `frontend/src/lib/legal.ts` and `backend/src/modules/auth/auth.service.ts`
       to the release date (Decided 4).
-- [ ] **Verify.** The retention sentence reads the same on the ID step and in
+- [x] **Verify.** The retention sentence reads the same on the ID step and in
       the notice; a new registration stores the new `CONSENT_VERSION`.
 
 ### Step 5.4 — Rollout notes
 
-- [ ] **Action.** The pull request's Rollout section names
+- [x] **Action.** The pull request's Rollout section names
       `SUPABASE_ID_BUCKET` (default `ids`) for both Render services, confirms
       both buckets exist, names `ID_HASH_SECRET` as set on both services (a
-      different value on each, never rotated), and confirms
-      `bilikha-production` is on an always-on instance.
-- [ ] **Verify.** `npm run check:pr` passes on the description.
+      different value on each, never rotated), and says
+      `bilikha-production` goes on an always-on instance before the release
+      that ships this.
+- [x] **Verify.** `npm run check:pr` passes on the description.
 
 ### Step 5.5 — Verify end to end on staging
 
