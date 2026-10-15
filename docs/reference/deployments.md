@@ -321,9 +321,11 @@ and visitors see the cold-start screen. What replaces it — Render Starter or a
 external pinger — is undecided; see
 [#21](https://github.com/ELITES-ORG/bilikha/issues/21). **ID verification
 depends on it:** the hourly pass that deletes ID photos 7 days after their
-decision runs inside the API, so on a sleeping instance it runs late. Plan 0053
-asks for production on an always-on instance before Phase 5 merges: once it is
-in `main`, any release takes it to production, and `main` stays releasable. The
+decision runs inside the API, so on a sleeping instance it runs late. Production
+goes on Render Starter before the release that ships plan 0053 Phase 5 (reyxdz,
+2026-10-15). Merging Phase 5 changes nothing on production, so it does not wait
+for that, but a `main` that contains it is not released until production is
+always-on ([release guide](../guides/release-to-production.md), step 4). The
 workflow still fails
 loudly when the API is down, so it stays as a monitor.
 

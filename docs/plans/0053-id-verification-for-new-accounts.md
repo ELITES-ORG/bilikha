@@ -94,9 +94,13 @@ as long as it takes, and its images are kept while it waits.
       production, created by reyxdz in each Supabase dashboard (Decided 1).
       Done 2026-10-10 on `bilikha-staging` and `bilikha-production`: private,
       no policies, 10 MB, `image/webp, image/jpeg`.
-- [ ] **Before Phase 5 merges:** `bilikha-production` on an always-on Render
-      instance (Starter), so the hourly sweep deletes images on time. On the
-      free tier it runs only when traffic wakes the server.
+- [ ] **Before the release that ships Phase 5:** `bilikha-production` on an
+      always-on Render instance (Starter), so the hourly sweep deletes images
+      on time. On the free tier it runs only when traffic wakes the server.
+      Moved from "before Phase 5 merges" by reyxdz (2026-10-15): merging
+      changes nothing on production, which runs only what is released. Until
+      it is done, a `main` containing Phase 5 is not released (release guide,
+      step 4).
 - [x] **Before Phase 5 merges:** `ID_HASH_SECRET` generated with
       `openssl rand -hex 32` and set on both Render services, `bilikha` and
       `bilikha-production`, a different value on each. **Never rotate it:** a
@@ -779,8 +783,9 @@ challenge it.
 ## Phase 5 — Switch on
 
 Branch `feat/id-verification-signup`. **Merge only after the private bucket
-exists, with its limits, on staging and production, and production is on an
-always-on Render instance** (Prerequisites).
+exists, with its limits, on staging and production, and `ID_HASH_SECRET` is set
+on both services. Release only after production is on an always-on Render
+instance** (Prerequisites).
 
 **Built as (2026-10-15).** Differences from the steps below, found in the code:
 
@@ -871,12 +876,13 @@ always-on Render instance** (Prerequisites).
 
 ### Step 5.4 — Rollout notes
 
-- [ ] **Action.** The pull request's Rollout section names
+- [x] **Action.** The pull request's Rollout section names
       `SUPABASE_ID_BUCKET` (default `ids`) for both Render services, confirms
       both buckets exist, names `ID_HASH_SECRET` as set on both services (a
-      different value on each, never rotated), and confirms
-      `bilikha-production` is on an always-on instance.
-- [ ] **Verify.** `npm run check:pr` passes on the description.
+      different value on each, never rotated), and says
+      `bilikha-production` goes on an always-on instance before the release
+      that ships this.
+- [x] **Verify.** `npm run check:pr` passes on the description.
 
 ### Step 5.5 — Verify end to end on staging
 
