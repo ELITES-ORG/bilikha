@@ -550,27 +550,44 @@ describe('/api/v1/media upload pipeline', () => {
       expect(otherSide.status).toBe(201);
     });
 
-    it("refuses files over a message's caps: a long or large video, a large PDF", async () => {
+    it("refuses a file over a message's caps, or of a type a message does not take", async () => {
       const { conversation, cookie } = await inConversation();
 
       const long = await ticket(cookie, toMessage(video('', { durationSeconds: 181 }), conversation.id));
       const large = await ticket(cookie, toMessage(video('', { sizeBytes: 100 * MB + 1 }), conversation.id));
       const bigPdf = await ticket(cookie, toMessage(pdf({ sizeBytes: 10 * MB + 1 }), conversation.id));
+      const bigPhoto = await ticket(cookie, toMessage(image('', { sizeBytes: 2 * MB + 1 }), conversation.id));
+      const bigClip = await ticket(cookie, toMessage(audio('', { sizeBytes: 15 * MB + 1 }), conversation.id));
+      const longClip = await ticket(cookie, toMessage(audio('', { durationSeconds: 601 }), conversation.id));
+      const word = await ticket(
+        cookie,
+        toMessage(
+          pdf({ mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }),
+          conversation.id,
+        ),
+      );
 
       expect(long.status).toBe(422);
       expect(long.error).toMatchObject({ code: 'MEDIA_TOO_LONG', details: { maxDurationSeconds: 180 } });
       expect(large.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 100 * MB } });
       expect(bigPdf.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 10 * MB } });
+      expect(bigPhoto.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 2 * MB } });
+      expect(bigClip.error).toMatchObject({ code: 'MEDIA_TOO_LARGE', details: { maxBytes: 15 * MB } });
+      expect(longClip.error).toMatchObject({ code: 'MEDIA_TOO_LONG', details: { maxDurationSeconds: 600 } });
+      expect(word.status).toBe(422);
+      expect(word.error).toMatchObject({ code: 'MEDIA_TYPE_NOT_ALLOWED', details: { mimeTypes: ['application/pdf'] } });
     });
 
     it('refuses every kind with 403 MEDIA_KIND_DISABLED when MESSAGE_ATTACHMENTS is off', async () => {
       const { client, conversation, cookie } = await inConversation();
       env.MESSAGE_ATTACHMENTS = false;
 
-      const result = await ticket(cookie, toMessage(image(''), conversation.id));
+      for (const body of [image(''), audio(''), video(''), pdf()]) {
+        const result = await ticket(cookie, toMessage(body, conversation.id));
 
-      expect(result.status).toBe(403);
-      expect(result.error).toMatchObject({ code: 'MEDIA_KIND_DISABLED', details: { enabledKinds: [] } });
+        expect(result.status, body.kind).toBe(403);
+        expect(result.error).toMatchObject({ code: 'MEDIA_KIND_DISABLED', details: { enabledKinds: [] } });
+      }
       expect(await reservationsOf(client.id)).toHaveLength(0);
     });
 
