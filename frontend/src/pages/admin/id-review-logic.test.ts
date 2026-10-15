@@ -51,11 +51,13 @@ describe('the decision body', () => {
     expect(decisionBody('verify', { ...empty, idNumber: ' 1234-5678 ' })).toEqual({
       decision: 'verify',
       idNumber: '1234-5678',
+      expectedDecidedAt: null,
     });
     expect(decisionBody('final', { ...empty, reason: ' Outside. ', noIdNumber: true })).toEqual({
       decision: 'final',
       reason: 'Outside.',
       noIdNumber: true,
+      expectedDecidedAt: null,
     });
   });
 
@@ -63,13 +65,20 @@ describe('the decision body', () => {
     expect(decisionBody('retry', { ...empty, reason: 'Blurred.', idNumber: '1234', noIdNumber: true })).toEqual({
       decision: 'retry',
       reason: 'Blurred.',
+      expectedDecidedAt: null,
     });
   });
 
   it('acknowledges a match once it has been seen', () => {
     expect(
       decisionBody('verify', { ...empty, idNumber: '1234', reason: 'Same card.', acknowledgeMatch: true }),
-    ).toEqual({ decision: 'verify', idNumber: '1234', reason: 'Same card.', acknowledgeMatch: true });
+    ).toEqual({
+      decision: 'verify',
+      idNumber: '1234',
+      reason: 'Same card.',
+      acknowledgeMatch: true,
+      expectedDecidedAt: null,
+    });
   });
 });
 
@@ -114,15 +123,18 @@ describe('changing a decision', () => {
     expect(changeProblem('verify', { ...reasoned, idNumber: '1', noIdNumber: true }, recorded)).toMatch(/not both/);
   });
 
-  it('sends the reason, and a number only when one was given', () => {
-    expect(changeBody('verify', { ...empty, reason: ' Second look. ' })).toEqual({
+  it('sends the reason, a number only when one was given, and the decision it changes', () => {
+    const decidedAt = '2026-10-14T03:00:00.000Z';
+    expect(changeBody('verify', { ...empty, reason: ' Second look. ' }, decidedAt)).toEqual({
       decision: 'verify',
       reason: 'Second look.',
+      expectedDecidedAt: decidedAt,
     });
-    expect(changeBody('final', { ...empty, reason: 'Ormoc.', idNumber: ' N01 ' })).toEqual({
+    expect(changeBody('final', { ...empty, reason: 'Ormoc.', idNumber: ' N01 ' }, decidedAt)).toEqual({
       decision: 'final',
       reason: 'Ormoc.',
       idNumber: 'N01',
+      expectedDecidedAt: decidedAt,
     });
   });
 });

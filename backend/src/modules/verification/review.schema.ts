@@ -24,6 +24,10 @@ export const idDecisionSchema = z
     idNumber: z.string().trim().min(1).max(64).optional(),
     noIdNumber: z.boolean().optional(),
     acknowledgeMatch: z.boolean().optional(),
+    // The decision the administrator's page showed: null for a first decision,
+    // its `decidedAt` for a change. Without it a decision sent from a page
+    // opened earlier would land as a change to one made since.
+    expectedDecidedAt: z.iso.datetime().nullable(),
   })
   .refine((body) => !(body.idNumber && body.noIdNumber), {
     path: ['noIdNumber'],

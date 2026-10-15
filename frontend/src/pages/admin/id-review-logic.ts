@@ -56,6 +56,7 @@ export function withNumberChange(
 /**
  * The request body: only what this decision uses. *Try again* sends no number —
  * the photo may be unreadable — and an empty field is left out, not sent blank.
+ * A first decision is made on a row nobody has decided.
  */
 export function decisionBody(decision: IdDecision, draft: DecisionDraft): IdDecisionPayload {
   const reason = draft.reason.trim();
@@ -66,6 +67,7 @@ export function decisionBody(decision: IdDecision, draft: DecisionDraft): IdDeci
     ...(decision !== 'retry' && draft.noIdNumber ? { noIdNumber: true } : {}),
     ...(decision !== 'retry' && !draft.noIdNumber && idNumber ? { idNumber } : {}),
     ...(draft.acknowledgeMatch ? { acknowledgeMatch: true } : {}),
+    expectedDecidedAt: null,
   };
 }
 
@@ -118,9 +120,12 @@ export function changeProblem(target: IdDecision, draft: DecisionDraft, onRecord
   return null;
 }
 
-/** The request body for a change: the reason always, a number only when one was given. */
-export function changeBody(target: IdDecision, draft: DecisionDraft): IdDecisionPayload {
-  return decisionBody(target, draft);
+/**
+ * The request body for a change: the reason always, a number only when one was
+ * given, and when the decision it changes was made.
+ */
+export function changeBody(target: IdDecision, draft: DecisionDraft, decidedAt: string): IdDecisionPayload {
+  return { ...decisionBody(target, draft), expectedDecidedAt: decidedAt };
 }
 
 /* --- Answering an appeal (plan 0053 Step 4.3) ---------------------------- */
