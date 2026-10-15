@@ -46,7 +46,8 @@ Three things to copy from this:
 
 - **Relative imports end in `.js`.** The build is ESM with `NodeNext` resolution.
   TypeScript resolves `./foo.js` to `foo.ts` at compile time and the emitted
-  import is correct at runtime. Omitting it fails at runtime, not compile time.
+  import is correct at runtime. Omitting it still runs under the dev server and
+  the tests, so it looks fine until `npm run typecheck` rejects it.
 - **Throw, don't hand-write error responses.** `AppError` renders through the
   central handler so every error in the API has one shape.
 - **`async` handlers need no wrapper.** Express 5 forwards rejected promises to
@@ -102,11 +103,20 @@ Non-negotiable, because the frontend client unwraps it generically:
 { "error": { "code": "NOT_FOUND", "message": "…", "details": [] } }
 ```
 
+What goes inside `data` is declared once, in `backend/src/contracts/<feature>.ts`,
+and the service annotates its return type with it
+([ADR 0037](../decisions/0037-one-definition-of-an-api-shape.md)). The
+annotation is the mechanism — a function that happens to return the right shape
+proves nothing. A contract file holds types only; its rules are in
+[`backend/src/contracts/README.md`](../../backend/src/contracts/README.md).
+A list route annotates its `meta` as `ListMeta` from `contracts/pagination.ts`.
+
 ## 6. Mirror it on the frontend
 
-Add the types and a query hook under `frontend/src/features/<feature>/`. Follow
-`features/taxonomy/` — a `types.ts`, an `api.ts` with a key factory, fetchers
-that wrap errors in `toApiError`, and a `useQuery` hook.
+Add a query hook under `frontend/src/features/<feature>/`. Follow
+`features/taxonomy/` — a `types.ts` that re-exports the shapes from
+`@contracts/<feature>` rather than redeclaring them, an `api.ts` with a key
+factory, fetchers that wrap errors in `toApiError`, and a `useQuery` hook.
 
 ## 7. Update the reference
 
@@ -121,6 +131,7 @@ PR. It is the only place the API surface is written down.
 - [ ] Input parsed with zod; `limit` capped on any list endpoint
 - [ ] Errors thrown as `AppError`, never hand-rolled JSON
 - [ ] Response wrapped in `data`
+- [ ] Response shape declared in `backend/src/contracts/` and annotated on the service
 - [ ] Mounted under `/api/v1`
-- [ ] Frontend types and hook added
+- [ ] Frontend hook added, its types re-exported from `@contracts/`
 - [ ] `docs/reference/api.md` updated

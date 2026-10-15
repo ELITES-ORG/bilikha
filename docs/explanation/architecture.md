@@ -112,13 +112,15 @@ sizes. See [`frontend/DESIGN.md`](../../frontend/DESIGN.md).
 
 The SPA is client-rendered, which conflicts with the product's core discovery
 mechanism: Google indexing profile pages, and Facebook and Messenger rendering
-link previews. **Facebook's scraper does not execute JavaScript**, so a shared
-profile link currently renders as a blank card.
+link previews. **Facebook's scraper does not execute JavaScript.**
 
-`index.html` carries static Open Graph tags as a stopgap. That does not solve
-per-profile tags.
+Link previews are solved without rendering the SPA: `frontend/vercel.json`
+sends known preview crawlers on `/creatives/:slug` and `/offers/:id` to a small
+HTML page from `backend/src/modules/share/`, carrying that item's own Open Graph
+tags ([ADR 0056](../decisions/0056-link-previews-come-from-a-crawler-only-html-endpoint.md)).
+Any other route still shares as the site-wide card in `index.html`.
 
-Before public launch this needs one of:
+Search engines are still served the empty SPA shell. Indexing needs one of:
 
 1. An SSR layer in front of the SPA for public routes
 2. A prerender service serving cached HTML to crawlers

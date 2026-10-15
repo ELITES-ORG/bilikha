@@ -6,19 +6,22 @@ Instructions for any AI agent or contributor working on Bilikha.
 
 ## Start here — what to load before you work
 
-Load these in order. **Do not load the whole `docs/` tree** — it is ~20,000
-words and most of it is irrelevant to any single task. More context is not
+Load these in order. **Do not load the whole `docs/` tree** — it is far too
+large, and most of it is irrelevant to any single task. More context is not
 better context.
 
-### Always (~1,400 words)
+### Always
 
 1. **This file** — the standing rules.
 2. **[`docs/explanation/constraints.md`](./docs/explanation/constraints.md)** —
    seven realities of building for a province of 180,000 people. Several
    decisions here look wrong by general web instinct and are correct. This is
    what stops you "fixing" them.
-3. **Your plan** — [`docs/plans/`](./docs/plans/). The plan is the task. Read
-   its "Rules for whoever executes this" before step 1.
+3. **Your plan or handoff** — [`docs/plans/`](./docs/plans/) or
+   [`docs/handoffs/`](./docs/handoffs/). The plan is the task. Read its
+   Prerequisites and Blockers, and its "Rules for whoever executes this" where
+   it has one, before step 1. Check a handoff's ground-truth section against
+   `main` before following it.
 
 ### Then, by what you are touching
 
@@ -26,6 +29,7 @@ better context.
 - [`docs/guides/add-an-api-endpoint.md`](./docs/guides/add-an-api-endpoint.md)
 - [`docs/guides/change-the-database-schema.md`](./docs/guides/change-the-database-schema.md)
 - [`docs/explanation/architecture.md`](./docs/explanation/architecture.md) — module boundaries
+- [`backend/src/contracts/README.md`](./backend/src/contracts/README.md) — response shapes, shared with the frontend
 
 **Frontend**
 - [`frontend/DESIGN.md`](./frontend/DESIGN.md) — tokens and rules. Not optional.
@@ -41,6 +45,7 @@ Faster and more reliable than any description of the conventions:
 | Writing | Imitate |
 |---|---|
 | A route module | `backend/src/modules/taxonomy/taxonomy.routes.ts` |
+| A response shape | `backend/src/contracts/taxonomy.ts` |
 | A schema table | `backend/src/db/schema/taxonomy.ts` |
 | Error handling | `backend/src/lib/http-error.ts` |
 | Env validation | `backend/src/config/env.ts` |
@@ -50,8 +55,8 @@ Faster and more reliable than any description of the conventions:
 
 ### Look up, do not preload
 
-- **[`docs/decisions/`](./docs/decisions/)** — ~6,700 words across 14 records.
-  Plans link the relevant ones inline; follow those links, do not read the set.
+- **[`docs/decisions/`](./docs/decisions/)** — far too many to read as a set.
+  Plans link the relevant ones inline; follow those links.
 - **[`docs/reference/`](./docs/reference/)** — API, data model, environment,
   commands, deployments. Grep these when you need an exact name or value.
 - **Other plans** — irrelevant to yours unless it names them as a dependency.
@@ -106,9 +111,12 @@ account for exactly this reason.
 
 ## Other standing rules
 
-**Never commit a secret.** `.env` files are gitignored. `DATABASE_URL`,
-`SESSION_SECRET`, and any API credential are entered in host dashboards only.
-Add every new variable to the relevant `.env.example` with a safe placeholder.
+**Never commit a secret.** `.env` files are gitignored, a `pre-commit` hook
+rejects one that is staged anyway, and `pr-audit` rejects one in a pull request.
+The repository is public, so a pushed branch is already exposed.
+`DATABASE_URL`, `SESSION_SECRET`, and any API credential are entered in host
+dashboards only. Add every new variable to the relevant `.env.example` with a
+safe placeholder.
 
 **Read before writing.** Before changing anything structural, read
 [`docs/explanation/constraints.md`](./docs/explanation/constraints.md). Several
@@ -120,16 +128,32 @@ only — no raw colours, shadows, or font sizes, and never an interpolated
 Tailwind class name.
 
 **Backend relative imports end in `.js`**, even though the files are `.ts`. The
-build is ESM with `NodeNext`. Omitting the extension compiles cleanly and fails
-at runtime.
+build is ESM with `NodeNext`. Omitting the extension still runs under the dev
+server and the tests, so it looks fine until `npm run typecheck` rejects it.
+
+**Never write Filipino or Waray copy.** Not even a placeholder
+([ADR 0055](./docs/decisions/0055-copy-is-translated-per-device-never-by-machine.md)).
+A new key goes in `en.ts`, and in `fil.ts` and `war.ts` with an empty value —
+`catalogs.test.ts` requires the key, and English shows until a fluent speaker
+translates it. See
+[`docs/guides/translate-the-interface.md`](./docs/guides/translate-the-interface.md).
 
 **Record decisions.** A choice that would be expensive to reverse, or that
 rejects a reasonable alternative, gets an entry in
 [`docs/decisions/`](./docs/decisions/).
 
 **Verify before reporting done.** Run `npm run typecheck`, `npm run lint`, and
-`npm run docs:check`. Do not report work complete on the basis that it looks
-right.
+`npm run docs:check`, and the tests for the files you changed:
+
+```
+npm --prefix backend run test -- src/modules/<feature>/<file>.test.ts
+npm --prefix frontend run test -- src/<path>/<file>.test.ts
+```
+
+Backend tests run against a real Postgres
+([ADR 0031](./docs/decisions/0031-testing-strategy.md)); start it first with
+`npm run db:up`. CI runs the full suite, the build and the bundle-size check. Do
+not report work complete on the basis that it looks right.
 
 **Release only when reyxdz asks, and only by the procedure** in
 [`docs/guides/release-to-production.md`](./docs/guides/release-to-production.md):
