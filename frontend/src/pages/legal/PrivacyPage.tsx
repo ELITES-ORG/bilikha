@@ -28,6 +28,18 @@ function Item({ lead, rest }: { lead: MessageKey; rest?: MessageKey }) {
   );
 }
 
+/** A list item whose bold label stands apart from a sentence that is complete on its own. */
+function Labelled({ lead, text }: { lead: MessageKey; text: MessageKey }) {
+  return (
+    <>
+      <strong className="text-ink">
+        <LegalText k={lead} />
+      </strong>{' '}
+      <LegalText k={text} />
+    </>
+  );
+}
+
 export function PrivacyPage() {
   return (
     <LegalLayout
@@ -75,6 +87,33 @@ export function PrivacyPage() {
         <p>
           <LegalText k="privacy.collect.consentRecord" />
         </p>
+        <p>
+          <LegalText k="privacy.collect.idAfter" />
+        </p>
+      </LegalSection>
+
+      {/* ADR 0057: an ID photo is sensitive personal information. Each claim
+          here is read off the code: who sees it, for how long, what stays. */}
+      <LegalSection titleKey="privacy.id.heading">
+        <p>
+          <LegalText k="privacy.id.intro" />
+        </p>
+        <LegalList
+          items={[
+            <Labelled key="privacy.id.contents" lead="privacy.id.contentsLead" text="privacy.id.contents" />,
+            <Labelled key="privacy.id.purpose" lead="privacy.id.purposeLead" text="privacy.id.purpose" />,
+            <Labelled key="privacy.id.who" lead="privacy.id.whoLead" text="privacy.id.who" />,
+            <Labelled key="privacy.id.retention" lead="privacy.id.retentionLead" text="privacy.id.retention" />,
+            <Labelled key="privacy.id.appeal" lead="privacy.id.appealLead" text="privacy.id.appeal" />,
+            <Labelled key="privacy.id.code" lead="privacy.id.codeLead" text="privacy.id.code" />,
+            <Labelled key="privacy.id.record" lead="privacy.id.recordLead" text="privacy.id.record" />,
+          ]}
+        />
+        <p>
+          <LegalText k="privacy.id.controllerBefore" />
+          {LEGAL_OPERATOR}
+          <LegalText k="privacy.id.controllerAfter" />
+        </p>
       </LegalSection>
 
       <LegalSection titleKey="privacy.public.heading">
@@ -115,6 +154,7 @@ export function PrivacyPage() {
             <Item key="privacy.never.barangayLead" lead="privacy.never.barangayLead" rest="privacy.never.barangayRest" />,
             <Item key="privacy.never.birthLead" lead="privacy.never.birthLead" />,
             <Item key="privacy.never.passwordLead" lead="privacy.never.passwordLead" rest="privacy.never.passwordRest" />,
+            <Item key="privacy.never.idLead" lead="privacy.never.idLead" />,
           ]}
         />
       </LegalSection>

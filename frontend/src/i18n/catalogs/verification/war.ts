@@ -11,6 +11,7 @@ import type { Catalog } from '../en';
 
 export const warVerification: Catalog = {
   'idStep.eyebrow': '',
+  'idStep.step': '',
   'idStep.heading': '',
   'idStep.intro': '',
   'idStep.resubmit.heading': '',

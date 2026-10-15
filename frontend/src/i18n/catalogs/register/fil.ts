@@ -14,7 +14,10 @@ export const filRegister: Catalog = {
   'register.signIn': 'Mag sign-in',
   'register.eyebrow': 'Sumali sa rehistro',
   'register.heading': 'Lumikha ng account',
-  'register.intro': 'Pwede mo ilista ang iyong mga likhang sining sa susunod na hakbang, o maglagay ng profile mamaya mula sa iyong account.',
+  // Blank until retranslated: the old sentence promised the creative step next,
+  // and the ID step now comes first (plan 0053 Phase 5; ADR 0055, no machine
+  // translation). English shows until then.
+  'register.intro': '',
   'register.name.heading': 'Pangalan',
   'register.name.first': 'Unang pangalan',
   'register.name.middle': 'Gitnang pangalan',

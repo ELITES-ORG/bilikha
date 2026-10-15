@@ -19,7 +19,8 @@ export const enRegister = {
   'register.signIn': 'Sign in',
   'register.eyebrow': 'Join the registry',
   'register.heading': 'Create your account',
-  'register.intro': 'You can list your creative work in the next step, or add a profile later from your account.',
+  'register.intro':
+    'Next, you add a photo of an ID from Biliran. An administrator checks it; until then you can browse offers and creatives.',
   'register.name.heading': 'Your name',
   'register.name.first': 'First name',
   'register.name.middle': 'Middle name',

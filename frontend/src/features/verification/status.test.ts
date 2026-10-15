@@ -4,6 +4,9 @@ import type { AuthUser } from '@/features/auth/types';
 import type { StorageLike } from '@/features/auth/session-cache';
 import { CHANGE_PASSWORD_PATH, guardRedirect } from '@/features/auth/guard-redirect';
 import {
+  afterRegistrationPath,
+  idStepPathFor,
+  inRegistrationFlow,
   appealFormProblem,
   appealOpenUntil,
   clearDeclineNotice,
@@ -206,5 +209,44 @@ describe('the appeal on the sign-in screen', () => {
     expect(appealFormProblem({ username: 'juan', password: '', message })).toBe('needsCredentials');
     expect(appealFormProblem({ username: 'juan', password: 'p', message: `  ${'x'.repeat(19)}  ` })).toBe('tooShort');
     expect(appealFormProblem({ username: 'juan', password: 'p', message })).toBeNull();
+  });
+});
+
+describe('registration goes through the ID step', () => {
+  // How the ID step and the intent page each read their own `next`.
+  const nextOf = (path: string) => new URL(path, 'http://x').searchParams.get('next');
+
+  it('goes to the ID step, then the intent question, then where the person was going', () => {
+    const start = afterRegistrationPath('/creatives/ana?tab=offers&x=1');
+    expect(start.startsWith('/welcome/id?next=')).toBe(true);
+
+    const afterId = nextOf(start)!;
+    expect(afterId.startsWith('/welcome?next=')).toBe(true);
+    expect(inRegistrationFlow(afterId)).toBe(true);
+
+    expect(nextOf(afterId)).toBe('/creatives/ana?tab=offers&x=1');
+  });
+
+  it('goes to the intent question with no destination when there was none, or an unsafe one', () => {
+    expect(afterRegistrationPath(null)).toBe('/welcome/id?next=%2Fwelcome');
+    expect(afterRegistrationPath('https://evil.example')).toBe('/welcome/id?next=%2Fwelcome');
+    expect(afterRegistrationPath('//evil.example')).toBe('/welcome/id?next=%2Fwelcome');
+  });
+
+  it('counts the ID step as part of registration only on its way to the intent question', () => {
+    expect(inRegistrationFlow('/welcome')).toBe(true);
+    expect(inRegistrationFlow('/welcome?next=%2Fdirectory')).toBe(true);
+    expect(inRegistrationFlow('/directory')).toBe(false);
+    expect(inRegistrationFlow('/welcome/profile')).toBe(false);
+  });
+});
+
+describe('signing in with an ID still owed', () => {
+  it('goes to the ID step, keeping where the person was going', () => {
+    expect(idStepPathFor('/creatives/ana')).toBe('/welcome/id?next=%2Fcreatives%2Fana');
+  });
+
+  it('adds nothing for the sign-in screen\'s own default', () => {
+    expect(idStepPathFor('/')).toBe('/welcome/id');
   });
 });
