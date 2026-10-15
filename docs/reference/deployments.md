@@ -189,7 +189,7 @@ environments**:
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role secret — never the anon key. Optional, as above |
 | `SUPABASE_STORAGE_BUCKET` | Defaults to `media` if omitted |
 | `SUPABASE_ID_BUCKET` | Defaults to `ids` if omitted. The bucket is **private**, 10 MB, `image/webp, image/jpeg`, no policies — created by reyxdz on both projects (2026-10-10). **Required** since plan 0053 Phase 5: every new account must add its ID, and ID uploads are refused until the bucket is ready |
-| `ID_HASH_SECRET` | `openssl rand -hex 32`, **a different value on each service**. **Never rotate it** — a new secret makes every stored ID-number hash unmatchable. **Required** since plan 0053 Phase 5: without it the API boots and warns, and no new account can be verified with an ID number |
+| `ID_HASH_SECRET` | `openssl rand -hex 32`, **a different value on each service**. **Never rotate it** — a new secret makes every stored ID-number hash unmatchable. **Required** since plan 0053 Phase 5, and set on both services before that phase merges: without it the API boots and warns, and no new account can be verified with an ID number |
 | `SENTRY_DSN` | The `bilikha-api` DSN, the same on both services — see [Sentry](#sentry--error-reports). Optional: if absent the API reports nothing and otherwise runs unchanged |
 
 **Never set `PORT`.** Render provides it; overriding it breaks routing.
@@ -322,8 +322,9 @@ external pinger — is undecided; see
 [#21](https://github.com/ELITES-ORG/bilikha/issues/21). **ID verification
 depends on it:** the hourly pass that deletes ID photos 7 days after their
 decision runs inside the API, so on a sleeping instance it runs late. Plan 0053
-asks for production on an always-on instance before ID verification is
-released there. The workflow still fails
+asks for production on an always-on instance before Phase 5 merges: once it is
+in `main`, any release takes it to production, and `main` stays releasable. The
+workflow still fails
 loudly when the API is down, so it stays as a monitor.
 
 **Staging is scheduled once a day only.** Its Render service is in a separate
