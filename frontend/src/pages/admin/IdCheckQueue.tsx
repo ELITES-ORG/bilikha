@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Inbox, MapPin } from 'lucide-react';
 import type { AdminIdVerificationRow } from '@contracts/verification';
 import { Badge, Button, EmptyState, Skeleton, TabPanels, Tabs } from '@/components/ui';
-import { useAdminIdQueue, useAdminSummary, type IdQueueView } from '@/features/admin/api';
+import { useAdminIdCount, useAdminIdQueue, useAdminSummary, type IdQueueView } from '@/features/admin/api';
 import { idTypeOption } from '@/features/verification/id-types';
 import {
   AdminPagination,
@@ -48,13 +48,15 @@ export function IdCheckQueue() {
   const [view, setView] = useState<View>('pending');
   const [page, setPage] = useState(1);
   const queue = useAdminIdQueue(view, page);
-  // The waiting tabs show their counts from the summary, so an appeal is seen
-  // from the Waiting tab; Decided counts only once it is open.
+  // Every tab keeps its number whichever is open. The waiting tabs read the
+  // summary, which also feeds the sidebar; Decided is history, not waiting
+  // work, so it has its own count.
   const summary = useAdminSummary();
+  const decided = useAdminIdCount('decided');
   const counts: Record<View, number | undefined> = {
     pending: summary.data?.people.ids,
     appeals: summary.data?.people.appeals,
-    decided: view === 'decided' ? queue.data?.meta.total : undefined,
+    decided: decided.data,
   };
 
   const pages = useMemo(() => {
