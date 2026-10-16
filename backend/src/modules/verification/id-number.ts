@@ -40,9 +40,26 @@ export function idHashReady(secret: string | undefined = env.ID_HASH_SECRET): bo
 }
 
 /**
- * HMAC-SHA256 over `<idType>:<normalised number>`, as hex. The type is part of
- * the input because two kinds of ID can share a number without being the same
- * document.
+ * Which numbering an ID's number belongs to: its own type, except where two
+ * documents carry the same number for the same person. The PhilSys card
+ * (PhilID) and its printed form (ePhilID) both show the PhilSys card number,
+ * so a number declined on one must be recognised on the other.
+ *
+ * The ePhilID joins the PhilID's numbering rather than both moving to a new
+ * one, so hashes already recorded for PhilID cards stay valid.
+ */
+const SAME_NUMBER_AS: Partial<Record<IdType, IdType>> = {
+  ephilid: 'philsys_id',
+};
+
+export function numberingOf(idType: IdType): IdType {
+  return SAME_NUMBER_AS[idType] ?? idType;
+}
+
+/**
+ * HMAC-SHA256 over `<numbering>:<normalised number>`, as hex. The numbering is
+ * part of the input because two kinds of ID can share a number without being
+ * the same document — except where they are (`numberingOf`).
  */
 export function hashIdNumber(
   idType: IdType,
@@ -67,5 +84,5 @@ export function hashIdNumber(
     );
   }
 
-  return createHmac('sha256', secret).update(`${idType}:${number}`).digest('hex');
+  return createHmac('sha256', secret).update(`${numberingOf(idType)}:${number}`).digest('hex');
 }
