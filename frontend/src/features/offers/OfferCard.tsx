@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ArrowRight, FileText, Film, Heart, MapPin, Music } from 'lucide-react';
 import type { MediaBadge } from '@contracts/media';
+import { onPhotoButtonClass } from '@/components/PageCornerActions';
 import { Avatar, Badge, ButtonLink, Card, Eyebrow, ProgressiveImage, Skeleton } from '@/components/ui';
 import { mediaBadgeText } from '@/features/media/badge';
 import type { OfferImage } from '@/features/offers/api';
@@ -78,13 +79,13 @@ export function SaveHeart({ save, className }: { save: OfferCardSave; className?
       disabled={save.pending}
       onClick={save.onToggle}
       className={cn(
-        'interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm',
-        'hover:text-navy-700 disabled:opacity-60',
+        onPhotoButtonClass,
+        'disabled:opacity-60',
         className,
       )}
     >
       <Heart
-        className={cn('size-5', save.saved && 'fill-current text-red-500')}
+        className={cn('size-6', save.saved && 'fill-current text-red-500')}
         aria-hidden="true"
       />
     </button>

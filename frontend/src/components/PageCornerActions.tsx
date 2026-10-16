@@ -3,9 +3,15 @@ import { ArrowLeft, Share2 } from 'lucide-react';
 import { useToast } from '@/components/ui';
 import { canGoBackInApp } from '@/lib/history';
 
-/** White pill over a photo or the navy cover band. */
-const pillClass =
-  'interactive-press inline-flex h-11 items-center gap-1.5 rounded-sm bg-surface px-4 text-sm font-semibold text-ink shadow-sm';
+/**
+ * A button over a photo or the navy cover band: the icon alone, white, with a
+ * dark outline around its strokes so it still reads on a bright photo. The scrim
+ * colour is always dark, so this holds in both themes. The button keeps its
+ * 44px tap area; only the box around the icon is gone.
+ */
+export const onPhotoButtonClass =
+  'interactive-press grid size-11 place-items-center rounded-sm text-on-primary ' +
+  '[filter:drop-shadow(0_0_1px_var(--color-scrim))_drop-shadow(0_0_1px_var(--color-scrim))_drop-shadow(0_1px_4px_var(--color-scrim))]';
 
 /**
  * Back from a page people often open from a shared link. With in-app history
@@ -19,16 +25,14 @@ export function BackPill() {
 
   if (canGoBackInApp(window.history.state)) {
     return (
-      <button type="button" className={pillClass} onClick={() => void navigate(-1)}>
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        Back
+      <button type="button" aria-label="Back" className={onPhotoButtonClass} onClick={() => void navigate(-1)}>
+        <ArrowLeft className="size-6" aria-hidden="true" />
       </button>
     );
   }
   return (
-    <Link to="/directory" className={pillClass}>
-      <ArrowLeft className="size-4" aria-hidden="true" />
-      Back
+    <Link to="/directory" aria-label="Back" className={onPhotoButtonClass}>
+      <ArrowLeft className="size-6" aria-hidden="true" />
     </Link>
   );
 }
@@ -59,10 +63,10 @@ export function ShareButton({ title, label }: { title: string; label: string }) 
     <button
       type="button"
       aria-label={label}
-      className="interactive-press grid size-11 place-items-center rounded-sm bg-surface text-ink shadow-sm hover:text-navy-700"
+      className={onPhotoButtonClass}
       onClick={() => void share()}
     >
-      <Share2 className="size-5" aria-hidden="true" />
+      <Share2 className="size-6" aria-hidden="true" />
     </button>
   );
 }
