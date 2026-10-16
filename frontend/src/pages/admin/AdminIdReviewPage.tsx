@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ImageOff, Lock, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Check, ImageOff, LoaderCircle, Lock, TriangleAlert } from 'lucide-react';
 import type { AdminIdVerificationDetail, IdNumberMatch } from '@contracts/verification';
 import { Button, ButtonLink, Container, EmptyState, Input, Skeleton, Textarea } from '@/components/ui';
 import { useAdminIdVerification, useDecideAppeal, useDecideIdVerification } from '@/features/admin/api';
@@ -233,6 +233,9 @@ function IdPhoto({
 }) {
   const retried = useRef(false);
   const [failed, setFailed] = useState(false);
+  // The link this side has finished loading, so a fresh link after a failed
+  // one shows as loading again.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   if (!url || failed) {
     return (
       <figure className="min-w-0">
@@ -248,11 +251,26 @@ function IdPhoto({
   }
   return (
     <figure className="min-w-0">
+      {/* An ID photo can take a while on a slow connection; an empty box
+          would read as a missing photo. */}
+      {loadedUrl !== url && (
+        <div
+          role="status"
+          className="flex aspect-[3/2] w-full items-center justify-center gap-2 rounded-md border border-hairline bg-surface-sunken text-sm text-ink-muted"
+        >
+          <LoaderCircle className="anim-spin size-4" aria-hidden="true" />
+          Loading photo…
+        </div>
+      )}
       <img
         src={url}
         alt={`${side} of the ID`}
         referrerPolicy="no-referrer"
-        className="max-h-[32rem] w-full rounded-md border border-hairline bg-surface-sunken object-contain"
+        className={cn(
+          'max-h-[32rem] w-full rounded-md border border-hairline bg-surface-sunken object-contain',
+          loadedUrl !== url && 'hidden',
+        )}
+        onLoad={() => setLoadedUrl(url)}
         onError={() => {
           if (retried.current) {
             setFailed(true);
@@ -310,6 +328,49 @@ function Problem({ children }: { children: string }) {
     <p role="alert" className="rounded-sm border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
       {children}
     </p>
+  );
+}
+
+/**
+ * One answer to pick before sending. An option, not an action: it is outlined,
+ * and picked it is tinted with a tick — never solid like the button that
+ * actually sends, so the two cannot be mistaken for each other.
+ */
+function Choice({
+  selected,
+  tone = 'neutral',
+  disabled,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  tone?: 'neutral' | 'danger';
+  disabled?: boolean;
+  onClick: () => void;
+  children: string;
+}) {
+  const looks = {
+    neutral: selected
+      ? 'border-navy-600 bg-navy-50 text-navy-800'
+      : 'border-hairline-strong bg-surface text-ink hover:border-navy-600',
+    danger: selected
+      ? 'border-danger-600 bg-danger-50 text-danger-700'
+      : 'border-hairline-strong bg-surface text-danger-700 hover:border-danger-600',
+  } as const;
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'inline-flex min-h-11 items-center gap-2 rounded-sm border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+        looks[tone],
+      )}
+    >
+      {selected && <Check className="size-4 shrink-0" aria-hidden="true" />}
+      {children}
+    </button>
   );
 }
 
@@ -461,16 +522,15 @@ function ChangeForm({
         <legend className="text-sm font-semibold text-ink">Change it to</legend>
         <div className="mt-2 flex flex-wrap gap-2">
           {changeOptions(current).map((option) => (
-            <Button
+            <Choice
               key={option}
-              variant={target === option ? 'primary' : 'secondary'}
-              size="sm"
-              aria-pressed={target === option}
+              selected={target === option}
+              tone={option === 'verify' ? 'neutral' : 'danger'}
               disabled={busy}
               onClick={() => choose(option)}
             >
               {CHANGE_LABEL[option]}
-            </Button>
+            </Choice>
           ))}
         </div>
       </fieldset>
@@ -624,24 +684,23 @@ function AppealPanel({ detail, photosShown }: { detail: AdminIdVerificationDetai
         <MatchWarning matches={matches} note="To grant it anyway, the reason goes on the record with the matches." />
       )}
 
-      <div className="flex flex-wrap gap-2 border-t border-hairline pt-4">
-        <Button
-          variant={outcome === 'grant' ? 'primary' : 'secondary'}
-          aria-pressed={outcome === 'grant'}
-          disabled={busy || !photosShown}
-          onClick={() => choose('grant')}
-        >
-          Grant — verify
-        </Button>
-        <Button
-          variant="ghost"
-          className="text-danger-700 hover:bg-danger-50 hover:text-danger-700"
-          aria-pressed={outcome === 'uphold'}
-          disabled={busy || !photosShown}
-          onClick={() => choose('uphold')}
-        >
-          Uphold — keep declined
-        </Button>
+      <div className="border-t border-hairline pt-4">
+        <fieldset>
+          <legend className="text-sm font-semibold text-ink">Your answer</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Choice selected={outcome === 'grant'} disabled={busy || !photosShown} onClick={() => choose('grant')}>
+              Grant — verify
+            </Choice>
+            <Choice
+              selected={outcome === 'uphold'}
+              tone="danger"
+              disabled={busy || !photosShown}
+              onClick={() => choose('uphold')}
+            >
+              Uphold — keep declined
+            </Choice>
+          </div>
+        </fieldset>
       </div>
 
       {outcome && (
