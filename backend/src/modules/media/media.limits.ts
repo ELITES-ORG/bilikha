@@ -138,6 +138,14 @@ export const UPLOAD_LIMITS: Readonly<Record<UploadDestination, Readonly<Record<M
 /** At most this many files in one message, of any kinds (#66). */
 export const FILES_PER_MESSAGE = 5;
 
+/** How long a photo, audio clip or video in a message stays readable (ADR 0060). */
+export const MESSAGE_FILE_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** When a message file stops opening: 30 days after it was sent, or never for a PDF. */
+export function messageFileExpiry(kind: MediaKind, sentAt: Date): Date | null {
+  return kind === 'document' ? null : new Date(sentAt.getTime() + MESSAGE_FILE_LIFETIME_MS);
+}
+
 /** Message files are private: read only through short signed URLs (ADR 0060). */
 export function isPrivateDestination(destination: UploadDestination): boolean {
   return destination === 'message';
