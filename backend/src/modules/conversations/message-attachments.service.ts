@@ -72,7 +72,11 @@ export async function verifyMessageUploads(
   return verified;
 }
 
-/** Writes the files and consumes their tickets, inside the message's transaction. */
+/**
+ * Consumes the tickets and writes the files, inside the message's transaction.
+ * Each ticket goes first: a second send racing for it then waits on the first
+ * and is refused with 410, rather than meeting the unique object key with a 500.
+ */
 export async function recordAttachments(
   tx: Tx,
   messageId: string,
@@ -80,6 +84,7 @@ export async function recordAttachments(
   sentAt: Date,
 ): Promise<void> {
   for (const upload of uploads) {
+    await consumeReservation(tx, upload.reservationId);
     await tx.insert(messageAttachments).values({
       messageId,
       kind: upload.kind,
@@ -91,7 +96,6 @@ export async function recordAttachments(
       expiresAt: messageFileExpiry(upload.kind, sentAt),
       createdAt: sentAt,
     });
-    await consumeReservation(tx, upload.reservationId);
   }
 }
 
