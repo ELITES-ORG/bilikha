@@ -81,11 +81,12 @@ still 18 or older).
    HMAC-SHA256 of the ID type and the normalised number, keyed with a server
    secret (`ID_HASH_SECRET`). The PhilID card and its printed ePhilID count as
    one type here, because both carry the same PhilSys card number (2026-10-16:
-   found on staging, where the same number on the two was not recognised). It never stores, logs or returns the number. If
-   another account's row has the same hash, the administrator is warned with
-   that account and its status, and must give a reason to verify anyway. The
-   hash is kept for as long as the record, after the photos are gone, and the
-   consent sentence and privacy notice say so.
+   found on staging, where the same number on the two was not recognised). It
+   never stores, logs or returns the number. If another account's row has the
+   same hash, the administrator is warned with that account and its status,
+   and must give a reason to verify anyway. The hash is kept for as long as
+   the record, after the photos are gone, and the consent sentence and privacy
+   notice say so.
 
 ## Alternatives considered
 
