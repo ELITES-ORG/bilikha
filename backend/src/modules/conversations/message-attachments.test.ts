@@ -213,6 +213,34 @@ describe('sending files', () => {
     const left = await db.select().from(mediaUploads).where(eq(mediaUploads.userId, client.id));
     expect(left.map((row) => row.id)).toEqual([good.id]);
   });
+
+  it('sends a ticket once when two sends race for it, refusing the second with 410', async () => {
+    const { client, conversation } = await inConversation();
+    const pdf = await uploadedPdf(client.id, conversation.id);
+    // Hold each check at storage until both have arrived, so both reach the write.
+    let arrived = 0;
+    let release!: () => void;
+    const bothChecking = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const look = stored.getMockImplementation()!;
+    stored.mockImplementation(async (bucket, key) => {
+      arrived += 1;
+      if (arrived === 2) release();
+      await bothChecking;
+      return look(bucket, key);
+    });
+
+    const results = await Promise.allSettled([
+      send(conversation.id, client.id, { attachments: [pdf.id] }),
+      send(conversation.id, client.id, { attachments: [pdf.id] }),
+    ]);
+
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    const refused = results.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+    expect(refused?.reason).toMatchObject({ status: 410, code: 'MEDIA_UPLOAD_EXPIRED' });
+    expect(await messageCount(conversation.id)).toBe(1);
+  });
 });
 
 describe('what the thread says', () => {
