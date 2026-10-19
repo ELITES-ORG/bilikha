@@ -52,6 +52,16 @@ describe('hashIdNumber', () => {
     );
   });
 
+  it('hashes a PhilID and its printed ePhilID the same: both carry the PhilSys card number', () => {
+    expect(hashIdNumber('ephilid', '1234-5678-9012-3456', SECRET)).toBe(
+      hashIdNumber('philsys_id', '1234 5678 9012 3456', SECRET),
+    );
+    // And no further: the ePhilID is not another document's number.
+    expect(hashIdNumber('ephilid', '123456789012', SECRET)).not.toBe(
+      hashIdNumber('umid', '123456789012', SECRET),
+    );
+  });
+
   it('hashes differently under a different secret', () => {
     expect(hashIdNumber('philsys_id', '123456789012', SECRET)).not.toBe(
       hashIdNumber('philsys_id', '123456789012', OTHER_SECRET),

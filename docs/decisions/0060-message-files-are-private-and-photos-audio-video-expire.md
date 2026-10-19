@@ -10,6 +10,11 @@
   [plan 0060](../plans/0060-message-attachments.md) ·
   [issue #66](https://github.com/ELITES-ORG/bilikha/issues/66)
 
+> **Amended 2026-10-19 by reyxdz.** No administrator opens a message file, not
+> even through a conversation report. This record first let the report view
+> list a reported conversation's files; that path is withdrawn, and the files
+> go between the two people in the conversation and no one else.
+
 ## Context
 
 A message carries text and at most one link each to an offer, a posting and a
@@ -81,9 +86,10 @@ most one per conversation per day. The sweep is best-effort and idempotent: a
 late or repeated run changes nothing a reader sees. `npm run messages:sweep`
 runs it by hand.
 
-**An administrator sees files only through a report.** The report view lists
-the reported conversation's attachments and issues the same short URLs. There
-is no other admin path to a message file.
+**No administrator opens a message file.** Not through a report, not through
+any other screen: files go straight to the recipient, and only the two
+participants are ever issued a URL. A conversation report records who reported
+it and why, and gives no access to its files (amended 2026-10-19).
 
 **Off in production until the buckets exist.** `MESSAGE_ATTACHMENTS` (default
 off) gates the ticket and the composer's attach button, as
@@ -108,6 +114,11 @@ the API has is its own timer, which does not run while Render is asleep, and
 GitHub's scheduled workflows run hours late (`keep-awake.yml`). A deadline that
 depends on either is not a deadline.
 
+**Files in the admin report view.** This record first chose it: a reported
+conversation's files listed for the administrator handling the report, through
+the same short URLs. Withdrawn by reyxdz on 2026-10-19: message files are sent
+directly to the recipient, with no administrator involved.
+
 **A storage quota per account, as offers have.** Rejected for now: expiry
 bounds the cost of everything but PDFs, and a quota would refuse a file in the
 middle of a negotiation for reasons the sender cannot see. Revisit if PDFs grow.
@@ -122,7 +133,8 @@ holds even if the sweep stalls, and the thread poll stays as cheap as it is.
 a URL that lapses after five minutes. Photos, audio and video vanish after 30
 days; the thread keeps a placeholder saying what was there and when it went, and
 the notices are the only warning. Four more buckets to configure per
-environment.
+environment. An administrator handling a report cannot see a file sent in that
+conversation.
 
 **Costs.** Supabase Pro on production before release, as for offer media: the
 free tier caps a file at 50 MB. The sweep adds a notification type,

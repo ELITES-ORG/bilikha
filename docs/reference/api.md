@@ -1048,7 +1048,9 @@ Thread list for the caller, filtered by `mode` (`hiring` \| `creative`, default
 you are the creative. Newest `lastMessageAt` first. Query: `mode`, `page`,
 `limit`. Each row: `id`, `profileSlug`, `otherPartyName`, `avatarUrl`, `role`
 (`client` \| `creative`), `lastMessage`, `unreadCount`, `lastMessageAt`. No
-subject.
+subject. `lastMessage` is `{ body, fromSelf, createdAt, attachmentKinds }`;
+`attachmentKinds` lists the kinds of file it carries (`image`, `audio`,
+`video`, `document`), so a message with an empty `body` can be described.
 
 ### `GET /api/v1/conversations/unread-count`
 
@@ -1084,6 +1086,13 @@ posting card carries `subdomainName` (the official plural) and
 Query: `after` (message uuid, for
 polling), `limit`. Non-participants → `404`. No subject.
 
+Each message carries `attachments`, its files ([ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md)), each
+`{ id, kind, mimeType, sizeBytes, durationSeconds, hasThumb, expiresAt, expired }`.
+They say what a file is and never where it is: there is no URL in the thread,
+so polling it downloads nothing. `expiresAt` is 30 days after sending for a
+photo, audio or video, and `null` for a PDF; `expired` is true from that
+instant on, whether or not the sweep has deleted the object.
+
 ### `POST /api/v1/conversations/:id/messages`
 
 ```jsonc
@@ -1091,9 +1100,20 @@ polling), `limit`. Non-participants → `404`. No subject.
   "body": "Happy to discuss rates this week.",
   "offerId": "optional-uuid-for-a-second-inquiry-in-the-same-thread",
   // or, when a creative replies to a posting:
-  "postingId": "optional-uuid"
+  "postingId": "optional-uuid",
+  // files, from POST /media/uploads with destination "message":
+  "attachments": ["reservation-uuid"]
 }
 ```
+
+`attachments` holds up to five upload reservations, each once; `body` may then
+be empty. Each is checked against what storage holds before the message is
+written, and the message, its files and the spent reservations are written
+together. A reservation for another conversation → `409` ("That upload belongs
+to a different conversation."); one that is gone, expired or another person's →
+`410 MEDIA_UPLOAD_EXPIRED`; a file that does not match its ticket → `422
+MEDIA_VERIFICATION_FAILED`, and that upload is deleted. In each case nothing is
+sent.
 
 `201`. Attach **either** `offerId` or `postingId`, not both. `offerId` must
 belong to the conversation's creative profile (`400` with `field: "offerId"`
@@ -1102,6 +1122,23 @@ thread's client, and the caller must be the creative (`400` with
 `field: "postingId"` otherwise, including replying to your own posting).
 Attached only on this message; never rewrites earlier messages. If the other
 party has blocked the caller → neutral `403`. Non-participants → `404`.
+
+### `GET /api/v1/conversations/:id/attachments/:attachmentId/url`
+
+A short URL for one file in the thread, asked for when the file is about to be
+shown or played ([ADR 0060](../decisions/0060-message-files-are-private-and-photos-audio-video-expire.md)). Query: `variant` — `file` (default) or
+`thumb` (an image's thumbnail or a video's poster).
+
+```jsonc
+{ "data": { "url": "https://…/object/sign/…", "expiresAt": "2026-10-15T09:05:00.000Z" } }
+```
+
+The URL lasts at most five minutes and never past the file's own `expiresAt`.
+Participants only: a non-participant, an unknown file, a file in another
+conversation, or a `thumb` for a file without one → `404`. From the file's
+`expiresAt` on → `410 ATTACHMENT_EXPIRED` ("This file is no longer
+available.", `details: { expiredAt }`), even before the sweep has run. A PDF
+never expires.
 
 ### `POST /api/v1/conversations/:id/read`
 

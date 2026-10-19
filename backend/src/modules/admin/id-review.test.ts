@@ -497,6 +497,26 @@ describe('ID review', () => {
       expect(still!.status).toBe('pending');
     });
 
+    it('recognises a PhilID number on a printed ePhilID, as found on staging', async () => {
+      const { cookie } = await admin();
+      const first = await person();
+      const second = await person();
+      const card = await submitted(first.id, { idType: 'philsys_id' });
+      expect(
+        (await decide(cookie, card.id, { decision: 'verify', idNumber: '1234-5678-9012-3456' })).status,
+      ).toBe(200);
+      // The printed ePhilID has no back.
+      const printout = await submitted(second.id, { idType: 'ephilid', backKey: null });
+
+      const warned = await decide(cookie, printout.id, { decision: 'verify', idNumber: '1234 5678 9012 3456' });
+
+      expect(warned.status).toBe(409);
+      expect(warned.error.code).toBe('ID_NUMBER_MATCH');
+      expect(warned.error.details.matches).toEqual([
+        { username: first.username, status: 'verified', decidedAt: expect.any(String) },
+      ]);
+    });
+
     it('verifies despite a match only with a reason, and says so on the record', async () => {
       const { cookie } = await admin();
       const first = await person();

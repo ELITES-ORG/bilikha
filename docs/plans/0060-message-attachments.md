@@ -26,6 +26,8 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 - Deleting a single message — there is no such feature; files go with their
   conversation (`ON DELETE CASCADE`) and `media:prune` finds the objects.
 - Account deletion — there is no such feature either.
+- Message files in the admin report view — nowhere: no administrator opens a
+  message file, not even through a report (ADR 0060, amended 2026-10-19).
 
 ## Rules for whoever executes this
 
@@ -52,7 +54,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 |---|---|---|
 | 1. Decide and record | 1 / 1 | Done |
 | 2. Data and the `message` destination | 4 / 4 | Done |
-| 3. Sending and reading | 0 / 4 | Not started |
+| 3. Sending and reading | 3 / 3 | Done — 3.4 dropped |
 | 4. Composer and thread | 0 / 3 | Not started |
 | 5. Expiry | 0 / 3 | Not started |
 | 6. Rollout (reyxdz) | 0 / 4 | Not started |
@@ -112,31 +114,36 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 ## Phase 3 — Sending and reading (pull request 3)
 
 ### Step 3.1 — Send with files
-- [ ] **Action.** `POST /conversations/:id/messages` takes `attachments:
+- [x] **Action.** `POST /conversations/:id/messages` takes `attachments:
   reservationId[]` (0–5); `body` is optional when there is at least one.
   Verify and consume each ticket in the message's transaction; write
   `message_attachments` with `expires_at`.
-- [ ] **Verify.** Tests: files only; a ticket from another conversation or user
+- [x] **Verify.** Tests: files only; a ticket from another conversation or user
   is refused; a forged size or type is deleted on verify.
 
 ### Step 3.2 — What the thread says
-- [ ] **Action.** Each message carries `attachments: { id, kind, mimeType,
+- [x] **Action.** Each message carries `attachments: { id, kind, mimeType,
   sizeBytes, durationSeconds, hasThumb, expiresAt, expired }`. The conversation
   list and notifications say "Sent a photo" (and the rest) when a message has no
   text. Contracts in `contracts/conversations.ts`.
-- [ ] **Verify.** Tests; no URL anywhere in the response.
+  *As built: the list's last message carries `attachmentKinds`, and the words
+  ("Sent a photo") are the browser's, in the catalogue (ADR 0055) — phase 4.3.
+  Notifications have nothing to change: messages never notify (ADR 0030).*
+- [x] **Verify.** Tests; no URL anywhere in the response.
 
 ### Step 3.3 — Signed reads
-- [ ] **Action.** `GET /conversations/:id/attachments/:attachmentId/url?variant=file|thumb`
+- [x] **Action.** `GET /conversations/:id/attachments/:attachmentId/url?variant=file|thumb`
   → `{ url, expiresAt }`, participants only, at most 300 seconds and never past
   `expires_at`; `410` once expired.
-- [ ] **Verify.** Tests: a non-participant gets 404; an expired file gets 410
+- [x] **Verify.** Tests: a non-participant gets 404; an expired file gets 410
   even before the sweep; a PDF never expires.
 
-### Step 3.4 — Reports
-- [ ] **Action.** The admin report view lists the reported conversation's
-  attachments and issues the same URLs; no other admin path.
-- [ ] **Verify.** Tests.
+### Step 3.4 — Reports (dropped)
+
+*Dropped 2026-10-19 by reyxdz.* This step would have listed a reported
+conversation's files in the admin report view. Message files go straight to
+the recipient with no administrator involved, so no admin path to them is
+built, through a report or otherwise (ADR 0060, as amended).
 
 ## Phase 4 — Composer and thread (pull request 4)
 

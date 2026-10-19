@@ -287,6 +287,11 @@ GET /storage/v1/bucket/nope
 
       A plain hash is not enough: ID numbers are short, so an unkeyed hash can
       be brute-forced back into the number.
+
+      *As built since ADR 0057's 2026-10-16 note: the input is
+      `` `${numberingOf(idType)}:${normalizeIdNumber(raw)}` ``. The ePhilID
+      hashes in the PhilID's numbering, because both carry the same PhilSys
+      card number; every other type keeps its own.*
 - [x] **Verify.** Unit tests: `'1234-5678 9012'` and `'123456789012'` hash the
       same; the same number under two ID types hashes differently; a different
       secret gives a different hash; no secret throws; `'A-1'` is refused; the
