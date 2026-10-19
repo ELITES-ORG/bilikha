@@ -10,8 +10,7 @@ import { canGoBackInApp } from '@/lib/history';
  * 44px tap area; only the box around the icon is gone.
  */
 export const onPhotoButtonClass =
-  'interactive-press grid size-11 place-items-center rounded-sm text-on-primary ' +
-  '[filter:drop-shadow(0_0_1px_var(--color-scrim))_drop-shadow(0_0_1px_var(--color-scrim))_drop-shadow(0_1px_4px_var(--color-scrim))]';
+  'interactive-press grid size-11 place-items-center rounded-sm text-on-primary on-photo-outline';
 
 /**
  * Back from a page people often open from a shared link. With in-app history
