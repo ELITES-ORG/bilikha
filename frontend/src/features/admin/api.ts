@@ -231,6 +231,7 @@ export type IdQueueView = 'pending' | 'appeals' | 'decided';
 export const adminIdKeys = {
   all: ['admin', 'ids'] as const,
   queue: (view: IdQueueView, page: number) => [...adminIdKeys.all, 'queue', view, page] as const,
+  count: (view: IdQueueView) => [...adminIdKeys.all, 'count', view] as const,
   detail: (id: string) => [...adminIdKeys.all, 'detail', id] as const,
 };
 
@@ -244,6 +245,29 @@ export function useAdminIdQueue(view: IdQueueView, page: number) {
           { params: { view, page, limit: 20 } },
         );
         return data;
+      } catch (error) {
+        throw toApiError(error);
+      }
+    },
+  });
+}
+
+/**
+ * How many rows a tab holds, without its rows: one row is asked for and only
+ * the total read. For the Decided tab, which the summary does not count — it
+ * counts only what waits for a decision — so the number stays on the tab when
+ * another one is open. Refreshed with the queue after every decision.
+ */
+export function useAdminIdCount(view: IdQueueView) {
+  return useQuery({
+    queryKey: adminIdKeys.count(view),
+    queryFn: async (): Promise<number> => {
+      try {
+        const { data } = await apiClient.get<Paginated<AdminIdVerificationRow>>(
+          '/admin/id-verifications',
+          { params: { view, page: 1, limit: 1 } },
+        );
+        return data.meta.total;
       } catch (error) {
         throw toApiError(error);
       }

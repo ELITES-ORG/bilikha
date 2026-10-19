@@ -4,6 +4,8 @@ import { messageLimiter } from '../../middleware/rate-limit.js';
 import { issueAgreementSchema } from '../agreements/agreements.schema.js';
 import { issueAgreement } from '../agreements/agreements.service.js';
 import {
+  attachmentIdSchema,
+  attachmentUrlSchema,
   conversationIdSchema,
   ensureConversationSchema,
   listHistorySchema,
@@ -14,6 +16,7 @@ import {
   startConversationSchema,
 } from './conversations.schema.js';
 import {
+  attachmentUrl,
   ensureConversation,
   getThread,
   listHistory,
@@ -71,6 +74,18 @@ conversationsRouter.post('/:id/messages', messageLimiter, async (req, res) => {
   const input = sendMessageSchema.parse(req.body);
   const data = await sendMessage(id, req.session.userId!, input);
   res.status(201).json({ data });
+});
+
+/**
+ * A file is read one at a time, when it is about to be shown or played: the
+ * thread itself carries no URL (ADR 0060).
+ */
+conversationsRouter.get('/:id/attachments/:attachmentId/url', async (req, res) => {
+  const id = conversationIdSchema.parse(req.params.id);
+  const attachmentId = attachmentIdSchema.parse(req.params.attachmentId);
+  const input = attachmentUrlSchema.parse(req.query);
+  const data = await attachmentUrl(id, attachmentId, req.session.userId!, input);
+  res.json({ data });
 });
 
 /**
