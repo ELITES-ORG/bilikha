@@ -214,6 +214,22 @@ describe('sending files', () => {
     expect(left.map((row) => row.id)).toEqual([good.id]);
   });
 
+  it('deletes a file whose stored type is not the one its ticket declared, sending nothing', async () => {
+    const { client, conversation } = await inConversation();
+    const relabelled = await uploadedPdf(client.id, conversation.id);
+    put('media-messages-documents', relabelled.objectKey, 500_000, 'text/html');
+
+    await expect(send(conversation.id, client.id, { attachments: [relabelled.id] })).rejects.toMatchObject({
+      status: 422,
+      code: 'MEDIA_VERIFICATION_FAILED',
+      details: { reason: 'type' },
+    });
+
+    expect(await messageCount(conversation.id)).toBe(0);
+    expect(discard).toHaveBeenCalledWith(relabelled.objectKey, 'media-messages-documents');
+    expect(await reservationCount(client.id)).toBe(0);
+  });
+
   it('sends a ticket once when two sends race for it, refusing the second with 410', async () => {
     const { client, conversation } = await inConversation();
     const pdf = await uploadedPdf(client.id, conversation.id);

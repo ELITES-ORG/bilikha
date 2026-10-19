@@ -25,7 +25,7 @@ export const sendMessageSchema = z
     /** Upload reservations to send as files (ADR 0060). */
     attachments: z
       .array(z.string().uuid('Invalid upload id'))
-      .max(FILES_PER_MESSAGE, `A message can carry at most ${FILES_PER_MESSAGE} files.`)
+      .max(FILES_PER_MESSAGE, `A message can carry at most ${FILES_PER_MESSAGE} files`)
       .refine((ids) => new Set(ids).size === ids.length, 'Each file can be sent once')
       .default([]),
   })
