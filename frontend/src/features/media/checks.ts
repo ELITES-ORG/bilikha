@@ -40,6 +40,33 @@ const BY_EXTENSION: Readonly<Record<string, string>> = {
 /** Pictures the browser resizes into WebP or JPEG. SVG is not among them. */
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 
+/** The file picker's pictures. HEIC is named by extension too: some browsers report no type for it. */
+export const IMAGE_ACCEPT: readonly string[] = [...IMAGE_TYPES, '.heic', '.heif'];
+
+/** Extensions beside each type, for phones that report a file's type wrongly or not at all. */
+const EXTENSIONS: Readonly<Record<string, readonly string[]>> = {
+  'audio/mpeg': ['.mp3'],
+  'audio/mp4': ['.m4a'],
+  'audio/aac': ['.aac'],
+  'audio/ogg': ['.ogg', '.opus'],
+  'video/mp4': ['.mp4'],
+  'video/webm': ['.webm'],
+  'application/pdf': ['.pdf'],
+};
+
+const OTHER_KINDS = ['audio', 'video', 'document'] as const;
+
+/** A file input's `accept` for one destination's limits: each enabled kind's types and extensions. */
+export function acceptFor(limits: Readonly<Record<MediaKind, KindLimitView>>): string {
+  const accepted = limits.image.enabled ? [...IMAGE_ACCEPT] : [];
+  for (const kind of OTHER_KINDS) {
+    const limit = limits[kind];
+    if (!limit.enabled) continue;
+    for (const type of limit.mimeTypes) accepted.push(type, ...(EXTENSIONS[type] ?? []));
+  }
+  return accepted.join(',');
+}
+
 function extensionOf(name: string): string {
   const dot = name.lastIndexOf('.');
   return dot === -1 ? '' : name.slice(dot + 1).toLowerCase();
