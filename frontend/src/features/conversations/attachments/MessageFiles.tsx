@@ -246,11 +246,12 @@ function PhotoViewer({ url, onClose, onDownload }: { url: string | null; onClose
 
 export function MessageFiles({
   conversationId,
-  files,
+  files = [],
   fromSelf,
 }: {
   conversationId: string;
-  files: readonly ConversationAttachment[];
+  /** Missing from an API that predates files in messages: then there are none. */
+  files?: readonly ConversationAttachment[];
   fromSelf: boolean;
 }) {
   const t = useT();
