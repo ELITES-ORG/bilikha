@@ -898,7 +898,8 @@ instance** (Prerequisites).
       Biliran), appeal, and both grant and uphold an appeal; reverse a decision;
       register a second account with the same ID and see it flagged; sign in
       with an account made before the release.
-- [x] **Verify.** The issue's Verify list, every box, plus the appeal and
+- [x] **Verify.** The issue's Verify list, every box a phone can show (the
+      7-day deletion rests on the tests, see Acceptance), plus the appeal and
       reversal paths.
 
 Done by emanuel on staging, 2026-10-20, in Chrome and Facebook's in-app
