@@ -101,6 +101,8 @@ export function AttachTray({
   const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const full = uploads.files.length >= limits.filesPerMessage;
+  const ready = uploads.files.filter((file) => file.state.status === 'confirming');
+  const latestReady = ready[ready.length - 1];
 
   return (
     <div id="message-files-tray" className="mb-2 space-y-2 rounded-md border border-hairline bg-surface-sunken p-3">
@@ -128,12 +130,16 @@ export function AttachTray({
       )}
 
       {uploads.files.length > 0 && (
-        <ul className="max-h-48 space-y-2 overflow-y-auto short:max-h-28" aria-live="polite">
+        <ul className="max-h-48 space-y-2 overflow-y-auto short:max-h-28">
           {uploads.files.map((file) => (
             <PendingRow key={file.key} file={file} onRemove={() => uploads.remove(file.key)} />
           ))}
         </ul>
       )}
+      {/* Says a file is ready once, not each progress tick: the list above is not a live region. */}
+      <p role="status" className="sr-only">
+        {latestReady ? fill(t('messages.files.ready'), { name: latestReady.name }) : ''}
+      </p>
 
       {!full && (
         <>
