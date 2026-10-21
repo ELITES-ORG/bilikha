@@ -163,8 +163,8 @@ built, through a report or otherwise (ADR 0060, as amended).
 ### Step 4.2 — In the thread
 - [x] **Action.** Thumbnails that open full size; players with
   `preload="none"`, size and duration before play; PDFs as a link with their
-  size; "Available until …" with a download button; the placeholder once
-  expired.
+  size and a download button; photos, audio and video with "Available until …"
+  and a download button; the placeholder once expired.
 - [x] **Verify.** Opening a thread downloads thumbnails only (DevTools, throttled).
   *Checked against a local stand-in for storage that logged every object
   served: over a dozen loads of a thread holding every kind, only thumbnails
