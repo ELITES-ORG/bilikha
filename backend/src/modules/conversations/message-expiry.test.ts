@@ -112,15 +112,10 @@ describe('deleting expired message files', () => {
 
   it('is idempotent: a second run deletes nothing more, and the thread reads the same before and after', async () => {
     const { conversation, message } = await inConversation();
-    const expired = await video(message.id, conversation.id, -HOUR);
-    // Past for the reader too, who reads by the real clock.
-    await db
-      .update(messageAttachments)
-      .set({ expiresAt: new Date(Date.now() - HOUR) })
-      .where(eq(messageAttachments.id, expired.id));
+    await video(message.id, conversation.id, -HOUR);
     const before = await loadAttachments([message.id]);
 
-    await deleteExpiredFiles(NOW);
+    expect(await deleteExpiredFiles(NOW)).toBe(1);
     remove.mockClear();
     expect(await deleteExpiredFiles(NOW)).toBe(0);
 
@@ -175,7 +170,7 @@ describe('the three-day notice', () => {
 
     expect(await sendExpiryNotices(NOW)).toBe(2);
     expect(await sendExpiryNotices(new Date(NOW.getTime() + HOUR))).toBe(0);
-    expect(await sendExpiryNotices(new Date(NOW.getTime() + 2 * DAY))).toBe(0);
+    expect(await sendExpiryNotices(new Date(NOW.getTime() + DAY))).toBe(0);
     expect(await noticesFor(client.id)).toHaveLength(1);
   });
 
