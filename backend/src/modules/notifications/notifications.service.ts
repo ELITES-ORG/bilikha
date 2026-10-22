@@ -35,6 +35,8 @@ export async function notify(input: {
   actorUserId?: string | null;
   type: NotificationType;
   targetId: string;
+  /** When it happened, for a job that works from its own clock. Defaults to now. */
+  at?: Date;
 }): Promise<void> {
   // Nobody is told about their own action. Enforced here rather than at every
   // call site, because the paths that notify both parties are exactly where it
@@ -47,6 +49,7 @@ export async function notify(input: {
       actorUserId: input.actorUserId ?? null,
       type: input.type,
       targetId: input.targetId,
+      createdAt: input.at,
     });
   } catch (error) {
     logger.error({ err: error, type: input.type }, 'failed to write notification');
