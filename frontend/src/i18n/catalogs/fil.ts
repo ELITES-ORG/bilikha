@@ -15,6 +15,11 @@
 import type { Catalog } from './en';
 
 export const fil: Catalog = {
+  'conversations.sent.image': '',
+  'conversations.sent.audio': '',
+  'conversations.sent.video': '',
+  'conversations.sent.document': '',
+  'conversations.sent.files': '',
   'signIn.eyebrow': 'Maligayang Pagbabalik',
   'signIn.heading': 'Mag sign-in',
   'signIn.intro': 'Gamitin ang username at password na pinili mo noong nag-rehistro.',

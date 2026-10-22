@@ -31,6 +31,11 @@ import {
   MessagePostingBlock,
 } from '@/features/conversations/PostingCard';
 import { relativeTime } from '@/features/conversations/relative-time';
+import { AttachToggle, AttachTray } from '@/features/conversations/attachments/ComposerFiles';
+import { MessageFiles } from '@/features/conversations/attachments/MessageFiles';
+import { isFileSendError, messageFileLimits } from '@/features/conversations/attachments/message-files';
+import { useMessageUploads } from '@/features/conversations/attachments/use-message-uploads';
+import { useMediaLimits } from '@/features/media/limits-api';
 import { OfferNotFoundError, usePublishedOffer } from '@/features/offers/api';
 import { PostingNotFoundError, usePosting } from '@/features/postings/api';
 import { toApiError } from '@/lib/api-client';
@@ -157,6 +162,10 @@ export function ConversationPage() {
   const [safetyError, setSafetyError] = useState<string | null>(null);
   const [composer, setComposer] = useState<ComposerMode>('closed');
   const markedFor = useRef<string | null>(null);
+  // Files in messages (ADR 0060): no attach button unless the API takes them.
+  const fileLimits = messageFileLimits(useMediaLimits());
+  const uploads = useMessageUploads(id ?? '', fileLimits);
+  const [trayOpen, setTrayOpen] = useState(false);
 
   const isCreative = thread.data?.role === 'creative';
 
@@ -228,7 +237,13 @@ export function ConversationPage() {
     e.preventDefault();
     setError(null);
     const text = body.trim();
-    if (!text) {
+    const waiting = uploads.blockingReason();
+    if (waiting) {
+      setError(waiting);
+      return;
+    }
+    const attachments = uploads.readyIds;
+    if (!text && attachments.length === 0) {
       setError('Write a message');
       return;
     }
@@ -243,7 +258,10 @@ export function ConversationPage() {
         body: text,
         ...(offerIdToSend ? { offerId: offerIdToSend } : {}),
         ...(postingIdToSend ? { postingId: postingIdToSend } : {}),
+        ...(attachments.length > 0 ? { attachments } : {}),
       });
+      uploads.sent();
+      setTrayOpen(false);
       setBody('');
       if (replyRef.current) replyRef.current.style.height = '';
       if (attachedOfferId) clearAttachedOffer();
@@ -251,6 +269,7 @@ export function ConversationPage() {
     } catch (err) {
       const apiError = toApiError(err);
       setError(apiError.message);
+      if (isFileSendError(apiError)) uploads.refused();
       if (apiError.message.toLowerCase().includes('cannot be delivered')) {
         setBlocked(true);
       }
@@ -523,7 +542,8 @@ export function ConversationPage() {
                       agreementRemoved={msg.agreementRemoved}
                       fromSelf={msg.fromSelf}
                     />
-                    <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>
+                    <MessageFiles conversationId={id!} files={msg.attachments} fromSelf={msg.fromSelf} />
+                    {msg.body && <p className="whitespace-pre-wrap text-pretty">{msg.body}</p>}
                   </div>
                   {!grouped && (
                     <p className="mt-1 px-1 text-2xs text-ink-subtle tabular-nums">
@@ -708,9 +728,19 @@ export function ConversationPage() {
                       )}
                     </div>
                   )}
+                  {fileLimits && trayOpen && (
+                    <AttachTray limits={fileLimits} uploads={uploads} onClose={() => setTrayOpen(false)} />
+                  )}
                   {error && <p className="mb-2 text-sm text-danger-700">{error}</p>}
                   {/* One field: the textarea and the send button share a border. */}
                   <div className="flex flex-row items-end gap-2 rounded-md border border-hairline-strong bg-surface p-1.5 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-4 focus-within:ring-navy-100">
+                    {fileLimits && (
+                      <AttachToggle
+                        open={trayOpen}
+                        count={uploads.files.length}
+                        onToggle={() => setTrayOpen((open) => !open)}
+                      />
+                    )}
                     <label htmlFor="reply-body" className="sr-only">
                       Reply
                     </label>

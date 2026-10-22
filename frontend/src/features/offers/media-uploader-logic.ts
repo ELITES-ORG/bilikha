@@ -1,5 +1,6 @@
 import type { MediaKind, MediaLimits } from '@contracts/media';
-import { formatBytes, formatDuration, type RefusalReason } from '@/features/media/checks';
+import { IMAGE_ACCEPT, acceptFor, formatBytes, formatDuration, type RefusalReason } from '@/features/media/checks';
+import { fill } from '@/i18n/fill';
 import type { MessageKey } from '@/i18n/catalogs/en';
 import { ApiError } from '@/lib/api-client';
 import type { OwnOffer, OwnOfferImage, OwnOfferMediaItem } from './api';
@@ -8,20 +9,6 @@ import type { OwnOffer, OwnOfferImage, OwnOfferMediaItem } from './api';
  * The offer editor's media section without React: what the file picker
  * offers, the sentence for a refused file, and the offer's items as one list.
  */
-
-/** Pictures the browser can resize. HEIC is named by extension too: some browsers report no type for it. */
-const IMAGE_ACCEPT = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', '.heic', '.heif'];
-
-/** Extensions beside each type, for phones that report a file's type wrongly or not at all. */
-const EXTENSIONS: Readonly<Record<string, readonly string[]>> = {
-  'audio/mpeg': ['.mp3'],
-  'audio/mp4': ['.m4a'],
-  'audio/aac': ['.aac'],
-  'audio/ogg': ['.ogg', '.opus'],
-  'video/mp4': ['.mp4'],
-  'video/webm': ['.webm'],
-  'application/pdf': ['.pdf'],
-};
 
 const OTHER_KINDS = ['audio', 'video', 'document'] as const;
 
@@ -32,15 +19,7 @@ export function acceptsOnlyImages(limits: MediaLimits | null): boolean {
 
 /** The file input's `accept`: images always, and each enabled kind's types. */
 export function acceptAttribute(limits: MediaLimits | null): string {
-  const accepted = [...IMAGE_ACCEPT];
-  if (limits) {
-    for (const kind of OTHER_KINDS) {
-      const limit = limits.destinations.offer[kind];
-      if (!limit.enabled) continue;
-      for (const type of limit.mimeTypes) accepted.push(type, ...(EXTENSIONS[type] ?? []));
-    }
-  }
-  return accepted.join(',');
+  return limits ? acceptFor(limits.destinations.offer) : IMAGE_ACCEPT.join(',');
 }
 
 /** A refusal before upload, or the API code that refused it. */
@@ -66,11 +45,6 @@ const REFUSAL_KEYS: Readonly<Record<Refusal, MessageKey>> = {
   MEDIA_LIMIT_REACHED: 'offers.media.refused.count',
   MEDIA_QUOTA_EXCEEDED: 'offers.media.refused.quota',
 };
-
-/** Replaces each `{name}` with its value. The catalogue keeps every sentence whole. */
-export function fill(text: string, values: Readonly<Record<string, string>>): string {
-  return Object.entries(values).reduce((out, [name, value]) => out.replace(`{${name}}`, value), text);
-}
 
 /**
  * The sentence for a refusal reason or an API error code. Anything else, an

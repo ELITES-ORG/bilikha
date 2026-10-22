@@ -6,6 +6,10 @@ import { enLegal } from './legal/en';
 import { filLegal } from './legal/fil';
 import { warLegal } from './legal/war';
 import './legal';
+import { enMessages } from './messages/en';
+import { filMessages } from './messages/fil';
+import { warMessages } from './messages/war';
+import './messages';
 import { enOffers } from './offers/en';
 import { filOffers } from './offers/fil';
 import { warOffers } from './offers/war';
@@ -36,6 +40,7 @@ import { resolveMessage, translate } from '../i18n-context';
 const SETS = [
   ['core', en, { fil, war }],
   ['legal', enLegal, { fil: filLegal, war: warLegal }],
+  ['messages', enMessages, { fil: filMessages, war: warMessages }],
   ['offers', enOffers, { fil: filOffers, war: warOffers }],
   ['organizations', enOrganizations, { fil: filOrganizations, war: warOrganizations }],
   ['verification', enVerification, { fil: filVerification, war: warVerification }],

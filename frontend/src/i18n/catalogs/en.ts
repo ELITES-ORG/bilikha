@@ -18,6 +18,7 @@
  * value. `catalogs.test.ts` fails if you forget.
  */
 import type { LegalKey } from './legal/en';
+import type { MessagesKey } from './messages/en';
 import type { OffersKey } from './offers/en';
 import type { OrganizationsKey } from './organizations/en';
 import type { VerificationKey } from './verification/en';
@@ -121,6 +122,12 @@ export const en = {
   'media.badge.video': 'Video',
   'media.badge.document': 'PDF',
   'media.noPoster': 'Video',
+  // The conversation list, for a last message with files and no text (ADR 0060)
+  'conversations.sent.image': 'Sent a photo',
+  'conversations.sent.audio': 'Sent an audio clip',
+  'conversations.sent.video': 'Sent a video',
+  'conversations.sent.document': 'Sent a PDF',
+  'conversations.sent.files': 'Sent {count} files',
 } as const;
 
 /**
@@ -131,6 +138,7 @@ export const en = {
 export type MessageKey =
   | keyof typeof en
   | LegalKey
+  | MessagesKey
   | OffersKey
   | OrganizationsKey
   | VerificationKey
