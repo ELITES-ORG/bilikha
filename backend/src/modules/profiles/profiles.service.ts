@@ -268,7 +268,7 @@ export async function listPublished(
   return { data, total: totals?.total ?? 0 };
 }
 
-/** A cover's two widths as URLs, or null unless both keys are set and storage is (ADR 0061). */
+/** A cover's two widths as URLs, or null unless both keys are set and storage is configured (ADR 0061). */
 export function profileCover(key: string | null, smallKey: string | null): ProfileCover | null {
   if (!key || !smallKey || !isStorageConfigured()) return null;
   return { url: publicUrl(key), smallUrl: publicUrl(smallKey) };
