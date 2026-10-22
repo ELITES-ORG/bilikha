@@ -151,8 +151,8 @@ why. Each is open to challenge in this plan's pull request.
 - [x] Issue #51 (ID verification) finished, so the two don't touch
       `storage.ts`, the admin area and migrations at once. Its build phases are
       all merged; its closing pull request is #111.
-- [x] This plan reviewed and merged, with Status set to Ready (#112, approved
-      by reyxdz, 2026-10-22).
+- [x] This plan reviewed and merged in #112 (approved by reyxdz, 2026-10-22).
+      #112 left the status Draft; this phase sets it to In progress.
 - [x] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate`, with nothing
       pending.

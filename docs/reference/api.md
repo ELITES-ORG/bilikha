@@ -1270,8 +1270,9 @@ Every decision writes a moderation action and notifies the owner. For a logo,
 the founder is notified; a rejected cover sends `cover_rejected` to the
 creative. An approved photo, logo or cover does not send a notification.
 
-If nothing is waiting, or the offer is already rejected, the response is
-`409`. If the item does not exist, it is `404`.
+If a photo, logo or cover is not waiting, the response is `404`, as it is when
+the item does not exist. If an offer is already rejected, or has nothing
+waiting, the response is `409`.
 
 ### `GET /api/v1/admin/accounts`
 
@@ -1915,8 +1916,8 @@ check is deleted.
 
 If a cover is waiting for review, it is withdrawn and the approved one stays.
 Otherwise the approved cover is removed. Removing needs no review.
-`{ data: { ok, removed: "pending" | "approved" } }`. `403` without a creative
-profile.
+`{ data: { ok, removed: "pending" | "approved" } }`. `401` when signed out or
+suspended. `403` without a creative profile.
 
 ### `POST /api/v1/media/abandon`
 
