@@ -190,7 +190,7 @@ built, through a report or otherwise (ADR 0060, as amended).
 
 ### Step 5.3 — Records
 - [x] **Action.** `api.md`, `data-model.md`, `environment.md`, `commands.md`,
-  the privacy notice's line on message files, README.
+  README. The privacy notice's line on message files is Step 6.4.
 - [x] **Verify.** `npm run docs:check` passes.
 
 ## Phase 6 — Rollout (reyxdz)
@@ -209,6 +209,8 @@ built, through a report or otherwise (ADR 0060, as amended).
 
 ### Step 6.4 — Production on
 - [ ] **Action.** The switch on `bilikha-production`, after Supabase Pro.
+  The privacy notice's lines on message files go out here too, with
+  `CONSENT_VERSION` (both sides) and the notice's date moved to the day they ship.
   Accept-and-close: #66.
 - [ ] **Verify.** Each kind sends and opens on production.
 
