@@ -1,6 +1,6 @@
 # 0061. A cover photo on the creative profile
 
-- **Status:** Draft
+- **Status:** Ready
 - **Owner:** emanuel
 - **Related:** [ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md) ·
   [ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md) ·
@@ -151,7 +151,8 @@ why. Each is open to challenge in this plan's pull request.
 - [x] Issue #51 (ID verification) finished, so the two don't touch
       `storage.ts`, the admin area and migrations at once. Its build phases are
       all merged; its closing pull request is #111.
-- [ ] This plan reviewed and merged, with Status set to Ready.
+- [x] This plan reviewed and merged, with Status set to Ready (#112, approved
+      by reyxdz, 2026-10-22).
 - [ ] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate`, with nothing
       pending.
