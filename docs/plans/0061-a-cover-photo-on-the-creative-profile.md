@@ -434,9 +434,15 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
       `CoverUploadTicket` in `UploadTicket`, `'cover'` in `requestUploadUrl`'s
       kind, and `confirmCover(objectKey, smallKey)` and `removeCover()`,
       shaped like `confirmAvatar` and `removeAvatar`.
-- [ ] **Action.** The client's `OwnProfile` and profile detail types gain the
-      new fields as **optional** (`cover?: ProfileCover | null`, and so on),
-      with the deployment-skew comment those files already use.
+- [ ] **Action.** On the client, keep the contract fields required and add
+      optional copies for deployment skew (ADR 0040). In
+      `frontend/src/features/profiles/types.ts`, add
+      `cover?: ProfileCover | null` beside the comment that file already
+      uses. `frontend/src/features/me/types.ts` re-exports `OwnProfile` from
+      `@contracts/me`, so replace that re-export with the contract type plus
+      optional `cover`, `pendingCover` and `coverRejectionReason`, and copy
+      the same comment. Do not mark the fields optional in
+      `backend/src/contracts/me.ts`.
 - [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 2.3 — The uploader
@@ -444,8 +450,9 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
 - [ ] **Action.** Create `frontend/src/features/media/CoverUploader.tsx`,
       modelled on `AvatarUploader.tsx`. Props: `cover`, `pendingCover`,
       `rejectionReason`, each possibly `undefined`.
-      - **Preview:** a band in the profile's shape (`h-24 sm:h-32`, `rounded-lg`,
-        `bg-primary`) showing the pending cover's `smallUrl` if there is one,
+      - **Preview:** a band in the profile's shape
+        (`relative h-32 overflow-hidden rounded-lg bg-primary sm:h-44 lg:h-56 short:h-24`),
+        showing the pending cover's `smallUrl` if there is one,
         otherwise the approved one, otherwise navy.
       - **Waiting:** with a pending cover, the same "waiting for review" note
         the profile photo shows, and the button reads `Withdraw new cover`.
