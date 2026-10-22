@@ -31,7 +31,7 @@ export const LEGAL_CONTACT: string | null = null;
  * When these documents were last changed. Shown on both pages: a notice with no
  * date cannot be checked against what a person agreed to.
  */
-export const LEGAL_LAST_UPDATED = '23 October 2026';
+export const LEGAL_LAST_UPDATED = '15 October 2026';
 
 /**
  * Mirrors `CONSENT_VERSION` in `backend/src/modules/auth/auth.service.ts`,
@@ -52,9 +52,5 @@ export const LEGAL_LAST_UPDATED = '23 October 2026';
  * 2026-10-15: new accounts began adding a photo of their ID (ADR 0057, plan
  * 0053 Phase 5) — the notice gained "The photo of your ID", and the terms say
  * Bilikha is for people from Biliran.
- *
- * 2026-10-23: the notice began saying that photos, audio, video and PDFs can
- * be sent in messages, that only the two people can open them, and that all
- * but PDFs are deleted after 30 days (ADR 0060, plan 0060 Phase 5).
  */
-export const CONSENT_VERSION = '2026-10-23';
+export const CONSENT_VERSION = '2026-10-15';
