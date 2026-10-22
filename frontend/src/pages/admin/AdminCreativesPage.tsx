@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Inbox } from 'lucide-react';
-import { useAdminCounts, useAdminProfiles } from '@/features/admin/api';
+import { useAdminCounts, useAdminProfiles, useAdminSummary } from '@/features/admin/api';
 import type { QueueStatus } from '@/features/admin/types';
 import { Avatar, Button, Container, EmptyState, Skeleton, TabPanels, Tabs } from '@/components/ui';
 import {
@@ -14,13 +14,18 @@ import {
   adminRowLinkClass,
   adminTabsClass,
 } from './admin-ui';
+import { ContentReviewList } from './content-review/ContentReviewList';
 
-const TABS: Array<{ status: QueueStatus; label: string }> = [
+/** The profile queue's states, and new covers: everything about a creative is decided here (ADR 0059, 0061). */
+type CreativeTab = QueueStatus | 'covers';
+
+const TABS: Array<{ status: CreativeTab; label: string }> = [
   { status: 'pending_review', label: 'Pending' },
   { status: 'edited', label: 'Edited' },
   { status: 'published', label: 'Published' },
   // A rejected profile is stored as `suspended` (ADR 0016); the tab says what it means.
   { status: 'suspended', label: 'Rejected' },
+  { status: 'covers', label: 'Covers' },
 ];
 
 /** Registrant, municipality, crafts, waiting, arrow — one column on a phone. */
@@ -36,9 +41,12 @@ function waitingLabel(createdAt: string): string {
 }
 
 export function AdminCreativesPage() {
-  const [status, setStatus] = useState<QueueStatus>('pending_review');
+  const [tab, setTab] = useState<CreativeTab>('pending_review');
   const [page, setPage] = useState(1);
   const counts = useAdminCounts();
+  const summary = useAdminSummary();
+  // The Covers tab has its own list; the profile query stays on Pending meanwhile.
+  const status: QueueStatus = tab === 'covers' ? 'pending_review' : tab;
   const list = useAdminProfiles(status, page);
 
   const totalPages = useMemo(() => {
@@ -51,7 +59,7 @@ export function AdminCreativesPage() {
     <Container width="wide" className="py-(--section-gap)">
       <AdminPageHeader
         title="Creatives"
-        description="New creative profiles, and edits to published ones. Oldest first. Open one to approve it, or reject it with a reason the registrant will see."
+        description="New creative profiles, edits to published ones, and new covers. Oldest first. Open one to approve it, or reject it with a reason the registrant will see."
       />
 
       <AdminToolbar ruled={false}>
@@ -59,18 +67,22 @@ export function AdminCreativesPage() {
           label="Queue"
           idPrefix="queue"
           className={adminTabsClass}
-          value={status}
+          value={tab}
           onChange={(next) => {
-            setStatus(next);
+            setTab(next);
             setPage(1);
           }}
-          items={TABS.map((tab) => ({
-            value: tab.status,
+          items={TABS.map((item) => ({
+            value: item.status,
             label: (
               <AdminTabLabel
-                text={tab.label}
-                count={counts.data?.[tab.status] ?? 0}
-                active={status === tab.status}
+                text={item.label}
+                count={
+                  item.status === 'covers'
+                    ? (summary.data?.creatives.covers ?? 0)
+                    : (counts.data?.[item.status] ?? 0)
+                }
+                active={tab === item.status}
               />
             ),
           }))}
@@ -79,119 +91,134 @@ export function AdminCreativesPage() {
 
       <TabPanels
         idPrefix="queue"
-        values={TABS.map((tab) => tab.status)}
-        value={status}
+        values={TABS.map((item) => item.status)}
+        value={tab}
         className="mt-8"
       >
-        {list.isPending && (
-          <ul className={adminListClass} aria-label="Loading the queue">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <li key={i} className="flex items-center gap-4 py-4" aria-hidden="true">
-                <Skeleton radius="full" className="size-10" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {list.isError && (
-          <EmptyState
-            icon={<Inbox className="size-5" />}
-            title="Could not load the queue"
-            description={list.error.message}
-            action={
-              <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
-                Try again
-              </Button>
-            }
+        {tab === 'covers' ? (
+          <ContentReviewList
+            kind="cover"
+            searchLabel="Search covers"
+            searchPlaceholder="Search by creative"
+            empty={{
+              title: 'No covers waiting',
+              description:
+                'A new cover appears here before anyone else can see it. The approved cover, or the navy band, stays on the profile until then.',
+            }}
           />
-        )}
-
-        {list.data && list.data.data.length === 0 && (
-          <EmptyState
-            icon={<CheckCircle2 className="size-5" />}
-            title={
-              status === 'edited'
-                ? 'No published edits waiting'
-                : 'Nothing waiting for review'
-            }
-            description={
-              status === 'edited'
-                ? 'Public changes to published profiles will appear here until they are acknowledged.'
-                : 'An empty pending queue is a good outcome — every registration has been decided.'
-            }
-          />
-        )}
-
-        {list.data && list.data.data.length > 0 && (
-          <div>
-            {/* Column heads for the desktop grid; a phone reads each row as a
-                stack, so the heads would only label nothing there. */}
-            <div
-              className={`mt-2 hidden gap-x-4 px-2 pb-3 text-xs font-semibold tracking-wider text-ink-subtle uppercase md:grid ${rowGrid}`}
-              aria-hidden="true"
-            >
-              <span>Registrant</span>
-              <span>Municipality</span>
-              <span>Crafts</span>
-              <span>Waiting</span>
-              <span />
-            </div>
-            <ul className={adminListClass}>
-              {list.data.data.map((row) => {
-                const name = `${row.firstName} ${row.lastName}`;
-                const waiting = waitingLabel(
-                  status === 'edited' ? (row.editedSinceReviewAt ?? row.createdAt) : row.createdAt,
-                );
-                return (
-                  <li key={row.id} className={adminRowLinkClass}>
-                    <div className={`grid items-center gap-x-4 gap-y-1 px-1 py-4 md:px-2 ${rowGrid}`}>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <Avatar src={null} name={name} size="md" />
-                        <div className="min-w-0">
-                          <Link
-                            to={`/admin/profiles/${row.id}`}
-                            className="font-semibold break-words text-ink after:absolute after:inset-0"
-                          >
-                            {name}
-                          </Link>
-                          <p className="text-sm break-words text-ink-muted">@{row.username}</p>
-                          {/* The desktop columns, folded into one line on a phone. */}
-                          <p className="mt-1 text-sm text-ink-muted md:hidden" data-numeric>
-                            {row.municipality} · {row.subdomainCount}{' '}
-                            {row.subdomainCount === 1 ? 'craft' : 'crafts'} · waiting {waiting}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="hidden text-sm text-ink md:block">{row.municipality}</p>
-                      <p className="hidden text-sm text-ink md:block" data-numeric>
-                        {row.subdomainCount}
-                      </p>
-                      <p className="hidden md:block">
-                        {status === 'edited' ? (
-                          <AdminStatusBadge status="edited" label={waiting} />
-                        ) : (
-                          <span className="text-sm text-ink" data-numeric>
-                            {waiting}
-                          </span>
-                        )}
-                      </p>
-                      <ArrowRight
-                        className="hidden size-4 text-ink-subtle transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-ink md:block"
-                        aria-hidden="true"
-                      />
+        ) : (
+          <>
+            {list.isPending && (
+              <ul className={adminListClass} aria-label="Loading the queue">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <li key={i} className="flex items-center gap-4 py-4" aria-hidden="true">
+                    <Skeleton radius="full" className="size-10" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-3 w-32" />
                     </div>
                   </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
+                ))}
+              </ul>
+            )}
 
-        <AdminPagination page={page} pages={totalPages} onPage={setPage} />
+            {list.isError && (
+              <EmptyState
+                icon={<Inbox className="size-5" />}
+                title="Could not load the queue"
+                description={list.error.message}
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
+                    Try again
+                  </Button>
+                }
+              />
+            )}
+
+            {list.data && list.data.data.length === 0 && (
+              <EmptyState
+                icon={<CheckCircle2 className="size-5" />}
+                title={
+                  status === 'edited'
+                    ? 'No published edits waiting'
+                    : 'Nothing waiting for review'
+                }
+                description={
+                  status === 'edited'
+                    ? 'Public changes to published profiles will appear here until they are acknowledged.'
+                    : 'An empty pending queue is a good outcome — every registration has been decided.'
+                }
+              />
+            )}
+
+            {list.data && list.data.data.length > 0 && (
+              <div>
+                {/* Column heads for the desktop grid; a phone reads each row as a
+                    stack, so the heads would only label nothing there. */}
+                <div
+                  className={`mt-2 hidden gap-x-4 px-2 pb-3 text-xs font-semibold tracking-wider text-ink-subtle uppercase md:grid ${rowGrid}`}
+                  aria-hidden="true"
+                >
+                  <span>Registrant</span>
+                  <span>Municipality</span>
+                  <span>Crafts</span>
+                  <span>Waiting</span>
+                  <span />
+                </div>
+                <ul className={adminListClass}>
+                  {list.data.data.map((row) => {
+                    const name = `${row.firstName} ${row.lastName}`;
+                    const waiting = waitingLabel(
+                      status === 'edited' ? (row.editedSinceReviewAt ?? row.createdAt) : row.createdAt,
+                    );
+                    return (
+                      <li key={row.id} className={adminRowLinkClass}>
+                        <div className={`grid items-center gap-x-4 gap-y-1 px-1 py-4 md:px-2 ${rowGrid}`}>
+                          <div className="flex min-w-0 items-center gap-3">
+                            <Avatar src={null} name={name} size="md" />
+                            <div className="min-w-0">
+                              <Link
+                                to={`/admin/profiles/${row.id}`}
+                                className="font-semibold break-words text-ink after:absolute after:inset-0"
+                              >
+                                {name}
+                              </Link>
+                              <p className="text-sm break-words text-ink-muted">@{row.username}</p>
+                              {/* The desktop columns, folded into one line on a phone. */}
+                              <p className="mt-1 text-sm text-ink-muted md:hidden" data-numeric>
+                                {row.municipality} · {row.subdomainCount}{' '}
+                                {row.subdomainCount === 1 ? 'craft' : 'crafts'} · waiting {waiting}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="hidden text-sm text-ink md:block">{row.municipality}</p>
+                          <p className="hidden text-sm text-ink md:block" data-numeric>
+                            {row.subdomainCount}
+                          </p>
+                          <p className="hidden md:block">
+                            {status === 'edited' ? (
+                              <AdminStatusBadge status="edited" label={waiting} />
+                            ) : (
+                              <span className="text-sm text-ink" data-numeric>
+                                {waiting}
+                              </span>
+                            )}
+                          </p>
+                          <ArrowRight
+                            className="hidden size-4 text-ink-subtle transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-ink md:block"
+                            aria-hidden="true"
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            <AdminPagination page={page} pages={totalPages} onPage={setPage} />
+          </>
+        )}
       </TabPanels>
     </Container>
   );

@@ -14,6 +14,10 @@
 > Uploads are no longer images only, and the free-tier ceilings below no longer
 > apply once Supabase is on Pro. Browser-side image sizing and direct upload
 > stand. The confirm step now checks the stored object.
+>
+> **Covers add two more fixed sizes, in [0061](./0061-a-cover-is-a-reviewed-profile-image.md).**
+> A profile cover is stored 1920px and 768px wide, fitted to width, and is
+> committed to in the same way as the sizes below.
 
 ## Context
 

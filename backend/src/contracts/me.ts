@@ -2,6 +2,8 @@
  * Account-hub profile and saved-offer responses (ADR 0037).
  */
 
+import type { ProfileCover } from './profiles.js';
+
 export type OwnProfileStatus = 'draft' | 'pending_review' | 'published' | 'suspended';
 export type ContactPreference = 'phone' | 'email';
 
@@ -22,6 +24,12 @@ export interface OwnProfile {
   editedSinceReviewAt: string | null;
   subdomainSlugs: string[];
   primarySubdomainSlug: string | null;
+  /** The approved cover, as the public sees it (ADR 0061). */
+  cover: ProfileCover | null;
+  /** A new cover waiting for review, seen only by its owner (ADR 0058). */
+  pendingCover: ProfileCover | null;
+  /** Why the last new cover was not approved; cleared by the next upload. */
+  coverRejectionReason: string | null;
 }
 
 export interface SavedOfferImage {

@@ -115,6 +115,7 @@ const TITLES: Record<NotificationType, string> = {
   offer_rejected: 'Your offer was not approved',
   avatar_rejected: 'Your new photo was not approved',
   logo_rejected: 'Your new organisation logo was not approved',
+  cover_rejected: 'Your new cover photo was not approved',
   attachment_expiring: 'A file in a conversation expires in 3 days',
 };
 
@@ -164,8 +165,9 @@ async function resolveTargets(rows: Notification[]) {
   const offerIds = byType(['offer_approved', 'offer_rejected']);
   const avatarOwnerIds = byType(['avatar_rejected']);
   const logoOrganizationIds = byType(['logo_rejected']);
+  const coverProfileIds = byType(['cover_rejected']);
 
-  const [profiles, threads, agreementRows, organizationRows, offerRows, avatarRows, logoRows] = await Promise.all([
+  const [profiles, threads, agreementRows, organizationRows, offerRows, avatarRows, logoRows, coverRows] = await Promise.all([
     profileIds.length === 0
       ? Promise.resolve([])
       : db
@@ -213,6 +215,12 @@ async function resolveTargets(rows: Notification[]) {
           .select({ id: organizations.id, slug: organizations.slug, reason: organizations.logoRejectionReason })
           .from(organizations)
           .where(inArray(organizations.id, logoOrganizationIds)),
+    coverProfileIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ id: creativeProfiles.id, reason: creativeProfiles.coverRejectionReason })
+          .from(creativeProfiles)
+          .where(inArray(creativeProfiles.id, coverProfileIds)),
   ]);
 
   return {
@@ -223,6 +231,7 @@ async function resolveTargets(rows: Notification[]) {
     offers: new Map(offerRows.map((o) => [o.id, o])),
     avatars: new Map(avatarRows.map((a) => [a.id, a])),
     logos: new Map(logoRows.map((l) => [l.id, l])),
+    covers: new Map(coverRows.map((c) => [c.id, c])),
   };
 }
 
@@ -379,6 +388,14 @@ export async function listNotifications(
         if (logo) {
           link = `/organizations/${logo.slug}/manage`;
           detail = logo.reason ?? 'Upload another logo to try again.';
+        }
+        break;
+      }
+      case 'cover_rejected': {
+        const cover = targets.covers.get(row.targetId);
+        if (cover) {
+          link = '/account/profile';
+          detail = cover.reason ?? 'Upload another cover to try again.';
         }
         break;
       }

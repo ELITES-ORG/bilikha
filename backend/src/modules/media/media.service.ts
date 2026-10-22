@@ -1,6 +1,7 @@
 import { and, count, eq, gt, lte, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { MediaKind, MediaUsage, UploadDestination, UploadTicket } from '../../contracts/media.js';
+import { env } from '../../config/env.js';
 import { db } from '../../db/index.js';
 import { creativeProfiles, mediaUploads, offerImages, offers, users } from '../../db/schema/index.js';
 import type { MediaUpload } from '../../db/schema/index.js';
@@ -8,6 +9,7 @@ import { AppError } from '../../lib/http-error.js';
 import {
   assertSafeObjectKey,
   avatarKey,
+  coverKey,
   createSignedUpload,
   deleteObject,
   discardObject,
@@ -35,14 +37,20 @@ import { matchesSignature } from './media.sniff.js';
 import { assertCanMessage, requireParticipant } from '../conversations/conversations.service.js';
 
 export const uploadUrlBodySchema = z.object({
-  kind: z.enum(['avatar', 'offer']),
+  kind: z.enum(['avatar', 'offer', 'cover']),
 });
 
 export const setAvatarBodySchema = z.object({
   objectKey: z.string().min(1).max(512),
 });
 
+export const setCoverBodySchema = z.object({
+  objectKey: z.string().min(1).max(512),
+  smallKey: z.string().min(1).max(512),
+});
+
 export type UploadUrlBody = z.infer<typeof uploadUrlBodySchema>;
+export type SetCoverBody = z.infer<typeof setCoverBodySchema>;
 
 async function requireOwnCreativeProfile(userId: string) {
   const [profile] = await db
@@ -52,7 +60,7 @@ async function requireOwnCreativeProfile(userId: string) {
     .limit(1);
 
   if (!profile) {
-    throw AppError.forbidden('A creative profile is required to upload offer images');
+    throw AppError.forbidden('A creative profile is required to upload this image');
   }
 
   return profile;
@@ -76,6 +84,18 @@ export function assertOwnOfferKey(profileId: string, objectKey: string) {
   }
 }
 
+/** A cover's stored files, each checked on confirm: the same 2 MB an offer photo has (ADR 0061). */
+const MAX_COVER_BYTES = UPLOAD_LIMITS.offer.image.maxBytes;
+
+function assertOwnCoverKey(profileId: string, objectKey: string) {
+  // Must run before the prefix test — see assertSafeObjectKey.
+  assertSafeObjectKey(objectKey);
+  const expectedPrefix = `covers/${profileId}/`;
+  if (!objectKey.startsWith(expectedPrefix)) {
+    throw AppError.forbidden('That image does not belong to your profile');
+  }
+}
+
 export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
   if (input.kind === 'avatar') {
     const objectKey = avatarKey(userId);
@@ -84,6 +104,20 @@ export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
   }
 
   const profile = await requireOwnCreativeProfile(userId);
+
+  if (input.kind === 'cover') {
+    const base = coverKey(profile.id);
+    const [full, small] = await Promise.all([
+      createSignedUpload(`${base}.webp`),
+      createSignedUpload(`${base}-768.webp`),
+    ]);
+    return {
+      kind: 'cover' as const,
+      full: { uploadUrl: full.uploadUrl, objectKey: full.objectKey },
+      small: { uploadUrl: small.uploadUrl, objectKey: small.objectKey },
+    };
+  }
+
   const base = offerKey(profile.id);
   const fullKey = `${base}.webp`;
   const thumbKey = `${base}-thumb.webp`;
@@ -158,7 +192,106 @@ export async function clearAvatar(userId: string) {
   return { ok: true as const, removed: current.pendingKey ? ('pending' as const) : ('approved' as const) };
 }
 
-/** Deletes an uploaded object that never got attached to an avatar or offer. */
+/**
+ * A new cover waits for review (ADR 0058, 0061), in the pending pair beside
+ * the approved one, as a new profile photo does. What was stored is checked
+ * first — both files there, each within 2 MB, each a WebP or JPEG — because a
+ * cover is public once approved and the browser's resize is not proof.
+ * Uploading again replaces the waiting pair and clears the last reason. It
+ * never sets the profile's Edited flag: a cover has its own review.
+ */
+export async function setCover(userId: string, { objectKey, smallKey }: SetCoverBody) {
+  const profile = await requireOwnCreativeProfile(userId);
+  assertOwnCoverKey(profile.id, objectKey);
+  assertOwnCoverKey(profile.id, smallKey);
+  if (!objectKey.endsWith('.webp') || smallKey !== objectKey.replace(/\.webp$/, '-768.webp')) {
+    throw AppError.badRequest('Those two images are not one cover');
+  }
+
+  const [full, small] = await Promise.all([
+    storedObject(env.SUPABASE_STORAGE_BUCKET, objectKey),
+    storedObject(env.SUPABASE_STORAGE_BUCKET, smallKey),
+  ]);
+  if (!full || !small) {
+    throw new AppError(400, 'UPLOAD_INCOMPLETE', 'The upload did not finish. Try again.');
+  }
+
+  const discardPair = () => Promise.all([discardObject(objectKey), discardObject(smallKey)]);
+  if ([full, small].some((file) => file.size === null || file.size > MAX_COVER_BYTES)) {
+    await discardPair();
+    throw new AppError(400, 'COVER_TOO_LARGE', 'That cover is over 2 MB after resizing. Try a different photo.');
+  }
+
+  const signatures = await Promise.all(
+    [objectKey, smallKey].map((key) => readFirstBytes(env.SUPABASE_STORAGE_BUCKET, key)),
+  );
+  // The resizer falls back to JPEG where the browser cannot encode WebP.
+  const isPhoto = (bytes: Uint8Array) => matchesSignature('image/webp', bytes) || matchesSignature('image/jpeg', bytes);
+  if (!signatures.every(isPhoto)) {
+    await discardPair();
+    throw new AppError(400, 'COVER_NOT_AN_IMAGE', "That file isn't a photo. Try another.");
+  }
+
+  const [current] = await db
+    .select({ pendingKey: creativeProfiles.coverPendingKey, pendingSmallKey: creativeProfiles.coverPendingSmallKey })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.id, profile.id))
+    .limit(1);
+
+  await db
+    .update(creativeProfiles)
+    .set({
+      coverPendingKey: objectKey,
+      coverPendingSmallKey: smallKey,
+      coverRejectionReason: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(creativeProfiles.id, profile.id));
+
+  if (current?.pendingKey && current.pendingKey !== objectKey) await discardObject(current.pendingKey);
+  if (current?.pendingSmallKey && current.pendingSmallKey !== smallKey) await discardObject(current.pendingSmallKey);
+
+  return { objectKey, smallKey };
+}
+
+/**
+ * Removing, as for a profile photo: a cover waiting for review is withdrawn;
+ * with none waiting, the approved cover is taken down. Taking one away needs
+ * no review.
+ */
+export async function clearCover(userId: string) {
+  const profile = await requireOwnCreativeProfile(userId);
+  const [current] = await db
+    .select({
+      key: creativeProfiles.coverKey,
+      smallKey: creativeProfiles.coverSmallKey,
+      pendingKey: creativeProfiles.coverPendingKey,
+      pendingSmallKey: creativeProfiles.coverPendingSmallKey,
+    })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.id, profile.id))
+    .limit(1);
+
+  const withdrawing = Boolean(current?.pendingKey);
+  const removing = withdrawing
+    ? [current?.pendingKey, current?.pendingSmallKey]
+    : [current?.key, current?.smallKey];
+
+  await db
+    .update(creativeProfiles)
+    .set(
+      withdrawing
+        ? { coverPendingKey: null, coverPendingSmallKey: null, updatedAt: new Date() }
+        : { coverKey: null, coverSmallKey: null, updatedAt: new Date() },
+    )
+    .where(eq(creativeProfiles.id, profile.id));
+
+  for (const key of removing) if (key) await discardObject(key);
+
+  return { ok: true as const, removed: withdrawing ? ('pending' as const) : ('approved' as const) };
+}
+
+/** Deletes an uploaded object that never got attached to an avatar, cover or offer. */
 export async function abandonObject(userId: string, objectKey: string) {
   assertSafeObjectKey(objectKey);
 
@@ -169,7 +302,11 @@ export async function abandonObject(userId: string, objectKey: string) {
   }
 
   const profile = await requireOwnCreativeProfile(userId);
-  assertOwnOfferKey(profile.id, objectKey);
+  if (objectKey.startsWith('covers/')) {
+    assertOwnCoverKey(profile.id, objectKey);
+  } else {
+    assertOwnOfferKey(profile.id, objectKey);
+  }
   await deleteObject(objectKey);
   return { ok: true as const };
 }

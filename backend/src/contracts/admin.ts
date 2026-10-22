@@ -143,9 +143,9 @@ export interface AdminPublishedOffer {
  * internally and strips it before responding, so it is deliberately absent here.
  */
 export interface AdminMediaRow {
-  /** The offer, account or organisation the item belongs to. */
+  /** The offer, account, organisation or creative profile (a cover) the item belongs to. */
   id: string;
-  kind: 'avatar' | 'offer' | 'logo';
+  kind: 'avatar' | 'offer' | 'logo' | 'cover';
   /** For an offer: a new one, or a change to one already published. */
   change?: 'new' | 'edit';
   createdAt: string;
@@ -166,7 +166,7 @@ export interface AdminMediaRow {
   images?: AdminMediaImage[];
   /** For a change to a published offer: what the public sees now. */
   published?: AdminPublishedOffer;
-  /** For a photo or logo replacing an approved one: the approved image. */
+  /** For a photo, logo or cover replacing an approved one: the approved image. */
   currentUrl?: string | null;
   /** For a logo on a published page: its slug, to see the image in context. */
   organizationSlug?: string;
@@ -191,6 +191,8 @@ export interface ContentQueueCounts {
   photos: number;
   /** New organisation logos, shown under Organisations. */
   logos: number;
+  /** New covers, shown under Creatives (ADR 0061). */
+  covers: number;
 }
 
 /**
@@ -198,7 +200,11 @@ export interface ContentQueueCounts {
  * one number per sidebar section, split the way each section's tabs are.
  */
 export interface AdminSummary {
-  creatives: { pending: number; edited: number };
+  /**
+   * New and edited profiles, and new covers (ADR 0061). `covers` is optional
+   * for deployment skew (ADR 0040): an API from before covers does not send it.
+   */
+  creatives: { pending: number; edited: number; covers?: number };
   offers: { new: number; changes: number };
   organizations: { pending: number; edited: number; logos: number };
   /**

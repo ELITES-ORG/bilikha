@@ -1,6 +1,6 @@
 # 0061. A cover photo on the creative profile
 
-- **Status:** Draft
+- **Status:** In progress
 - **Owner:** emanuel
 - **Related:** [ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md) ·
   [ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md) ·
@@ -151,18 +151,19 @@ why. Each is open to challenge in this plan's pull request.
 - [x] Issue #51 (ID verification) finished, so the two don't touch
       `storage.ts`, the admin area and migrations at once. Its build phases are
       all merged; its closing pull request is #111.
-- [ ] This plan reviewed and merged, with Status set to Ready.
-- [ ] Database running and current:
+- [x] This plan reviewed and merged in #112 (approved by reyxdz, 2026-10-22).
+      #112 left the status Draft; this phase sets it to In progress.
+- [x] Database running and current:
       `npm run db:up && npm --prefix backend run db:migrate`, with nothing
       pending.
-- [ ] Local storage configured: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+- [x] Local storage configured: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
       in `backend/.env` ([local setup](../getting-started/local-setup.md)).
 
 ## Progress
 
 | Phase | Steps | Status |
 |---|---|---|
-| 1. Data, API and review | 0 / 9 | Not started |
+| 1. Data, API and review | 9 / 9 | Done |
 | 2. The uploader and the band | 0 / 6 | Not started |
 | 3. Verify on staging | 0 / 3 | Not started |
 
@@ -176,7 +177,7 @@ upload yet.
 
 ### Step 1.1 — The columns and the notification type
 
-- [ ] **Action.** In `backend/src/db/schema/profiles.ts`, add to
+- [x] **Action.** In `backend/src/db/schema/profiles.ts`, add to
       `creativeProfiles` after `editedSinceReviewAt`:
 
       ```ts
@@ -191,12 +192,12 @@ upload yet.
       coverRejectionReason: text('cover_rejection_reason'),
       ```
 
-- [ ] **Action.** In `backend/src/db/schema/notifications.ts`, add
+- [x] **Action.** In `backend/src/db/schema/notifications.ts`, add
       `'cover_rejected'` after `'logo_rejected'`, and name covers in the
       comment above them.
-- [ ] **Action.** `npm --prefix backend run db:generate`. Read the file it
+- [x] **Action.** `npm --prefix backend run db:generate`. Read the file it
       writes under `backend/drizzle/`.
-- [ ] **Verify.** It holds five `ADD COLUMN` statements on
+- [x] **Verify.** It holds five `ADD COLUMN` statements on
       `creative_profiles`, all nullable, with no default, and one
       `ALTER TYPE "notification_type" ADD VALUE 'cover_rejected'`. Nothing is
       dropped or backfilled. `npm --prefix backend run db:migrate` exits 0, and
@@ -204,14 +205,14 @@ upload yet.
 
 ### Step 1.2 — The shapes, once
 
-- [ ] **Action.** In `backend/src/lib/storage.ts`, below `offerKey`:
+- [x] **Action.** In `backend/src/lib/storage.ts`, below `offerKey`:
 
       ```ts
       /** A cover's base key; the caller appends `.webp` and `-768.webp` (ADR 0061). */
       export const coverKey = (profileId: string) => `covers/${profileId}/${randomUUID()}`;
       ```
 
-- [ ] **Action.** In `backend/src/contracts/profiles.ts`:
+- [x] **Action.** In `backend/src/contracts/profiles.ts`:
 
       ```ts
       /** A creative's cover (issue #36): `url` is 1920px wide, `smallUrl` 768px. */
@@ -227,20 +228,20 @@ upload yet.
       };
       ```
 
-- [ ] **Action.** In `backend/src/contracts/me.ts`, import `ProfileCover` and
+- [x] **Action.** In `backend/src/contracts/me.ts`, import `ProfileCover` and
       add to `OwnProfile`: `cover: ProfileCover | null`,
       `pendingCover: ProfileCover | null` and
       `coverRejectionReason: string | null`.
-- [ ] **Action.** Add `'cover'` to the admin queue's kind wherever `'logo'` is
+- [x] **Action.** Add `'cover'` to the admin queue's kind wherever `'logo'` is
       listed: `AdminMediaRow['kind']` in `backend/src/contracts/admin.ts`, the
       two `z.enum`s in `admin.routes.ts`, and the summary contract's creatives
       counts (`covers`).
-- [ ] **Verify.** `npm run typecheck` fails only where the new fields are not
+- [x] **Verify.** `npm run typecheck` fails only where the new fields are not
       yet produced. Steps 1.4–1.6 fill them in.
 
 ### Step 1.3 — The route tests first
 
-- [ ] **Action.** Add a `covers` block to `backend/src/modules/media/media.test.ts`,
+- [x] **Action.** Add a `covers` block to `backend/src/modules/media/media.test.ts`,
       with the storage mock that file already uses: `createSignedUpload`,
       `storedObject` (a size per key, set by each test), `readFirstBytes` (WebP
       bytes, or not), `deleteObject` and `discardObject`. Cases:
@@ -257,12 +258,12 @@ upload yet.
       11. `DELETE /media/cover` with a pending pair → 200 `removed: "pending"`; the pending pair is gone and the approved one stays. Again with none pending → `removed: "approved"`, the approved pair gone. A third time → 200, nothing deleted.
       12. A suspended creative → 401 on all three (ADR 0028).
       13. `POST /media/abandon` with an own `covers/` key → 200; another profile's → 403.
-- [ ] **Verify.** `npm --prefix backend run test -- src/modules/media/media.test.ts`:
+- [x] **Verify.** `npm --prefix backend run test -- src/modules/media/media.test.ts`:
       the cover cases fail, and nothing else does.
 
 ### Step 1.4 — The cover endpoints
 
-- [ ] **Action.** In `backend/src/modules/media/media.service.ts`:
+- [x] **Action.** In `backend/src/modules/media/media.service.ts`:
       - Widen `uploadUrlBodySchema.kind` to `['avatar', 'offer', 'cover']`. For
         `cover`: `requireOwnCreativeProfile`, `base = coverKey(profile.id)`,
         sign `${base}.webp` and `${base}-768.webp`, return
@@ -293,32 +294,32 @@ upload yet.
         objects, and return `{ ok: true, removed: 'pending' | 'approved' }`.
       - In `abandonObject`, before the offer fallback: a `covers/` key is
         checked with `assertOwnCoverKey` and deleted.
-- [ ] **Action.** In `backend/src/modules/media/media.routes.ts`, add
+- [x] **Action.** In `backend/src/modules/media/media.routes.ts`, add
       `PUT /cover` and `DELETE /cover`, shaped like the avatar pair. Uploads
       stay rate-limited by `uploadLimiter` on `/upload-url`.
-- [ ] **Verify.** The media tests pass.
+- [x] **Verify.** The media tests pass.
 
 ### Step 1.5 — Return the cover
 
-- [ ] **Action.** In `backend/src/modules/profiles/profiles.service.ts`,
+- [x] **Action.** In `backend/src/modules/profiles/profiles.service.ts`,
       `getPublishedBySlug` returns `cover` from the **approved** pair only:
       `{ url: publicUrl(coverKey), smallUrl: publicUrl(coverSmallKey) }` when
       both are set and storage is configured, otherwise `null`.
       `listPublished` is untouched (Decided 9).
-- [ ] **Action.** In `backend/src/modules/me/me.service.ts`, every function that
+- [x] **Action.** In `backend/src/modules/me/me.service.ts`, every function that
       builds an `OwnProfile` (typecheck names them) returns `cover`,
       `pendingCover` and `coverRejectionReason` the same way.
-- [ ] **Action.** Extend the profile and `me` tests:
+- [x] **Action.** Extend the profile and `me` tests:
       - an approved cover returns both URLs on the public detail;
       - a pending cover is **not** on the public detail, and is on the owner's
         `pendingCover`;
       - a profile without one returns `cover: null`;
       - the directory's list rows have no `cover` key.
-- [ ] **Verify.** Those test files pass.
+- [x] **Verify.** Those test files pass.
 
 ### Step 1.6 — Approve and Reject
 
-- [ ] **Action.** In `backend/src/modules/admin/content-review.service.ts`:
+- [x] **Action.** In `backend/src/modules/admin/content-review.service.ts`:
       - The queue lists a cover for each profile with a pending pair, under
         `kind: 'cover'`: `url` and `thumbUrl` from the pending pair, the
         approved `smallUrl` (if any) as what it would replace, the owner's name
@@ -334,53 +335,53 @@ upload yet.
         - A version that no longer matches the pending key is refused, as for
           a photo.
         - No pending cover → `AppError.notFound('No cover is waiting for review.')`.
-- [ ] **Action.** In `backend/src/modules/notifications/notifications.service.ts`,
+- [x] **Action.** In `backend/src/modules/notifications/notifications.service.ts`,
       add `cover_rejected` beside `logo_rejected`: the title
       `Your new cover photo was not approved`, its target the creative's own
       profile editor, and the reason read from the profile when the centre
       opens (ADR 0030).
-- [ ] **Action.** Tests in `content-review.test.ts` (and `summary.test.ts`):
+- [x] **Action.** Tests in `content-review.test.ts` (and `summary.test.ts`):
       - a pending cover is listed under `kind=cover` and counted;
       - approve makes it the public cover, and the old approved pair is
         discarded;
       - reject keeps the old public cover, stores the reason, sends one
         `cover_rejected`, and discards the rejected pair;
       - a stale version is refused.
-- [ ] **Verify.** Those test files pass.
+- [x] **Verify.** Those test files pass.
 
 ### Step 1.7 — Creatives → Covers in the admin area
 
-- [ ] **Action.** In `frontend/src/pages/admin/AdminCreativesPage.tsx`, add a
+- [x] **Action.** In `frontend/src/pages/admin/AdminCreativesPage.tsx`, add a
       **Covers** tab beside the existing ones, with its count from the summary.
       It shows `ContentReviewList` for `kind=cover`, as the Organisations page
       does for logos.
-- [ ] **Action.** In `frontend/src/pages/admin/content-review/ReviewCard.tsx`
+- [x] **Action.** In `frontend/src/pages/admin/content-review/ReviewCard.tsx`
       (and its logic file), render a cover at a landscape aspect
       (`aspect-3/1`, `object-cover`), with the approved cover beside it when
       there is one. Extend `review-list-logic.test.ts` and
       `admin-sections.test.ts` for the new kind and count.
-- [ ] **Verify.** Those frontend tests pass, and `npm run typecheck` exits 0.
+- [x] **Verify.** Those frontend tests pass, and `npm run typecheck` exits 0.
 
 ### Step 1.8 — Keep covers out of the orphan sweep
 
-- [ ] **Action.** In `backend/src/scripts/prune-orphan-media.ts`, select the
+- [x] **Action.** In `backend/src/scripts/prune-orphan-media.ts`, select the
       four cover keys from `creativeProfiles` and add each to the media
       bucket's references. Name them in the header comment.
-- [ ] **Verify.** Locally, set a cover through the API and run
+- [x] **Verify.** Locally, set a cover through the API and run
       `npm --prefix backend run media:prune` with the age check temporarily at
       `0`. It lists no `covers/` key that a row holds. Revert the age check;
       `git diff` on the script shows only the references and the comment.
 
 ### Step 1.9 — Docs and ADR 0061
 
-- [ ] **Action.** `docs/reference/api.md`:
+- [x] **Action.** `docs/reference/api.md`:
       - **Media:** `kind: "cover"` and its ticket shape; `PUT` and
         `DELETE /api/v1/media/cover`, with every status and code from Step 1.3;
       - **Admin:** `cover` in the queue's kinds and in the summary;
       - the public profile detail's `cover`, and the owner's three fields.
-- [ ] **Action.** `docs/reference/data-model.md`: the five columns under
+- [x] **Action.** `docs/reference/data-model.md`: the five columns under
       `creative_profiles`, and `cover_rejected` in the notification types.
-- [ ] **Action.** Write `docs/decisions/0061-a-cover-is-a-reviewed-profile-image.md`
+- [x] **Action.** Write `docs/decisions/0061-a-cover-is-a-reviewed-profile-image.md`
       from `_template.md`, taking the next free number if 0061 is gone:
       - **Context:** the band is navy for want of data (plan 0042); issue #36.
       - **Decision:** two width-fitted WebP sizes, 1920 and 768, fixed as ADR
@@ -397,9 +398,36 @@ upload yet.
 
       Add its row to `docs/decisions/README.md`. Add an "Amended by 0061" line
       to ADR 0030's header.
-- [ ] **Verify.** `npm run docs:check` exits 0. Open the pull request
+- [x] **Verify.** `npm run docs:check` exits 0. Open the pull request
       `Let the API store and review a cover photo per creative profile (plan 0061, phase 1)`,
       with `Part of #36`.
+
+**Built as** (2026-10-22, branch `feat/cover-photo-api`), where it differs
+from the steps above:
+
+- Migration `0043_pale_otto_octavius.sql`: five `ADD COLUMN`s and the
+  `cover_rejected` enum value, which nothing in the migration uses.
+- A failed check, a replaced pending pair and a decision delete files with
+  `discardObject` (best-effort; `media:prune` is the backstop), as the photo
+  does. `abandonObject` keeps `deleteObject` for covers, as for offers.
+- `AdminSummary.creatives.covers` is optional on the contract, for deployment
+  skew (ADR 0040); the Creatives badge and tab read it with `?? 0`.
+- The reader tests are a new `backend/src/modules/profiles/cover.test.ts`:
+  approved cover public, a waiting one never, the owner's three fields, and no
+  cover on a directory card. Two route cases were added to Step 1.3's list: a
+  file of exactly 2 MB, and the JPEG fallback, are accepted.
+- `data-model.md` documents no notification types, so `cover_rejected` is
+  recorded in `api.md` and ADR 0061 only.
+- ADR 0021 gains a header note that covers add two fixed sizes, and the
+  decisions index rows for 0021 and 0030 name 0061.
+- Checked locally against real storage: upload, the owner sees it waiting and
+  the public does not, approve makes both widths public, a replacement shows
+  the current cover beside it, reject keeps the public cover, stores the reason
+  and sends `cover_rejected`, the rejected files are gone. `media:prune` with
+  the age check at 0 flagged no cover a row holds, and flagged the approved
+  pair once its references were removed. The Covers tab and badge were checked
+  at 375 and 1280px, light and dark: no sideways overflow or overlapping
+  controls.
 
 ---
 

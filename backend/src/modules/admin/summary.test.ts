@@ -22,9 +22,16 @@ import { adminSummary } from './summary.service.js';
 async function waitingOfEveryKind() {
   const live = await makeCreative({ profile: { status: 'published' } });
 
-  // Creatives: one new, one published edit; a plain published one waits for nothing.
+  // Creatives: one new, one published edit, and a new cover waiting on a
+  // third; a plain published one, and an approved cover, wait for nothing.
   await makeCreative({ profile: { status: 'pending_review' } });
   await makeCreative({ profile: { status: 'published', editedSinceReviewAt: new Date() } });
+  const covered = await makeCreative({
+    profile: { status: 'published', coverPendingKey: 'covers/x/new.webp', coverPendingSmallKey: 'covers/x/new-768.webp' },
+  });
+  await makeCreative({
+    profile: { status: 'published', coverKey: 'covers/y/ok.webp', coverSmallKey: 'covers/y/ok-768.webp' },
+  });
 
   // Offers: one new, two changes (text, and a photo), one that waits for nothing.
   const fresh = await makeOffer(live.profile.id, { status: 'pending_review', title: 'ZZ New offer' });
@@ -95,7 +102,7 @@ async function waitingOfEveryKind() {
     { ratingId: answered.id, reporterUserId: live.user.id, reason: 'Old.', status: 'dismissed' },
   ]);
 
-  return { fresh, edited, photographed, person, withLogo: withLogo! };
+  return { fresh, edited, photographed, person, withLogo: withLogo!, covered: covered.profile };
 }
 
 describe('the admin summary', () => {
@@ -103,7 +110,7 @@ describe('the admin summary', () => {
     await waitingOfEveryKind();
 
     expect(await adminSummary()).toEqual({
-      creatives: { pending: 1, edited: 1 },
+      creatives: { pending: 1, edited: 1, covers: 1 },
       offers: { new: 1, changes: 2 },
       organizations: { pending: 1, edited: 1, logos: 1 },
       people: { photos: 1, ids: 1, appeals: 1 },
@@ -113,7 +120,7 @@ describe('the admin summary', () => {
 
   it('is all zeros when nothing waits', async () => {
     expect(await adminSummary()).toEqual({
-      creatives: { pending: 0, edited: 0 },
+      creatives: { pending: 0, edited: 0, covers: 0 },
       offers: { new: 0, changes: 0 },
       organizations: { pending: 0, edited: 0, logos: 0 },
       people: { photos: 0, ids: 0, appeals: 0 },
@@ -131,6 +138,7 @@ describe('the content queue by subject', () => {
 
     expect(await ids({ kind: 'avatar' })).toEqual([`avatar:${waiting.person.id}`]);
     expect(await ids({ kind: 'logo' })).toEqual([`logo:${waiting.withLogo.id}`]);
+    expect(await ids({ kind: 'cover' })).toEqual([`cover:${waiting.covered.id}`]);
     expect(await ids({ change: 'new' })).toEqual([`offer:${waiting.fresh.id}`]);
     expect(await ids({ change: 'edit' })).toEqual(
       [`offer:${waiting.edited.id}`, `offer:${waiting.photographed.id}`].sort(),
@@ -140,6 +148,6 @@ describe('the content queue by subject', () => {
 
     // Unfiltered, it is still the whole queue.
     const all = await listContentQueue({ page: 1, limit: 50 });
-    expect(all.total).toBe(5);
+    expect(all.total).toBe(6);
   });
 });

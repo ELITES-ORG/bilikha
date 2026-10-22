@@ -216,6 +216,9 @@ phone verification.
 | `reviewed_by` | `uuid` FK null → `users.id` | `ON DELETE SET NULL` |
 | `contact_preference` | `text` | Default `phone`; channel revealed when the creative responds to an inquiry |
 | `edited_since_review_at` | `timestamptz` null | Set when a published profile's public fields change; cleared when an admin acknowledges the edit |
+| `cover_key` / `cover_small_key` | `text` null | The approved cover, 1920px and 768px wide, under `covers/<profileId>/` ([ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)) |
+| `cover_pending_key` / `cover_pending_small_key` | `text` null | A new cover waiting for review, seen only by its owner ([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md)); moved to the approved pair on approval |
+| `cover_rejection_reason` | `text` null | Why the last new cover was not approved; cleared by the next upload |
 | `created_at` / `updated_at` | `timestamptz` | |
 
 Indexes: unique on `user_id`, `slug`; `(status, created_at)` for the review

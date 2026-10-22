@@ -2,9 +2,10 @@ import type { AdminMediaRow } from '@contracts/admin';
 import type { OfferMediaItem } from '@contracts/media';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Check, ImageOff, Images, UserRound, Users, X } from 'lucide-react';
+import { ArrowUpRight, Check, ImageOff, Images, RectangleHorizontal, UserRound, Users, X } from 'lucide-react';
 import { Badge, Button, ProgressiveImage, Skeleton, Textarea } from '@/components/ui';
 import { AudioItem, DocumentLink, VideoItem } from '@/features/media/MediaPlayer';
+import { cn } from '@/lib/cn';
 import { formatPriceRange } from '@/lib/money';
 import { AdminFact, AdminStatusBadge } from '../admin-ui';
 import { formatAdminDate } from '../admin-format';
@@ -14,14 +15,15 @@ import { mediaChanges, mediaKindOf } from './review-list-logic';
  * One item waiting for a decision (ADR 0058): what it is, what the public sees
  * now if anything, and Approve or Reject with a reason its owner sees. The same
  * card under every subject that reviews content — Offers, People's profile
- * photos, Organisations' logos (ADR 0059) — so a decision always looks the same.
+ * photos, Organisations' logos, Creatives' covers (ADR 0059, 0061) — so a
+ * decision always looks the same.
  */
 
 export type ReviewAction = 'approve' | 'reject';
 
 type MediaKind = AdminMediaRow['kind'];
 
-const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Profile photo', offer: 'Offer', logo: 'Logo' };
+const KIND_LABEL: Record<MediaKind, string> = { avatar: 'Profile photo', offer: 'Offer', logo: 'Logo', cover: 'Cover' };
 
 /** What the card is: an offer is new, or a change to one already public. */
 function cardLabel(item: AdminMediaRow): string {
@@ -91,7 +93,8 @@ function MediaPreview({ item }: { item: AdminMediaRow }) {
 
   if (!item.thumbUrl) return <NoPreview text="No preview available" />;
   // Fills the frame like every other card, so a row of cards lines up; the
-  // centre of a square avatar is what survives the crop.
+  // centre of a square avatar is what survives the crop. A cover's frame is a
+  // wide strip, as the profile band shows it.
   return (
     <ProgressiveImage
       src={item.thumbUrl}
@@ -174,7 +177,12 @@ export function ReviewCard({
 
   return (
     <li className="group flex flex-col overflow-hidden rounded-md border border-hairline bg-surface transition-[border-color,box-shadow] duration-200 hover:border-hairline-strong hover:shadow-sm">
-      <div className="relative aspect-4/3 overflow-hidden bg-surface-sunken">
+      <div
+        className={cn(
+          'relative overflow-hidden bg-surface-sunken',
+          item.kind === 'cover' ? 'aspect-3/1' : 'aspect-4/3',
+        )}
+      >
         <MediaPreview item={item} />
         <div className="absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
           <Badge
@@ -185,6 +193,8 @@ export function ReviewCard({
                 <Images className="size-3.5" aria-hidden="true" />
               ) : item.kind === 'logo' ? (
                 <Users className="size-3.5" aria-hidden="true" />
+              ) : item.kind === 'cover' ? (
+                <RectangleHorizontal className="size-3.5" aria-hidden="true" />
               ) : (
                 <UserRound className="size-3.5" aria-hidden="true" />
               )
@@ -235,9 +245,12 @@ export function ReviewCard({
             <img
               src={item.currentUrl}
               alt=""
-              width={44}
+              width={item.kind === 'cover' ? 132 : 44}
               height={44}
-              className="size-11 shrink-0 rounded-full object-cover"
+              className={cn(
+                'h-11 shrink-0 object-cover',
+                item.kind === 'cover' ? 'aspect-3/1 rounded-xs' : 'w-11 rounded-full',
+              )}
               loading="lazy"
               decoding="async"
             />

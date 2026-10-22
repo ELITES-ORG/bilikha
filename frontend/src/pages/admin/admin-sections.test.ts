@@ -47,20 +47,20 @@ describe('which admin section is marked', () => {
 
 describe('the sections by subject', () => {
   const summary: AdminSummary = {
-    creatives: { pending: 2, edited: 1 },
+    creatives: { pending: 2, edited: 1, covers: 4 },
     offers: { new: 3, changes: 4 },
     organizations: { pending: 1, edited: 2, logos: 5 },
     people: { photos: 6, ids: 2, appeals: 1 },
     reports: { open: 7 },
   };
 
-  it('counts everything waiting under its subject: a logo with its organisation, a change with new offers, an ID and an appeal with photos', () => {
+  it('counts everything waiting under its subject: a cover with its creative, a logo with its organisation, a change with new offers, an ID and an appeal with photos', () => {
     const waiting = Object.fromEntries(
       ADMIN_SECTIONS.map((section) => [section.label, section.waiting ? section.waiting(summary) : null]),
     );
 
     expect(waiting).toEqual({
-      Creatives: 3,
+      Creatives: 7,
       Offers: 7,
       Organisations: 8,
       People: 9,
@@ -68,6 +68,13 @@ describe('the sections by subject', () => {
       'Find an account': null,
       Taxonomy: null,
     });
+  });
+
+  it('still counts Creatives when an API from before covers sends no covers', () => {
+    const creatives = ADMIN_SECTIONS.find((section) => section.label === 'Creatives')!;
+    const older: AdminSummary = { ...summary, creatives: { pending: 2, edited: 1 } };
+
+    expect(creatives.waiting!(older)).toBe(3);
   });
 
   it('still counts People when an API from before ID review sends no ids', () => {

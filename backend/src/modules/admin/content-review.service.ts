@@ -327,8 +327,38 @@ export async function listContentQueue(options: {
     _flagged: false,
   }));
 
+  const coverRows = !wants('cover') ? [] : await db
+    .select({
+      id: creativeProfiles.id,
+      updatedAt: creativeProfiles.updatedAt,
+      pendingKey: creativeProfiles.coverPendingKey,
+      pendingSmallKey: creativeProfiles.coverPendingSmallKey,
+      smallKey: creativeProfiles.coverSmallKey,
+      ownerName,
+      profileSlug: creativeProfiles.slug,
+    })
+    .from(creativeProfiles)
+    .innerJoin(users, eq(users.id, creativeProfiles.userId))
+    .where(isNotNull(creativeProfiles.coverPendingKey));
+
+  const coverItems: QueueRow[] = coverRows.map((row) => ({
+    id: row.id,
+    kind: 'cover',
+    createdAt: row.updatedAt.toISOString(),
+    url: imageUrl(row.pendingKey),
+    thumbUrl: imageUrl(row.pendingSmallKey),
+    caption: null,
+    ownerName: row.ownerName,
+    profileSlug: row.profileSlug,
+    profileId: row.id,
+    currentUrl: imageUrl(row.smallKey),
+    // A new upload is a new key, so the key is the version (ADR 0061).
+    version: row.pendingKey!,
+    _flagged: false,
+  }));
+
   // Flagged offers first, then everything else oldest first: a queue is a queue.
-  const merged = [...offerItems, ...avatarItems, ...logoItems].sort((a, b) => {
+  const merged = [...offerItems, ...avatarItems, ...logoItems, ...coverItems].sort((a, b) => {
     if (a._flagged !== b._flagged) return a._flagged ? -1 : 1;
     return a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0;
   });
@@ -343,7 +373,7 @@ export async function listContentQueue(options: {
  * sidebar and the tab counts read this on every admin page.
  */
 export async function contentQueueCounts(): Promise<ContentQueueCounts> {
-  const [[newOffers], [changedOffers], [photos], [logos]] = await Promise.all([
+  const [[newOffers], [changedOffers], [photos], [logos], [covers]] = await Promise.all([
     db.select({ total: count() }).from(offers).where(NEW_OFFER),
     db
       .select({ total: count() })
@@ -352,12 +382,14 @@ export async function contentQueueCounts(): Promise<ContentQueueCounts> {
       .where(CHANGED_OFFER),
     db.select({ total: count() }).from(users).where(isNotNull(users.avatarPendingKey)),
     db.select({ total: count() }).from(organizations).where(isNotNull(organizations.logoPendingKey)),
+    db.select({ total: count() }).from(creativeProfiles).where(isNotNull(creativeProfiles.coverPendingKey)),
   ]);
   return {
     newOffers: newOffers?.total ?? 0,
     changedOffers: changedOffers?.total ?? 0,
     photos: photos?.total ?? 0,
     logos: logos?.total ?? 0,
+    covers: covers?.total ?? 0,
   };
 }
 
@@ -371,7 +403,7 @@ function requireReason(action: ReviewAction, reason: string | undefined): string
 }
 
 export async function reviewContent(input: {
-  kind: 'avatar' | 'offer' | 'logo';
+  kind: 'avatar' | 'offer' | 'logo' | 'cover';
   id: string;
   adminId: string;
   action: ReviewAction;
@@ -382,6 +414,7 @@ export async function reviewContent(input: {
   const reason = requireReason(input.action, input.reason);
   if (input.kind === 'offer') return reviewOffer({ ...input, reason });
   if (input.kind === 'avatar') return reviewAvatar({ ...input, reason });
+  if (input.kind === 'cover') return reviewCover({ ...input, reason });
   return reviewLogo({ ...input, reason });
 }
 
@@ -564,6 +597,75 @@ async function reviewAvatar(input: ReviewInput) {
   });
   await discardObject(input.version);
   await notify({ userId: user.id, actorUserId: input.adminId, type: 'avatar_rejected', targetId: user.id });
+  return { ok: true as const };
+}
+
+/**
+ * A cover, as a profile photo (ADR 0061): approving swaps the waiting pair in
+ * and discards the pair it replaces; rejecting keeps the approved cover,
+ * stores the reason, discards the waiting pair and tells the creative. The
+ * queue item's id is the creative profile.
+ */
+async function reviewCover(input: ReviewInput) {
+  const [profile] = await db
+    .select({
+      id: creativeProfiles.id,
+      userId: creativeProfiles.userId,
+      key: creativeProfiles.coverKey,
+      smallKey: creativeProfiles.coverSmallKey,
+      pendingKey: creativeProfiles.coverPendingKey,
+      pendingSmallKey: creativeProfiles.coverPendingSmallKey,
+    })
+    .from(creativeProfiles)
+    .where(eq(creativeProfiles.id, input.id))
+    .limit(1);
+  if (!profile?.pendingKey || !profile.pendingSmallKey) throw AppError.notFound('No cover is waiting for review.');
+  // The pending key is the version: a new upload replaces it.
+  if (profile.pendingKey !== input.version) throw AppError.conflict(STALE);
+  const pendingSmallKey = profile.pendingSmallKey;
+
+  const now = new Date();
+  // Each write is conditional on the key the administrator saw, so a cover
+  // replaced in the meantime is neither published nor discarded.
+  const stillPending = and(eq(creativeProfiles.id, profile.id), eq(creativeProfiles.coverPendingKey, input.version));
+
+  if (input.action === 'approve') {
+    const updated = await db
+      .update(creativeProfiles)
+      .set({
+        coverKey: input.version,
+        coverSmallKey: pendingSmallKey,
+        coverPendingKey: null,
+        coverPendingSmallKey: null,
+        coverRejectionReason: null,
+        updatedAt: now,
+      })
+      .where(stillPending)
+      .returning({ id: creativeProfiles.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
+    if (profile.key && profile.key !== input.version) await discardObject(profile.key);
+    if (profile.smallKey && profile.smallKey !== pendingSmallKey) await discardObject(profile.smallKey);
+    return { ok: true as const };
+  }
+
+  await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(creativeProfiles)
+      .set({ coverPendingKey: null, coverPendingSmallKey: null, coverRejectionReason: input.reason, updatedAt: now })
+      .where(stillPending)
+      .returning({ id: creativeProfiles.id });
+    if (updated.length === 0) throw AppError.conflict(STALE);
+    await tx.insert(moderationActions).values({
+      profileId: profile.id,
+      subjectUserId: profile.userId,
+      adminId: input.adminId,
+      action: 'media_removed',
+      reason: input.reason,
+    });
+  });
+  await discardObject(input.version);
+  await discardObject(pendingSmallKey);
+  await notify({ userId: profile.userId, actorUserId: input.adminId, type: 'cover_rejected', targetId: profile.id });
   return { ok: true as const };
 }
 

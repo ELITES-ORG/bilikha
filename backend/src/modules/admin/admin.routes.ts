@@ -76,8 +76,8 @@ adminRouter.get('/media', async (req, res) => {
   const page = z.coerce.number().int().positive().default(1).parse(req.query.page ?? 1);
   const limit = z.coerce.number().int().positive().max(50).default(20).parse(req.query.limit ?? 20);
   // One subject's part of the queue: offers (new or changes), profile photos,
-  // or organisation logos. Neither given: everything, as before.
-  const kind = z.enum(['avatar', 'offer', 'logo']).optional().parse(req.query.kind);
+  // organisation logos, or covers. Neither given: everything, as before.
+  const kind = z.enum(['avatar', 'offer', 'logo', 'cover']).optional().parse(req.query.kind);
   const change = z.enum(['new', 'edit']).optional().parse(req.query.change);
   const { data, total } = await listContentQueue({ page, limit, kind, change });
   const meta: ListMeta = { page, limit, total };
@@ -85,7 +85,7 @@ adminRouter.get('/media', async (req, res) => {
 });
 
 adminRouter.post('/media/:kind/:id/review', async (req, res) => {
-  const kind = z.enum(['avatar', 'offer', 'logo']).parse(req.params.kind);
+  const kind = z.enum(['avatar', 'offer', 'logo', 'cover']).parse(req.params.kind);
   const id = z.string().uuid('Invalid id').parse(req.params.id);
   // A rejection's reason is shown to the item's owner (ADR 0058); the service
   // refuses a rejection without one.

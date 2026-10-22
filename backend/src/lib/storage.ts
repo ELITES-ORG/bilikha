@@ -545,6 +545,9 @@ export const organizationLogoKey = (organizationId: string) =>
 export const offerKey = (profileId: string) =>
   `offers/${profileId}/${randomUUID()}`; // caller appends .webp / -thumb.webp
 
+/** A cover's base key; the caller appends `.webp` and `-768.webp` (ADR 0061). */
+export const coverKey = (profileId: string) => `covers/${profileId}/${randomUUID()}`;
+
 /** An offer's audio, video or PDF. Under the same prefix in whichever bucket it lives. */
 export const offerMediaKey = (profileId: string, ext: string) => `offers/${profileId}/${randomUUID()}.${ext}`;
 

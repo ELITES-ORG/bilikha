@@ -6,17 +6,18 @@ import { eq } from 'drizzle-orm';
 import { createApp } from '../../app.js';
 import { env } from '../../config/env.js';
 import { db } from '../../db/index.js';
-import { mediaUploads, offerImages, userBlocks } from '../../db/schema/index.js';
+import { creativeProfiles, mediaUploads, offerImages, userBlocks } from '../../db/schema/index.js';
 import type { MediaLimits, UploadTicket } from '../../contracts/media.js';
 import { hashPassword } from '../../lib/password.js';
 import {
   createSignedUpload,
+  deleteObject,
   discardObject,
   readFirstBytes,
   storedObject,
   type StoredObject,
 } from '../../lib/storage.js';
-import { makeConversation, makeCreative, makeOffer, makeUser, PASSWORD } from '../../test/factories.js';
+import { makeConversation, makeCreative, makeOffer, makeUser, PASSWORD, suspend } from '../../test/factories.js';
 import { verifyReservation } from './media.service.js';
 
 /**
@@ -32,6 +33,7 @@ vi.mock('../../lib/storage.js', async (importOriginal) => {
     storedObject: vi.fn(),
     readFirstBytes: vi.fn(),
     discardObject: vi.fn(),
+    deleteObject: vi.fn(),
   };
 });
 
@@ -39,6 +41,7 @@ const signUpload = vi.mocked(createSignedUpload);
 const stored = vi.mocked(storedObject);
 const firstBytes = vi.mocked(readFirstBytes);
 const discard = vi.mocked(discardObject);
+const remove = vi.mocked(deleteObject);
 
 const MB = 1_000_000;
 const ID3 = new Uint8Array([0x49, 0x44, 0x33, 0x04, 0x00]);
@@ -85,6 +88,7 @@ describe('/api/v1/media upload pipeline', () => {
     stored.mockReset().mockResolvedValue(null);
     firstBytes.mockReset().mockResolvedValue(new Uint8Array());
     discard.mockReset().mockResolvedValue(undefined);
+    remove.mockReset().mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -765,6 +769,230 @@ describe('/api/v1/media upload pipeline', () => {
       expect(discard).toHaveBeenCalledWith(lapsed.objectKey, 'media-audio');
       expect(await reservationsOf(other.user.id)).toHaveLength(1);
       expect(stored).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('covers (issue #36, ADR 0061)', () => {
+    const KB = 1_000;
+    const COVER_KEY = /^covers\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/;
+
+    /** A fresh pair under the profile's own prefix, as a ticket would name it. */
+    const pairFor = (profileId: string) => {
+      const base = `covers/${profileId}/${randomUUID()}`;
+      return { objectKey: `${base}.webp`, smallKey: `${base}-768.webp` };
+    };
+
+    /** Storage reports these sizes (missing key: not stored) and these first bytes. */
+    function storageHolds(sizes: Record<string, number>, bytes: Uint8Array = WEBP) {
+      stored.mockImplementation(async (_bucket: string, objectKey: string) =>
+        objectKey in sizes ? { name: objectKey, updatedAt: null, size: sizes[objectKey]!, mimetype: 'image/webp' } : null,
+      );
+      firstBytes.mockResolvedValue(bytes);
+    }
+
+    async function coverRow(profileId: string) {
+      const [row] = await db
+        .select({
+          coverKey: creativeProfiles.coverKey,
+          coverSmallKey: creativeProfiles.coverSmallKey,
+          coverPendingKey: creativeProfiles.coverPendingKey,
+          coverPendingSmallKey: creativeProfiles.coverPendingSmallKey,
+          coverRejectionReason: creativeProfiles.coverRejectionReason,
+          editedSinceReviewAt: creativeProfiles.editedSinceReviewAt,
+        })
+        .from(creativeProfiles)
+        .where(eq(creativeProfiles.id, profileId));
+      return row!;
+    }
+
+    const setCover = (cookie: string, pair: { objectKey: string; smallKey: string }) =>
+      call(cookie, 'PUT', '/cover', pair);
+
+    it('issues a ticket for two widths of one cover under the profile', async () => {
+      const { profile, cookie } = await signedIn();
+      const reply = await call(cookie, 'POST', '/upload-url', { kind: 'cover' });
+
+      expect(reply.status).toBe(200);
+      const data = reply.data as { kind: string; full: { objectKey: string }; small: { objectKey: string } };
+      expect(data.kind).toBe('cover');
+      expect(data.full.objectKey).toMatch(COVER_KEY);
+      expect(data.full.objectKey.startsWith(`covers/${profile.id}/`)).toBe(true);
+      expect(data.small.objectKey).toBe(data.full.objectKey.replace(/\.webp$/, '-768.webp'));
+    });
+
+    it('refuses a cover ticket to an account with no creative profile', async () => {
+      const user = await makeUser({ passwordHash: await hashPassword(PASSWORD) });
+      const reply = await call(await signIn(user.username), 'POST', '/upload-url', { kind: 'cover' });
+      expect(reply.status).toBe(403);
+    });
+
+    it('puts a new cover in the pending pair, leaving the approved one and the Edited flag alone', async () => {
+      const { profile, cookie } = await signedIn();
+      const approved = pairFor(profile.id);
+      await db
+        .update(creativeProfiles)
+        .set({ status: 'published', coverKey: approved.objectKey, coverSmallKey: approved.smallKey, coverRejectionReason: 'Too dark.' })
+        .where(eq(creativeProfiles.id, profile.id));
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 300 * KB, [pair.smallKey]: 90 * KB });
+
+      const reply = await setCover(cookie, pair);
+
+      expect(reply.status).toBe(200);
+      expect(await coverRow(profile.id)).toEqual({
+        coverKey: approved.objectKey,
+        coverSmallKey: approved.smallKey,
+        coverPendingKey: pair.objectKey,
+        coverPendingSmallKey: pair.smallKey,
+        coverRejectionReason: null,
+        editedSinceReviewAt: null,
+      });
+      expect(discard).not.toHaveBeenCalled();
+    });
+
+    it('replaces a waiting cover, discarding the old pending pair only', async () => {
+      const { profile, cookie } = await signedIn();
+      const first = pairFor(profile.id);
+      const second = pairFor(profile.id);
+      storageHolds({ [first.objectKey]: 300 * KB, [first.smallKey]: 90 * KB, [second.objectKey]: 300 * KB, [second.smallKey]: 90 * KB });
+
+      expect((await setCover(cookie, first)).status).toBe(200);
+      expect((await setCover(cookie, second)).status).toBe(200);
+
+      const row = await coverRow(profile.id);
+      expect(row.coverPendingKey).toBe(second.objectKey);
+      expect(row.coverPendingSmallKey).toBe(second.smallKey);
+      expect(discard.mock.calls.map(([key]) => key).sort()).toEqual([first.objectKey, first.smallKey].sort());
+    });
+
+    it("refuses another profile's cover keys with 403", async () => {
+      const { profile, cookie } = await signedIn();
+      const other = await makeCreative();
+      const reply = await setCover(cookie, pairFor(other.profile.id));
+
+      expect(reply.status).toBe(403);
+      expect((await coverRow(profile.id)).coverPendingKey).toBeNull();
+    });
+
+    it('refuses two keys that are not one cover', async () => {
+      const { profile, cookie } = await signedIn();
+      const reply = await setCover(cookie, { objectKey: pairFor(profile.id).objectKey, smallKey: pairFor(profile.id).smallKey });
+      expect(reply.status).toBe(400);
+    });
+
+    it('refuses a key that climbs out of its folder', async () => {
+      const { profile, cookie } = await signedIn();
+      const objectKey = `covers/${profile.id}/../../avatars/x/y.webp`;
+      const reply = await setCover(cookie, { objectKey, smallKey: objectKey.replace(/\.webp$/, '-768.webp') });
+      expect(reply.status).toBe(400);
+    });
+
+    it('refuses a cover over 2 MB with COVER_TOO_LARGE, and discards both files', async () => {
+      const { profile, cookie } = await signedIn();
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 2 * MB + 1, [pair.smallKey]: 90 * KB });
+
+      const reply = await setCover(cookie, pair);
+
+      expect(reply.status).toBe(400);
+      expect(reply.error?.code).toBe('COVER_TOO_LARGE');
+      expect(discard.mock.calls.map(([key]) => key).sort()).toEqual([pair.objectKey, pair.smallKey].sort());
+      expect((await coverRow(profile.id)).coverPendingKey).toBeNull();
+    });
+
+    it('accepts a cover of exactly 2 MB', async () => {
+      const { profile, cookie } = await signedIn();
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 2 * MB, [pair.smallKey]: 90 * KB });
+      expect((await setCover(cookie, pair)).status).toBe(200);
+    });
+
+    it('refuses a file that is not a photo with COVER_NOT_AN_IMAGE, and discards both files', async () => {
+      const { profile, cookie } = await signedIn();
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 300 * KB, [pair.smallKey]: 90 * KB }, ID3);
+
+      const reply = await setCover(cookie, pair);
+
+      expect(reply.status).toBe(400);
+      expect(reply.error?.code).toBe('COVER_NOT_AN_IMAGE');
+      expect(discard).toHaveBeenCalledTimes(2);
+      expect((await coverRow(profile.id)).coverPendingKey).toBeNull();
+    });
+
+    it('accepts the JPEG the resizer falls back to', async () => {
+      const { profile, cookie } = await signedIn();
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 300 * KB, [pair.smallKey]: 90 * KB }, JPEG);
+      expect((await setCover(cookie, pair)).status).toBe(200);
+    });
+
+    it('answers UPLOAD_INCOMPLETE when one of the pair was never stored', async () => {
+      const { profile, cookie } = await signedIn();
+      const pair = pairFor(profile.id);
+      storageHolds({ [pair.objectKey]: 300 * KB });
+
+      const reply = await setCover(cookie, pair);
+
+      expect(reply.status).toBe(400);
+      expect(reply.error?.code).toBe('UPLOAD_INCOMPLETE');
+      expect((await coverRow(profile.id)).coverPendingKey).toBeNull();
+    });
+
+    it('removes a waiting cover first, then the approved one, then nothing', async () => {
+      const { profile, cookie } = await signedIn();
+      const approved = pairFor(profile.id);
+      const pending = pairFor(profile.id);
+      await db
+        .update(creativeProfiles)
+        .set({
+          coverKey: approved.objectKey,
+          coverSmallKey: approved.smallKey,
+          coverPendingKey: pending.objectKey,
+          coverPendingSmallKey: pending.smallKey,
+        })
+        .where(eq(creativeProfiles.id, profile.id));
+
+      const first = await call(cookie, 'DELETE', '/cover');
+      expect(first.status).toBe(200);
+      expect(first.data).toEqual({ ok: true, removed: 'pending' });
+      let row = await coverRow(profile.id);
+      expect([row.coverPendingKey, row.coverPendingSmallKey]).toEqual([null, null]);
+      expect(row.coverKey).toBe(approved.objectKey);
+
+      const second = await call(cookie, 'DELETE', '/cover');
+      expect(second.data).toEqual({ ok: true, removed: 'approved' });
+      row = await coverRow(profile.id);
+      expect([row.coverKey, row.coverSmallKey]).toEqual([null, null]);
+
+      const third = await call(cookie, 'DELETE', '/cover');
+      expect(third.status).toBe(200);
+      expect(discard.mock.calls.map(([key]) => key).sort()).toEqual(
+        [pending.objectKey, pending.smallKey, approved.objectKey, approved.smallKey].sort(),
+      );
+    });
+
+    it('answers 401 to a suspended creative on every cover route (ADR 0028)', async () => {
+      const { user, profile, cookie } = await signedIn();
+      await suspend(user.id);
+      const pair = pairFor(profile.id);
+
+      expect((await call(cookie, 'POST', '/upload-url', { kind: 'cover' })).status).toBe(401);
+      expect((await setCover(cookie, pair)).status).toBe(401);
+      expect((await call(cookie, 'DELETE', '/cover')).status).toBe(401);
+    });
+
+    it("abandons an own cover file, and refuses another profile's", async () => {
+      const { profile, cookie } = await signedIn();
+      const other = await makeCreative();
+
+      const own = await call(cookie, 'POST', '/abandon', { objectKey: pairFor(profile.id).objectKey });
+      expect(own.status).toBe(200);
+      expect(remove).toHaveBeenCalledTimes(1);
+
+      const theirs = await call(cookie, 'POST', '/abandon', { objectKey: pairFor(other.profile.id).objectKey });
+      expect(theirs.status).toBe(403);
+      expect(remove).toHaveBeenCalledTimes(1);
     });
   });
 });
