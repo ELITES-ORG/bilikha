@@ -1,6 +1,6 @@
 # 0053. Verify new accounts with a photo of a Biliran ID
 
-- **Status:** In progress
+- **Status:** Complete — production release waits for the always-on instance (Prerequisites)
 - **Owner:** emanuel
 - **Related:** [ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md) ·
   [ADR 0051](../decisions/0051-an-admin-reset-issues-a-one-time-password.md) ·
@@ -120,7 +120,7 @@ as long as it takes, and its images are kept while it waits.
 | 2. Account side | 9 / 9 | Done |
 | 3. Admin review and retention | 7 / 7 | Done |
 | 4. Reversal and appeals | 5 / 5 | Done |
-| 5. Switch on | 3 / 5 | In progress — Steps 5.4 (the pull request's rollout notes) and 5.5 (staging, a real phone) outstanding |
+| 5. Switch on | 5 / 5 | Done |
 
 ---
 
@@ -891,36 +891,52 @@ instance** (Prerequisites).
 
 ### Step 5.5 — Verify end to end on staging
 
-- [ ] **Action.** On a real Android phone, including Facebook's in-app browser:
+- [x] **Action.** On a real Android phone, including Facebook's in-app browser:
       register, photograph both sides, see the banner; verify as an
       administrator, and see the person told so by the *ID verified* notice;
       decline (try again) and resubmit; decline (not from
       Biliran), appeal, and both grant and uphold an appeal; reverse a decision;
       register a second account with the same ID and see it flagged; sign in
       with an account made before the release.
-- [ ] **Verify.** The issue's Verify list, every box, plus the appeal and
+- [x] **Verify.** The issue's Verify list, every box a phone can show (the
+      7-day deletion rests on the tests, see Acceptance), plus the appeal and
       reversal paths.
+
+Done by emanuel on staging, 2026-10-20, in Chrome and Facebook's in-app
+browser on an Android phone, after `ID_HASH_SECRET` was confirmed on the
+staging service: its boot log shows neither the ID bucket warning nor the
+"ID_HASH_SECRET is not set" one. Every path above behaved as planned.
 
 ---
 
 ## Acceptance
 
-- [ ] An account registered after Phase 5 cannot write anything until verified,
+Ticked 2026-10-20. Step 5.5 covers what a person can see on staging; the parts
+a phone cannot show (the sweep's timing, what is logged, what is stored) rest on
+the tests named after each line.
+
+- [x] An account registered after Phase 5 cannot write anything until verified,
       and every write route answers `403 VERIFICATION_PENDING` to `curl`.
-- [ ] No ID image is reachable without an administrator's session, and none is
+      (`verification-gate.test.ts`, `register.test.ts`.)
+- [x] No ID image is reachable without an administrator's session, and none is
       readable more than 7 days after its latest decision unless an appeal is
-      open — whether or not the sweep has run.
-- [ ] Every view, decision, reversal and appeal outcome is in
-      `moderation_actions`.
-- [ ] Images are deleted within the hour after their 7 days end; the record
-      remains.
-- [ ] A *not from Biliran* decline can be appealed once within 7 days, and any
+      open — whether or not the sweep has run. (`id-review.test.ts`,
+      `verification.routes.test.ts`.)
+- [x] Every view, decision, reversal and appeal outcome is in
+      `moderation_actions`. (`id-review.test.ts`, `id-review-changes.test.ts`,
+      `appeal.test.ts`.)
+- [x] Images are deleted within the hour after their 7 days end; the record
+      remains. (`retention.test.ts`; on time on production only once it is
+      always-on — see Prerequisites.)
+- [x] A *not from Biliran* decline can be appealed once within 7 days, and any
       decision can be reversed by an administrator in that window.
-- [ ] A repeated ID, meaning the same number on another account, is recognised
+      (`appeal.test.ts`, `appeal-limit.test.ts`, `id-review-changes.test.ts`.)
+- [x] A repeated ID, meaning the same number on another account, is recognised
       and shown to the administrator. No ID number is stored, logged or returned
-      anywhere, only its keyed hash.
-- [ ] Accounts from before the release behave exactly as before.
-- [ ] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`,
+      anywhere, only its keyed hash. (`id-number.test.ts`, `id-review.test.ts`.)
+- [x] Accounts from before the release behave exactly as before.
+      (`verification-gate.test.ts`, and an older account on staging.)
+- [x] `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`,
       `npm run docs:check` pass on every phase.
 
 ## Decided (reyxdz, 2026-10-10)
