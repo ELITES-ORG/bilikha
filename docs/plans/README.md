@@ -119,6 +119,7 @@ does not exist yet, say so and mark the plan blocked rather than inventing it.
 | [0057](./0057-upload-pipeline-and-offer-media.md) | The upload pipeline, and audio, video and PDF on offers | In progress |
 | [0058](./0058-search-by-everyday-words.md) | Search by everyday words | Complete |
 | [0060](./0060-message-attachments.md) | Attachments in messages | Ready |
+| [0061](./0061-a-cover-photo-on-the-creative-profile.md) | A cover photo on the creative profile | Draft |
 
 Listed in execution order, which is not numeric order — 0002 ran first, and
 0007 before 0006, and 0017 before 0016.
