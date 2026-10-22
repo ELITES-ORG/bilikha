@@ -28,6 +28,7 @@
     "media:prune": "tsx src/scripts/prune-orphan-media.ts",
     "media:buckets": "tsx src/scripts/configure-media-buckets.ts",
     "ids:purge": "tsx src/scripts/purge-id-images.ts",
+    "messages:sweep": "tsx src/scripts/sweep-message-files.ts",
     "notifications:prune": "tsx src/scripts/prune-notifications.ts"
   },
   "dependencies": {
