@@ -56,7 +56,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 | 2. Data and the `message` destination | 4 / 4 | Done |
 | 3. Sending and reading | 3 / 3 | Done — 3.4 dropped |
 | 4. Composer and thread | 3 / 3 | Partly — 4.1's resumed upload is checked on staging (6.2) |
-| 5. Expiry | 0 / 3 | Not started |
+| 5. Expiry | 3 / 3 | Done |
 | 6. Rollout (reyxdz) | 0 / 4 | Not started |
 
 ---
@@ -178,20 +178,20 @@ built, through a report or otherwise (ADR 0060, as amended).
 ## Phase 5 — Expiry (pull request 5)
 
 ### Step 5.1 — The sweep
-- [ ] **Action.** On the API's hourly timer, beside the ID retention pass:
+- [x] **Action.** On the API's hourly timer, beside the ID retention pass:
   delete expired objects and stamp `file_deleted_at`. `messages:sweep` runs it
   by hand.
-- [ ] **Verify.** Tests: idempotent; a late run changes nothing a reader sees.
+- [x] **Verify.** Tests: idempotent; a late run changes nothing a reader sees.
 
 ### Step 5.2 — The three-day notice
-- [ ] **Action.** `attachment_expiring` to both participants, at most one per
+- [x] **Action.** `attachment_expiring` to both participants, at most one per
   conversation per day.
-- [ ] **Verify.** Tests.
+- [x] **Verify.** Tests.
 
 ### Step 5.3 — Records
-- [ ] **Action.** `api.md`, `data-model.md`, `environment.md`, `commands.md`,
-  the privacy notice's line on message files, README.
-- [ ] **Verify.** `npm run docs:check` passes.
+- [x] **Action.** `api.md`, `data-model.md`, `environment.md`, `commands.md`,
+  README. The privacy notice's line on message files is Step 6.4.
+- [x] **Verify.** `npm run docs:check` passes.
 
 ## Phase 6 — Rollout (reyxdz)
 
@@ -209,6 +209,8 @@ built, through a report or otherwise (ADR 0060, as amended).
 
 ### Step 6.4 — Production on
 - [ ] **Action.** The switch on `bilikha-production`, after Supabase Pro.
+  The privacy notice's lines on message files go out here too, with
+  `CONSENT_VERSION` (both sides) and the notice's date moved to the day they ship.
   Accept-and-close: #66.
 - [ ] **Verify.** Each kind sends and opens on production.
 
