@@ -37,12 +37,13 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   // it. Declines need no notification — they end the session with the reason.
   'id_verified',
   // Content review (ADR 0058). An offer or a change to it was approved, or
-  // was not (with the reason); a new photo or logo was not approved. An
-  // approved photo needs no message — it simply appears.
+  // was not (with the reason); a new photo, logo or cover (ADR 0061) was not
+  // approved. An approved photo needs no message — it simply appears.
   'offer_approved',
   'offer_rejected',
   'avatar_rejected',
   'logo_rejected',
+  'cover_rejected',
   // A photo, audio or video in a conversation expires in three days
   // (ADR 0060). Sent to both people, at most one per conversation per day.
   'attachment_expiring',

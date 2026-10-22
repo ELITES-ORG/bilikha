@@ -302,6 +302,13 @@
       "when": 1791927313298,
       "tag": "0042_nostalgic_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792674745806,
+      "tag": "0043_pale_otto_octavius",
+      "breakpoints": true
     }
   ]
 }

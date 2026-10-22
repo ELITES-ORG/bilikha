@@ -25,6 +25,8 @@ export type NotificationType =
   | 'offer_rejected'
   | 'avatar_rejected'
   | 'logo_rejected'
+  // A new cover was not approved (ADR 0061).
+  | 'cover_rejected'
   // A photo, audio or video in a conversation expires in three days (ADR 0060).
   | 'attachment_expiring';
 

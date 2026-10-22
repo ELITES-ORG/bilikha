@@ -24,6 +24,7 @@ import { AppError } from '../../lib/http-error.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { isStorageConfigured, publicUrl } from '../../lib/storage.js';
 import { coverPoster } from '../offers/offers.service.js';
+import { profileCover } from '../profiles/profiles.service.js';
 import type {
   ChangePasswordInput,
   CreateProfileInput,
@@ -90,6 +91,11 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile | null> 
       rejectionReason: creativeProfiles.rejectionReason,
       editedSinceReviewAt: creativeProfiles.editedSinceReviewAt,
       profileId: creativeProfiles.id,
+      coverKey: creativeProfiles.coverKey,
+      coverSmallKey: creativeProfiles.coverSmallKey,
+      coverPendingKey: creativeProfiles.coverPendingKey,
+      coverPendingSmallKey: creativeProfiles.coverPendingSmallKey,
+      coverRejectionReason: creativeProfiles.coverRejectionReason,
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
@@ -131,6 +137,9 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile | null> 
     editedSinceReviewAt: row.editedSinceReviewAt?.toISOString() ?? null,
     subdomainSlugs: subdomainRows.map((s) => s.slug),
     primarySubdomainSlug: primary?.slug ?? null,
+    cover: profileCover(row.coverKey, row.coverSmallKey),
+    pendingCover: profileCover(row.coverPendingKey, row.coverPendingSmallKey),
+    coverRejectionReason: row.coverRejectionReason,
   };
 }
 

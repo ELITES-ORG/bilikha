@@ -45,4 +45,14 @@ export interface PublicProfileListResult {
  * The single-profile response: the directory shape plus its offers. Lived in
  * the service while contracts could not import each other.
  */
-export type PublicProfileDetail = PublicProfile & { offers: ProfileOffer[] };
+/** A creative's cover (issue #36, ADR 0061): `url` is 1920px wide, `smallUrl` 768px. */
+export interface ProfileCover {
+  url: string;
+  smallUrl: string;
+}
+
+export type PublicProfileDetail = PublicProfile & {
+  offers: ProfileOffer[];
+  /** The approved cover only; one waiting for review is never public. */
+  cover: ProfileCover | null;
+};

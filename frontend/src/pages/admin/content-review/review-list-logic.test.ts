@@ -70,6 +70,18 @@ describe('media review filtering', () => {
   });
 });
 
+describe('cover review search (ADR 0061)', () => {
+  it('finds a cover by its creative, the only text a cover carries', () => {
+    const covers = [
+      row({ id: 'cover-a', kind: 'cover', ownerName: 'Dina Santos', profileSlug: 'dina' }),
+      row({ id: 'cover-b', kind: 'cover', ownerName: 'Eric Uy', profileSlug: 'eric' }),
+    ];
+
+    expect(filterAndSortReview(covers, 'dina', 'queue').map((item) => item.id)).toEqual(['cover-a']);
+    expect(filterAndSortReview(covers, '', 'queue').map((item) => item.id)).toEqual(['cover-a', 'cover-b']);
+  });
+});
+
 describe('media review ordering', () => {
   it('preserves the server queue order and never mutates the input', () => {
     const original = items.map((item) => item.id);

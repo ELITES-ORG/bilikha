@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type { ProfileOffer } from '../../contracts/offers.js';
 import type {
+  ProfileCover,
   PublicProfile,
   PublicProfileDetail,
   PublicProfileListResult,
@@ -267,6 +268,12 @@ export async function listPublished(
   return { data, total: totals?.total ?? 0 };
 }
 
+/** A cover's two widths as URLs, or null unless both keys are set and storage is (ADR 0061). */
+export function profileCover(key: string | null, smallKey: string | null): ProfileCover | null {
+  if (!key || !smallKey || !isStorageConfigured()) return null;
+  return { url: publicUrl(key), smallUrl: publicUrl(smallKey) };
+}
+
 export async function getPublishedBySlug(slug: string): Promise<PublicProfileDetail> {
   const [row] = await db
     .select({
@@ -281,6 +288,8 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfileDet
       suffix: users.suffix,
       municipality: municipalities.name,
       avatarKey: users.avatarKey,
+      coverKey: creativeProfiles.coverKey,
+      coverSmallKey: creativeProfiles.coverSmallKey,
     })
     .from(creativeProfiles)
     .innerJoin(users, eq(creativeProfiles.userId, users.id))
@@ -307,6 +316,8 @@ export async function getPublishedBySlug(slug: string): Promise<PublicProfileDet
     municipality: row.municipality,
     subdomains: subdomainMap.get(row.id) ?? [],
     offers: profileOffers,
+    // The approved pair only: a cover waiting for review is never public (ADR 0058).
+    cover: profileCover(row.coverKey, row.coverSmallKey),
     memberSince: row.createdAt.toISOString(),
   };
 }

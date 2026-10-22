@@ -57,7 +57,7 @@ Number sequentially. Never renumber.
 | [0018](./0018-conversations-replace-one-shot-inquiries.md) | Conversations replace one-shot inquiries, in-app only | Accepted (amended by 0024) |
 | [0019](./0019-one-account-creative-as-attachable-role.md) | One account; creative is a role you add | Accepted (amended by 0020) |
 | [0020](./0020-location-required-biliran-only.md) | Location required at registration, Biliran only | Accepted (proved by an ID, 0057) |
-| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted (scope and budget superseded by 0046; private ID bucket in 0057) |
+| [0021](./0021-image-storage-and-upload-path.md) | Image storage, sized in the browser, uploaded directly | Accepted (scope and budget superseded by 0046; private ID bucket in 0057; cover sizes in 0061) |
 | [0022](./0022-offers-replace-portfolio.md) | Offers replace the portfolio; the directory indexes offers | Accepted (amended by 0046) |
 | [0023](./0023-bottom-navigation-on-phones.md) | Bottom navigation on phones | Accepted |
 | [0024](./0024-offers-attach-to-messages.md) | An offer attaches to a message, not a conversation | Accepted |
@@ -66,7 +66,7 @@ Number sequentially. Never renumber.
 | [0027](./0027-account-is-a-hub.md) | The account page is a hub, not a page | Accepted |
 | [0028](./0028-suspension-is-enforced-per-request.md) | Suspension is enforced per request; content hidden by derivation | Accepted |
 | [0029](./0029-work-agreements-not-invoices.md) | Work agreements, accepted by re-authentication | Accepted |
-| [0030](./0030-notifications.md) | Notifications: a record, and two ways to deliver it | Accepted (four review notifications added by 0058) |
+| [0030](./0030-notifications.md) | Notifications: a record, and two ways to deliver it | Accepted (four review notifications added by 0058, a fifth by 0061) |
 | [0031](./0031-testing-strategy.md) | Tests run against a real database, at the service layer | Accepted |
 | [0032](./0032-an-accepted-agreement-is-not-deleted.md) | An accepted agreement is not deleted | Accepted |
 | [0033](./0033-ratings-earned-by-a-completed-agreement.md) | A rating is earned by a completed agreement | Accepted |
@@ -97,3 +97,4 @@ Number sequentially. Never renumber.
 | [0058](./0058-content-waits-for-approval-beside-what-is-public.md) | Offers and images wait for approval, beside what is already public | Accepted |
 | [0059](./0059-the-admin-area-is-organised-by-subject.md) | The admin area is organised by what is being decided | Accepted |
 | [0060](./0060-message-files-are-private-and-photos-audio-video-expire.md) | Message files are private, and photos, audio and video expire after 30 days | Accepted (amended 2026-10-19) |
+| [0061](./0061-a-cover-is-a-reviewed-profile-image.md) | A cover is a reviewed profile image, stored at two fixed widths | Accepted |

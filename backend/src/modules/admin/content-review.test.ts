@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import { env } from '../../config/env.js';
 import { db } from '../../db/index.js';
 import {
+  creativeProfiles,
   creativeProfileSubdomains,
   creativeSubdomains,
   moderationActions,
@@ -31,7 +32,7 @@ import {
 import type { PatchOfferBody } from '../offers/offers.schema.js';
 import { getPublishedBySlug } from '../profiles/profiles.service.js';
 import { startOrContinue } from '../conversations/conversations.service.js';
-import { listContentQueue, reviewContent } from './content-review.service.js';
+import { contentQueueCounts, listContentQueue, reviewContent } from './content-review.service.js';
 
 /** As the admin page does: decide on the version the queue showed. */
 async function review(input: Omit<Parameters<typeof reviewContent>[0], 'version'>) {
@@ -563,6 +564,120 @@ describe('a new profile photo', () => {
     expect(await clearAvatar(user.id)).toMatchObject({ removed: 'approved' });
     const [row] = await db.select().from(users).where(eq(users.id, user.id));
     expect(row).toMatchObject({ avatarKey: null, avatarPendingKey: null });
+  });
+});
+
+describe('a new cover (ADR 0061)', () => {
+  const pair = (profileId: string, name: string) => ({
+    key: `covers/${profileId}/${name}.webp`,
+    small: `covers/${profileId}/${name}-768.webp`,
+  });
+
+  /** A published creative with an approved cover and a new one waiting. */
+  async function waiting() {
+    const { user, profile } = await makeCreative();
+    const approved = pair(profile.id, 'approved');
+    const pending = pair(profile.id, 'pending');
+    await db
+      .update(creativeProfiles)
+      .set({
+        coverKey: approved.key,
+        coverSmallKey: approved.small,
+        coverPendingKey: pending.key,
+        coverPendingSmallKey: pending.small,
+      })
+      .where(eq(creativeProfiles.id, profile.id));
+    return { user, profile, approved, pending, admin: await makeAdmin() };
+  }
+
+  const coverRow = async (profileId: string) =>
+    (await db.select().from(creativeProfiles).where(eq(creativeProfiles.id, profileId)))[0]!;
+
+  it('is listed under Creatives with the cover it would replace, and counted', async () => {
+    const { profile, approved, pending } = await waiting();
+    const before = await contentQueueCounts();
+
+    const { data } = await listContentQueue({ page: 1, limit: 10_000, kind: 'cover' });
+    const row = data.find((item) => item.id === profile.id);
+
+    expect(data.every((item) => item.kind === 'cover')).toBe(true);
+    expect(row).toMatchObject({
+      kind: 'cover',
+      profileId: profile.id,
+      profileSlug: profile.slug,
+      url: expect.stringContaining(pending.key),
+      thumbUrl: expect.stringContaining(pending.small),
+      currentUrl: expect.stringContaining(approved.small),
+      version: pending.key,
+    });
+    expect(before.covers).toBeGreaterThanOrEqual(1);
+    await review({ kind: 'cover', id: profile.id, adminId: (await makeAdmin()).id, action: 'approve' });
+    const after = await listContentQueue({ page: 1, limit: 10_000, kind: 'cover' });
+    expect(after.data.some((item) => item.id === profile.id)).toBe(false);
+  });
+
+  it('replaces the public cover when approved, and the replaced files are deleted', async () => {
+    const { profile, approved, pending, admin } = await waiting();
+
+    await review({ kind: 'cover', id: profile.id, adminId: admin.id, action: 'approve' });
+
+    expect(await coverRow(profile.id)).toMatchObject({
+      coverKey: pending.key,
+      coverSmallKey: pending.small,
+      coverPendingKey: null,
+      coverPendingSmallKey: null,
+      editedSinceReviewAt: null,
+    });
+    expect((await getPublishedBySlug(profile.slug)).cover?.url).toContain(pending.key);
+    expect(deleted.sort()).toEqual([approved.key, approved.small].sort());
+  });
+
+  it('is dropped when rejected, keeping the public cover, and its creative is told why', async () => {
+    const { user, profile, approved, pending, admin } = await waiting();
+
+    await review({ kind: 'cover', id: profile.id, adminId: admin.id, action: 'reject', reason: 'Shows a phone number.' });
+
+    expect(await coverRow(profile.id)).toMatchObject({
+      coverKey: approved.key,
+      coverSmallKey: approved.small,
+      coverPendingKey: null,
+      coverPendingSmallKey: null,
+      coverRejectionReason: 'Shows a phone number.',
+    });
+    expect(deleted.sort()).toEqual([pending.key, pending.small].sort());
+    const actions = await db.select().from(moderationActions).where(eq(moderationActions.profileId, profile.id));
+    expect(actions).toEqual([expect.objectContaining({ action: 'media_removed', reason: 'Shows a phone number.' })]);
+    const { data } = await listNotifications(user.id, { page: 1, limit: 10 });
+    expect(data[0]).toMatchObject({ type: 'cover_rejected', detail: 'Shows a phone number.', link: '/account/profile' });
+  });
+
+  it('needs a reason to reject', async () => {
+    const { profile, admin } = await waiting();
+    await expect(review({ kind: 'cover', id: profile.id, adminId: admin.id, action: 'reject' })).rejects.toMatchObject({
+      status: 400,
+    });
+  });
+
+  it('is refused when a new cover replaced it after the administrator saw it, and deletes nothing', async () => {
+    const { profile, pending, admin } = await waiting();
+    const newer = pair(profile.id, 'newer');
+    await db
+      .update(creativeProfiles)
+      .set({ coverPendingKey: newer.key, coverPendingSmallKey: newer.small })
+      .where(eq(creativeProfiles.id, profile.id));
+
+    await expect(
+      reviewContent({ kind: 'cover', id: profile.id, adminId: admin.id, action: 'approve', version: pending.key }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect((await coverRow(profile.id)).coverPendingKey).toBe(newer.key);
+    expect(deleted).toEqual([]);
+  });
+
+  it('cannot be reviewed when no cover is waiting', async () => {
+    const { profile } = await makeCreative();
+    await expect(
+      reviewContent({ kind: 'cover', id: profile.id, adminId: (await makeAdmin()).id, action: 'approve', version: 'x' }),
+    ).rejects.toMatchObject({ status: 404 });
   });
 });
 

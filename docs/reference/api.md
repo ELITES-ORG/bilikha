@@ -534,7 +534,12 @@ Persists which side of the market Home, Messages, and History show
 
 Returns the signed-in user's creative profile when one exists, including their
 own contact details, `contactPreference`, moderation status, rejection reason,
-edit-review flag, selected sub-domain slugs, and primary sub-domain slug.
+edit-review flag, selected sub-domain slugs, and primary sub-domain slug. It
+also carries the cover
+([ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)):
+`cover`, the approved one as the public sees it; `pendingCover`, a new one
+waiting for review; and `coverRejectionReason`, why the last new one was not
+approved. Each cover is `{ url, smallUrl }` (1920px and 768px wide) or `null`.
 Accounts without a profile receive `{ "data": null }`.
 
 ### `POST /api/v1/me/profile`
@@ -765,8 +770,11 @@ see the previous recency order and no `isNearby` field.
 `name`, `singularName`, `domain`), `images[]` with
 `id` / `url` / `thumbUrl` / `sortOrder`, optional `mediaBadge` as on
 `GET /offers`, and optional `poster`, the first video's poster in the same shape
-as an image, or `null`), `memberSince`. Directory cards from
-`GET /creatives` omit `offers` — the offer listing is `GET /offers`.
+as an image, or `null`), `cover` (`{ url, smallUrl }`, 1920px and 768px wide,
+or `null`: only an approved cover, never one waiting for review —
+[ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)),
+`memberSince`. Directory cards from `GET /creatives` omit `offers` and `cover` —
+the offer listing is `GET /offers`.
 
 ---
 
@@ -1166,7 +1174,7 @@ How many items wait for a decision under each admin section
 ```jsonc
 {
   "data": {
-    "creatives": { "pending": 2, "edited": 1 },
+    "creatives": { "pending": 2, "edited": 1, "covers": 1 },
     "offers": { "new": 3, "changes": 1 },
     "organizations": { "pending": 0, "edited": 1, "logos": 1 },
     "people": { "photos": 4, "ids": 2, "appeals": 1 },
@@ -1178,6 +1186,8 @@ How many items wait for a decision under each admin section
 Published and suspended rows are not waiting, so they are not counted. `people.ids`
 is submitted IDs waiting for a decision, and `people.appeals` open appeals
 against a decline ([ADR 0057](../decisions/0057-new-accounts-are-verified-with-a-biliran-id.md)).
+`creatives.covers` is new covers waiting for review
+([ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)).
 
 ### `GET /api/v1/admin/media`
 
@@ -1186,7 +1196,7 @@ Everything waiting for a decision
 paginated. Optional filters return one admin section's part of the queue
 ([ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md)):
 
-- `kind`: `offer`, `avatar` or `logo`.
+- `kind`: `offer`, `avatar`, `logo` or `cover`.
 - `change`: `new` or `edit`, for new offers or changes to published ones.
   It implies `kind=offer`.
 
@@ -1194,22 +1204,24 @@ Without either, the whole queue comes back:
 
 - **Offers.** A new offer in `pending_review`, and a published offer with a
   waiting change: a revision, or photos added or removed.
-- **Avatars and logos.** A new profile photo or organisation logo in its
-  pending slot.
+- **Avatars, logos and covers.** A new profile photo, organisation logo or
+  creative's cover in its pending slot.
 
 Flagged items (`flaggedAt` set) sort first, then the rest by the longest
 waiting.
 
 Each row has:
 
-- `kind` (`avatar` \| `offer` \| `logo`)
+- `kind` (`avatar` \| `offer` \| `logo` \| `cover`)
 - absolute `url`/`thumbUrl` for the waiting image
 - the owner's name (the organisation's name for a logo)
 - the profile slug, when there is one
 
-A logo row carries `organizationSlug` when the page is published. An avatar or
-logo row carries `currentUrl` when it would replace an approved image. Every
-row carries a `version`: a token for exactly what the row shows.
+A logo row carries `organizationSlug` when the page is published. An avatar,
+logo or cover row carries `currentUrl` when it would replace an approved image.
+A cover row's `id` and `profileId` are the creative profile's; its `url` is the
+1920px file and its `thumbUrl` the 768px one. Every row carries a `version`: a
+token for exactly what the row shows.
 
 Offer rows also include:
 
@@ -1227,13 +1239,14 @@ Offer rows also include:
 
 ### `POST /api/v1/admin/media/:kind/:id/review`
 
-`kind` is `avatar`, `offer` or `logo`. For a logo, `id` is the organisation's.
+`kind` is `avatar`, `offer`, `logo` or `cover`. For a logo, `id` is the
+organisation's; for a cover, the creative profile's.
 
 Body: `{ "action": "approve" | "reject", "reason"?: string, "version": string }`.
 A reject needs a `reason` of up to 500 characters, else `400`. The owner sees
 the reason. `version` is the queue row's: if the owner has changed the item
-since — edited the offer, added or removed a photo, uploaded another photo or
-logo — the decision is refused with `409`, so nothing is approved unseen.
+since — edited the offer, added or removed a photo, uploaded another photo,
+logo or cover — the decision is refused with `409`, so nothing is approved unseen.
 Reload the queue and decide on what is there now.
 
 **Approve:**
@@ -1241,7 +1254,7 @@ Reload the queue and decide on what is there now.
 - A new offer is published.
 - An offer change replaces the public version. Added photos go live, and
   removed photos are deleted.
-- A photo or logo replaces the approved one, which is then deleted.
+- A photo, logo or cover replaces the approved one, which is then deleted.
 
 **Reject:**
 
@@ -1250,12 +1263,12 @@ Reload the queue and decide on what is there now.
 - An offer change is dropped. Photos it added are deleted, photos it removed
   are kept, and the public version is unchanged. The reason is stored as the
   offer's `revisionRejectionReason`.
-- A waiting photo or logo is deleted, and the reason is stored on the account
-  or organisation.
+- A waiting photo, logo or cover is deleted, and the reason is stored on the
+  account, organisation or creative profile.
 
 Every decision writes a moderation action and notifies the owner. For a logo,
-the founder is notified. An approved photo or logo does not send a
-notification.
+the founder is notified; a rejected cover sends `cover_rejected` to the
+creative. An approved photo, logo or cover does not send a notification.
 
 If nothing is waiting, or the offer is already rejected, the response is
 `409`. If the item does not exist, it is `404`.
@@ -1831,15 +1844,20 @@ account's reservation.
 Rate-limited to 30 requests per user per hour, shared with `POST /media/uploads`.
 
 ```jsonc
-{ "kind": "avatar" }        // or "offer"
+{ "kind": "avatar" }        // or "offer", or "cover"
 ```
 
 `kind: "avatar"` → `{ data: { kind: "avatar", uploadUrl, objectKey } }`
 
 `kind: "offer"` → `{ data: { kind: "offer", full: { uploadUrl, objectKey }, thumb: { uploadUrl, objectKey } } }`
 
+`kind: "cover"` → `{ data: { kind: "cover", full: { uploadUrl, objectKey }, small: { uploadUrl, objectKey } } }`.
+`full` is `covers/<profileId>/<uuid>.webp`, for the 1920px-wide image, and
+`small` the same with `-768.webp`, for the 768px one
+([ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)).
+
 `401` when signed out. `403` when a client account (no creative profile) asks
-for an offer ticket.
+for an offer or cover ticket.
 
 The browser `PUT`s the resized image to `uploadUrl`, then confirms the key with
 a later media or offers endpoint.
@@ -1863,6 +1881,43 @@ If a photo is waiting for review, it is withdrawn and the approved photo stays.
 Otherwise the approved photo is removed. Removing a photo needs no review.
 `{ data: { ok, removed: "pending" | "approved" } }`.
 
+### `PUT /api/v1/media/cover`
+
+```jsonc
+{
+  "objectKey": "covers/<profileId>/<uuid>.webp",
+  "smallKey": "covers/<profileId>/<uuid>-768.webp"
+}
+```
+
+Records the pair in the cover's pending slot and clears any earlier rejection
+reason. The public keeps seeing the approved cover, or the navy band, until an
+administrator approves it
+([ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md),
+[ADR 0061](../decisions/0061-a-cover-is-a-reviewed-profile-image.md)). If
+another cover was already waiting, it is deleted. A cover never marks the
+profile as edited. `{ data: { objectKey, smallKey } }`.
+
+Before recording, the stored files are checked; a pair that fails a size or type
+check is deleted.
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `VALIDATION_ERROR` | A key is missing, empty or over 512 characters |
+| `400` | `BAD_REQUEST` | `smallKey` is not `objectKey` with `-768.webp`, `objectKey` does not end in `.webp`, or a key is malformed (for example contains `..`) |
+| `400` | `UPLOAD_INCOMPLETE` | One of the pair is not in storage |
+| `400` | `COVER_TOO_LARGE` | A stored file is over 2 MB |
+| `400` | `COVER_NOT_AN_IMAGE` | A stored file is not a WebP or JPEG |
+| `401` | | Signed out or suspended |
+| `403` | | No creative profile, or a key not under `covers/<callerProfileId>/` |
+
+### `DELETE /api/v1/media/cover`
+
+If a cover is waiting for review, it is withdrawn and the approved one stays.
+Otherwise the approved cover is removed. Removing needs no review.
+`{ data: { ok, removed: "pending" | "approved" } }`. `403` without a creative
+profile.
+
 ### `POST /api/v1/media/abandon`
 
 ```jsonc
@@ -1870,7 +1925,9 @@ Otherwise the approved photo is removed. Removing a photo needs no review.
 ```
 
 Deletes an object that was uploaded but never recorded — used when an offer
-thumb upload fails after the display upload succeeded. Ownership-checked.
+thumb upload fails after the display upload succeeded, or one width of a cover
+after the other did. Ownership-checked: an offer or cover key must be under the
+caller's own profile.
 
 ---
 

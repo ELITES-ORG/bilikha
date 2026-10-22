@@ -17,6 +17,9 @@
 >
 > As this record requires, the reason is read from the item when the
 > notifications open, not copied into the notification.
+>
+> **Amended by [0061](./0061-a-cover-is-a-reviewed-profile-image.md)
+> (2026-10-22).** It adds a fifth: a new cover was not approved.
 
 ## Context
 

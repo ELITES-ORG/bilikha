@@ -19,7 +19,7 @@ export async function adminSummary(): Promise<AdminSummary> {
     openAppealCount(),
   ]);
   return {
-    creatives: { pending: profiles.pending_review ?? 0, edited: profiles.edited ?? 0 },
+    creatives: { pending: profiles.pending_review ?? 0, edited: profiles.edited ?? 0, covers: content.covers },
     offers: { new: content.newOffers, changes: content.changedOffers },
     organizations: {
       pending: organizations.pending_review ?? 0,

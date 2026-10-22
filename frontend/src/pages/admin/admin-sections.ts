@@ -35,7 +35,8 @@ export const ADMIN_SECTIONS = [
     path: '/admin/creatives',
     icon: ListChecks,
     group: 'decide',
-    waiting: (s: AdminSummary) => s.creatives.pending + s.creatives.edited,
+    // A new cover is decided here too (ADR 0061); an API from before covers sends none.
+    waiting: (s: AdminSummary) => s.creatives.pending + s.creatives.edited + (s.creatives.covers ?? 0),
   },
   {
     label: 'Offers',

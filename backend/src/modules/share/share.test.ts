@@ -160,6 +160,7 @@ describe('link-preview card contents', () => {
     fullName: 'Juan Dela Cruz',
     bio: null,
     avatarUrl: 'https://storage.example/avatars/juan.webp',
+    cover: null,
     municipality: 'Naval',
     subdomains: [
       {

@@ -41,6 +41,15 @@ export const creativeProfiles = pgTable(
     // Edited queue. Cleared when an admin acknowledges it.
     // See ADR 0016.
     editedSinceReviewAt: timestamp('edited_since_review_at', { withTimezone: true }),
+    // The profile band image (issue #36): two widths of one upload under
+    // covers/<profileId>/. A new cover waits in the pending pair until an
+    // administrator approves it (ADR 0058); the approved pair stays public
+    // meanwhile. ADR 0061.
+    coverKey: text('cover_key'),
+    coverSmallKey: text('cover_small_key'),
+    coverPendingKey: text('cover_pending_key'),
+    coverPendingSmallKey: text('cover_pending_small_key'),
+    coverRejectionReason: text('cover_rejection_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

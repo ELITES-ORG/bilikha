@@ -2,8 +2,9 @@
  * Lists every object in the four offer buckets (images, audio, video,
  * documents) and the four private message buckets, compares against keys
  * referenced by users.avatar_key and avatar_pending_key, organizations.logo_key
- * and logo_pending_key, offer_images, message_attachments, and unexpired upload
- * reservations, and reports (or deletes with --delete)
+ * and logo_pending_key, creative_profiles' four cover keys (cover_key,
+ * cover_small_key and their pending pair), offer_images, message_attachments,
+ * and unexpired upload reservations, and reports (or deletes with --delete)
  * objects older than 24 hours that no row references. With --delete it first
  * removes expired reservations, so their objects count as orphans.
  *
@@ -18,7 +19,14 @@ import { gt, lte } from 'drizzle-orm';
 import { env } from '../config/env.js';
 import type { UploadDestination } from '../contracts/media.js';
 import { db, closeDatabase } from '../db/index.js';
-import { mediaUploads, messageAttachments, offerImages, organizations, users } from '../db/schema/index.js';
+import {
+  creativeProfiles,
+  mediaUploads,
+  messageAttachments,
+  offerImages,
+  organizations,
+  users,
+} from '../db/schema/index.js';
 import { AppError } from '../lib/http-error.js';
 import { deleteObject, listObjects, type StoredObject } from '../lib/storage.js';
 import { storageBelongsToDatabase } from '../lib/storage-safety.js';
@@ -61,10 +69,18 @@ async function main() {
     console.log(`Deleted ${expired.length} expired upload reservation(s).`);
   }
 
-  const [avatarRows, logoRows, itemRows, attachmentRows, reservationRows] = await Promise.all([
-    // Pending photos and logos are referenced too: they wait for review (ADR 0058).
+  const [avatarRows, logoRows, coverRows, itemRows, attachmentRows, reservationRows] = await Promise.all([
+    // Pending photos, logos and covers are referenced too: they wait for review (ADR 0058).
     db.select({ key: users.avatarKey, pending: users.avatarPendingKey }).from(users),
     db.select({ key: organizations.logoKey, pending: organizations.logoPendingKey }).from(organizations),
+    db
+      .select({
+        key: creativeProfiles.coverKey,
+        smallKey: creativeProfiles.coverSmallKey,
+        pendingKey: creativeProfiles.coverPendingKey,
+        pendingSmallKey: creativeProfiles.coverPendingSmallKey,
+      })
+      .from(creativeProfiles),
     db
       .select({ kind: offerImages.kind, objectKey: offerImages.objectKey, thumbKey: offerImages.thumbKey })
       .from(offerImages),
@@ -91,6 +107,11 @@ async function main() {
   for (const row of [...avatarRows, ...logoRows]) {
     addReference(referenced, mediaBucket, row.key);
     addReference(referenced, mediaBucket, row.pending);
+  }
+  for (const row of coverRows) {
+    for (const key of [row.key, row.smallKey, row.pendingKey, row.pendingSmallKey]) {
+      addReference(referenced, mediaBucket, key);
+    }
   }
   for (const row of itemRows) {
     addReference(referenced, bucketFor(row.kind), row.objectKey);

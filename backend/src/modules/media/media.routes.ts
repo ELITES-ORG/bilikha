@@ -7,11 +7,14 @@ import {
   abandonObject,
   abandonUploadTicket,
   clearAvatar,
+  clearCover,
   issueUploadTicket,
   issueUploadUrl,
   mediaUsage,
   setAvatar,
   setAvatarBodySchema,
+  setCover,
+  setCoverBodySchema,
   uploadTicketBodySchema,
   uploadUrlBodySchema,
 } from './media.service.js';
@@ -56,6 +59,17 @@ mediaRouter.put('/avatar', async (req, res) => {
 
 mediaRouter.delete('/avatar', async (req, res) => {
   const data = await clearAvatar(req.session.userId!);
+  res.status(200).json({ data });
+});
+
+mediaRouter.put('/cover', async (req, res) => {
+  const input = setCoverBodySchema.parse(req.body);
+  const data = await setCover(req.session.userId!, input);
+  res.status(200).json({ data });
+});
+
+mediaRouter.delete('/cover', async (req, res) => {
+  const data = await clearCover(req.session.userId!);
   res.status(200).json({ data });
 });
 
