@@ -1101,6 +1101,12 @@ so polling it downloads nothing. `expiresAt` is 30 days after sending for a
 photo, audio or video, and `null` for a PDF; `expired` is true from that
 instant on, whether or not the sweep has deleted the object.
 
+The sweep runs hourly in the API (and `npm run messages:sweep`): it deletes an
+expired file's object and thumbnail or poster and stamps `file_deleted_at`. It
+also sends both participants an `attachment_expiring` notification, linking to
+the conversation, when a file in it expires within three days: at most one per
+person per conversation a day, and none for a file an earlier notice covered.
+
 ### `POST /api/v1/conversations/:id/messages`
 
 ```jsonc

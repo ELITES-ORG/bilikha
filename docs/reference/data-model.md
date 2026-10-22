@@ -575,6 +575,12 @@ video stop opening at `expires_at`; a PDF has none.
 
 Indexes: unique `object_key`; `message_id`; `expires_at` where `file_deleted_at is null and expires_at is not null`.
 
+The row stays after the sweep deletes the object, so the thread can say what
+was there. The sweep runs hourly in the API: it deletes expired objects, then
+stamps `file_deleted_at`, and a failed delete is tried again the next hour.
+Three days before a file expires, both participants get an
+`attachment_expiring` notification whose `target_id` is the conversation.
+
 ## `agreements`
 
 A priced package proposed in a conversation. The document status (`sent` /
