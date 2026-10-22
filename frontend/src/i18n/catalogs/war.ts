@@ -90,4 +90,9 @@ export const war: Catalog = {
   'media.badge.video': '',
   'media.badge.document': '',
   'media.noPoster': '',
+  'conversations.sent.image': '',
+  'conversations.sent.audio': '',
+  'conversations.sent.video': '',
+  'conversations.sent.document': '',
+  'conversations.sent.files': '',
 };

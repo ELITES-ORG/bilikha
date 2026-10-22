@@ -55,7 +55,7 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 | 1. Decide and record | 1 / 1 | Done |
 | 2. Data and the `message` destination | 4 / 4 | Done |
 | 3. Sending and reading | 3 / 3 | Done — 3.4 dropped |
-| 4. Composer and thread | 0 / 3 | Not started |
+| 4. Composer and thread | 3 / 3 | Partly — 4.1's resumed upload is checked on staging (6.2) |
 | 5. Expiry | 0 / 3 | Not started |
 | 6. Rollout (reyxdz) | 0 / 4 | Not started |
 
@@ -148,22 +148,32 @@ built, through a report or otherwise (ADR 0060, as amended).
 ## Phase 4 — Composer and thread (pull request 4)
 
 ### Step 4.1 — Attach
-- [ ] **Action.** An attach button in the composer: limits shown before
+- [x] **Action.** An attach button in the composer: limits shown before
   picking, an oversized or wrong file refused before a byte is sent, progress in
   percent and MB, cancel, resumable audio and video. The note that photos, audio
   and video are kept 30 days. Copy in the catalogue (ADR 0055).
+  *As built: the offer editor's transfer moved to `features/media/transfer.ts`
+  and both destinations use it; the copy is the `messages` section
+  (`catalogs/messages/`), Filipino and Waray empty for a speaker.*
 - [ ] **Verify.** 375px, light and dark; a dropped connection resumes.
+  *375px, light and dark: checked with local data. The resumed upload is the
+  offer editor's TUS transport, unchanged; it needs a storage project to drop,
+  so it is checked on staging in 6.2.*
 
 ### Step 4.2 — In the thread
-- [ ] **Action.** Thumbnails that open full size; players with
+- [x] **Action.** Thumbnails that open full size; players with
   `preload="none"`, size and duration before play; PDFs as a link with their
-  size; "Available until …" with a download button; the placeholder once
-  expired.
-- [ ] **Verify.** Opening a thread downloads thumbnails only (DevTools, throttled).
+  size and a download button; photos, audio and video, with one "Available until …"
+  line for the message and a download button; the placeholder once expired.
+- [x] **Verify.** Opening a thread downloads thumbnails only (DevTools, throttled).
+  *Checked against a local stand-in for storage that logged every object
+  served: over a dozen loads of a thread holding every kind, only thumbnails
+  and a video's poster were downloaded; the video itself was signed only when
+  Play was tapped.*
 
 ### Step 4.3 — The list
-- [ ] **Action.** "Sent a photo" and the rest in the conversation list.
-- [ ] **Verify.** Screenshots.
+- [x] **Action.** "Sent a photo" and the rest in the conversation list.
+- [x] **Verify.** Screenshots.
 
 ## Phase 5 — Expiry (pull request 5)
 

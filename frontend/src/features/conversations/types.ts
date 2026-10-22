@@ -104,7 +104,10 @@ export interface EnsureConversationResult {
 }
 
 export interface SendMessagePayload {
+  /** May be empty when the message carries files. */
   body: string;
   offerId?: string;
   postingId?: string;
+  /** Upload reservations, sent as the message's files (ADR 0060). */
+  attachments?: string[];
 }

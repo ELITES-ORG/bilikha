@@ -139,7 +139,9 @@ const AgreementPage = lazy(() =>
   import('@/pages/AgreementPage').then((m) => ({ default: m.AgreementPage })),
 );
 const ConversationPage = lazy(() =>
-  import('@/pages/ConversationPage').then((m) => ({ default: m.ConversationPage })),
+  import('@/pages/ConversationPage')
+    .then(withSection('messages'))
+    .then((m) => ({ default: m.ConversationPage })),
 );
 const HistoryPage = lazy(() =>
   import('@/pages/HistoryPage').then((m) => ({ default: m.HistoryPage })),

@@ -2,10 +2,10 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { FileText, Film, ImagePlus, Music, Plus, X } from 'lucide-react';
-import type { MediaKind, UploadTicketBody } from '@contracts/media';
+import type { MediaKind } from '@contracts/media';
 import { Button, useToast } from '@/components/ui';
 import { abandonUpload, requestUploadUrl, uploadImage } from '@/features/media/api';
-import { checkBeforeUpload, classifyFile, formatBytes, formatDuration, mimeTypeOf } from '@/features/media/checks';
+import { checkBeforeUpload, classifyFile, formatBytes, formatDuration } from '@/features/media/checks';
 import {
   abandonUploadTicket,
   attachOfferMedia,
@@ -14,12 +14,12 @@ import {
   useMediaLimits,
   useMediaUsage,
 } from '@/features/media/limits-api';
-import { capturePoster, readDuration, videoCodec } from '@/features/media/probe';
-import { putWithProgress } from '@/features/media/put-upload';
-import { tusUpload } from '@/features/media/tus-upload';
+import { readDuration, videoCodec } from '@/features/media/probe';
+import { isAbort, transferFile } from '@/features/media/transfer';
 import { initialUploadState, uploadReducer, type UploadEvent, type UploadState } from '@/features/media/upload-machine';
 import '@/i18n/catalogs/offers';
 import type { MessageKey } from '@/i18n/catalogs/en';
+import { fill } from '@/i18n/fill';
 import { useT } from '@/i18n/i18n-context';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
@@ -29,7 +29,6 @@ import { offerImageLimit } from './limits';
 import {
   acceptAttribute,
   acceptsOnlyImages,
-  fill,
   isFull,
   itemsForOffer,
   refusalMessage,
@@ -59,12 +58,6 @@ function titleFrom(name: string): string | undefined {
   const title = (dot > 0 ? name.slice(0, dot) : name).trim().slice(0, 120).trim();
   return title || undefined;
 }
-
-function cancelled(): DOMException {
-  return new DOMException('The upload was cancelled.', 'AbortError');
-}
-
-const isAbort = (error: unknown) => error instanceof DOMException && error.name === 'AbortError';
 
 /** resizeImage throws plain Errors; everything else is an API failure. */
 function describe(error: unknown): string {
@@ -146,58 +139,19 @@ export function MediaUploader({ offer, onChanged }: { offer: OwnOffer; onChanged
     controllers.current.set(key, controller);
     setUploads((current) => [...current, { key, name: file.name, state: initialUploadState }]);
 
-    const ticketFor = async (body: Omit<UploadTicketBody, 'destination' | 'offerId' | 'kind'>) => {
-      const ticket = await requestUploadTicket({ destination: 'offer', offerId: offer.id, kind, ...body });
-      reservations.current.set(key, ticket.reservationId);
-      if (signal.aborted) throw cancelled();
-      return ticket;
-    };
-
-    let stage: UploadStage = 'sending';
+    let stage: UploadStage = kind === 'image' ? 'preparing' : 'sending';
     try {
-      if (kind === 'image') {
-        stage = 'preparing';
-        const [display, thumb] = await Promise.all([resizeImage(file, DISPLAY_EDGE), resizeImage(file, THUMB_EDGE)]);
-        stage = 'sending';
-        if (signal.aborted) throw cancelled();
-        const ticket = await ticketFor({ mimeType: display.type, sizeBytes: display.size, thumbSizeBytes: thumb.size });
-        if (ticket.transport !== 'put') throw new Error('Unexpected upload ticket.');
-        send(key, { type: 'checked', total: display.size + thumb.size });
-        const sent = [0, 0];
-        const report = (index: 0 | 1) => (bytes: number) => {
-          sent[index] = bytes;
-          send(key, { type: 'progress', sent: sent[0]! + sent[1]! });
-        };
-        await Promise.all([
-          putWithProgress(display, ticket.file.uploadUrl, { onProgress: report(0), signal }),
-          putWithProgress(thumb, ticket.thumb.uploadUrl, { onProgress: report(1), signal }),
-        ]);
-      } else {
-        const poster = kind === 'video' ? await capturePoster(file) : null;
-        if (signal.aborted) throw cancelled();
-        const ticket = await ticketFor({
-          mimeType: mimeTypeOf(file),
-          sizeBytes: file.size,
-          ...(durationSeconds !== null ? { durationSeconds } : {}),
-          ...(poster ? { thumbSizeBytes: poster.size } : {}),
-        });
-        if (ticket.transport !== 'tus') throw new Error('Unexpected upload ticket.');
-        const posterBytes = poster && ticket.poster ? poster.size : 0;
-        send(key, { type: 'checked', total: file.size + posterBytes });
-        if (poster && ticket.poster) {
-          await putWithProgress(poster, ticket.poster.uploadUrl, {
-            onProgress: (bytes) => send(key, { type: 'progress', sent: bytes }),
-            signal,
-          });
-        }
-        await tusUpload(file, ticket.tus, {
-          onProgress: (bytes) => send(key, { type: 'progress', sent: posterBytes + bytes }),
-          signal,
-        });
-      }
+      const reservationId = await transferFile(file, kind, durationSeconds, {
+        requestTicket: (body) => requestUploadTicket({ destination: 'offer', offerId: offer.id, ...body }),
+        onEvent: (event) => {
+          if (event.type === 'prepared') stage = 'sending';
+          else if (event.type === 'ticket') reservations.current.set(key, event.reservationId);
+          else send(key, event);
+        },
+        signal,
+      });
 
       send(key, { type: 'transferred' });
-      const reservationId = reservations.current.get(key)!;
       await attachOfferMedia(offer.id, {
         reservationId,
         ...(kind === 'image' ? {} : { title: titleFrom(file.name) }),

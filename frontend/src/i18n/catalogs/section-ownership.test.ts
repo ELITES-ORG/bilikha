@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { en } from './en';
 import { enLegal } from './legal/en';
+import { enMessages } from './messages/en';
 import { enOffers } from './offers/en';
 import { enOrganizations } from './organizations/en';
 import { enVerification } from './verification/en';
@@ -16,6 +17,7 @@ import { enRegister } from './register/en';
  */
 const SECTIONS = [
   { name: 'legal', keys: Object.keys(enLegal), home: '/src/pages/legal/' },
+  { name: 'messages', keys: Object.keys(enMessages), home: '/src/features/conversations/attachments/' },
   { name: 'offers', keys: Object.keys(enOffers), home: '/src/features/offers/' },
   { name: 'organizations', keys: Object.keys(enOrganizations), home: '/src/pages/organizations/' },
   { name: 'verification', keys: Object.keys(enVerification), home: '/src/pages/onboarding/' },

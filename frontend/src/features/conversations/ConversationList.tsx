@@ -7,8 +7,10 @@ import { Avatar, Badge, Button, ButtonLink } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { useConversationThreads } from '@/features/conversations/api';
 import { relativeTime } from '@/features/conversations/relative-time';
+import { useT } from '@/i18n/i18n-context';
 import { cn } from '@/lib/cn';
 import { effectiveViewMode } from '@/lib/view-mode';
+import { lastMessagePreview } from './last-message';
 
 /**
  * The inbox: every conversation, newest first, paginated. It is the whole
@@ -16,6 +18,7 @@ import { effectiveViewMode } from '@/lib/view-mode';
  * where it stays mounted while threads change on the right.
  */
 export function ConversationList() {
+  const t = useT();
   const [page, setPage] = useState(1);
   const { data: user } = useCurrentUser();
   const mode = effectiveViewMode(user);
@@ -103,7 +106,7 @@ export function ConversationList() {
                           )}
                         >
                           {row.lastMessage.fromSelf ? 'You: ' : ''}
-                          {row.lastMessage.body}
+                          {lastMessagePreview(row.lastMessage, t)}
                         </p>
                       )}
                     </div>
