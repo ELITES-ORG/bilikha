@@ -55,9 +55,9 @@ are kept. Nothing larger than a thumbnail downloads until someone taps it.
 | 1. Decide and record | 1 / 1 | Done |
 | 2. Data and the `message` destination | 4 / 4 | Done |
 | 3. Sending and reading | 3 / 3 | Done — 3.4 dropped |
-| 4. Composer and thread | 3 / 3 | Partly — 4.1's resumed upload is checked on staging (6.2) |
+| 4. Composer and thread | 3 / 3 | Done |
 | 5. Expiry | 3 / 3 | Done |
-| 6. Rollout (reyxdz) | 0 / 4 | Not started |
+| 6. Rollout (reyxdz) | 2 / 4 | In progress — staging on; production waits for Supabase Pro |
 
 ---
 
@@ -155,10 +155,11 @@ built, through a report or otherwise (ADR 0060, as amended).
   *As built: the offer editor's transfer moved to `features/media/transfer.ts`
   and both destinations use it; the copy is the `messages` section
   (`catalogs/messages/`), Filipino and Waray empty for a speaker.*
-- [ ] **Verify.** 375px, light and dark; a dropped connection resumes.
-  *375px, light and dark: checked with local data. The resumed upload is the
-  offer editor's TUS transport, unchanged; it needs a storage project to drop,
-  so it is checked on staging in 6.2.*
+- [x] **Verify.** 375px, light and dark; a dropped connection resumes.
+  *375px, light and dark: checked with local data. The resumed upload was
+  checked on staging on 2026-10-24: a 3.1 MB video's TUS upload stopped
+  halfway, asked storage for its offset (1,559,962 of 3,119,925) and finished
+  from there.*
 
 ### Step 4.2 — In the thread
 - [x] **Action.** Thumbnails that open full size; players with
@@ -196,12 +197,22 @@ built, through a report or otherwise (ADR 0060, as amended).
 ## Phase 6 — Rollout (reyxdz)
 
 ### Step 6.1 — Buckets
-- [ ] **Action.** `media:buckets` on staging, then production.
+- [x] **Action.** `media:buckets` on staging, then production.
+  *Run by reyxdz on both (reported 2026-10-24).*
 - [ ] **Verify.** `--check` exits 0 on both.
+  *Staging's buckets work: on 2026-10-24 each kind uploaded, read back through
+  a signed URL, and the public path was refused. reyxdz to record each
+  project's `--check` result here.*
 
 ### Step 6.2 — Staging on
-- [ ] **Action.** `MESSAGE_ATTACHMENTS=true` on Render `bilikha`.
+- [x] **Action.** `MESSAGE_ATTACHMENTS=true` on Render `bilikha`.
 - [ ] **Verify.** #66's "Verify" list on staging, both roles, a phone.
+  *Checked through the API on 2026-10-24, as the client in a conversation with
+  reyxdz_creative: each kind sent and read back byte for byte; no URL in the
+  thread; signed URLs lapse after five minutes; no public URL; an 11 MB PDF, a
+  text file, a 3:20 video, a conversation the caller is not in, a sixth file
+  and a forged PDF each refused. Still to check: the creative's side on a
+  phone, light and dark, with the thumbnails-only Network check.*
 
 ### Step 6.3 — Release
 - [ ] **Action.** Release with production's switch off.
@@ -212,6 +223,8 @@ built, through a report or otherwise (ADR 0060, as amended).
   The privacy notice's lines on message files go out here too, with
   `CONSENT_VERSION` (both sides) and the notice's date moved to the day they ship.
   Accept-and-close: #66.
+  *The notice's lines are written (dated 2026-10-24), to merge after 6.3 and
+  be released with the switch; the date moves if they ship on another day.*
 - [ ] **Verify.** Each kind sends and opens on production.
 
 ---

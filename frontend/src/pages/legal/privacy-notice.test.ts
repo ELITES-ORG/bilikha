@@ -86,3 +86,13 @@ describe('privacy notice: the photo of your ID', () => {
     expect(enLegal['terms.who.id']).toContain('people from Biliran');
   });
 });
+
+describe('privacy notice: files sent in messages', () => {
+  it('says who can open them, how long they are kept, and that both people are told first (ADR 0060)', () => {
+    expect(enLegal['privacy.usage.messagesRest']).toContain('opened only by the two of you');
+    expect(enLegal['privacy.usage.messagesRest']).toContain('not by administrators');
+    expect(enLegal['privacy.retention.body']).toContain('deleted 30 days after they are sent');
+    expect(enLegal['privacy.retention.body']).toContain('told three days before');
+    expect(enLegal['privacy.retention.body']).toContain('A PDF stays');
+  });
+});
