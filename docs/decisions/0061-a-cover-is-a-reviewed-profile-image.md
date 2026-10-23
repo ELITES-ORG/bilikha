@@ -16,7 +16,7 @@ The band at the top of a creative's profile page is navy because there was no
 image to put there ([plan 0042](../plans/0042-the-creative-profile-page.md)).
 Creatives asked to fill it with a photo of their own work (issue #36).
 
-The band is wide and short: about 3:1 on a phone, nearer 5:1 on a desktop. A
+The band is wide and short: about 2.6:1 on a phone, 4:1 on a desktop. A
 phone in Biliran is often on prepaid data, so it must not download an image
 sized for a desktop (constraints §3). Since
 [0058](./0058-content-waits-for-approval-beside-what-is-public.md), nothing new

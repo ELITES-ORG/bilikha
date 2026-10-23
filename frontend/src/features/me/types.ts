@@ -5,12 +5,22 @@
 
 import type {
   ContactPreference,
-  OwnProfile,
+  OwnProfile as ContractOwnProfile,
   OwnProfileStatus,
   SavedOfferItem,
 } from '@contracts/me';
+import type { ProfileCover } from '@contracts/profiles';
 
-export type { ContactPreference, OwnProfile, SavedOfferItem };
+export type { ContactPreference, ProfileCover, SavedOfferItem };
+
+export type OwnProfile = Omit<ContractOwnProfile, 'cover' | 'pendingCover' | 'coverRejectionReason'> & {
+  // Optional because the two tiers deploy independently: the frontend can be
+  // live on Vercel while Render is still serving a payload without these
+  // (ADR 0040). Reading them unguarded would break the profile editor.
+  cover?: ProfileCover | null;
+  pendingCover?: ProfileCover | null;
+  coverRejectionReason?: string | null;
+};
 export type ProfileStatus = OwnProfileStatus;
 
 export interface UpdateProfilePayload {
