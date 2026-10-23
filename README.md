@@ -1,4 +1,4 @@
-# Bilikha
+[![Bilikha — Every creative in Biliran, in one place. Search the registry by craft, name, or town.](./docs/readme/hero.jpg)](https://bilikha.vercel.app)
 
 **Biliran Creative Industries Registry** — a directory and inquiry platform
 connecting creative talent across Biliran with the clients, LGUs, and
@@ -6,6 +6,25 @@ organisations that hire them.
 
 Built around the nine creative domains defined by RA 11904 (Philippine Creative
 Industries Development Act).
+
+[Open the registry](https://bilikha.vercel.app) · [Staging](https://bilikha-staging.vercel.app) · [Run it locally](./docs/getting-started/local-setup.md)
+
+---
+
+![The nine creative domains, from Audiovisual Media to Cultural Sites, each with the crafts listed under it.](./docs/readme/domains.jpg)
+
+Every registered creative in Biliran is listed under one or more of these.
+
+![The eight municipalities — Almeria, Biliran, Cabucgayan, Caibiran, Culaba, Kawayan, Maripipi, and Naval — beside a map of the province.](./docs/readme/coverage.jpg)
+
+Filter the registry by where a creative actually works.
+
+![Sign in to Bilikha, with the wordmark and the navy and red corner shapes.](./docs/readme/sign-in.jpg)
+
+An account is a username and password. A creative is listed once an
+administrator has reviewed the registration.
+
+[![Are you a creative in Biliran? Get listed.](./docs/readme/join.png)](https://bilikha.vercel.app/register)
 
 ---
 
@@ -100,8 +119,8 @@ Live on production since 2026-10-03, with staging running ahead of it on
 
 - **Accounts.** Username and password registration with admin moderation; one
   account that adds a creative role, and a client or creative mode
-- **Creative profiles.** Crafts from the nine-domain taxonomy (81 sub-domains),
-  one of eight municipalities, a bio, an avatar and portfolio images
+- **Creative profiles.** Crafts from the nine-domain taxonomy, one of eight
+  municipalities, a bio, an avatar and portfolio images
 - **Offers and the directory.** Creatives publish offers; the directory lists
   offers and creatives, nearby first, and searches them by craft, name or town
   — including everyday words for a craft that administrators add, in Waray,
