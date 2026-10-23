@@ -5,7 +5,6 @@ import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
 import { CoverUploader } from '@/features/media/CoverUploader';
 import { toApiError } from '@/lib/api-client';
-import { cn } from '@/lib/cn';
 import { useUpdateOwnProfile } from './api';
 import { ProfileCraftFields, type ProfileCraftFormState } from './ProfileCraftFields';
 import type { OwnProfile, UpdateProfilePayload } from './types';
@@ -59,7 +58,6 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
   const [formError, setFormError] = useState<string | null>(null);
 
   const unchanged = JSON.stringify(form) === JSON.stringify(saved);
-  const dirty = !unchanged;
 
   function update<K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -186,7 +184,7 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
   return (
     <form
       onSubmit={(event) => void onSubmit(event)}
-      className={cn('space-y-8', dirty && 'pb-24')}
+      className="space-y-8"
       noValidate
     >
       {profile.status === 'suspended' && profile.rejectionReason && (
@@ -243,27 +241,7 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
         }}
       />
 
-      {/*
-        Sticky save when dirty so a 3-screen form does not hide whether an edit
-        registered. Bottom offset matches the phone tab bar (see bottom-nav.ts).
-        Complete literals only — Tailwind emits nothing for composed class names.
-      */}
-      {dirty ? (
-        <div
-          className={cn(
-            'fixed inset-x-0 z-30 border-t border-hairline bg-paper/95 px-(--gutter) py-3 backdrop-blur-sm',
-            'max-sm:bottom-[calc(var(--bottom-nav-h)+1px+env(safe-area-inset-bottom,0px))]',
-            'sm:bottom-0',
-          )}
-        >
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
-            <p className="text-sm text-ink-muted">Unsaved changes</p>
-            {saveButton}
-          </div>
-        </div>
-      ) : (
-        saveButton
-      )}
+      {saveButton}
     </form>
   );
 }

@@ -146,7 +146,7 @@
 
   /* The page arriving after a plain link. Opacity only: any transform on
      `main` makes it the containing block of the fixed bars inside it (the
-     reply composer, the offer dock, the profile save bar), so for the length
+     reply composer, the offer dock), so for the length
      of the animation they dropped out of place above the tab bar and snapped
      back. A sideways slide also widened the page past the screen for a moment,
      which some in-app browsers answer by rescaling it, tab bar included. */
