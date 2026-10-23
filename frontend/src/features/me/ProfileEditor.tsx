@@ -3,6 +3,7 @@ import { Button, Input, useToast } from '@/components/ui';
 import { useCurrentUser } from '@/features/auth/api';
 import { toFieldErrors } from '@/features/auth/field-errors';
 import { AvatarUploader } from '@/features/media/AvatarUploader';
+import { CoverUploader } from '@/features/media/CoverUploader';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { useUpdateOwnProfile } from './api';
@@ -170,6 +171,11 @@ export function ProfileEditor({ profile }: { profile: OwnProfile }) {
         avatarUrl={user?.avatarUrl ?? null}
         pendingAvatarUrl={user?.pendingAvatarUrl ?? null}
         rejectionReason={user?.avatarRejectionReason ?? null}
+      />
+      <CoverUploader
+        cover={profile.cover}
+        pendingCover={profile.pendingCover}
+        rejectionReason={profile.coverRejectionReason}
       />
       <p className="text-xs text-ink-subtle">
         Saved as soon as you upload — no need to press Save profile.

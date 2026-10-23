@@ -9,6 +9,7 @@
 
 import type { ProfileOffer } from '@contracts/offers';
 import type {
+  ProfileCover,
   PublicProfile as ContractPublicProfile,
   PublicProfileSubdomain,
 } from '@contracts/profiles';
@@ -24,6 +25,8 @@ export type PublicProfile = ContractPublicProfile & {
   /** @deprecated Replaced by offers; kept optional for older API responses. */
   portfolio?: { id: string; url: string; thumbUrl: string; caption: string | null }[];
   offers?: ProfileOffer[];
+  /** The approved cover, on the profile page only; never on a directory card (ADR 0061). */
+  cover?: ProfileCover | null;
 };
 
 export interface ListPublishedParams {

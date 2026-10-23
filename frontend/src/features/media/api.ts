@@ -16,10 +16,17 @@ export type OfferUploadTicket = {
   thumb: { uploadUrl: string; objectKey: string };
 };
 
-export type UploadTicket = AvatarUploadTicket | OfferUploadTicket;
+/** A cover's two widths (ADR 0061): 1920px for `full`, 768px for `small`. */
+export type CoverUploadTicket = {
+  kind: 'cover';
+  full: { uploadUrl: string; objectKey: string };
+  small: { uploadUrl: string; objectKey: string };
+};
+
+export type UploadTicket = AvatarUploadTicket | OfferUploadTicket | CoverUploadTicket;
 
 /** Ask the API for a signed upload URL. Image bytes never go through our server. */
-export async function requestUploadUrl(kind: 'avatar' | 'offer'): Promise<UploadTicket> {
+export async function requestUploadUrl(kind: 'avatar' | 'offer' | 'cover'): Promise<UploadTicket> {
   try {
     const { data } = await apiClient.post<ApiResponse<UploadTicket>>('/media/upload-url', { kind });
     return data.data;
@@ -58,6 +65,24 @@ export async function confirmAvatar(objectKey: string): Promise<void> {
 export async function removeAvatar(): Promise<void> {
   try {
     await apiClient.delete('/media/avatar');
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+/** The cover's pair waits for review (ADR 0058); the approved cover stays public meanwhile. */
+export async function confirmCover(objectKey: string, smallKey: string): Promise<void> {
+  try {
+    await apiClient.put('/media/cover', { objectKey, smallKey });
+  } catch (error) {
+    throw toApiError(error);
+  }
+}
+
+/** Withdraws a cover waiting for review, or removes the approved one. */
+export async function removeCover(): Promise<void> {
+  try {
+    await apiClient.delete('/media/cover');
   } catch (error) {
     throw toApiError(error);
   }
