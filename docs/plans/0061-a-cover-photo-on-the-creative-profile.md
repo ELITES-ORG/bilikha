@@ -592,7 +592,7 @@ from the steps above:
 - **The band's height follows its width** (asked for after the first browser
   check, where a desktop band of 1200 × 224 cut most of the photo). Instead of
   three fixed heights, `clamp(6rem, 3.7rem + 20cqw, 18.75rem)`, measured on the
-  band's own container: about 126px at 375px, 177px at 640px, 249px at
+  band's own container: about 126px at 375px, 179px at 640px, 251px at
   1024px, and 4:1 (about 300px) from 1280px up; a short screen keeps 96px.
   It applies to every profile, with a cover or not, so all profiles keep one
   shape. Defined once in `features/profiles/profile-band.ts` and used by the
