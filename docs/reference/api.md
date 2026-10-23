@@ -1933,8 +1933,16 @@ suspended. `403` without a creative profile.
 
 Deletes an object that was uploaded but never recorded — used when an offer
 thumb upload fails after the display upload succeeded, or one width of a cover
-after the other did. Ownership-checked: an offer or cover key must be under the
-caller's own profile.
+after the other did. Ownership-checked: an avatar key must be under
+`avatars/<callerUserId>/`, and an offer or cover key under the caller's own
+profile. `{ data: { ok: true } }`.
+
+A file something still uses is kept, and the answer is `409` `CONFLICT` ("That
+file is in use."): a profile photo, approved or waiting; an offer's file or its
+thumbnail or poster, in any state; either width of a cover, approved or
+waiting; or an upload in progress (an unexpired reservation). The check and the
+delete run under the same lock that attaching a file takes, so nothing can be
+attached between them ([issue #115](https://github.com/ELITES-ORG/bilikha/issues/115)).
 
 ---
 

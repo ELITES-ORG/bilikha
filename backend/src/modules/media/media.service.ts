@@ -1,4 +1,4 @@
-import { and, count, eq, gt, lte, ne, sql } from 'drizzle-orm';
+import { and, count, eq, gt, lte, ne, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import type { MediaKind, MediaUsage, UploadDestination, UploadTicket } from '../../contracts/media.js';
 import { env } from '../../config/env.js';
@@ -65,6 +65,15 @@ async function requireOwnCreativeProfile(userId: string) {
 
   return profile;
 }
+
+/**
+ * The lock an owner's files are attached under. Offers and covers share the
+ * profile's, which creating an offer, attaching an upload and issuing a ticket
+ * already take. A photo's is prefixed: postings lock on the bare user id.
+ */
+const avatarLock = (userId: string) => `avatar:${userId}`;
+
+const lockFiles = (tx: Tx, lockKey: string) => tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
 
 function assertOwnAvatarKey(userId: string, objectKey: string) {
   // Must run before the prefix test — see assertSafeObjectKey.
@@ -144,18 +153,23 @@ export async function issueUploadUrl(userId: string, input: UploadUrlBody) {
 export async function setAvatar(userId: string, objectKey: string) {
   assertOwnAvatarKey(userId, objectKey);
 
-  const [current] = await db
-    .select({ pendingKey: users.avatarPendingKey })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+  // Under the photo's lock, so an abandon of this key waits for it (issue #115).
+  const current = await db.transaction(async (tx) => {
+    await lockFiles(tx, avatarLock(userId));
+    const [row] = await tx
+      .select({ pendingKey: users.avatarPendingKey })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
 
-  if (!current) throw AppError.unauthorized();
+    if (!row) throw AppError.unauthorized();
 
-  await db
-    .update(users)
-    .set({ avatarPendingKey: objectKey, avatarRejectionReason: null, updatedAt: new Date() })
-    .where(eq(users.id, userId));
+    await tx
+      .update(users)
+      .set({ avatarPendingKey: objectKey, avatarRejectionReason: null, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+    return row;
+  });
 
   if (current.pendingKey && current.pendingKey !== objectKey) {
     await discardObject(current.pendingKey);
@@ -232,21 +246,26 @@ export async function setCover(userId: string, { objectKey, smallKey }: SetCover
     throw new AppError(400, 'COVER_NOT_AN_IMAGE', "That file isn't a photo. Try another.");
   }
 
-  const [current] = await db
-    .select({ pendingKey: creativeProfiles.coverPendingKey, pendingSmallKey: creativeProfiles.coverPendingSmallKey })
-    .from(creativeProfiles)
-    .where(eq(creativeProfiles.id, profile.id))
-    .limit(1);
+  // Under the profile's lock, so an abandon of either key waits for it (issue #115).
+  const current = await db.transaction(async (tx) => {
+    await lockFiles(tx, profile.id);
+    const [row] = await tx
+      .select({ pendingKey: creativeProfiles.coverPendingKey, pendingSmallKey: creativeProfiles.coverPendingSmallKey })
+      .from(creativeProfiles)
+      .where(eq(creativeProfiles.id, profile.id))
+      .limit(1);
 
-  await db
-    .update(creativeProfiles)
-    .set({
-      coverPendingKey: objectKey,
-      coverPendingSmallKey: smallKey,
-      coverRejectionReason: null,
-      updatedAt: new Date(),
-    })
-    .where(eq(creativeProfiles.id, profile.id));
+    await tx
+      .update(creativeProfiles)
+      .set({
+        coverPendingKey: objectKey,
+        coverPendingSmallKey: smallKey,
+        coverRejectionReason: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(creativeProfiles.id, profile.id));
+    return row;
+  });
 
   if (current?.pendingKey && current.pendingKey !== objectKey) await discardObject(current.pendingKey);
   if (current?.pendingSmallKey && current.pendingSmallKey !== smallKey) await discardObject(current.pendingSmallKey);
@@ -291,23 +310,77 @@ export async function clearCover(userId: string) {
   return { ok: true as const, removed: withdrawing ? ('pending' as const) : ('approved' as const) };
 }
 
-/** Deletes an uploaded object that never got attached to an avatar, cover or offer. */
+/** Whether anything still points at this key: a photo, an offer's file, a cover, or an upload in progress. */
+async function fileInUse(tx: Tx, objectKey: string): Promise<boolean> {
+  const [photo, offerFile, cover, upload] = await Promise.all([
+    tx
+      .select({ id: users.id })
+      .from(users)
+      .where(or(eq(users.avatarKey, objectKey), eq(users.avatarPendingKey, objectKey)))
+      .limit(1),
+    // Every state and kind: a live file, one waiting for review, one waiting to be removed.
+    tx
+      .select({ id: offerImages.id })
+      .from(offerImages)
+      .where(or(eq(offerImages.objectKey, objectKey), eq(offerImages.thumbKey, objectKey)))
+      .limit(1),
+    tx
+      .select({ id: creativeProfiles.id })
+      .from(creativeProfiles)
+      .where(
+        or(
+          eq(creativeProfiles.coverKey, objectKey),
+          eq(creativeProfiles.coverSmallKey, objectKey),
+          eq(creativeProfiles.coverPendingKey, objectKey),
+          eq(creativeProfiles.coverPendingSmallKey, objectKey),
+        ),
+      )
+      .limit(1),
+    // An expired reservation holds nothing; media:prune clears it.
+    tx
+      .select({ id: mediaUploads.id })
+      .from(mediaUploads)
+      .where(
+        and(
+          or(eq(mediaUploads.objectKey, objectKey), eq(mediaUploads.thumbKey, objectKey)),
+          gt(mediaUploads.expiresAt, new Date()),
+        ),
+      )
+      .limit(1),
+  ]);
+  return [photo, offerFile, cover, upload].some((rows) => rows.length > 0);
+}
+
+/**
+ * Deletes an upload that never got attached to an avatar, cover or offer —
+ * the browser's clean-up when the second half of an upload fails. A file
+ * something still uses is refused (issue #115). The check and the delete
+ * happen under the owner's lock, which every path that attaches a file takes,
+ * so nothing can be attached between them.
+ */
 export async function abandonObject(userId: string, objectKey: string) {
   assertSafeObjectKey(objectKey);
 
+  let lockKey: string;
   if (objectKey.startsWith(`avatars/${userId}/`)) {
     assertOwnAvatarKey(userId, objectKey);
-    await deleteObject(objectKey);
-    return { ok: true as const };
+    lockKey = avatarLock(userId);
+  } else {
+    const profile = await requireOwnCreativeProfile(userId);
+    if (objectKey.startsWith('covers/')) {
+      assertOwnCoverKey(profile.id, objectKey);
+    } else {
+      assertOwnOfferKey(profile.id, objectKey);
+    }
+    lockKey = profile.id;
   }
 
-  const profile = await requireOwnCreativeProfile(userId);
-  if (objectKey.startsWith('covers/')) {
-    assertOwnCoverKey(profile.id, objectKey);
-  } else {
-    assertOwnOfferKey(profile.id, objectKey);
-  }
-  await deleteObject(objectKey);
+  // The delete runs inside the transaction, so the lock is held until it is done.
+  await db.transaction(async (tx) => {
+    await lockFiles(tx, lockKey);
+    if (await fileInUse(tx, objectKey)) throw AppError.conflict('That file is in use.');
+    await deleteObject(objectKey);
+  });
   return { ok: true as const };
 }
 

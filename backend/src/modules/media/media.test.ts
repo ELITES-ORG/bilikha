@@ -2,11 +2,11 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createApp } from '../../app.js';
 import { env } from '../../config/env.js';
 import { db } from '../../db/index.js';
-import { creativeProfiles, mediaUploads, offerImages, userBlocks } from '../../db/schema/index.js';
+import { creativeProfiles, mediaUploads, offerImages, userBlocks, users } from '../../db/schema/index.js';
 import type { MediaLimits, UploadTicket } from '../../contracts/media.js';
 import { hashPassword } from '../../lib/password.js';
 import {
@@ -993,6 +993,197 @@ describe('/api/v1/media upload pipeline', () => {
       const theirs = await call(cookie, 'POST', '/abandon', { objectKey: pairFor(other.profile.id).objectKey });
       expect(theirs.status).toBe(403);
       expect(remove).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('abandon (issue #115)', () => {
+    const abandon = (cookie: string, objectKey: string) => call(cookie, 'POST', '/abandon', { objectKey });
+    const fresh = (folder: string, ownerId: string, suffix = '.webp') => `${folder}/${ownerId}/${randomUUID()}${suffix}`;
+
+    /** Refused as in use, with nothing deleted. */
+    async function expectKept(cookie: string, objectKey: string) {
+      const reply = await abandon(cookie, objectKey);
+      expect(reply.status).toBe(409);
+      expect(reply.error?.code).toBe('CONFLICT');
+      expect(remove).not.toHaveBeenCalled();
+    }
+
+    it('keeps a profile photo in use, approved or waiting', async () => {
+      const { user, cookie } = await signedIn();
+      const approved = fresh('avatars', user.id);
+      const waiting = fresh('avatars', user.id);
+      await db.update(users).set({ avatarKey: approved, avatarPendingKey: waiting }).where(eq(users.id, user.id));
+
+      await expectKept(cookie, approved);
+      await expectKept(cookie, waiting);
+      const [row] = await db.select().from(users).where(eq(users.id, user.id));
+      expect(row).toMatchObject({ avatarKey: approved, avatarPendingKey: waiting });
+    });
+
+    it("keeps an offer's file in use: the file or its thumbnail, live or waiting, of any kind", async () => {
+      const { profile, offer, cookie } = await signedIn();
+      const live = fresh('offers', profile.id, '');
+      const waiting = fresh('offers', profile.id, '');
+      const recording = fresh('offers', profile.id, '.mp3');
+      await insertItem(offer.id, { objectKey: `${live}.webp`, thumbKey: `${live}-thumb.webp` });
+      await insertItem(offer.id, { objectKey: `${waiting}.webp`, thumbKey: `${waiting}-thumb.webp`, state: 'pending_add' });
+      await insertItem(offer.id, { kind: 'audio', mimeType: 'audio/mpeg', objectKey: recording, thumbKey: null });
+
+      for (const key of [`${live}.webp`, `${live}-thumb.webp`, `${waiting}.webp`, `${waiting}-thumb.webp`, recording]) {
+        await expectKept(cookie, key);
+      }
+    });
+
+    it('keeps a file an upload in progress holds', async () => {
+      const { user, profile, offer, cookie } = await signedIn();
+      const base = fresh('offers', profile.id, '');
+      await reserve(user.id, offer.id, {
+        kind: 'image',
+        bucket: env.SUPABASE_STORAGE_BUCKET,
+        objectKey: `${base}.webp`,
+        thumbKey: `${base}-thumb.webp`,
+        mimeType: 'image/webp',
+        durationSeconds: null,
+      });
+
+      await expectKept(cookie, `${base}.webp`);
+      await expectKept(cookie, `${base}-thumb.webp`);
+    });
+
+    it('keeps a cover in use: either width, approved or waiting', async () => {
+      const { profile, cookie } = await signedIn();
+      const approved = fresh('covers', profile.id, '');
+      const waiting = fresh('covers', profile.id, '');
+      await db
+        .update(creativeProfiles)
+        .set({
+          coverKey: `${approved}.webp`,
+          coverSmallKey: `${approved}-768.webp`,
+          coverPendingKey: `${waiting}.webp`,
+          coverPendingSmallKey: `${waiting}-768.webp`,
+        })
+        .where(eq(creativeProfiles.id, profile.id));
+
+      for (const key of [`${approved}.webp`, `${approved}-768.webp`, `${waiting}.webp`, `${waiting}-768.webp`]) {
+        await expectKept(cookie, key);
+      }
+    });
+
+    it('still deletes an own upload nothing uses, in each folder', async () => {
+      const { user, profile, offer, cookie } = await signedIn();
+      // A reservation that has expired holds nothing.
+      const expired = fresh('offers', profile.id);
+      await reserve(user.id, offer.id, { objectKey: expired, expiresAt: new Date(Date.now() - 1000) });
+      const keys = [fresh('avatars', user.id), fresh('offers', profile.id), fresh('covers', profile.id), expired];
+
+      for (const key of keys) expect((await abandon(cookie, key)).status).toBe(200);
+      expect(remove.mock.calls.map(([key]) => key)).toEqual(keys);
+    });
+
+    /**
+     * Abandon and an attach of the same file, at once. The test holds the
+     * owner's lock, so abandon must wait for it; the file is attached while it
+     * waits, and abandon then finds it in use. No timing: the wait is read from
+     * pg_locks.
+     */
+    async function raceAgainstAttach(
+      lockKey: string,
+      attach: (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]) => Promise<unknown>,
+      start: () => Promise<ApiReply>,
+    ) {
+      let release!: () => void;
+      const released = new Promise<void>((resolve) => (release = resolve));
+      let locked!: () => void;
+      const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+
+      const holder = db.transaction(async (tx) => {
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${lockKey}))`);
+        locked();
+        await released;
+        await attach(tx);
+      });
+      await lockTaken;
+
+      const abandoning = start();
+      const waiting = async () => {
+        const rows = (await db.execute(
+          sql`select count(*)::int as n from pg_locks where locktype = 'advisory' and not granted`,
+        )) as unknown as { n: number }[];
+        return rows[0]!.n > 0;
+      };
+      try {
+        for (let i = 0; i < 200 && !(await waiting()); i++) await new Promise((resolve) => setTimeout(resolve, 25));
+        expect(await waiting()).toBe(true);
+      } finally {
+        // Always let the holder finish, so a failed check leaves no open transaction.
+        release();
+        await holder;
+      }
+      return abandoning;
+    }
+
+    it('waits for a cover being attached, then keeps it', async () => {
+      const { profile, cookie } = await signedIn();
+      const key = fresh('covers', profile.id);
+
+      const reply = await raceAgainstAttach(
+        profile.id,
+        (tx) => tx.update(creativeProfiles).set({ coverPendingKey: key }).where(eq(creativeProfiles.id, profile.id)),
+        () => abandon(cookie, key),
+      );
+
+      expect(reply.status).toBe(409);
+      expect(remove).not.toHaveBeenCalled();
+    });
+
+    // The other side of the lock: each path that attaches a file waits for it too.
+    const nothing = async () => undefined;
+
+    it('makes a new profile photo wait for the photo lock', async () => {
+      const { user, cookie } = await signedIn();
+      const reply = await raceAgainstAttach(`avatar:${user.id}`, nothing, () =>
+        call(cookie, 'PUT', '/avatar', { objectKey: fresh('avatars', user.id) }),
+      );
+      expect(reply.status).toBe(200);
+    });
+
+    it('makes a new cover wait for the profile lock', async () => {
+      const { profile, cookie } = await signedIn();
+      const base = fresh('covers', profile.id, '');
+      const pair = { objectKey: `${base}.webp`, smallKey: `${base}-768.webp` };
+      stored.mockImplementation(async (_bucket: string, key: string) => object(key, 300_000, 'image/webp'));
+      firstBytes.mockResolvedValue(WEBP);
+
+      const reply = await raceAgainstAttach(profile.id, nothing, () => call(cookie, 'PUT', '/cover', pair));
+      expect(reply.status).toBe(200);
+    });
+
+    it('makes an offer image on the old route wait for the profile lock', async () => {
+      const { profile, offer, cookie } = await signedIn();
+      const stem = fresh('offers', profile.id, '');
+      const reply = await raceAgainstAttach(profile.id, nothing, async () => {
+        const response = await fetch(`${base}/offers/${offer.id}/images`, {
+          method: 'POST',
+          headers: { cookie, 'content-type': 'application/json' },
+          body: JSON.stringify({ objectKey: `${stem}.webp`, thumbKey: `${stem}-thumb.webp` }),
+        });
+        return { status: response.status, ...((await response.json()) as Omit<ApiReply, 'status'>) };
+      });
+      expect(reply.status).toBe(201);
+    });
+
+    it('waits for a profile photo being attached, on its own lock, then keeps it', async () => {
+      const { user, cookie } = await signedIn();
+      const key = fresh('avatars', user.id);
+
+      const reply = await raceAgainstAttach(
+        `avatar:${user.id}`,
+        (tx) => tx.update(users).set({ avatarPendingKey: key }).where(eq(users.id, user.id)),
+        () => abandon(cookie, key),
+      );
+
+      expect(reply.status).toBe(409);
+      expect(remove).not.toHaveBeenCalled();
     });
   });
 });
