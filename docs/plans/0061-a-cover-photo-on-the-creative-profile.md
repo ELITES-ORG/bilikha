@@ -164,7 +164,7 @@ why. Each is open to challenge in this plan's pull request.
 | Phase | Steps | Status |
 |---|---|---|
 | 1. Data, API and review | 9 / 9 | Done |
-| 2. The uploader and the band | 0 / 6 | Not started |
+| 2. The uploader and the band | 6 / 6 | Done |
 | 3. Verify on staging | 0 / 3 | Not started |
 
 ---
@@ -437,7 +437,7 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
 
 ### Step 2.1 — Size the cover in the browser
 
-- [ ] **Action.** In `frontend/src/lib/image.ts`:
+- [x] **Action.** In `frontend/src/lib/image.ts`:
       - Export `COVER_WIDTH = 1920`, `COVER_SMALL_WIDTH = 768`,
         `COVER_MIN_WIDTH = 1200` and `COVER_MIN_HEIGHT = 400`.
       - Move the size check, the decode and the HEIC error out of
@@ -448,21 +448,21 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
         `'That photo is too small for a cover — use one at least 1200 × 400 pixels'`;
         fit the width to 1920 and to 768, never upscaling, with the same
         WebP-then-JPEG encode; close the bitmap.
-- [ ] **Action.** Tests in `frontend/src/lib/image.test.ts` (create it, or
+- [x] **Action.** Tests in `frontend/src/lib/image.test.ts` (create it, or
       extend it), stubbing `createImageBitmap` and the canvas:
       - 1000 × 800 rejects with the too-small message;
       - 4000 × 3000 gives 1920 × 1440 and 768 × 576;
       - 1300 × 500 gives 1300 × 500 (not upscaled) and 768 × 295;
       - a file over the pick limit rejects before `createImageBitmap` runs.
-- [ ] **Verify.** `npm --prefix frontend run test -- src/lib/image.test.ts` passes.
+- [x] **Verify.** `npm --prefix frontend run test -- src/lib/image.test.ts` passes.
 
 ### Step 2.2 — The client calls and types
 
-- [ ] **Action.** In `frontend/src/features/media/api.ts`: a
+- [x] **Action.** In `frontend/src/features/media/api.ts`: a
       `CoverUploadTicket` in `UploadTicket`, `'cover'` in `requestUploadUrl`'s
       kind, and `confirmCover(objectKey, smallKey)` and `removeCover()`,
       shaped like `confirmAvatar` and `removeAvatar`.
-- [ ] **Action.** On the client, keep the contract fields required and add
+- [x] **Action.** On the client, keep the contract fields required and add
       optional copies for deployment skew (ADR 0040). In
       `frontend/src/features/profiles/types.ts`, add
       `cover?: ProfileCover | null` beside the comment that file already
@@ -471,11 +471,11 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
       optional `cover`, `pendingCover` and `coverRejectionReason`, and copy
       the same comment. Do not mark the fields optional in
       `backend/src/contracts/me.ts`.
-- [ ] **Verify.** `npm --prefix frontend run typecheck` exits 0.
+- [x] **Verify.** `npm --prefix frontend run typecheck` exits 0.
 
 ### Step 2.3 — The uploader
 
-- [ ] **Action.** Create `frontend/src/features/media/CoverUploader.tsx`,
+- [x] **Action.** Create `frontend/src/features/media/CoverUploader.tsx`,
       modelled on `AvatarUploader.tsx`. Props: `cover`, `pendingCover`,
       `rejectionReason`, each possibly `undefined`.
       - **Preview:** a band in the profile's shape
@@ -499,14 +499,14 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
         sent.
       - **After success:** invalidate `meKeys.profile()` and `profileKeys.all`.
       - Every new string goes in `en.ts`, with empty `fil` and `war`.
-- [ ] **Action.** Render it in `frontend/src/features/me/ProfileEditor.tsx`
+- [x] **Action.** Render it in `frontend/src/features/me/ProfileEditor.tsx`
       directly below the `AvatarUploader`.
-- [ ] **Verify.** `npm --prefix frontend run typecheck && npm run lint` exit 0;
+- [x] **Verify.** `npm --prefix frontend run typecheck && npm run lint` exit 0;
       `catalogs.test.ts` passes.
 
 ### Step 2.4 — The image in the band
 
-- [ ] **Action.** In `frontend/src/pages/CreativeProfilePage.tsx`, inside the
+- [x] **Action.** In `frontend/src/pages/CreativeProfilePage.tsx`, inside the
       band, before the `CornerBlob`s:
 
       ```tsx
@@ -532,20 +532,20 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
       - No `loading="lazy"`: the band is above the fold.
       - Back and Share need no change. Since #110 they are white icons with a
         dark outline, made to read on any photo.
-- [ ] **Verify.** `npm --prefix frontend run build && npm run check:bundle`
+- [x] **Verify.** `npm --prefix frontend run build && npm run check:bundle`
       exit 0.
 
 ### Step 2.5 — The owner's way to the cover
 
-- [ ] **Action.** If the profile page already shows its owner an edit link
+- [x] **Action.** If the profile page already shows its owner an edit link
       (`grep -n "account/profile" frontend/src/pages/CreativeProfilePage.tsx`),
       that link is the way to the cover. Otherwise add nothing: the issue says
       "may".
-- [ ] **Verify.** Nothing to run. Say in the pull request which case applied.
+- [x] **Verify.** Nothing to run. Say in the pull request which case applied.
 
 ### Step 2.6 — Check it in a browser
 
-- [ ] **Verify**, locally with storage configured, each ticked in the pull
+- [x] **Verify**, locally with storage configured, each ticked in the pull
       request:
       - Add a cover: the editor shows it waiting; the public profile still
         shows navy. Approve it under Creatives → Covers: the profile shows it.
@@ -565,6 +565,45 @@ Branch `feat/cover-photo-ui`, off `origin/main` after Phase 1 merges.
       Open the pull request
       `Let creatives add a cover photo to their profile (plan 0061, phase 2)`,
       with `Closes #36`.
+
+**Built as** (2026-10-23, branch `feat/cover-photo-ui`), where it differs
+from the steps above:
+
+- **Copy stays in the component.** `ProfileEditor`, `AvatarUploader` and
+  `CreativeProfilePage` write their English directly and none uses the
+  catalogue, so `CoverUploader` does the same; no `en.ts` keys were added.
+  Translating the account page is its own piece of work.
+- **Errors use the toast,** as the photo uploader does (it has no inline
+  alert). The band preview never shows a broken image: it shows the last good
+  cover, or navy.
+- **The photo's browse-only note is not repeated** under the cover: the
+  cover's buttons are disabled the same way, and the note sits just above.
+- **Tests check the sizing logic.** The frontend tests run in Node, so the
+  width-fitting and the 1200 × 400 floor are a pure `coverSize()` in
+  `lib/image.ts`, tested directly in `lib/image.test.ts`, with the 20 MB
+  refusal tested through `resizeCover`. `resizeImage` keeps its behaviour: its
+  decode and encode moved, unchanged, into private `decodeImage` and
+  `encodeImage`, which `resizeCover` shares.
+- **The owner's client type uses `Omit`** of the contract's three cover
+  fields, then adds them as optional; an intersection would have kept them
+  required.
+- **Step 2.5:** the profile page already links its owner to
+  `/account/profile`, so nothing was added.
+- **The band's height follows its width** (asked for after the first browser
+  check, where a desktop band of 1200 × 224 cut most of the photo). Instead of
+  three fixed heights, `clamp(6rem, 3.7rem + 20cqw, 18.75rem)`, measured on the
+  band's own container: about 126px at 375px, 179px at 640px, 251px at
+  1024px, and 4:1 (about 300px) from 1280px up; a short screen keeps 96px.
+  It applies to every profile, with a cover or not, so all profiles keep one
+  shape. Defined once in `features/profiles/profile-band.ts` and used by the
+  profile page, its loading skeleton and the uploader's preview. Organisation
+  pages, and their skeleton, keep their band.
+- **Checked in a browser** with the local API and storage: a 1000 × 800 photo
+  is refused before any request; a waiting cover leaves the public band navy;
+  after approval a 375px screen fetched only the `-768.webp` and a 1280px one
+  only the full file; a replacement waits while the approved cover stays
+  public; rejecting it shows the reason and sends the notification; withdraw
+  and remove each survive a reload; with no cover the profile is as before.
 
 ---
 

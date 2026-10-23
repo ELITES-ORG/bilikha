@@ -9,25 +9,6 @@ Industries Development Act).
 
 [Open the registry](https://bilikha.vercel.app) · [Staging](https://bilikha-staging.vercel.app) · [Run it locally](./docs/getting-started/local-setup.md)
 
----
-
-![The nine creative domains, from Audiovisual Media to Cultural Sites, each with the crafts listed under it.](./docs/readme/domains.jpg)
-
-Every registered creative in Biliran is listed under one or more of these.
-
-![The eight municipalities — Almeria, Biliran, Cabucgayan, Caibiran, Culaba, Kawayan, Maripipi, and Naval — beside a map of the province.](./docs/readme/coverage.jpg)
-
-Filter the registry by where a creative actually works.
-
-![Sign in to Bilikha, with the wordmark and the navy and red corner shapes.](./docs/readme/sign-in.jpg)
-
-An account is a username and password. A creative is listed once an
-administrator has reviewed the registration.
-
-[![Are you a creative in Biliran? Get listed.](./docs/readme/join.png)](https://bilikha.vercel.app/register)
-
----
-
 ## Quick start
 
 Requires Node 20+, Docker Desktop, and npm.

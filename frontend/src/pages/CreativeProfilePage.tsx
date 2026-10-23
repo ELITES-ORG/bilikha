@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { CornerBlob } from '@/components/Decor';
+import { profileBandClass, profileBandFrameClass } from '@/features/profiles/profile-band';
 import { BackPill, ShareButton } from '@/components/PageCornerActions';
 import { ProfileSkeleton } from '@/components/page-skeleton/parts';
 import {
@@ -175,16 +176,35 @@ export function CreativeProfilePage() {
 
             return (
               <>
-                {/* Cover. There is no cover photo in the data, so a navy band
-                    carries the identity instead of a stock image. */}
-                <div className="relative h-32 overflow-hidden rounded-lg bg-primary sm:h-44 lg:h-56 short:h-24">
-                  <CornerBlob placement="top-right" onNavy />
-                  <CornerBlob placement="bottom-left" onNavy className="opacity-70" />
-                  <div className="absolute top-3 left-3">
-                    <BackPill />
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <ShareButton title={name} label="Share this profile" />
+                {/* Cover. An approved cover photo fills the band (issue #36,
+                    ADR 0061): a phone downloads the 768px file, a wider screen
+                    the 1920px one. Without one, the navy band carries the
+                    identity instead of a stock image, and stays behind the
+                    photo while it loads. */}
+                <div className={profileBandFrameClass}>
+                  <div className={profileBandClass}>
+                    {data.cover ? (
+                      <picture>
+                        <source media="(min-width: 40rem)" srcSet={data.cover.url} />
+                        <img
+                          src={data.cover.smallUrl}
+                          alt=""
+                          decoding="async"
+                          className="absolute inset-0 size-full object-cover"
+                        />
+                      </picture>
+                    ) : (
+                      <>
+                        <CornerBlob placement="top-right" onNavy />
+                        <CornerBlob placement="bottom-left" onNavy className="opacity-70" />
+                      </>
+                    )}
+                    <div className="absolute top-3 left-3">
+                      <BackPill />
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      <ShareButton title={name} label="Share this profile" />
+                    </div>
                   </div>
                 </div>
 
