@@ -172,6 +172,8 @@ export function CoverUploader({ cover = null, pendingCover = null, rejectionReas
           type="file"
           accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
           className="sr-only"
+          tabIndex={-1}
+          aria-hidden="true"
           onChange={onFileChange}
         />
       </div>
