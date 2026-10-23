@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Container, Skeleton } from '@/components/ui';
 import { OfferCardSkeleton } from '@/features/offers/OfferCard';
+import { profileBandFrameClass, profileBandHeightClass } from '@/features/profiles/profile-band';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 
@@ -250,11 +251,21 @@ export function AccountSkeleton() {
   );
 }
 
-/** A creative's profile: cover, identity, the tabs and their first offers. */
-export function ProfileSkeleton() {
+/**
+ * A creative's profile: cover, identity, the tabs and their first offers. The
+ * band matches the profile's (ADR 0061); an organisation's page keeps its own
+ * fixed heights.
+ */
+export function ProfileSkeleton({ band = 'creative' }: { band?: 'creative' | 'organisation' }) {
   return (
     <div aria-hidden="true">
-      <Skeleton radius="md" className="h-32 w-full sm:h-44 lg:h-56 short:h-24" />
+      {band === 'creative' ? (
+        <div className={profileBandFrameClass}>
+          <Skeleton radius="md" className={cn('w-full', profileBandHeightClass)} />
+        </div>
+      ) : (
+        <Skeleton radius="md" className="h-32 w-full sm:h-44 lg:h-56 short:h-24" />
+      )}
       <div className="relative -mt-14 flex flex-col items-center sm:-mt-16 lg:flex-row lg:items-start lg:gap-6 lg:px-8">
         <span className="rounded-full bg-paper p-1">
           <Skeleton radius="full" className="size-28" />

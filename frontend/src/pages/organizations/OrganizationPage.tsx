@@ -54,7 +54,7 @@ export function OrganizationPage() {
   return (
     <main className={pbBottomNav}>
       <Container width="wide" className="py-6 sm:py-10">
-        {organization.isPending && <ProfileSkeleton />}
+        {organization.isPending && <ProfileSkeleton band="organisation" />}
         {organization.isError && <p className="text-danger-700">{organization.error.message}</p>}
 
         {data && (

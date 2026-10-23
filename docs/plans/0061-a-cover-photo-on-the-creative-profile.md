@@ -596,8 +596,8 @@ from the steps above:
   1024px, and 4:1 (about 300px) from 1280px up; a short screen keeps 96px.
   It applies to every profile, with a cover or not, so all profiles keep one
   shape. Defined once in `features/profiles/profile-band.ts` and used by the
-  profile page and the uploader's preview. Organisation pages keep their
-  band.
+  profile page, its loading skeleton and the uploader's preview. Organisation
+  pages, and their skeleton, keep their band.
 - **Checked in a browser** with the local API and storage: a 1000 × 800 photo
   is refused before any request; a waiting cover leaves the public band navy;
   after approval a 375px screen fetched only the `-768.webp` and a 1280px one
