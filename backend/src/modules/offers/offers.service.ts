@@ -595,6 +595,9 @@ export async function addOfferImage(
   assertOwnOfferKey(profile.id, input.thumbKey);
 
   const row = await db.transaction(async (tx) => {
+    // The profile's lock first, as attachOfferMedia takes it, so an abandon of
+    // these keys waits for the attach (issue #115).
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
     // Also serialises concurrent uploads, so the limit holds.
     const current = await lockOwnOffer(tx, profile.id, offerId);
     const imageLimit = UPLOAD_LIMITS.offer.image.perTarget;
