@@ -24,8 +24,11 @@ export type { PublicUser } from '../../contracts/auth.js';
  *  that searches which find nothing are counted (issue #24). It moved to
  *  2026-10-15 when new accounts began adding a photo of their ID: the privacy
  *  notice gained its ID section, and the terms say Bilikha is for people from
- *  Biliran (ADR 0057, plan 0053 Phase 5). */
-export const CONSENT_VERSION = '2026-10-15';
+ *  Biliran (ADR 0057, plan 0053 Phase 5). It moved to 2026-10-24 when the
+ *  privacy notice began saying that photos, audio, video and PDFs can be sent
+ *  in messages, that only the two people can open them, and that all but PDFs
+ *  are deleted after 30 days (ADR 0060, plan 0060 Step 6.4). */
+export const CONSENT_VERSION = '2026-10-24';
 
 export async function registerUser(input: RegisterInput): Promise<PublicUser> {
   const usernameNormalized = normalizeUsername(input.username);
