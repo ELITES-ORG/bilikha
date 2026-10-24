@@ -635,12 +635,12 @@ request, as plan 0053's staging check was (#111).
 Done by emanuel on staging, 2026-10-24, in Chrome and Facebook's in-app
 browser (from a Messenger link) on an Android phone, with an administrator on
 a computer, against frontend build `349f6d3555be` (#122) with the API healthy.
-On one creative profile, the cover waited, was approved, and its rejected replacement
-came back with the reason and a notification while the approved cover stayed
-public. In Supabase the folder held only the approved pair, and was empty
-after removal, when the API returned `cover: null`. The Covers count showed in
-the badge and the tab, and the profile stayed out of Edited. A 375px screen
-fetched only `-768.webp` and a 1280px one only the full file.
+On one creative profile, the cover waited, was approved, and its rejected
+replacement came back with the reason and a notification while the approved
+cover stayed public. In Supabase the folder held only the approved pair, and
+was empty after removal, when the API returned `cover: null`. The Covers count
+showed in the badge and the tab, and the profile stayed out of Edited. A 375px
+screen fetched only `-768.webp` and a 1280px one only the full file.
 
 ---
 
