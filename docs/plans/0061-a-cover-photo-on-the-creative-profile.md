@@ -1,6 +1,6 @@
 # 0061. A cover photo on the creative profile
 
-- **Status:** In progress
+- **Status:** Complete
 - **Owner:** emanuel
 - **Related:** [ADR 0058](../decisions/0058-content-waits-for-approval-beside-what-is-public.md) ·
   [ADR 0059](../decisions/0059-the-admin-area-is-organised-by-subject.md) ·
@@ -165,7 +165,7 @@ why. Each is open to challenge in this plan's pull request.
 |---|---|---|
 | 1. Data, API and review | 9 / 9 | Done |
 | 2. The uploader and the band | 6 / 6 | Done |
-| 3. Verify on staging | 0 / 3 | Not started |
+| 3. Verify on staging | 3 / 3 | Done |
 
 ---
 
@@ -609,38 +609,64 @@ from the steps above:
 
 ## Phase 3 — Verify on staging
 
-No pull request. Run after Phase 2 deploys to staging.
+No code. Run after Phase 2 deploys to staging, and recorded by a docs-only pull
+request, as plan 0053's staging check was (#111).
 
 ### Step 3.1 — The round trip
 
-- [ ] **Verify.** On staging, a creative uploads a cover, an administrator
+- [x] **Verify.** On staging, a creative uploads a cover, an administrator
       approves it, the creative replaces it and the replacement is rejected,
       then the creative removes it. In the Supabase dashboard, the
-      `covers/<profileId>/` folder holds only the pairs a row points to.
+      `covers/<profileId>/` folder holds only the pairs a row points to. A
+      read-only check of the public page fetched only the 768px file at 375px
+      and only the 1920px file at 1280px.
 
 ### Step 3.2 — The admin side
 
-- [ ] **Verify.** Creatives shows the Covers count in the sidebar badge and the
+- [x] **Verify.** Creatives shows the Covers count in the sidebar badge and the
       tab. A cover decision does not put the profile in the Edited tab.
 
 ### Step 3.3 — Facebook's in-app browser
 
-- [ ] **Verify.** Open a profile with a cover from a Messenger link on an
+- [x] **Verify.** Open a profile with a cover from a Messenger link on an
       Android phone. The 768px image shows, and Back and Share work
       ([constraints](../explanation/constraints.md)).
+
+Done by emanuel on staging, 2026-10-24, in Chrome and Facebook's in-app
+browser (from a Messenger link) on an Android phone, with an administrator on
+a computer, against frontend build `349f6d3555be` (#122) with the API healthy.
+Profile `mimay`: the cover waited, was approved, and its rejected replacement
+came back with the reason and a notification while the approved cover stayed
+public. In Supabase the folder held only the approved pair, and was empty
+after removal, when the API returned `cover: null`. The Covers count showed in
+the badge and the tab, and the profile stayed out of Edited. A 375px screen
+fetched only `-768.webp` and a 1280px one only the full file.
 
 ---
 
 ## Acceptance
 
-- [ ] Every step above is ticked.
-- [ ] Issue #36's Verify list is satisfied, read through ADR 0058: the round
+Ticked 2026-10-24. Phase 3 covers what a person sees on staging; the rest rests
+on the tests named after each line.
+
+- [x] Every step above is ticked.
+- [x] Issue #36's Verify list is satisfied, read through ADR 0058: the round
       trip, the per-width download, the unhappy paths in Step 1.3, an
       administrator's decision, no change without a cover, phone width in
-      light and dark.
-- [ ] A cover is never public before an administrator approves it, and a
+      light and dark. Read through ADR 0058, the issue's "an admin removes a
+      cover from the media queue" is the Reject decision on a waiting cover;
+      an approved cover is removed by its owner. Round trip: Step 3.1
+      (`media.test.ts`, `content-review.test.ts`). Per-width download: the
+      read-only check in Step 3.1 on staging (`image.test.ts` for the sizes).
+      Unhappy paths: `media.test.ts` (Step 1.3's cases) and `image.test.ts`
+      (the 1200 × 400 floor, 20 MB). The decision: `content-review.test.ts`,
+      `summary.test.ts`. No change without a cover: `cover.test.ts`. Phone
+      width, light and dark: checked locally in #120 and on staging in Step
+      3.1's read-only check and Step 3.3.
+- [x] A cover is never public before an administrator approves it, and a
       rejected one never replaces the approved one.
-- [ ] Plan status set to Complete, with the README row updated.
+      (`cover.test.ts`, `content-review.test.ts`, `media.test.ts`.)
+- [x] Plan status set to Complete, with the README row updated.
 
 ## Follow-ups
 
