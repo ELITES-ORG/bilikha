@@ -42,13 +42,12 @@ frontend/src/i18n/catalogs/
     war.ts    Waray
   account/        The account pages' empty and error states
   conversation/   A conversation's error state
+  messages/       Files in a conversation
   my-postings/    A client's own postings
   offers/         A creative's offer editor
   organizations/  The organisation pages
   verification/   The ID step after registration
 ```
-
-Every folder holds the same three files — `en.ts`, `fil.ts`, `war.ts`.
 
 The top-level files hold the screens every visitor loads. A page that loads
 only when someone opens it, like the privacy notice and the terms, keeps its
