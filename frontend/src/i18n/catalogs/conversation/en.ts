@@ -1,8 +1,8 @@
 /**
- * The empty and error states of a conversation, in English (ADR 0055, plan 0059).
+ * The error state of a conversation, in English (ADR 0055, plan 0059).
  *
- * Kept out of `../en.ts` because only these lazy pages use the strings: they
- * travel in the pages' chunk, so a visitor who never opens them never
+ * Kept out of `../en.ts` because only this lazy page uses the strings: they
+ * travel in the page's chunk, so a visitor who never opens it never
  * downloads them (constraint 3). `./index.ts` registers them, and
  * `pages/ConversationPage.tsx` imports it.
  *

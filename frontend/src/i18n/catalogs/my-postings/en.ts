@@ -1,8 +1,8 @@
 /**
  * The empty states of a client's own postings, in English (ADR 0055, plan 0059).
  *
- * Kept out of `../en.ts` because only these lazy pages use the strings: they
- * travel in the pages' chunk, so a visitor who never opens them never
+ * Kept out of `../en.ts` because only this lazy page uses the strings: they
+ * travel in the page's chunk, so a visitor who never opens it never
  * downloads them (constraint 3). `./index.ts` registers them, and
  * `pages/MyPostingsPage.tsx` imports it.
  *
