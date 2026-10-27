@@ -47,9 +47,8 @@ core key, shared.
 ## Decisions
 
 - **One reworded string.** A creative's empty services tab said
-  "`{firstName}` hasn't added any services." The catalogue has no
-  interpolation (ADR 0055 §3), and gluing a name between fragments forces
-  English word order, so it reads "No services added yet."
+  "`{firstName}` hasn't added any services." Gluing a name between
+  fragments forces English word order, so it reads "No services added yet."
 - **A section per lazy page group**, as #76 set: a string costs every visitor
   only if its page loads up front.
 
