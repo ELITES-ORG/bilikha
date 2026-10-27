@@ -39,6 +39,7 @@ import { filConversation } from './conversation/fil';
 import { warConversation } from './conversation/war';
 import './conversation';
 import { resolveMessage, translate } from '../i18n-context';
+import { fill } from '../fill';
 
 /**
  * The guard that keeps a translator's file in step with the interface
@@ -133,5 +134,11 @@ describe('catalogues', () => {
       text: 'Waray heading',
       lang: 'war',
     });
+  });
+
+  it("fills the creative's name into the empty services text", () => {
+    expect(fill(translate(fil, 'creative.services.emptyDescription'), { name: 'Ana' })).toBe(
+      "Ana hasn't added any services.",
+    );
   });
 });

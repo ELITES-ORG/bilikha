@@ -163,7 +163,7 @@ export const en = {
   'notifications.empty.description':
     'When an administrator reviews your creative profile, or a creative replies to something you posted, it shows up here.',
   'creative.services.emptyTitle': 'No services yet',
-  'creative.services.emptyDescription': 'No services added yet.',
+  'creative.services.emptyDescription': "{name} hasn't added any services.",
   'creative.portfolio.emptyTitle': 'No portfolio items yet',
   'creative.portfolio.emptyDescription': 'Images added to offers appear here.',
   'messages.pick.title': 'Select a conversation',
