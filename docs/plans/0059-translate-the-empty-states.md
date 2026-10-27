@@ -28,6 +28,7 @@ in the component:
 | `pages/CreativeProfilePage.tsx` | first | `catalogs/en.ts` |
 | `pages/MessagesLayout.tsx` | first | `catalogs/en.ts` |
 | `pages/HomePage.tsx` | first | `catalogs/en.ts` |
+| `features/ratings/components/ProfileRatings.tsx` (via `CreativeProfilePage`) | first | `catalogs/en.ts` |
 | `pages/account/*` (four pages) | lazy | new section `catalogs/account/` |
 | `pages/MyPostingsPage.tsx` | lazy | new section `catalogs/my-postings/` |
 | `pages/ConversationPage.tsx` | lazy | new section `catalogs/conversation/` |
