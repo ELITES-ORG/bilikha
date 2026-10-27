@@ -169,6 +169,8 @@ export const en = {
   'messages.pick.title': 'Select a conversation',
   'messages.pick.description': 'Choose a thread on the left to read and reply.',
   'home.domains.errorTitle': 'Could not load the domains',
+  'creative.ratings.empty': 'No ratings yet.',
+  'creative.reviews.empty': 'No ratings yet. Ratings come from clients who confirmed an engagement complete.',
 } as const;
 
 /**

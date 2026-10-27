@@ -50,9 +50,9 @@ function profileCopy(summary: WorkSummary): string | null {
   return 'Your profile is live in the directory.';
 }
 
-function offersCopy(summary: WorkSummary): string {
+function offersCopy(summary: WorkSummary): ReactNode {
   if (summary.offers.total === 0) {
-    return 'No offers yet — clients cannot hire what they cannot see priced.';
+    return <Message k="account.work.noOffers" />;
   }
   const saved =
     summary.offers.savedByOthers === 0
@@ -65,9 +65,9 @@ function offersCopy(summary: WorkSummary): string {
     : `${summary.offers.total} offers · ${saved}`;
 }
 
-function inquiriesCopy(summary: WorkSummary): string {
+function inquiriesCopy(summary: WorkSummary): ReactNode {
   if (summary.inquiries.total === 0) {
-    return 'No inquiries yet — when a client contacts you, the thread lands in Messages.';
+    return <Message k="account.work.noInquiries" />;
   }
   if (summary.inquiries.awaitingYourReply > 0) {
     const waiting =
@@ -83,10 +83,10 @@ function inquiriesCopy(summary: WorkSummary): string {
     : `${summary.inquiries.total} inquiries · you are caught up`;
 }
 
-function agreementsCopy(summary: WorkSummary): string {
+function agreementsCopy(summary: WorkSummary): ReactNode {
   const { agreements } = summary;
   if (agreements.total === 0) {
-    return 'No work agreements yet — they appear here once you issue one from a conversation.';
+    return <Message k="account.work.noAgreements" />;
   }
 
   const parts: string[] = [];
@@ -134,7 +134,7 @@ function moneyCopy(summary: WorkSummary): ReactNode {
     m.cancelledCentavos > 0;
 
   if (!hasAny) {
-    return 'Nothing agreed yet — the figure here is what you and a client put in writing, not what changed hands.';
+    return <Message k="account.work.noMoney" />;
   }
 
   // Lifecycle order; cancelled last and only when it happened. Zero states
@@ -170,9 +170,9 @@ function moneyCopy(summary: WorkSummary): ReactNode {
   );
 }
 
-function ratingsCopy(summary: WorkSummary): string {
+function ratingsCopy(summary: WorkSummary): ReactNode {
   if (summary.ratings.count === 0 || summary.ratings.average == null) {
-    return 'No ratings yet — they appear after a completed engagement.';
+    return <Message k="account.work.noRatings" />;
   }
   const score = summary.ratings.average.toFixed(1);
   return summary.ratings.count === 1

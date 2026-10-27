@@ -319,7 +319,11 @@ export function OfferDetailPage() {
                         */}
                         {data.creative.rating.count > 0 && (
                           <div className="mt-1">
-                            <RatingScore summary={data.creative.rating} size="sm" />
+                            <RatingScore
+                              summary={data.creative.rating}
+                              emptyText={<Message k="creative.ratings.empty" />}
+                              size="sm"
+                            />
                           </div>
                         )}
                       </div>

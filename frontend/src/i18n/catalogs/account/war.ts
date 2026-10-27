@@ -13,4 +13,9 @@ export const warAccount: Catalog = {
   'account.error.account': '',
   'account.error.work': '',
   'account.error.profile': '',
+  'account.work.noOffers': '',
+  'account.work.noInquiries': '',
+  'account.work.noAgreements': '',
+  'account.work.noMoney': '',
+  'account.work.noRatings': '',
 };

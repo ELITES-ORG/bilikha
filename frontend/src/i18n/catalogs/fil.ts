@@ -126,4 +126,6 @@ export const fil: Catalog = {
   'messages.pick.title': '',
   'messages.pick.description': '',
   'home.domains.errorTitle': '',
+  'creative.ratings.empty': '',
+  'creative.reviews.empty': '',
 };

@@ -460,7 +460,7 @@ export function CreativeProfilePage() {
                         {rating.data && (
                           <RatingScore
                             summary={rating.data}
-                            emptyText="No ratings yet."
+                            emptyText={<Message k="creative.ratings.empty" />}
                             size="sm"
                           />
                         )}
