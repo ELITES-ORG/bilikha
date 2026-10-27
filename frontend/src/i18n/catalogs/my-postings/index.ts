@@ -2,9 +2,9 @@ import { registerSection } from '../../sections';
 import { enMyPostings } from './en';
 
 /**
- * Registers the strings of a client's own postings. Imported by `pages/MyPostingsPage.tsx`, so
- * they ship in that chunk and are registered before it renders. Registering
- * twice is a no-op.
+ * Registers the strings of a client's own postings. Imported by
+ * `pages/MyPostingsPage.tsx`, so they ship in that chunk and are registered
+ * before it renders. Registering twice is a no-op.
  */
 registerSection({
   name: 'my-postings',
