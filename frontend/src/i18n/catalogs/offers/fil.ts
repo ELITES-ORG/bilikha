@@ -55,4 +55,7 @@ export const filOffers: Catalog = {
   'offers.media.kind.document': '',
   'offers.media.state.pendingAdd': '',
   'offers.media.state.pendingRemove': '',
+  'offers.editor.add': '',
+  'offers.editor.emptyTitle': '',
+  'offers.editor.emptyDescription': '',
 };

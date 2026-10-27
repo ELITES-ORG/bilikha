@@ -39,6 +39,7 @@ import { formatPriceRange } from '@/lib/money';
 import { cn } from '@/lib/cn';
 import { normalizeSearch, SEARCH_MAX_LENGTH } from '@/lib/search-query';
 import { useI18n } from '@/i18n/i18n-context';
+import { Message } from '@/i18n/Message';
 
 type DirectoryView = 'offers' | 'creatives';
 const DIRECTORY_VIEWS: ReadonlyArray<DirectoryView> = ['offers', 'creatives'];
@@ -585,16 +586,20 @@ export function DirectoryPage() {
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
                 title={
-                  creativeHome
-                    ? 'Could not load postings'
-                    : view === 'offers'
-                      ? 'Could not load offers'
-                      : 'Could not load creatives'
+                  <Message
+                    k={
+                      creativeHome
+                        ? 'directory.error.postings'
+                        : view === 'offers'
+                          ? 'directory.error.offers'
+                          : 'directory.error.creatives'
+                    }
+                  />
                 }
                 description={list.error.message}
                 action={
                   <Button variant="secondary" size="sm" onClick={() => void list.refetch()}>
-                    Try again
+                    <Message k="common.tryAgain" />
                   </Button>
                 }
               />
@@ -602,12 +607,12 @@ export function DirectoryPage() {
 
             {creativeHome && postings.data && postings.data.data.length === 0 && (
               <ModeAwareEmptyState
-                title="No postings yet"
-                description="No postings match your sub-domains yet."
+                title={<Message k="directory.empty.postingsTitle" />}
+                description={<Message k="directory.empty.postingsDescription" />}
                 extraAction={
                   activeFilterCount > 0 ? (
                     <Button size="sm" variant="secondary" onClick={clearFilters}>
-                      Clear filters
+                      <Message k="directory.search.clearFilters" />
                     </Button>
                   ) : undefined
                 }
@@ -648,16 +653,16 @@ export function DirectoryPage() {
             {view === 'offers' && offers.data && offers.data.data.length === 0 && !creativeHome && !q && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
-                  title="No offers here yet"
-                  description="No offers match these filters yet — try another filter, or browse creatives."
+                  title={<Message k="directory.empty.offersTitle" />}
+                  description={<Message k="directory.empty.offersDescription" />}
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('creatives')}>
-                        Browse creatives
+                        <Message k="directory.empty.browseCreatives" />
                       </Button>
                       {activeFilterCount > 0 && (
                         <Button size="sm" variant="secondary" onClick={clearFilters}>
-                          Clear filters
+                          <Message k="directory.search.clearFilters" />
                         </Button>
                       )}
                     </div>
@@ -665,16 +670,16 @@ export function DirectoryPage() {
                 />
               ) : (
                 <EmptyState
-                  title="No offers here yet"
-                  description="Try another filter, or browse creatives instead."
+                  title={<Message k="directory.empty.offersTitle" />}
+                  description={<Message k="directory.empty.offersDescriptionGuest" />}
                   action={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('creatives')}>
-                        Browse creatives
+                        <Message k="directory.empty.browseCreatives" />
                       </Button>
                       {activeFilterCount > 0 && (
                         <Button size="sm" variant="secondary" onClick={clearFilters}>
-                          Clear filters
+                          <Message k="directory.search.clearFilters" />
                         </Button>
                       )}
                     </div>
@@ -696,16 +701,16 @@ export function DirectoryPage() {
             {view === 'creatives' && creatives.data && creatives.data.data.length === 0 && !creativeHome && !q && (
               user?.profileSlug ? (
                 <ModeAwareEmptyState
-                  title="Nobody listed here yet"
-                  description="No creatives match these filters yet — try another filter, or browse offers."
+                  title={<Message k="directory.empty.creativesTitle" />}
+                  description={<Message k="directory.empty.creativesDescription" />}
                   extraAction={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('offers')}>
-                        Browse offers
+                        <Message k="directory.empty.browseOffers" />
                       </Button>
                       {activeFilterCount > 0 && (
                         <Button size="sm" variant="secondary" onClick={clearFilters}>
-                          Clear filters
+                          <Message k="directory.search.clearFilters" />
                         </Button>
                       )}
                     </div>
@@ -713,24 +718,28 @@ export function DirectoryPage() {
                 />
               ) : (
                 <EmptyState
-                  title="Nobody listed here yet"
+                  title={<Message k="directory.empty.creativesTitle" />}
                   description={
-                    subdomain
-                      ? 'This sub-domain has no published creatives yet.'
-                      : domain
-                        ? 'This domain has no published creatives yet.'
-                        : municipality
-                          ? 'No published creatives in that municipality yet.'
-                          : 'Published creatives will appear here as the registry grows.'
+                    <Message
+                      k={
+                        subdomain
+                          ? 'directory.empty.creativesInSubdomain'
+                          : domain
+                            ? 'directory.empty.creativesInDomain'
+                            : municipality
+                              ? 'directory.empty.creativesInMunicipality'
+                              : 'directory.empty.creativesAnywhere'
+                      }
+                    />
                   }
                   action={
                     <div className="flex flex-wrap justify-center gap-2">
                       <Button size="sm" onClick={() => setView('offers')}>
-                        Browse offers
+                        <Message k="directory.empty.browseOffers" />
                       </Button>
                       {activeFilterCount > 0 && (
                         <Button size="sm" variant="secondary" onClick={clearFilters}>
-                          Clear filters
+                          <Message k="directory.search.clearFilters" />
                         </Button>
                       )}
                     </div>

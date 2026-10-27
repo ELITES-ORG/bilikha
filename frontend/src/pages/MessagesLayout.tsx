@@ -9,6 +9,7 @@ import { ConversationList } from '@/features/conversations/ConversationList';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/use-media-query';
+import { Message } from '@/i18n/Message';
 
 /**
  * /messages and /messages/:id share this frame. The URL is the only state:
@@ -81,8 +82,8 @@ export function MessagesEmptyPane() {
       <EmptyState
         className="max-w-md border-0 bg-transparent"
         icon={<MessagesSquare className="size-5" />}
-        title="Select a conversation"
-        description="Choose a thread on the left to read and reply."
+        title={<Message k="messages.pick.title" />}
+        description={<Message k="messages.pick.description" />}
       />
     </div>
   );

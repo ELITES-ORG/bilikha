@@ -7,6 +7,8 @@ import { ProfileEditor } from '@/features/me/ProfileEditor';
 import { useOwnProfile } from '@/features/me/api';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { AccountPageHeading } from './AccountPageHeading';
+import '@/i18n/catalogs/account';
+import { Message } from '@/i18n/Message';
 
 export function ProfileSettingsPage() {
   const profile = useOwnProfile();
@@ -34,7 +36,7 @@ export function ProfileSettingsPage() {
             <div className="mt-10">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load your profile"
+                title={<Message k="account.error.profile" />}
                 description={profile.error.message}
               />
             </div>

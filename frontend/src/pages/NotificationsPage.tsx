@@ -19,6 +19,7 @@ import { relativeTime } from '@/features/conversations/relative-time';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
+import { Message } from '@/i18n/Message';
 
 function Row({
   row,
@@ -127,7 +128,7 @@ export function NotificationsPage() {
           {notifications.isError && (
             <div className="mt-8">
               <EmptyState
-                title="Could not load notifications"
+                title={<Message k="notifications.error.title" />}
                 description={notifications.error.message}
               />
             </div>
@@ -136,8 +137,8 @@ export function NotificationsPage() {
           {notifications.data && rows.length === 0 && (
             <div className="mt-8">
               <EmptyState
-                title="Nothing yet"
-                description="When an administrator reviews your creative profile, or a creative replies to something you posted, it shows up here."
+                title={<Message k="notifications.empty.title" />}
+                description={<Message k="notifications.empty.description" />}
               />
             </div>
           )}

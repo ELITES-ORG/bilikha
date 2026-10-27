@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Skeleton } from '@/components/ui';
+import { Message } from '@/i18n/Message';
 import { relativeTime } from '@/features/conversations/relative-time';
 import { useProfileRatings, useRatingSummary } from '../api';
 import { starsLabel } from '../format';
@@ -40,7 +41,7 @@ export function ProfileRatings({ slug, isOwner }: ProfileRatingsProps) {
         {summary.data && (
           <RatingScore
             summary={summary.data}
-            emptyText="No ratings yet. Ratings come from clients who confirmed an engagement complete."
+            emptyText={<Message k="creative.reviews.empty" />}
             size="md"
           />
         )}

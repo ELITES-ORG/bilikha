@@ -24,6 +24,8 @@ import { toApiError } from '@/lib/api-client';
 import { AccountPageHeading } from './account/AccountPageHeading';
 import { BrowseOnlyNote } from '@/features/verification/BrowseOnlyNote';
 import { useVerificationGate } from '@/features/verification/useVerificationGate';
+import '@/i18n/catalogs/my-postings';
+import { Message } from '@/i18n/Message';
 
 function postingStatusTone(status: string): 'neutral' | 'warning' {
   // Expired lapsed without a deliberate close — it should not look like Closed.
@@ -69,7 +71,9 @@ export function MyPostingsPage() {
           {/* The empty state carries its own, so this is still one button. */}
           {populated && !browseOnly && (
             <div className="mt-6">
-              <ButtonLink to="/postings/new">Post work</ButtonLink>
+              <ButtonLink to="/postings/new">
+                <Message k="myPostings.post" />
+              </ButtonLink>
             </div>
           )}
 
@@ -79,14 +83,16 @@ export function MyPostingsPage() {
 
             {empty && (
               <EmptyState
-                title="No postings yet"
-                description="Publish work you need done — matching creatives will see it on their Home feed."
+                title={<Message k="myPostings.empty.title" />}
+                description={<Message k="myPostings.empty.description" />}
                 action={
                   // Posting work waits for a verified ID (ADR 0057).
                   browseOnly ? (
                     <BrowseOnlyNote />
                   ) : (
-                    <ButtonLink to="/postings/new" size="sm">Post work</ButtonLink>
+                    <ButtonLink to="/postings/new" size="sm">
+                      <Message k="myPostings.post" />
+                    </ButtonLink>
                   )
                 }
               />

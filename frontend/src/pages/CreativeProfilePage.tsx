@@ -39,6 +39,7 @@ import { RatingScore } from '@/features/ratings/components/RatingScore';
 import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { Message } from '@/i18n/Message';
 
 type LightboxTarget = { url: string; alt: string };
 
@@ -329,8 +330,13 @@ export function CreativeProfilePage() {
                           ) : (
                             <EmptyState
                               className="mt-6 py-8"
-                              title="No services yet"
-                              description={`${firstName} hasn't added any services.`}
+                              title={<Message k="creative.services.emptyTitle" />}
+                              description={
+                                <Message
+                                  k="creative.services.emptyDescription"
+                                  values={{ name: firstName }}
+                                />
+                              }
                             />
                           )}
                         </>
@@ -368,8 +374,8 @@ export function CreativeProfilePage() {
                             <EmptyState
                               className="mt-6 py-8"
                               icon={<LayoutGrid className="size-5" />}
-                              title="No portfolio items yet"
-                              description="Images added to offers appear here."
+                              title={<Message k="creative.portfolio.emptyTitle" />}
+                              description={<Message k="creative.portfolio.emptyDescription" />}
                             />
                           )}
                         </>
@@ -459,7 +465,7 @@ export function CreativeProfilePage() {
                         {rating.data && (
                           <RatingScore
                             summary={rating.data}
-                            emptyText="No ratings yet."
+                            emptyText={<Message k="creative.ratings.empty" />}
                             size="sm"
                           />
                         )}

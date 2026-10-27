@@ -40,6 +40,13 @@ frontend/src/i18n/catalogs/
     en.ts     English — the source
     fil.ts    Filipino
     war.ts    Waray
+  account/        The account pages' empty and error states
+  conversation/   A conversation's error state
+  messages/       Files in a conversation
+  my-postings/    A client's own postings
+  offers/         A creative's offer editor
+  organizations/  The organisation pages
+  verification/   The ID step after registration
 ```
 
 The top-level files hold the screens every visitor loads. A page that loads
@@ -143,9 +150,13 @@ English-only visitor nothing (constraint 3).
 
 ## What is not covered yet
 
-- **Most of the app.** Sign-in, registration, the privacy notice, the terms of
-  use and the language control read from a catalogue so far. Everything else
-  is still English in the component.
+- **Some of the app.** Sign-in, registration, the language control, the main
+  empty states (plan 0059), offers, organisations and the ID step read from a
+  catalogue, and so do the privacy notice and terms. Other copy — form labels
+  outside these, toasts, most buttons — is still English in the component.
+- **The words under "Could not load…"** are the server's error message, so they
+  stay English even where the title is translated (see *Messages from the
+  server* below).
 - **Some registration text cannot carry its language yet.** Hints,
   placeholders, error messages and the municipality and barangay labels are
   plain-text props on `Input` and `Select`, so a translated hint is announced

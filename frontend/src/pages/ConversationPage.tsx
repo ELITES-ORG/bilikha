@@ -41,6 +41,8 @@ import { PostingNotFoundError, usePosting } from '@/features/postings/api';
 import { toApiError } from '@/lib/api-client';
 import { pbBottomNav, pbConversationComposer, fixedComposerAboveNav } from '@/lib/bottom-nav';
 import { cn } from '@/lib/cn';
+import '@/i18n/catalogs/conversation';
+import { Message } from '@/i18n/Message';
 
 type MenuMode = 'closed' | 'menu' | 'report' | 'block';
 
@@ -412,11 +414,11 @@ export function ConversationPage() {
             <div className="lg:p-5">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load this conversation"
+                title={<Message k="conversation.error.title" />}
                 description={thread.error.message}
                 action={
                   <ButtonLink to="/messages" size="sm" variant="secondary">
-                    Back to messages
+                    <Message k="conversation.error.back" />
                   </ButtonLink>
                 }
               />

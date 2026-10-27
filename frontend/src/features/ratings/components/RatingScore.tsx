@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { scoreLine } from '../format';
 import type { RatingSummary } from '../types';
 import { StarRow } from './StarRow';
@@ -5,7 +6,7 @@ import { StarRow } from './StarRow';
 export interface RatingScoreProps {
   summary: RatingSummary;
   /** Shown when there is nothing to average. Plain words, never empty stars. */
-  emptyText?: string;
+  emptyText: ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -16,7 +17,7 @@ export interface RatingScoreProps {
  */
 export function RatingScore({
   summary,
-  emptyText = 'No ratings yet',
+  emptyText,
   size = 'md',
 }: RatingScoreProps) {
   const line = scoreLine(summary);

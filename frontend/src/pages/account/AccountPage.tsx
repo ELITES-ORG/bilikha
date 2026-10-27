@@ -61,6 +61,8 @@ import {
 import { effectiveViewMode, MODE_LABEL } from '@/lib/view-mode';
 import { LOCALES, type Locale } from '@/lib/locale';
 import { useI18n } from '@/i18n/i18n-context';
+import '@/i18n/catalogs/account';
+import { Message } from '@/i18n/Message';
 
 function profileStatusLabel(status: ProfileStatus): string {
   switch (status) {
@@ -382,7 +384,7 @@ export function AccountPage() {
             <div className="mt-8">
               <EmptyState
                 icon={<TriangleAlert className="size-5" />}
-                title="Could not load your account"
+                title={<Message k="account.error.account" />}
                 description={profile.error.message}
               />
             </div>

@@ -23,6 +23,7 @@ import { useT } from '@/i18n/i18n-context';
 import { toApiError } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
 import { centavosToPesoInput, formatPriceRange, pesoInputToCentavos } from '@/lib/money';
+import { Message } from '@/i18n/Message';
 
 type FormState = {
   title: string;
@@ -326,7 +327,7 @@ export function OfferEditor() {
           disabled={!canAdd}
           onClick={startCreate}
         >
-          Add offer
+          <Message k="offers.editor.add" />
         </Button>
       </div>
 
@@ -344,8 +345,8 @@ export function OfferEditor() {
 
       {offers.length === 0 && !creating ? (
         <EmptyState
-          title="No offers yet"
-          description="Clients cannot hire what they cannot see priced."
+          title={<Message k="offers.editor.emptyTitle" />}
+          description={<Message k="offers.editor.emptyDescription" />}
           action={
             <Button
               type="button"
@@ -354,7 +355,7 @@ export function OfferEditor() {
               disabled={!canAdd}
               onClick={startCreate}
             >
-              Add offer
+              <Message k="offers.editor.add" />
             </Button>
           }
         />
