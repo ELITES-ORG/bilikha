@@ -46,9 +46,7 @@ core key, shared.
 
 ## Decisions
 
-- **One reworded string.** A creative's empty services tab said
-  "`{firstName}` hasn't added any services." Gluing a name between
-  fragments forces English word order, so it reads "No services added yet."
+- **A name in one string.** A creative's empty services tab reads "`{name}` hasn't added any services.", the name filled into a placeholder a translator can move.
 - **A section per lazy page group**, as #76 set: a string costs every visitor
   only if its page loads up front.
 
