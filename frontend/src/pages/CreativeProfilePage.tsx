@@ -40,8 +40,6 @@ import { formatPriceRange } from '@/lib/money';
 import { pbBottomNav } from '@/lib/bottom-nav';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { Message } from '@/i18n/Message';
-import { useT } from '@/i18n/i18n-context';
-import { fill } from '@/i18n/fill';
 
 type LightboxTarget = { url: string; alt: string };
 
@@ -76,7 +74,6 @@ export function CreativeProfilePage() {
   const { slug } = useParams<{ slug: string }>();
   const [params, setParams] = useSearchParams();
   const profile = usePublishedProfile(slug);
-  const t = useT();
   const rating = useRatingSummary(slug);
   const { data: user } = useCurrentUser();
   const [composerOpen, setComposerOpen] = useState(false);
@@ -334,7 +331,12 @@ export function CreativeProfilePage() {
                             <EmptyState
                               className="mt-6 py-8"
                               title={<Message k="creative.services.emptyTitle" />}
-                              description={fill(t('creative.services.emptyDescription'), { name: firstName })}
+                              description={
+                                <Message
+                                  k="creative.services.emptyDescription"
+                                  values={{ name: firstName }}
+                                />
+                              }
                             />
                           )}
                         </>
